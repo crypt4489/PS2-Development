@@ -1,0 +1,1609 @@
+#include "ps_global.h"
+#include "ps_gs.h"
+#include "ps_gamelogic.h"
+#include "ps_vif.h"
+#include "ps_misc.h"
+#include "ps_timer.h"
+#include "ps_spr.h"
+#include "ps_texture.h"
+#include "ps_pad.h"
+#include "ps_proc_texture.h"
+#include "ps_texture_io.h"
+#include "ps_skybox.h"
+#include "ps_vumanager.h"
+#include "ps_font.h"
+#include "ps_manager.h"
+#include "ps_waves.h"
+#include "ps_camera.h"
+#include "ps_file_io.h"
+#include "ps_gameobject.h"
+#include "ps_shadowvolume.h"
+#include "ps_shadowprojection.h"
+#include "ps_qwordnode.h"
+#include "ps_wireframe.h"
+#include "ps_obb.h"
+#include "ps_doublebuffer.h"
+#include "ps_movement.h"
+#include "ps_vu1pipeline.h"
+#include "ps_lights.h"
+#include "body.h"
+#include "pad.h"
+
+GameManager manager;
+
+RenderTarget *shadowTarget;
+Texture *shadowTexture;
+Camera shadowCam;
+GameObject *shadowViewer, *shadowBox, *regBox, *wallObj;;
+
+VECTOR object_position = {+50.00f, 0.00f, -75.00f, 1.00f};
+VECTOR object_position2 = {-25.00f, 10.0f, 0.00f, 1.00f};
+VECTOR object_rotation = {0.00f, 0.00f, 0.00f, 1.00f};
+VECTOR object_rotation2 = {0.00f, 0.00f, 0.00f, 1.00f};
+
+VECTOR camera_position = {0.0f, 10.0f, 20.00f, 1.00f};
+VECTOR camera_rotation = {0.00f, +0.05f, 0.00f, 1.00f};
+
+VECTOR at = {0.0f, 0.0f, 0.0f, 1.0f};
+VECTOR forward = {0.0f, 0.0f, 1.0f, 1.0f};
+VECTOR up = {0.0f, 1.0f, 0.0f, 1.0f};
+VECTOR right = {1.0f, 0.0f, 0.0f, 1.0f};
+
+extern u32 VU1Drew3D_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1Drew3D_CodeEnd __attribute__((section(".vudata"))); // 0
+
+extern u32 VU1Wave3D_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1Wave3D_CodeEnd __attribute__((section(".vudata"))); // 1
+
+extern u32 VU1Shadow_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1Shadow_CodeEnd __attribute__((section(".vudata"))); // 2
+
+extern u32 VU1ColorDraw3D_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1ColorDraw3D_CodeEnd __attribute__((section(".vudata"))); // 3
+
+extern u32 VU1ProjectionShadow3D_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1ProjectionShadow3D_CodeEnd __attribute__((section(".vudata"))); // 4
+
+extern u32 VU1ColorObject3D_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1ColorObject3D_CodeEnd __attribute__((section(".vudata"))); // 5
+
+extern u32 VU1WireFrame3D_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1WireFrame3D_CodeEnd __attribute__((section(".vudata"))); // 6
+
+extern u32 VU1OBBDraw3D_CodeStart __attribute__((section(".vudata"))); // 7
+extern u32 VU1OBBDraw3D_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1ObjDraw3D_BBO_CodeStart __attribute__((section(".vudata"))); // 8
+extern u32 VU1ObjDraw3D_BBO_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1ObjDraw3D_AnimTex_CodeStart __attribute__((section(".vudata"))); // 9
+extern u32 VU1ObjDraw3D_AnimTex_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1TessGrid3D_CodeStart __attribute__((section(".vudata"))); // 10
+extern u32 VU1TessGrid3D_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_LightObj3D_CodeStart __attribute__((section(".vudata"))); // 11
+extern u32 VU1_LightObj3D_CodeEnd __attribute__((section(".vudata")));   //
+
+extern u32 VU1_EnvMapObj3D_CodeStart __attribute__((section(".vudata"))); // 12
+extern u32 VU1_EnvMapObj3D_CodeEnd __attribute__((section(".vudata")));   // 12
+
+TimerStruct *ts;
+
+int context = 0;
+
+char *print_out = "DREW FLETCHER";
+
+extern char padBuf[256] __attribute__((aligned(64)));
+extern u32 port;
+extern u32 slot;
+
+void setupImages();
+
+blend_t blender;
+
+Waves wave;
+
+MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
+
+TessGrid tessGrid;
+
+Texture *myFontTex;
+
+Font myFont;
+
+float startTime;
+
+float blowTime;
+
+#define FB_SIZE 640 * 480
+
+VECTOR lightPos = {0.0f, 80.0f, +25.0f, 1.0f};
+VECTOR mainDirLightDirection = {+1.0f, +2.0f, -0.5f, 0.0f};
+VECTOR mainDirLightColor = {1.0f, 0.51f, 0.52f, 1.0f};
+VECTOR ambientColor = {0.0f, 0.25f, 0.30f, 1.0f};
+
+static float lodGrid[4] = {150.0f, 125.0f, 75.0f, 50.0f};
+
+framebuffer_t frame_buffer_1;
+framebuffer_t frame_buffer_2;
+zbuffer_t z;
+
+extern volatile u32 *vu1_data_address;
+
+extern volatile u32 *vif1_top;
+
+extern volatile u32 *vif1_tops;
+
+extern volatile u32 *vif1_tops;
+
+const char *waterName = "WATER";
+const char *iceName = "ICE";
+const char *face1Name = "FACE1";
+const char *face2Name = "FACE2";
+const char *face3Name = "FACE3";
+const char *face4Name = "FACE4";
+const char *face5Name = "FACE5";
+const char *face6Name = "FACE6";
+const char *specName = "SPECULAR";
+const char *glossName = "GLOSS";
+const char *worldName = "WORLD";
+const char *NewYorkName = "NewYork";
+
+static void setup_lights()
+{
+    MATRIX m;
+    matrix_unit(lightTransform);
+    matrix_unit(m);
+    VECTOR lightRight, lightUp;
+    CrossProduct(up, mainDirLightDirection, lightRight);
+    normalize(lightRight, lightRight);
+    CrossProduct(lightRight, mainDirLightDirection, lightUp);
+    CreateRotationAndCopyMatFromObjAxes(m, lightUp, mainDirLightDirection, lightRight);
+
+    /*VECTOR lightDir = { 0.0f, 0.0f, +1.0f, 0.0f };
+    vector_copy(shadowCam.look, lightDir);
+    vector_copy(shadowCam.right, right);
+    vector_copy(shadowCam.up, up); */
+    MatrixInverse(lightTransform, m);
+
+    CreateNormalizedTextureCoordinateMatrix(lightTransform);
+}
+
+static void update_sphere(GameObject *sphere)
+{
+    static float angle = 0.0f;
+    float shearFactor = Sin(TWOPI * angle);
+    static float startSphereUV = 0.0f;
+    static float deltaT = 0.0f;
+
+    float *anim = (float *)sphere->objData;
+    anim[0] = 1.0f;
+    anim[4] = 0.5f * shearFactor;
+    anim[12] = -0.5f * anim[4];
+
+    anim[1] = 0.0f;
+    anim[5] = 1.0f;
+    anim[13] = 0.0f;
+
+    deltaT = (getTicks(ts) - startSphereUV) * 0.001f;
+
+    startSphereUV = getTicks(ts);
+
+    angle += deltaT / 3.0f;
+    angle -= (u32)angle;
+
+    static float angleMatter = 1.0f;
+    // Pitch((void *)sphere, PS_MV_GAMEOBJECT, angleMatter, sphere->forward, sphere->up);
+    // CreateRotationMatFromObjAxes(sphere, sphere->up, sphere->forward, sphere->right);
+}
+
+static void updateTexturedSquare(GameObject *square)
+{
+    static float angle = 0.0f;
+    float shearFactor = Sin(TWOPI * angle);
+    static float startSphereUV = 0.0f;
+    static float deltaT = 0.0f;
+
+    float *anim = (float *)square->objData;
+    anim[0] = 1.0f;
+    anim[4] = shearFactor;
+    anim[12] = angle;
+
+    anim[1] = 0.0f;
+    anim[5] = 1.0f;
+    anim[13] = 0.0f;
+
+    deltaT = (getTicks(ts) - startSphereUV) * 0.0001f;
+
+    startSphereUV = getTicks(ts);
+
+    angle += deltaT / 3.0f;
+    angle -= (u32)angle;
+}
+
+void update_light_vu1_buffer(GameObject *obj, qword_t *q)
+{
+
+    MATRIX screen;
+
+    CreateWorldMatrix(obj->world, obj->scale, obj->rotation_m, obj->translation);
+
+    matrix_unit(screen);
+    matrix_multiply(screen, screen, obj->world);
+    matrix_multiply(screen, screen, manager.mainCam->view);
+    matrix_multiply(screen, screen, manager.mainCam->proj);
+
+    qword_t *wvp_screen = q;
+
+    memcpy(wvp_screen, screen, 4 * sizeof(qword_t));
+
+    wvp_screen += 4;
+
+    memcpy(wvp_screen, obj->rotation_m, 4 * sizeof(qword_t));
+
+    wvp_screen += 4;
+
+    wvp_screen = vector_to_qword(wvp_screen, mainDirLightDirection);
+    wvp_screen = create_light_color_vu1_vector(wvp_screen, mainDirLightColor); // vector_to_qword(wvp_screen, mainDirLightColor);
+    wvp_screen = create_light_color_vu1_vector(wvp_screen, ambientColor);
+
+    char name[MAX_CHAR_PIPELINE_NAME];
+
+    if (manager.gs_context == 0)
+    {
+        strcpy(name, CTX0_PIPE);
+    }
+    else
+    {
+        strcpy(name, CTX1_PIPE);
+    }
+
+    strcat(name, ENVMAPPIPENAME);
+
+    qword_t *envmap = getQwordByName(obj->util, name);
+
+    memcpy(envmap, screen, 4 * sizeof(qword_t));
+
+    envmap += 4;
+
+    memcpy(envmap, obj->rotation_m, 4 * sizeof(qword_t));
+
+    envmap += 4;
+
+    memcpy(envmap, lightTransform, 4 * sizeof(qword_t));
+
+    envmap += 4;
+
+    envmap = vector_to_qword(envmap, mainDirLightDirection);
+    envmap = create_light_color_vu1_vector(envmap, mainDirLightColor);
+    envmap = create_light_color_vu1_vector(envmap, ambientColor);
+}
+
+#define maxTheta 0.2f
+
+void update_light_sphere_vu1_buffer(GameObject *obj, qword_t *q)
+{
+
+    VECTOR pos;
+
+    MATRIX screen, cameraLTM;
+
+    Camera *cam = manager.mainCam;
+
+    VectorSubtractXYZ(obj->pos, cam->pos, pos);
+
+    normalize(pos, pos);
+
+    float d = DotProduct(pos, mainDirLightDirection);
+
+    float otherD = DotProduct(pos, cam->look);
+
+    CreateWorldMatrix(obj->world, obj->scale, obj->rotation_m, obj->translation);
+
+    matrix_unit(cameraLTM);
+
+    if (d > maxTheta && Abs(otherD) > 0.825f)
+    {
+
+        CreateCameraWorldMatrix(cam, cameraLTM);
+
+        MatrixInverse(cameraLTM, cameraLTM);
+
+        CreateNormalizedTextureCoordinateMatrix(cameraLTM);
+    }
+    else
+    {
+        cameraLTM[0] = 0.0f;
+        cameraLTM[5] = 0.0f;
+        cameraLTM[10] = 0.0f;
+        cameraLTM[15] = 0.0f;
+    }
+
+    matrix_unit(screen);
+    matrix_multiply(screen, screen, obj->world);
+    matrix_multiply(screen, screen, manager.mainCam->view);
+    matrix_multiply(screen, screen, manager.mainCam->proj);
+
+    qword_t *wvp_screen = q;
+
+    memcpy(wvp_screen, screen, 4 * sizeof(qword_t));
+
+    wvp_screen += 4;
+
+    memcpy(wvp_screen, obj->rotation_m, 4 * sizeof(qword_t));
+
+    wvp_screen += 4;
+
+    wvp_screen = vector_to_qword(wvp_screen, mainDirLightDirection);
+    wvp_screen = create_light_color_vu1_vector(wvp_screen, mainDirLightColor);
+    wvp_screen = create_light_color_vu1_vector(wvp_screen, ambientColor);
+
+    char name[MAX_CHAR_PIPELINE_NAME];
+
+    if (manager.gs_context == 0)
+    {
+        strcpy(name, CTX0_PIPE);
+    }
+    else
+    {
+        strcpy(name, CTX1_PIPE);
+    }
+
+    strcat(name, ENVMAPPIPENAME);
+
+    qword_t *envmap = getQwordByName(obj->util, name);
+
+    memcpy(envmap, screen, 4 * sizeof(qword_t));
+
+    envmap += 4;
+
+    memcpy(envmap, obj->rotation_m, 4 * sizeof(qword_t));
+
+    envmap += 4;
+
+    memcpy(envmap, cameraLTM, 4 * sizeof(qword_t));
+
+    envmap += 4;
+
+    envmap = vector_to_qword(envmap, mainDirLightDirection);
+    envmap = create_light_color_vu1_vector(envmap, mainDirLightColor);
+    envmap = create_light_color_vu1_vector(envmap, ambientColor);
+}
+
+void update_anim_tex_vu1_buffer_obj(GameObject *obj, qword_t *q)
+{
+    MATRIX screen;
+
+    CreateWorldMatrix(obj->world, obj->scale, obj->rotation_m, obj->translation);
+
+    matrix_unit(screen);
+    matrix_multiply(screen, screen, obj->world);
+    matrix_multiply(screen, screen, manager.mainCam->view);
+    matrix_multiply(screen, screen, manager.mainCam->proj);
+
+    qword_t *wvp_screen = q;
+
+    memcpy(wvp_screen, screen, 4 * sizeof(qword_t));
+
+    float *anim = (float *)obj->objData;
+
+    wvp_screen += 4;
+
+    memcpy(wvp_screen, anim, sizeof(MATRIX));
+}
+
+static void update_cube(GameObject *cube)
+{
+    static float angle = 1.0f;
+    RotateY((void *)cube, PS_MV_GAMEOBJECT, angle, cube->right, cube->up, cube->forward);
+    CreateRotationMatFromObjAxes(cube, cube->up, cube->forward, cube->right);
+    // angle += 0.001f;
+}
+
+static void update_body(GameObject *body)
+{
+    // static float angle = 0.0f;
+    // CreateRotationMatrix(right, DegToRad(angle), body->rotation_m);
+    // angle += 0.5f;
+}
+
+static void update_skybox(GameObject *cube)
+{
+    static float angle = 0.1f;
+    RotateY((void *)cube, PS_MV_GAMEOBJECT, angle, cube->right, cube->up, cube->forward);
+    CreateRotationMatFromObjAxes(cube, cube->up, cube->forward, cube->right);
+    // angle += 0.001f;
+}
+
+void update_light()
+{
+    blowTime = getTicks(ts) - startTime;
+    lightPos[0] = 40.0f * sin(.0005f * PI * blowTime);
+
+    lightPos[2] = 30.0f * cos(.0005f * PI * blowTime);
+}
+
+void setupFont()
+{
+
+    prim_t prim;
+    color_t color;
+
+    prim.type = PRIM_SPRITE;
+    prim.shading = PRIM_SHADE_FLAT;
+    prim.mapping = DRAW_ENABLE;
+    prim.fogging = DRAW_DISABLE;
+    prim.blending = DRAW_ENABLE;
+    prim.antialiasing = DRAW_DISABLE;
+    prim.mapping_type = PRIM_MAP_UV;
+    prim.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x00;
+    color.b = 0x00;
+    color.a = 0x80;
+    color.q = 0.0f;
+
+    myFont.color = color;
+    myFont.prim = prim;
+
+    char *fontWidths = (char *)malloc(256);
+
+    myFontTex = read_tex_file("\\MY_FONT.BMP;1", "BasicFont", READ_BMP, 0x80, 1);
+
+    myFontTex->clut_buffer = RewriteAlphaClutBuffer(myFontTex->clut_buffer);
+
+    myFont.fontTex = myFontTex;
+    myFont.fontWidths = fontWidths;
+
+    CreateFontWidths(&myFont, "\\FONT.DAT;1");
+
+    create_tex_structs(myFontTex, myFontTex->width, myFontTex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE);
+
+    create_clut_structs(myFontTex, 16, GS_PSM_32);
+
+    myFontTex->texbuf.address = manager.textureInVram->texbuf.address;
+    myFontTex->clut.address = manager.textureInVram->clut.address;
+}
+
+void setupGameManager()
+{
+
+    manager.ScreenHeight = 480;
+    manager.ScreenWidth = 640;
+    manager.ScreenHHalf = 240;
+    manager.ScreenWHalf = 320;
+    manager.gs_context = 0;
+
+    manager.objListHead = NULL;
+    manager.texListHead = NULL;
+    manager.collision_objs = NULL;
+
+    manager.textureInVram = (Texture *)malloc(sizeof(Texture));
+    manager.textureInVram->width = 256;
+    manager.textureInVram->height = 256;
+    manager.textureInVram->psm = GS_PSM_8;
+    manager.textureInVram->id = 0;
+
+    manager.mainCam = (Camera *)malloc(sizeof(Camera));
+
+    InitCameraObb(manager.mainCam, 10.0f, 10.0f, 10.0f, BBO_FIXED);
+
+    manager.vu1DoneProcessing = 1;
+
+    CameraLookAt(manager.mainCam, camera_position, at, up);
+
+    InitGS(&manager, &frame_buffer_1, &z, manager.gs_context);
+
+    InitFramebuffer(&frame_buffer_2, frame_buffer_1.width, frame_buffer_1.height, frame_buffer_1.psm);
+
+    manager.targetBack.render = &frame_buffer_1;
+    manager.targetBack.z = &z;
+
+    manager.targetDisplay.render = &frame_buffer_2;
+    manager.targetDisplay.z = &z;
+
+    SetupRenderTarget(&manager.targetDisplay, 1, 0);
+
+    SetupRenderTarget(&manager.targetBack, 0, 0);
+}
+
+void setupSkyBox()
+{
+
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go1 = (GameObject *)malloc(sizeof(GameObject));
+    VECTOR skyboxPos = {0.0f, 15.0f, -25.0f, 1.0f};
+    vector_copy(go1->pos, skyboxPos);
+
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    defineObjAxes(go1, up, right, forward);
+
+    CreateRotationMatrix(up, DegToRad(90.0f), go1->rotation_m);
+    CreateScaleMatrix(scales, go1->scale);
+    CreateTranslationMatrix(skyboxPos, go1->translation);
+    CreateWorldMatrix(go1->world, go1->scale, go1->rotation_m, go1->translation);
+
+    read_model_file("\\BOX16.BIN;1", go1);
+
+    go1->prim = prim_tex;
+    go1->color = color;
+    go1->gs_reg_mask = DRAW_STQ2_REGLIST;
+    go1->gs_reg_count = 3;
+
+    go1->update_draw = update_vu1_buffer_skybox;
+    go1->tex = getTexByName(&manager, face1Name);
+    go1->objData = &manager.mainCam->pos;
+    go1->shadowVertexCount = 0;
+    go1->util = NULL;
+
+    go1->update_object = update_skybox;
+
+    go1->main_call_routine = basic_call_routine;
+
+    create_pipeline_skybox(go1, 0, 0);
+    create_pipeline_skybox(go1, 0, 1);
+    addToManagerObjList(&manager, go1);
+}
+
+void setupSphere()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *sphere = (GameObject *)malloc(sizeof(GameObject));
+
+    read_model_file("\\SPHERE2.BIN;1", sphere);
+
+    VECTOR pos = {-50.0f, 50.0f, -100.0f, 1.0f};
+
+    VECTOR scales = {10.0f, 10.0f, 10.0f, 0.1f}; //{0.1f, 0.1f, 0.1f, 0.1f};
+
+    VECTOR upInv;
+
+    vector_copy(upInv, up);
+
+    upInv[1] *= -1.0f;
+
+    defineObjAxes(sphere, upInv, right, forward);
+
+    CreateRotationMatFromObjAxes(sphere, upInv, forward, right);
+    CreateScaleMatrix(scales, sphere->scale);
+    CreateTranslationMatrix(pos, sphere->translation);
+    CreateWorldMatrix(sphere->world, sphere->scale, sphere->rotation_m, sphere->translation);
+
+    vector_copy(sphere->pos, pos);
+
+    sphere->prim = prim_tex;
+    sphere->color = color;
+    sphere->gs_reg_mask = DRAW_STQ2_REGLIST;
+    sphere->gs_reg_count = 3;
+
+    sphere->update_draw = update_light_sphere_vu1_buffer;
+    sphere->tex = getTexByName(&manager, worldName);
+    sphere->shadowVertexCount = 0;
+    sphere->util = NULL;
+    sphere->main_call_routine = envmap_call_routine;
+    sphere->update_object = update_sphere;
+
+    matrix_unit(animTransform);
+
+    sphere->objData = (void *)animTransform;
+
+    init_obb(sphere, BBO_FIXED);
+
+    Texture *envMap = getTexByName(&manager, specName);
+
+    create_envmap_lights_pipeline(sphere, envMap, 11, 12, 7000, 0);
+
+    create_envmap_lights_pipeline(sphere, envMap, 11, 12, 7000, 1);
+
+    addToManagerObjList(&manager, sphere);
+}
+
+void setupBody()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *body = (GameObject *)malloc(sizeof(GameObject));
+
+    read_model_file("\\BODY.BIN;1", body);
+
+    VECTOR pos = {+50.0f, 10.0f, -185.0f, 1.0f};
+
+    vector_copy(body->pos, pos);
+
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 0.0f};
+
+    VECTOR bRight, bFor, bUp;
+
+    vector_copy(bRight, right);
+
+    vector_copy(bFor, forward);
+
+    vector_copy(bUp, up);
+
+    bRight[0] *= -1.0f;
+
+    defineObjAxes(body, bUp, bRight, bFor);
+
+    CreateRotationMatFromObjAxes(body, body->up, body->forward, body->right);
+    CreateScaleMatrix(scales, body->scale);
+    CreateTranslationMatrix(pos, body->translation);
+    CreateWorldMatrix(body->world, body->scale, body->rotation_m, body->translation);
+
+    body->prim = prim_tex;
+    body->color = color;
+    body->gs_reg_mask = DRAW_STQ2_REGLIST;
+    body->gs_reg_count = 3;
+
+    body->shadowVertexCount = 0;
+
+    body->update_draw = update_object_bbo_buffer;
+
+    body->tex = getTexByName(&manager, face1Name);
+    body->util = NULL;
+    body->main_call_routine = obj_draw_bbo_call_routine;
+    body->update_object = update_body;
+
+    create_draw_pipeline_shadow_projection_obj(body, 4, 2000, 0); // 2 2,3
+    create_pipeline_wireframe_object(body, 6, 2000, 0);           // 2 4,5
+    init_obb(body, BBO_FIT);
+    create_bbo_draw_pipeline(body, 7, 150, 0);      // 2 6,7
+    create_obj_bbo_draw_pipeline(body, 8, 2000, 0); // 2 8,9
+
+    create_draw_pipeline_shadow_projection_obj(body, 4, 2000, 1); // 2 12,13
+    create_pipeline_wireframe_object(body, 6, 2000, 1);           // 2 14,15
+    create_bbo_draw_pipeline(body, 7, 150, 1);                    // 2 16,17
+    create_obj_bbo_draw_pipeline(body, 8, 2000, 1);               // 2 18,19
+    addToManagerObjList(&manager, body);
+}
+
+void setupFloorObject()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_DISABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_UV;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0xFF;
+    color.g = 0xFF;
+    color.b = 0xFF;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go3 = (GameObject *)malloc(sizeof(GameObject));
+
+    int w, l, dw, dh;
+
+    w = 100;
+    l = w;
+    dw = 500;
+    dh = 500;
+    CreateGrid(w, l, dw, dh, go3);
+    go3->indices = (int *)malloc(sizeof(int) * go3->indexCount);
+    go3->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    go3->vertices = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    CreateGridIndices(w, l, dw, dh, go3);
+    CreateGridVectors(w, l, dw, dh, go3);
+    CreateGridUVS(w, l, dw, dh, go3);
+
+    VECTOR tempPos = {0.0f, -20.0f, 0.0f, 1.0f};
+
+    vector_copy(go3->pos, tempPos);
+
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    CreateRotationMatrix(up, DegToRad(0), go3->rotation_m);
+    CreateScaleMatrix(scales, go3->scale);
+    CreateTranslationMatrix(tempPos, go3->translation);
+    CreateWorldMatrix(go3->world, go3->scale, go3->rotation_m, go3->translation);
+    defineObjAxes(go3, up, right, forward);
+
+    go3->color = color;
+    go3->gs_reg_count = 2;
+    go3->gs_reg_mask = DRAW_RGBAQ_REGLIST;
+    go3->prim = prim_tex;
+    go3->shadowVertexCount = 0;
+    go3->update_object = NULL;
+
+    go3->update_draw = update_vu1_buffer_obj;
+
+    go3->util = NULL;
+    go3->main_call_routine = basic_call_routine;
+
+    init_obb(go3, BBO_FIXED);
+
+    create_draw_pipeline_color_obj(go3, 5, 25000, 0);
+    create_draw_pipeline_color_obj(go3, 5, 25000, 1);
+    addToManagerObjList(&manager, go3);
+    addToManagerCollisionList(&manager, go3);
+
+    wallObj = go3;
+}
+
+void setupTexturedSquare()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go3 = (GameObject *)malloc(sizeof(GameObject));
+
+    int w, l, dw, dh;
+
+    w = 50;
+    l = w;
+    dw = 25;
+    dh = 25;
+    CreateGrid(w, l, dw, dh, go3);
+    go3->indices = (int *)malloc(sizeof(int) * go3->indexCount);
+    go3->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    go3->vertices = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    CreateGridIndices(w, l, dw, dh, go3);
+    CreateGridVectors(w, l, dw, dh, go3);
+    CreateGridUVS(w, l, dw, dh, go3);
+
+    VECTOR tempPos = {0.0f, +20.0f, +35.0f, 1.0f};
+
+    vector_copy(go3->pos, tempPos);
+
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    CreateRotationMatrix(up, DegToRad(0), go3->rotation_m);
+    CreateScaleMatrix(scales, go3->scale);
+    CreateTranslationMatrix(tempPos, go3->translation);
+    CreateWorldMatrix(go3->world, go3->scale, go3->rotation_m, go3->translation);
+    defineObjAxes(go3, up, right, forward);
+
+    go3->color = color;
+    go3->gs_reg_count = 3;
+    go3->gs_reg_mask = DRAW_STQ2_REGLIST;
+    go3->prim = prim_tex;
+    go3->shadowVertexCount = 0;
+    go3->update_object = updateTexturedSquare;
+
+    go3->update_draw = update_anim_tex_vu1_buffer_obj;
+
+    go3->util = NULL;
+    go3->main_call_routine = basic_call_routine;
+
+    go3->tex = getTexByName(&manager, waterName);
+
+    matrix_unit(squareTransform);
+
+    go3->objData = (void *)squareTransform;
+
+    init_obb(go3, BBO_FIXED);
+
+    create_pipeline_obj(go3, 9, 3000, 0);
+    create_pipeline_obj(go3, 9, 3000, 1);
+    addToManagerObjList(&manager, go3);
+}
+
+void setupWallObjects()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_DISABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_UV;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0xFF;
+    color.g = 0xFF;
+    color.b = 0xFF;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go3 = (GameObject *)malloc(sizeof(GameObject));
+
+    int w, l, dw, dh;
+
+    w = 100;
+    l = w;
+    dw = 500;
+    dh = 500;
+    CreateGrid(w, l, dw, dh, go3);
+    go3->indices = (int *)malloc(sizeof(int) * go3->indexCount);
+    go3->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    go3->vertices = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    CreateGridIndices(w, l, dw, dh, go3);
+    CreateGridVectors(w, l, dw, dh, go3);
+    CreateGridUVS(w, l, dw, dh, go3);
+
+    VECTOR tempPos = {0.0f, +230.0f, -250.0f, 1.0f};
+
+    vector_copy(go3->pos, tempPos);
+
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    CreateRotationMatrix(right, DegToRad(-90), go3->rotation_m);
+    CreateScaleMatrix(scales, go3->scale);
+    CreateTranslationMatrix(tempPos, go3->translation);
+    CreateWorldMatrix(go3->world, go3->scale, go3->rotation_m, go3->translation);
+    defineObjAxes(go3, up, right, forward);
+
+    go3->color = color;
+    go3->gs_reg_count = 2;
+    go3->gs_reg_mask = DRAW_RGBAQ_REGLIST;
+    go3->prim = prim_tex;
+    go3->shadowVertexCount = 0;
+    go3->update_object = NULL;
+
+    go3->update_draw = update_vu1_buffer_obj;
+
+    go3->util = NULL;
+    go3->main_call_routine = basic_call_routine;
+
+    init_obb(go3, BBO_FIXED);
+    create_draw_pipeline_color_obj(go3, 5, 25000, 0);
+    create_draw_pipeline_color_obj(go3, 5, 25000, 1);
+    addToManagerObjList(&manager, go3);
+    addToManagerCollisionList(&manager, go3);
+}
+
+void update_tess_grid(GameObject *obj)
+{
+    Camera *cam = manager.mainCam;
+    VECTOR posVec;
+    VectorSubtractXYZ(cam->pos, obj->pos, posVec);
+    float d = dist(posVec);
+    int i;
+    for (i = 0; i < 4; i++)
+    {
+        if (d > lodGrid[i])
+        {
+            break;
+        }
+    }
+
+    TessGrid *grid = (TessGrid *)obj->objData;
+
+    float xDim = pow(2, (float)(i + 1));
+    float yDim = pow(2, (float)(i + 1));
+
+    grid->xDim = (int)xDim;
+    grid->yDim = (int)yDim;
+}
+
+void update_vu1_buffer_tess_grid(GameObject *obj, qword_t *q)
+{
+    MATRIX screen;
+
+    CreateWorldMatrix(obj->world, obj->scale, obj->rotation_m, obj->translation);
+
+    matrix_unit(screen);
+    matrix_multiply(screen, screen, obj->world);
+    matrix_multiply(screen, screen, manager.mainCam->view);
+    matrix_multiply(screen, screen, manager.mainCam->proj);
+
+    qword_t *wvp_screen = q; // obj->wvp_matrix;//
+
+    memcpy(wvp_screen, screen, 4 * sizeof(qword_t));
+
+    wvp_screen += 4;
+
+    TessGrid *grid = (TessGrid *)obj->objData;
+
+    float lengthX = Abs(grid->extent.top[0] - grid->extent.bottom[0]);
+
+    float lengthY = Abs(grid->extent.top[2] - grid->extent.bottom[2]);
+
+    float stepVertX = lengthX / (float)grid->xDim;
+
+    float stepVertY = lengthY / (float)grid->yDim;
+
+    float du = 1.0f / (grid->xDim);
+    float dv = 1.0f / (grid->yDim);
+
+    VECTOR firstSet;
+    firstSet[0] = stepVertX;
+    firstSet[1] = stepVertY;
+    firstSet[2] = du;
+    firstSet[3] = dv;
+
+    wvp_screen = vector_to_qword(wvp_screen, firstSet);
+
+    // pack dim
+
+    wvp_screen->sw[0] = grid->xDim + 1;
+    wvp_screen->sw[1] = grid->yDim;
+    wvp_screen->sw[2] = 0;
+    wvp_screen->sw[3] = 0;
+    wvp_screen++;
+
+    VECTOR texXY;
+    CreateVector(0.0f, 0.0f, 1.0f, -1.0f, texXY);
+
+    wvp_screen = vector_to_qword(wvp_screen, texXY);
+
+    VECTOR extent;
+    vector_copy(extent, grid->extent.top);
+    extent[3] = 0.0f;
+
+    wvp_screen = vector_to_qword(wvp_screen, extent);
+}
+
+void setupTessObject()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE_STRIP;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go3 = (GameObject *)malloc(sizeof(GameObject));
+
+    VECTOR tempPos = {-150.0f, +50.0f, -150.0f, 1.0f};
+
+    vector_copy(go3->pos, tempPos);
+
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    CreateRotationMatrix(right, 0, go3->rotation_m);
+    CreateScaleMatrix(scales, go3->scale);
+    CreateTranslationMatrix(tempPos, go3->translation);
+    CreateWorldMatrix(go3->world, go3->scale, go3->rotation_m, go3->translation);
+    defineObjAxes(go3, up, right, forward);
+
+    go3->tex = getTexByName(&manager, NewYorkName);
+
+    go3->color = color;
+    go3->gs_reg_count = 3;
+    go3->gs_reg_mask = DRAW_STQ2_REGLIST;
+    go3->prim = prim_tex;
+    go3->shadowVertexCount = 0;
+    go3->update_object = update_tess_grid;
+
+    go3->update_draw = update_vu1_buffer_tess_grid;
+
+    go3->util = NULL;
+    go3->main_call_routine = basic_call_routine;
+
+    CreateVector(-25.0f, 0.0f, -25.0f, 0.0f, tessGrid.extent.top);
+
+    CreateVector(25.0f, 0.0f, 25.0f, 0.0f, tessGrid.extent.bottom);
+
+    tessGrid.xDim = 2;
+    tessGrid.yDim = 2;
+
+    go3->objData = (void *)&tessGrid;
+
+    create_tess_grid_pipeline(go3, &tessGrid, 10, 0);
+    create_tess_grid_pipeline(go3, &tessGrid, 10, 1);
+    addToManagerObjList(&manager, go3);
+}
+
+void update_torus(GameObject *torus)
+{
+    static float angle = 0.5f;
+    Pitch((void *)torus, PS_MV_GAMEOBJECT, angle, torus->forward, torus->up);
+    CreateRotationMatFromObjAxes(torus, torus->up, torus->forward, torus->right);
+}
+
+void setupTorus()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *torus = (GameObject *)malloc(sizeof(GameObject));
+
+    read_model_file("\\TORUS.BIN;1", torus);
+
+    VECTOR pos = {+150.0f, 10.0f, -185.0f, 1.0f};
+
+    vector_copy(torus->pos, pos);
+
+    VECTOR scales = {5.0f, 5.0f, 5.0f, 0.0f};
+
+    VECTOR bRight, bFor, bUp;
+
+    vector_copy(bRight, right);
+
+    vector_copy(bFor, forward);
+
+    vector_copy(bUp, up);
+
+    bRight[0] *= 1.0f;
+
+    defineObjAxes(torus, bUp, bRight, bFor);
+
+    CreateRotationMatFromObjAxes(torus, torus->up, torus->forward, torus->right);
+    CreateScaleMatrix(scales, torus->scale);
+    CreateTranslationMatrix(pos, torus->translation);
+    CreateWorldMatrix(torus->world, torus->scale, torus->rotation_m, torus->translation);
+
+    torus->prim = prim_tex;
+    torus->color = color;
+    torus->gs_reg_mask = DRAW_STQ2_REGLIST;
+    torus->gs_reg_count = 3;
+
+    torus->shadowVertexCount = 0;
+
+    torus->update_draw = update_light_vu1_buffer;
+
+    torus->tex = getTexByName(&manager, NewYorkName);
+    torus->util = NULL;
+    torus->main_call_routine = envmap_call_routine;
+    torus->update_object = update_torus;
+
+    Texture *envMap = getTexByName(&manager, glossName);
+
+    create_envmap_lights_pipeline(torus, envMap, 11, 12, 8000, 0);
+
+    create_envmap_lights_pipeline(torus, envMap, 11, 12, 8000, 1);
+
+    addToManagerObjList(&manager, torus);
+}
+
+void update_vu1_shadow_buffer_obj(GameObject *obj, qword_t *q)
+{
+    MATRIX screen;
+
+    CreateWorldMatrix(obj->world, obj->scale, obj->rotation_m, obj->translation);
+
+    matrix_unit(screen);
+    matrix_multiply(screen, screen, obj->world);
+    matrix_multiply(screen, screen, shadowCam.view);
+    matrix_multiply(screen, screen, shadowCam.proj);
+
+    qword_t *wvp_screen = q; // obj->wvp_matrix;//
+
+    memcpy(wvp_screen, screen, 4 * sizeof(qword_t));
+}
+
+void setupShadowTexViewer()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go3 = (GameObject *)malloc(sizeof(GameObject));
+
+    int w, l, dw, dh;
+
+    w = 50;
+    l = w;
+    dw = 25;
+    dh = 25;
+    CreateGrid(w, l, dw, dh, go3);
+    go3->indices = (int *)malloc(sizeof(int) * go3->indexCount);
+    go3->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    go3->vertices = (VECTOR *)malloc(sizeof(VECTOR) * go3->indexCount);
+    CreateGridIndices(w, l, dw, dh, go3);
+    CreateGridVectors(w, l, dw, dh, go3);
+    CreateGridUVS(w, l, dw, dh, go3);
+
+    VECTOR tempPos = {-10.0f, +20.0f, +85.0f, 1.0f};
+
+    vector_copy(go3->pos, tempPos);
+
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    CreateRotationMatrix(up, DegToRad(0), go3->rotation_m);
+    CreateScaleMatrix(scales, go3->scale);
+    CreateTranslationMatrix(tempPos, go3->translation);
+    CreateWorldMatrix(go3->world, go3->scale, go3->rotation_m, go3->translation);
+    defineObjAxes(go3, up, right, forward);
+
+    go3->color = color;
+    go3->gs_reg_count = 3;
+    go3->gs_reg_mask = DRAW_STQ2_REGLIST;
+    go3->prim = prim_tex;
+    go3->shadowVertexCount = 0;
+    go3->update_object = NULL;
+
+    go3->update_draw = update_vu1_buffer_obj;
+
+    go3->util = NULL;
+    go3->main_call_routine = basic_call_routine;
+
+    go3->tex = shadowTexture;
+
+    init_obb(go3, BBO_FIXED);
+
+    create_shadowmap_pipeline_obj(go3, 0, 3000, 0);
+    create_shadowmap_pipeline_obj(go3, 0, 3000, 1);
+    // addToManagerObjList(&manager, go3);
+
+    shadowViewer = go3;
+}
+
+void setupShadowCube()
+{
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_DISABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x00;
+    color.g = 0x00;
+    color.b = 0x00;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go2 = (GameObject *)malloc(sizeof(GameObject));
+    
+
+    VECTOR pos = {+0.0f, 0.0f, -60.0f, 0.0f};
+    vector_copy(go2->pos, pos);
+
+    read_model_file("\\BOX.BIN;1", go2);
+
+    go2->color = color;
+    go2->gs_reg_count = 2;
+    go2->gs_reg_mask = DRAW_RGBAQ_REGLIST;
+    go2->prim = prim_tex;
+
+    go2->update_draw = update_vu1_shadow_buffer_obj;
+
+    go2->util = NULL;
+
+    VECTOR scales = {1.5f, 1.5f, 1.5f, 1.0f};
+
+    CreateRotationMatrix(up, 0, go2->rotation_m);
+    CreateScaleMatrix(scales, go2->scale);
+    CreateTranslationMatrix(go2->pos, go2->translation);
+    CreateWorldMatrix(go2->world, go2->scale, go2->rotation_m, go2->translation);
+    defineObjAxes(go2, up, right, forward);
+
+    go2->main_call_routine = basic_call_routine;
+    go2->update_object = update_cube;
+
+    init_obb(go2, BBO_FIT);
+
+    create_draw_pipeline_color_obj(go2, 5, DEFAULT_PIPELINE_SIZE, 0);
+    create_draw_pipeline_color_obj(go2, 5, DEFAULT_PIPELINE_SIZE, 1);
+
+    shadowBox = go2;
+}
+
+void setupGameObjects()
+{
+
+    blender.color1 = BLEND_COLOR_DEST;
+    blender.color2 = BLEND_COLOR_SOURCE;
+    blender.color3 = BLEND_COLOR_SOURCE;
+    blender.alpha = BLEND_ALPHA_DEST;
+    blender.fixed_alpha = 0x80;
+
+    setupSkyBox(); // 1
+
+    setupFloorObject(); // 2
+
+    setupWallObjects(); // 3
+
+    setupSphere(); // 4
+
+    setupBody(); // 5
+
+    prim_t prim_tex;
+    color_t color;
+
+    prim_tex.type = PRIM_TRIANGLE;
+    prim_tex.shading = PRIM_SHADE_GOURAUD;
+    prim_tex.mapping = DRAW_ENABLE;
+    prim_tex.fogging = DRAW_DISABLE;
+    prim_tex.blending = DRAW_DISABLE;
+    prim_tex.antialiasing = DRAW_DISABLE;
+    prim_tex.mapping_type = PRIM_MAP_ST;
+    prim_tex.colorfix = PRIM_UNFIXED;
+
+    color.r = 0x80;
+    color.g = 0x80;
+    color.b = 0x80;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    GameObject *go2 = (GameObject *)malloc(sizeof(GameObject));
+    vector_copy(go2->pos, object_position);
+
+    read_model_file("\\BOX.BIN;1", go2);
+
+    go2->prim = prim_tex;
+    go2->color = color;
+    go2->gs_reg_mask = DRAW_STQ2_REGLIST;
+    go2->gs_reg_count = 3;
+
+    go2->update_draw = update_vu1_buffer_obj;
+    go2->tex = getTexByName(&manager, specName);
+    go2->util = NULL;
+
+    VECTOR scales = {0.5f, 0.5f, 0.5f, 1.0f};
+
+    CreateRotationMatrix(up, 0, go2->rotation_m);
+    CreateScaleMatrix(scales, go2->scale);
+    CreateTranslationMatrix(object_position, go2->translation);
+    CreateWorldMatrix(go2->world, go2->scale, go2->rotation_m, go2->translation);
+    defineObjAxes(go2, up, right, forward);
+
+    go2->main_call_routine = shadow_proj_call_routine;
+    go2->update_object = update_cube;
+
+    init_obb(go2, BBO_FIT);
+
+    create_pipeline_obj(go2, 0, DEFAULT_PIPELINE_SIZE, 0); // 2
+
+    create_draw_pipeline_shadow_projection_obj(go2, 4, DEFAULT_PIPELINE_SIZE, 0); // 2
+
+    create_pipeline_obj(go2, 0, DEFAULT_PIPELINE_SIZE, 1); // 2 6,7
+
+    create_draw_pipeline_shadow_projection_obj(go2, 4, DEFAULT_PIPELINE_SIZE, 1); // 2 8,9
+
+    addToManagerObjList(&manager, go2);
+
+    setupTexturedSquare();
+
+    setupTessObject();
+
+    setupTorus();
+
+    setupShadowTexViewer();
+
+    setupShadowCube();
+}
+
+void cleanup()
+{
+    clearManagerObjList(&manager);
+    clearManagerTexList(&manager);
+    free(manager.mainCam);
+}
+
+void RenderShadowScene()
+{
+    SetupRenderTarget(shadowTarget, manager.gs_context, 0);
+
+    ClearScreen(shadowTarget, manager.gs_context, 0xFF, 0x00, 0x00, 0x80);
+
+    shadowBox->update_object(shadowBox);
+
+    shadowBox->main_call_routine(shadowBox);
+
+    SetupRenderTarget(&manager.targetBack, manager.gs_context, 1);
+}
+
+int vu1_render()
+{
+    packet_t *packets[2];
+    packet_t *current;
+
+    packets[0] = packet_init(100, PACKET_NORMAL);
+    packets[1] = packet_init(100, PACKET_NORMAL);
+
+    dma_wait_fast();
+
+    CreateProjectionMatrix(manager.mainCam->proj, manager.ScreenWidth, manager.ScreenHeight, graph_aspect_ratio(), 0.1, 2000.0f);
+
+    UpdateCameraMatrix(manager.mainCam);
+
+    int i;
+    for (;;)
+    {
+        i = 0;
+        update_pad();
+
+        ClearScreen(&manager.targetBack, manager.gs_context, manager.bgkc.r, manager.bgkc.g, manager.bgkc.b, 0x80);
+
+        GameObject *obj = manager.objListHead;
+
+
+
+        while (obj != NULL)
+        {
+            if (obj->update_object != NULL)
+            {
+                obj->update_object(obj);
+            }
+
+           
+            obj->main_call_routine(obj);
+            
+            obj = obj->next;
+
+            i++;
+        }
+
+        RenderShadowScene();
+
+        shadowViewer->main_call_routine(shadowViewer);
+
+        current = packets[context];
+
+        packet_reset(current);
+
+        print_text(current, &myFont, print_out, -310, -225, manager.gs_context);
+
+        context ^= 1;
+
+        graph_wait_vsync();
+
+        switchBuffers();
+
+        update_light();
+    }
+
+    packet_free(packets[0]);
+    packet_free(packets[1]);
+
+    return 0;
+}
+
+void setup_vu_programs()
+{
+    upload_program_to_vu1(&VU1Drew3D_CodeStart, &VU1Drew3D_CodeEnd, 0);
+
+    upload_program_to_vu1(&VU1Wave3D_CodeStart, &VU1Wave3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1Shadow_CodeStart, &VU1Shadow_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1ColorDraw3D_CodeStart, &VU1ColorDraw3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1ProjectionShadow3D_CodeStart, &VU1ProjectionShadow3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1ColorObject3D_CodeStart, &VU1ColorObject3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1WireFrame3D_CodeStart, &VU1WireFrame3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1OBBDraw3D_CodeStart, &VU1OBBDraw3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1ObjDraw3D_BBO_CodeStart, &VU1ObjDraw3D_BBO_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1ObjDraw3D_AnimTex_CodeStart, &VU1ObjDraw3D_AnimTex_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1TessGrid3D_CodeStart, &VU1TessGrid3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1_LightObj3D_CodeStart, &VU1_LightObj3D_CodeEnd, getCurrBasePointer());
+
+    upload_program_to_vu1(&VU1_EnvMapObj3D_CodeStart, &VU1_EnvMapObj3D_CodeEnd, getCurrBasePointer());
+}
+
+void setupImages()
+{
+    create_tex_buf(manager.textureInVram, 256, GS_PSM_32);
+
+    create_tex_structs(manager.textureInVram, manager.textureInVram->width, manager.textureInVram->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE);
+
+    create_clut_buf(&manager.textureInVram->clut, 16, GS_PSM_32);
+}
+
+int Vu1CompleteHandler(s32 cause, void *arg, void *addr)
+{
+    GameManager *local_manager = (GameManager *)arg;
+
+    local_manager->vu1DoneProcessing = 1;
+    *R_EE_VIF1_FBRST |= 1 << 3;
+    return 0;
+}
+
+void SetupVu1Inthandler()
+{
+    s32 id = AddIntcHandler2(5, Vu1CompleteHandler, 0, &manager);
+    if (id <= 0)
+    {
+        ERRORLOG("failed to reg vif1 int handler!");
+        return;
+    }
+    EnableIntc(5);
+}
+
+void loadInTextures()
+{
+
+    AddAndCreateTexture("\\WATER.BMP;1", waterName, READ_BMP, 0x80, 1, TEX_ADDRESS_WRAP);
+
+    AddAndCreateTexture("\\FACE1.BMP;1", face1Name, READ_BMP, 0x80, 1, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\FACE2.BMP;1", face2Name, READ_BMP, 0x80, 1, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\FACE3.BMP;1", face3Name, READ_BMP, 0x80, 1, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\FACE4.BMP;1", face4Name, READ_BMP, 0x80, 1, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\FACE5.BMP;1", face5Name, READ_BMP, 0x80, 1, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\FACE6.BMP;1", face6Name, READ_BMP, 0x80, 1, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\SPECULAR.BMP;1", specName, READ_BMP, 0xFF, 0, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\WORLD2.BMP;1", worldName, READ_BMP, 0xFF, 0, TEX_ADDRESS_WRAP);
+
+    AddAndCreateTexture("\\NEWYORK.PNG;1", NewYorkName, READ_PNG, 0, 0, TEX_ADDRESS_CLAMP);
+
+    AddAndCreateTexture("\\GLOSS.PNG;1", glossName, READ_PNG, 0xFF, 0, TEX_ADDRESS_CLAMP);
+}
+
+void setupShadowRenderTarget()
+{
+    shadowTarget = CreateRenderTarget(128, 128);
+    shadowTexture = CreateTextureFromRenderTarget(shadowTarget);
+
+    VECTOR camPos ={0.0f, 0.0f, +10.0f, 0.0f}; //{-1.0f, 5.0f, +9.0f, 0.0f};
+    VECTOR camAt = {0.0f, 0.0f, 0.0f, 0.0f};
+
+    CameraLookAt(&shadowCam, camPos, camAt, up);
+
+
+   // CreateProjectionMatrix(shadowCam.proj, 128.0f, 128.0f, 1.0f, 0.1f, 100.0f);
+
+  //  vector_copy(shadowCam.pos, camPos);
+
+    CreateOrthoGraphicMatrix(+40.0f, -40.0f, +40.0f, -40.0f, 0.1, 100.0f, shadowCam.proj);
+
+    UpdateCameraMatrix(&shadowCam);
+}
+
+int old_main(int argc, char **argv)
+{
+    dma_channel_initialize(DMA_CHANNEL_GIF, NULL, 0);
+    dma_channel_fast_waits(DMA_CHANNEL_GIF);
+    dma_channel_initialize(DMA_CHANNEL_VIF1, NULL, 0);
+    dma_channel_fast_waits(DMA_CHANNEL_VIF1);
+
+    InitDVDDrive();
+
+    init_pad(port, slot, padBuf);
+
+    init_vif();
+
+    init_double_buffering(16, 496);
+
+    SetupVu1Inthandler();
+
+    setup_vu_programs();
+
+    ts = (TimerStruct *)malloc(sizeof(TimerStruct));
+
+    TimerZeroEnable(ts);
+
+    setupGameManager();
+
+    setupImages();
+
+    setupShadowRenderTarget();
+
+    loadInTextures();
+
+    setupGameObjects();
+
+    setup_lights();
+
+    setupFont();
+
+    vu1_render();
+
+    cleanup();
+
+    TimerZeroDisable(ts);
+
+    free(ts);
+
+    SleepThread();
+
+    return 0;
+}

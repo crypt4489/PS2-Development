@@ -1,0 +1,220 @@
+void create_draw_pipeline_color_obj(GameObject *obj, u32 programNumber, u32 qwSize, int context)
+{
+  u32 sizeOfPipeline;
+
+  char name[MAX_CHAR_PIPELINE_NAME], name_dynamic[MAX_CHAR_PIPELINE_NAME];
+
+  strcpy(name, (context == 0) ? CTX0_PIPE : CTX1_PIPE);
+
+  strcpy(name_dynamic, name);
+
+  strcat(name_dynamic, DYNAMIC_PIPE);
+
+  qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * qwSize);
+
+  qword_t *q = pipeline_dma;
+
+  qword_t *dcode_tag_vif1 = q;
+
+  q++;
+
+  q = vif_set_z_test(q, 3, 1, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, context); // 4
+
+  u32 code = VIF_CMD_UNPACK(0, 3, 0);
+
+  q = read_unpack_data(q, 0, 13, 0, code);
+
+  obj->util = addQWordNode(obj->util, q, 0, name_dynamic); // wvp_matrix and shadow matrix
+
+  q += 8;
+
+  q = create_color_obj_headers(q, obj, obj->color);
+
+  q = create_draw_dma_color_obj(q, obj, GetProgramAddress(programNumber), obj->prim, context);
+
+  sizeOfPipeline = q - dcode_tag_vif1 - 1;
+
+  dcode_tag_vif1->sw[0] = DMA_DCODE(DMA_CHANNEL_VIF1, sizeOfPipeline, 1, 1);
+  dcode_tag_vif1->sw[1] = DMA_DCODE(DMA_CHANNEL_VIF1, sizeOfPipeline, 1, 1);
+  dcode_tag_vif1->sw[2] = DMA_DCODE(DMA_CHANNEL_VIF1, sizeOfPipeline, 1, 1);
+  dcode_tag_vif1->sw[3] = DMA_DCODE(DMA_CHANNEL_VIF1, sizeOfPipeline, 1, 1);
+
+  q->sw[0] = DMA_DCODE_END;
+  q->sw[1] = DMA_DCODE_END;
+  q->sw[2] = DMA_DCODE_END;
+  q->sw[3] = DMA_DCODE_END;
+
+  obj->util = addQWordNode(obj->util, pipeline_dma, 0, name);
+}
+
+void create_pipeline_obj_vu1pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
+{
+  u32 sizeOfPipeline;
+
+  qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * qwSize);
+
+  VU1Pipeline *pipeline = CreateVU1Pipeline("GENERIC_PIPELINE", 3);
+
+  qword_t *q = pipeline_dma;
+
+  if (obj->tex != NULL)
+  {
+    q = CreateDCODETag(q, DMA_DCODE_LOAD_OBJ_TEXTURE);
+  }
+
+  qword_t *dcode_callback_tags = q;
+
+  q += 3;
+
+  qword_t *dcode_tag_vif1 = q;
+
+  q++;
+
+  q = InitDoubleBufferingQWord(q, 16, 496);
+
+  qword_t *per_obj_tag = q;
+
+  q = CreateDMATag(per_obj_tag, DMA_CNT, 4, 0, 0, 0);
+
+  qword_t *direct_tag = q;
+
+  q = CreateDirectTag(direct_tag, 3, 0);
+
+  q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+  PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawRegisters, q, NULL);
+
+  q += 2; //(obj-> tex == NULL ? 4 : 14);
+
+  q = read_unpack_data(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
+
+  PipelineCallback *setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawVU1Header, q, NULL);
+
+  PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL);
+
+  q += 16;
+
+   qword_t vu1_addr;
+  vu1_addr.sw[0] = vu1_addr.sw[1] = vu1_addr.sw[2] = 0;
+
+  if (obj->tex == NULL)
+  {
+    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, GetProgramAddressVU1Manager(g_Manager.vu1Manager, programNumber), 0, obj->vertexBuffer.vertexCount-1,  DRAW_VERTICES, &vu1_addr);
+  }
+  else
+  {
+    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, GetProgramAddressVU1Manager(g_Manager.vu1Manager, programNumber), 0, obj->vertexBuffer.vertexCount-1,  DRAW_VERTICES | DRAW_TEXTURE, &vu1_addr);
+  }
+
+  sizeOfPipeline = q - dcode_tag_vif1 - 1;
+
+  CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+
+  CreateDCODETag(q, DMA_DCODE_END);
+
+  pipeline->q = pipeline_dma;
+  // AddPipelineCallbackNode(pipeline, setupGSRegs);
+  // AddPipelineCallbackNode(pipeline, setupVU1Header);
+
+  dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags);
+  dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupMVPHeader, dcode_callback_tags);
+  AddPipelineCallbackNodeQword(pipeline, setupVU1Header, dcode_callback_tags);
+  AddVU1Pipeline(obj, pipeline);
+  SetActivePipeline(obj, pipeline);
+}
+
+void create_mesh_pipeline_obj_vu1pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
+{
+  u32 sizeOfPipeline;
+
+  qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * qwSize);
+
+  VU1Pipeline *pipeline = CreateVU1Pipeline("MESH_PIPELINE", 3);
+
+  qword_t *q = pipeline_dma;
+
+  qword_t *dcode_callback_tags = q;
+
+  q += 3;
+
+  qword_t *dcode_tag_vif1 = q;
+
+  q++;
+
+  q = InitDoubleBufferingQWord(q, 16, 496);
+
+  qword_t *per_obj_tag = q;
+
+  q = CreateDMATag(per_obj_tag, DMA_CNT, 4, 0, 0, 0);
+
+  qword_t *direct_tag = q;
+
+  q = CreateDirectTag(direct_tag, 3, 0);
+
+  q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+  PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawRegisters, q, NULL);
+
+  q += 2; //(obj-> tex == NULL ? 4 : 14);
+
+  q = CreateDMATag(q, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+
+  PipelineCallback *setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawVU1Header, q, NULL);
+
+  PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL);
+
+  q += 16;
+
+  sizeOfPipeline = q - dcode_tag_vif1 - 1;
+
+  // printf("%d\n", sizeOfPipeline);
+
+  CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+
+  u32 msize = obj->vertexBuffer.matCount;
+
+  if (msize > 0)
+  {
+
+    LinkedList *node = obj->vertexBuffer.materials;
+    while (node != NULL)
+    {
+
+      Material *mat = (Material *)node->data;
+      u32 start, end;
+
+      start = mat->start;
+      end = mat->end;
+
+      q = CreateLoadByIdDCODETag(q, mat->materialId);
+
+      qword_t *dma_vif1 = q;
+      q++;
+
+       qword_t vu1_addr;
+  vu1_addr.sw[0] = vu1_addr.sw[1] = vu1_addr.sw[2] = 0;
+
+      q = CreateVU1VertexUpload(q, &obj->vertexBuffer, GetProgramAddressVU1Manager(g_Manager.vu1Manager, programNumber), start, end, DRAW_TEXTURE | DRAW_VERTICES, &vu1_addr);
+
+      u32 meshPipe = q - dma_vif1 - 1;
+
+      CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+
+      node = node->next;
+    }
+  }
+
+  CreateDCODETag(q, DMA_DCODE_END);
+
+  pipeline->q = pipeline_dma;
+
+  // dump_packet(pipeline->q);
+  //  AddPipelineCallbackNode(pipeline, setupGSRegs);
+  //  AddPipelineCallbackNode(pipeline, setupVU1Header);
+
+  dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags);
+  dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupMVPHeader, dcode_callback_tags);
+  AddPipelineCallbackNodeQword(pipeline, setupVU1Header, dcode_callback_tags);
+  AddVU1Pipeline(obj, pipeline);
+  SetActivePipeline(obj, pipeline);
+}

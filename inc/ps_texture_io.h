@@ -1,0 +1,44 @@
+#ifndef PS_TEXTURE_IO_H
+#define PS_TEXTURE_IO_H
+
+#include "ps_global.h"
+
+#define BITMAP_ID      0x4D42
+
+
+
+typedef struct __attribute__((packed)) BitmapFileHeader
+{
+	u16  bfType;
+    u32  bfSize;
+    u16  bfReserved1;
+    u16  bfReserved2;
+    u32  bfOffBits;
+} BitmapFileHeader;
+
+typedef struct __attribute__((packed)) BitmapInfoHeader
+{
+	u32	biSize ;
+	int	biWidth;
+	int	biHeight;
+	u16	biPlanes;
+	u16	biBitCount;
+	u32	biCompression;
+	u32	biSizeImage;
+	int	biXPelsPerMeter;
+	int	biYPelsPerMeter;
+	u32	biClrUsed;
+	u32	biClrImportant;
+} BitmapInfoHeader;
+
+
+
+
+void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char alpha);
+
+void LoadPng(u8 *data, Texture *tex, u32 size);
+
+
+Texture *ReadTexFile(const char *fileName, const char *name, u32 readType, u8 alpha, u8 useAlpha);
+
+#endif
