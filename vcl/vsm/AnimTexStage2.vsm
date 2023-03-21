@@ -1,0 +1,36 @@
+; =================================================
+; flowMon::Emit() vcl 1.4beta7 produced this code:
+		.vu
+		.align 4
+		.global	VU1_AnimTexStage2_CodeStart
+		.global	VU1_AnimTexStage2_CodeEnd
+VU1_AnimTexStage2_CodeStart:
+START:
+; _LNOPT_w=[ normal2 ] 9 [9 0] 9   [START]
+         NOP                                                        xtop          VI01                                
+         NOP                                                        iaddiu        VI02,VI01,0x00000001                
+         NOP                                                        ilw.w         VI03,0(VI01)                        
+         NOP                                                        lq            VF01,16(VI00)                       
+         NOP                                                        lq            VF02,17(VI00)                       
+         NOP                                                        lq            VF03,18(VI00)                       
+         NOP                                                        lq            VF04,19(VI00)                       
+         NOP                                                        iadd          VI02,VI02,VI03                      
+         NOP                                                        iadd          VI03,VI01,VI03                      
+vertexLoop:
+; _LNOPT_w=[ normal2 ] 7 [12 5] 12   [vertexLoop]
+         NOP                                                        lq            VF05,0(VI02)                        
+         mulax         ACC,VF01,VF05x                               isubiu        VI03,VI03,1                                ;	STALL_LATENCY ?3
+         madday        ACC,VF02,VF05y                               iaddiu        VI02,VI02,0x00000001                
+         maddaz        ACC,VF03,VF05z                               NOP                                               
+         maddw         VF05,VF04,VF05w                              NOP                                               
+         NOP                                                        ibne          VI03,VI01,vertexLoop                
+         NOP                                                        sq            VF05,-1(VI02)                              ;	STALL_LATENCY ?2
+; _LNOPT_w=[ ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_AnimTexStage2_vcl_7]
+         NOP                                                        ilw.y         VI01,0(VI01)                        
+         NOP                                                        jr            VI01                
+		.align 4
+VU1_AnimTexStage2_CodeEnd:
+;	iCount=18
+; register stats:
+;   4 VU User integer
+;   5 VU User floating point

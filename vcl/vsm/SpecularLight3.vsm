@@ -1,0 +1,118 @@
+; =================================================
+; flowMon::Emit() vcl 1.4beta7 produced this code:
+		.vu
+		.align 4
+		.global	VU1_SpecularLightStage3_CodeStart
+		.global	VU1_SpecularLightStage3_CodeEnd
+VU1_SpecularLightStage3_CodeStart:
+START:
+; _LNOPT_w=[ normal2 ] 14 [14 0] 14   [START]
+         NOP                                                        lq.xyz        VF01,4(VI00)                        
+         NOP                                                        ilw.x         VI01,20(VI00)                       
+         NOP                                                        lq.xyz        VF02,5(VI00)                        
+         NOP                                                        xtop          VI03                                
+         NOP                                                        iaddiu        VI04,VI03,0x00000001                
+         NOP                                                        ilw.w         VI06,0(VI03)                        
+         NOP                                                        lq.xyz        VF03,6(VI00)                        
+         NOP                                                        lq.xyz        VF04,7(VI00)                        
+         NOP                                                        lq.xyz        VF05,15(VI00)                       
+         NOP                                                        iadd          VI05,VI04,VI06                      
+         NOP                                                        iaddiu        VI02,VI00,0x00000015                
+         NOP                                                        iadd          VI05,VI05,VI06                      
+         NOP                                                        iadd          VI06,VI03,VI06                      
+         NOP                                                        iaddiu        VI07,VI01,0                         
+vertexLoop:
+; _LNOPT_w=[ vuta1 ] 12 [36 0] 36   [vertexLoop]
+         max.xyz       VF07,VF00,VF00                               lq.xyz        VF08,0(VI05)                        
+         mulax.xyz     ACC,VF01,VF08x                               lq            VF06,0(VI04)                               ;	STALL_LATENCY ?3
+         madday.xyz    ACC,VF02,VF08y                               NOP                                               
+         maddz.xyz     VF08,VF03,VF08z                              NOP                                               
+         mulax.xyz     ACC,VF01,VF06x                               NOP                                                      ;	STALL_LATENCY ?1
+         madday.xyz    ACC,VF02,VF06y                               NOP                                               
+         mul.xyz       VF09,VF08,VF08                               NOP                                               
+         addy.x        VF09,VF09,VF09y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF09,VF09,VF09z                              NOP                                                      ;	STALL_LATENCY ?3
+         maddaz.xyz    ACC,VF03,VF06z                               rsqrt         Q,VF00w,VF09x                              ;	STALL_LATENCY ?3
+         maddw.xyz     VF06,VF04,VF06w                              ibeq          VI07,VI00,write_color               
+         mulq.xyz      VF08,VF08,Q                                  waitq                                                    ;	STALL_LATENCY ?11
+light_loop:
+; _LNOPT_w=[ normal2 ] 5 [8 0] 8   [light_loop]
+         NOP                                                        ilw.w         VI08,0(VI02)                        
+         NOP                                                        isubiu        VI09,VI08,1                                ;	STALL_LATENCY ?3
+         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI09,VI00,directional_light         
+         NOP                                                        isubiu        VI07,VI07,1                         
+; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_8]
+         NOP                                                        isubiu        VI09,VI08,2                         
+         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI09,VI00,point_light               
+         NOP                                                        NOP                                               
+; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_9]
+         NOP                                                        isubiu        VI08,VI08,3                         
+         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI08,VI00,spotlight                 
+         NOP                                                        NOP                                               
+; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_10]
+         NOP                                                        iaddiu        VI02,VI02,0x00000001                
+compare_light_loop:
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [compare_light_loop]
+         NOP                                                        ibne          VI07,VI00,light_loop                
+         NOP                                                        NOP                                               
+write_color:
+; _LNOPT_w=[ vuta1 ] 9 [10 0] 10   [write_color]
+         NOP                                                        loi           0x437f0000                          
+         minii.xyz     VF07,VF07,I                                  loi           0x43000000                          
+         NOP                                                        isubiu        VI06,VI06,1                         
+         addi.w        VF07,VF00,I                                  iaddiu        VI07,VI01,0                         
+         maxx.xyz      VF07,VF07,VF00x                              iaddiu        VI05,VI05,0x00000001                       ;	STALL_LATENCY ?1
+         NOP                                                        iaddiu        VI04,VI04,0x00000001                
+         NOP                                                        iaddiu        VI02,VI00,0x00000015                
+         NOP                                                        ibne          VI06,VI03,vertexLoop                
+         NOP                                                        sq            VF07,-1(VI05)                       
+; _LNOPT_w=[ ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_15]
+         NOP                                                        ilw.z         VI08,0(VI03)                        
+         NOP                                                        jr            VI08                                              
+; _LNOPT_w=[ normal2 ] 0 [0 0] 0   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_17]
+directional_light:
+; _LNOPT_w=[ normal2 ] 27 [111 0] 111   [directional_light]
+         sub.xyz       VF09,VF05,VF06                               NOP                                               
+         mul.xyz       VF10,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF10,VF10,VF10y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF10,VF10,VF10z                              NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        rsqrt         Q,VF00w,VF10x                              ;	STALL_LATENCY ?3
+         NOP                                                        lq.xyz        VF10,0(VI02)                        
+         sub.xyz       VF10,VF00,VF10                               NOP                                                      ;	STALL_LATENCY ?3
+         mulq.xyz      VF09,VF09,Q                                  waitq                                                    ;	STALL_LATENCY ?7
+         add.xyz       VF09,VF10,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         mul.xyz       VF10,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF10,VF10,VF10y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF10,VF10,VF10z                              NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        rsqrt         Q,VF00w,VF10x                              ;	STALL_LATENCY ?3
+         mulq.xyz      VF09,VF09,Q                                  waitq                                                    ;	STALL_LATENCY ?12
+         mul.xyz       VF09,VF08,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF09,VF09,VF09y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF09,VF09,VF09z                              NOP                                                      ;	STALL_LATENCY ?3
+         mul.x         VF09,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         mul.x         VF09,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         mul.x         VF09,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         mul.x         VF09,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         mul.x         VF09,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
+         miniw.x       VF09,VF09,VF00w                              NOP                                                      ;	STALL_LATENCY ?3
+         maxx.x        VF10,VF09,VF00x                              lq.xyz        VF09,1(VI02)                               ;	STALL_LATENCY ?3
+         mulx.xyz      VF09,VF09,VF10x                              NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        b             compare_light_loop                  
+         add.xyz       VF07,VF07,VF09                               iaddiu        VI02,VI02,0x00000002                       ;	STALL_LATENCY ?2
+spotlight:
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [spotlight]
+         NOP                                                        b             compare_light_loop                  
+         NOP                                                        iaddiu        VI02,VI02,0x00000003                
+point_light:
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [point_light]
+         NOP                                                        b             compare_light_loop                  
+         NOP                                                        iaddiu        VI02,VI02,0x00000002                
+		.align 4
+VU1_SpecularLightStage3_CodeEnd:
+;	iCount=84
+; register stats:
+;  10 VU User integer
+;  11 VU User floating point
