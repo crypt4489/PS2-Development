@@ -1,0 +1,16 @@
+# Ignore
+.vscode/
+PS2 Demo.code-workspace
+SYSTEM.CNF
+archive/
+assets/
+vcl/Archive/
+vcl/Makefile
+vcl/Processed/
+vcl/my_vcl.inc
+vcl/vcl_sml.i
+vcl/vclpp
+vcl/vsm/old_112722/
+vcl/vsm/old_3162023/
+# Except this file
+!.gitignore
