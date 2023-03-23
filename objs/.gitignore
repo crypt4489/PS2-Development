@@ -1,4 +1,4 @@
 # Ignore
-*.obj
+*.o
 # Except this file
 !.gitignore

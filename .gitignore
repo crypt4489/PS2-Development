@@ -12,5 +12,6 @@ vcl/vcl_sml.i
 vcl/vclpp
 vcl/vsm/old_112722/
 vcl/vsm/old_3162023/
+test.iso
 # Except this file
 !.gitignore
