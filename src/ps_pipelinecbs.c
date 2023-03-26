@@ -98,7 +98,6 @@ qword_t *CreateMorphInterpolatorDMAUpload(qword_t *tag, qword_t *q, VU1Pipeline 
 
 qword_t *CreateMorphPipelineCallbacks(qword_t *tag, qword_t *q, VU1Pipeline *pipeline)
 {
-
   PipelineCallback *setupVU1Morph = CreatePipelineCBNode(SetupPerMorphDrawVU1Header, q, NULL);
 
   tag = AddPipelineCallbackNodeQword(pipeline, setupVU1Morph, tag, q);
@@ -108,9 +107,9 @@ qword_t *CreateMorphPipelineCallbacks(qword_t *tag, qword_t *q, VU1Pipeline *pip
 
 void SetupPerObjDrawTessVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
-  qword_t *wvp_screen = pipeline_loc; // obj->wvp_matrix;//
+  qword_t *pipeline_temp = pipeline_loc; // obj->wvp_matrix;//
 
-  wvp_screen += 4;
+  pipeline_temp += 4;
 
   TessGrid *grid = (TessGrid *)arg;
 
@@ -126,21 +125,21 @@ void SetupPerObjDrawTessVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg,
   firstSet[0] = stepVertX;
   firstSet[1] = stepVertY;
 
-  wvp_screen = vector_to_qword(wvp_screen, firstSet);
+  pipeline_temp = vector_to_qword(pipeline_temp, firstSet);
 
   // pack dim
 
-  wvp_screen->sw[0] = grid->xDim + 1;
-  wvp_screen->sw[1] = grid->yDim;
-  wvp_screen->sw[2] = 0;
-  wvp_screen->sw[3] = 0;
-  wvp_screen++;
+  pipeline_temp->sw[0] = grid->xDim + 1;
+  pipeline_temp->sw[1] = grid->yDim;
+  pipeline_temp->sw[2] = 0;
+  pipeline_temp->sw[3] = 0;
+  pipeline_temp++;
 
   VECTOR extent;
   vector_copy(extent, grid->extent.top);
   extent[3] = 0.0f;
 
-  wvp_screen = vector_to_qword(wvp_screen, extent);
+  pipeline_temp = vector_to_qword(pipeline_temp, extent);
 
   //  printf("here in tess grid callback");
 }
@@ -155,43 +154,42 @@ void SetupPerObjDrawRegisters(VU1Pipeline *pipe, GameObject *obj, void *arg, qwo
 
 void SetupPerObjDrawWireframeVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
-  qword_t *wvp_screen = pipeline_loc;
+  qword_t *pipeline_temp = pipeline_loc;
 
-  wvp_screen += VU1_LOCATION_SCALE_VECTOR;
+  pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
 
-  wvp_screen = VIFSetupScaleVector(wvp_screen);
+  pipeline_temp = VIFSetupScaleVector(pipeline_temp);
 
-  wvp_screen->sw[0] = (int)255;
-  wvp_screen->sw[1] = (int)0;
-  wvp_screen->sw[2] = (int)0;
-  wvp_screen->sw[3] = (int)128;
-  wvp_screen++;
+  pipeline_temp->sw[0] = (int)255;
+  pipeline_temp->sw[1] = (int)0;
+  pipeline_temp->sw[2] = (int)0;
+  pipeline_temp->sw[3] = (int)128;
+  pipeline_temp++;
 
-  wvp_screen->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, obj->renderState.prim.shading, DRAW_DISABLE, obj->renderState.prim.fogging, obj->renderState.prim.blending, obj->renderState.prim.antialiasing, obj->renderState.prim.mapping_type, g_Manager.gs_context, obj->renderState.prim.colorfix), 0, 2);
-  wvp_screen->dw[1] = DRAW_RGBAQ_REGLIST;
-  wvp_screen+=2;
-  wvp_screen->sw[3] = obj->renderState.state.render_state.state;
+  pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, obj->renderState.prim.shading, DRAW_DISABLE, obj->renderState.prim.fogging, obj->renderState.prim.blending, obj->renderState.prim.antialiasing, obj->renderState.prim.mapping_type, g_Manager.gs_context, obj->renderState.prim.colorfix), 0, 2);
+  pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+  pipeline_temp += 2;
+  pipeline_temp->sw[3] = obj->renderState.state.render_state.state;
 }
 
 void SetupPerObjDrawVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
+  qword_t *pipeline_temp = pipeline_loc;
 
-  qword_t *wvp_screen = pipeline_loc;
+  pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
 
-  wvp_screen += VU1_LOCATION_SCALE_VECTOR;
+  pipeline_temp = VIFSetupScaleVector(pipeline_temp);
 
-  wvp_screen = VIFSetupScaleVector(wvp_screen);
+  pipeline_temp->sw[0] = (int)obj->renderState.color.r;
+  pipeline_temp->sw[1] = (int)obj->renderState.color.g;
+  pipeline_temp->sw[2] = (int)obj->renderState.color.b;
+  pipeline_temp->sw[3] = (int)obj->renderState.color.a;
+  pipeline_temp++;
 
-  wvp_screen->sw[0] = (int)obj->renderState.color.r;
-  wvp_screen->sw[1] = (int)obj->renderState.color.g;
-  wvp_screen->sw[2] = (int)obj->renderState.color.b;
-  wvp_screen->sw[3] = (int)obj->renderState.color.a;
-  wvp_screen++;
-
-  wvp_screen->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading, obj->renderState.prim.mapping, obj->renderState.prim.fogging, obj->renderState.prim.blending, obj->renderState.prim.antialiasing, obj->renderState.prim.mapping_type, g_Manager.gs_context, obj->renderState.prim.colorfix), 0, obj->renderState.state.gs_reg_count);
-  wvp_screen->dw[1] = obj->renderState.state.gs_reg_mask;
-    wvp_screen+=2;
-  wvp_screen->sw[3] = obj->renderState.state.render_state.state;
+  pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading, obj->renderState.prim.mapping, obj->renderState.prim.fogging, obj->renderState.prim.blending, obj->renderState.prim.antialiasing, obj->renderState.prim.mapping_type, g_Manager.gs_context, obj->renderState.prim.colorfix), 0, obj->renderState.state.gs_reg_count);
+  pipeline_temp->dw[1] = obj->renderState.state.gs_reg_mask;
+  pipeline_temp += 2;
+  pipeline_temp->sw[3] = obj->renderState.state.render_state.state;
 }
 
 void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
@@ -219,33 +217,31 @@ void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t
     ERRORLOG("something went wrong with camera");
   }
 
-  qword_t *wvp_screen = pipeline_loc;
+  qword_t *pipeline_temp = pipeline_loc;
 
-  memcpy(wvp_screen + 4, m, 4 * sizeof(qword_t));
+  memcpy(pipeline_temp + 4, m, 4 * sizeof(qword_t));
 
   matrix_multiply(screen, screen, cam->view);
   matrix_multiply(screen, screen, cam->proj);
-  memcpy(wvp_screen, screen, 4 * sizeof(qword_t));
+  memcpy(pipeline_temp, screen, 4 * sizeof(qword_t));
 
   camProps[0] = cam->near;
   camProps[1] = cam->frus->nwidth;
   camProps[2] = cam->frus->nheight;
-  memcpy(wvp_screen + 13, camProps, sizeof(float) * 4);
-  u32 dirty = GetDirtyLTM(cam->ltm);
-  if (dirty)
+  memcpy(pipeline_temp + 13, camProps, sizeof(float) * 4);
+  if (GetDirtyLTM(cam->ltm))
   {
     VECTOR quat;
     CreateCameraQuat(cam, quat);
-    memcpy(wvp_screen + 14, quat, sizeof(float) * 4);
-    memcpy(wvp_screen + 15, GetPositionVectorLTM(cam->ltm), sizeof(float) * 3);
+    memcpy(pipeline_temp + 14, quat, sizeof(float) * 4);
+    memcpy(pipeline_temp + 15, GetPositionVectorLTM(cam->ltm), sizeof(float) * 3);
   }
 }
 
 void SetupPerObjLightBuffer(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
   MATRIX m;
-  u32 dirty = GetDirtyLTM(obj->ltm);
-  if (dirty)
+  if (GetDirtyLTM(obj->ltm))
   {
     CreateWorldMatrixLTM(obj->ltm, m);
     memcpy(pipeline_loc + VU1_LOCATION_GLOBAL_MATRIX, m, sizeof(MATRIX));

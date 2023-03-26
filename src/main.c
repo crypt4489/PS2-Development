@@ -277,15 +277,13 @@ static void UpdateLight()
 
 void SetupCube()
 {
-    prim_t prim;
     color_t color;
 
-    CREATE_PRIM_STRUCT(prim, PRIM_TRIANGLE, PRIM_SHADE_GOURAUD, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, PRIM_UNFIXED);
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
     box = InitializeGameObject();
     // ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0));
 
     DEBUGLOG("Here is the render state 0x%x", box->renderState.state.render_state.state);
 
@@ -311,21 +309,17 @@ void SetupCube()
 
     InitOBB(box, BBO_FIXED);
 
-    //  CreateGraphicsPipeline(box, GEN_PIPELINE_NAME, VU1Stage4, DRAW_TEXTURE | DRAW_VERTICES, 0, 0);
-
-    //  CreateShadowMapVU1Pipeline(box, 8, DEFAULT_PIPELINE_SIZE);
-
     CreateGraphicsPipeline(box, "Clipper");
 
-    // AddObjectToRenderWorld(world, box);
+    CreateShadowMapVU1Pipeline(box, 8, DEFAULT_PIPELINE_SIZE);
+
+    AddObjectToRenderWorld(world, box);
 }
 
 void SetupSphere()
 {
-    prim_t prim;
     color_t color;
 
-    CREATE_PRIM_STRUCT(prim, PRIM_TRIANGLE, PRIM_SHADE_GOURAUD, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, PRIM_UNFIXED);
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
     VECTOR object_position = {-50.0f, 0.0f, 0.0f, 0.0f};
@@ -333,7 +327,7 @@ void SetupSphere()
     sphere = InitializeGameObject();
     ReadModelFile("MODELS\\SPHERE.BIN", &sphere->vertexBuffer);
 
-    SetupGameObjectPrimRegs(sphere, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 1, 0, 1, 0));
+    SetupGameObjectPrimRegs(sphere, color,  RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 1, 0, 1, 0, 1, 0));
 
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
@@ -349,8 +343,6 @@ void SetupSphere()
 
     CreateSphereTarget();
 
-    // CreateGraphicsPipeline(sphere, GEN_PIPELINE_NAME, VU1Stage1 | VU1Stage3 | VU1Stage4,  DRAW_NORMAL | DRAW_TEXTURE | DRAW_MORPH | DRAW_VERTICES, VU1GenericMorph, 0);
-
     CreateSpecularPipeline(sphere, "SPEC_PIPE");
 
     AddObjectToRenderWorld(world, sphere);
@@ -358,17 +350,15 @@ void SetupSphere()
 
 void SetupMultiSphere()
 {
-    prim_t prim;
     color_t color;
 
-    CREATE_PRIM_STRUCT(prim, PRIM_TRIANGLE, PRIM_SHADE_GOURAUD, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, PRIM_UNFIXED);
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
     VECTOR object_position = {+50.0f, 0.0f, 0.0f, 0.0f};
 
     multiSphere = InitializeGameObject();
     ReadModelFile("MODELS\\MULTISPHERE.BIN", &multiSphere->vertexBuffer);
-    SetupGameObjectPrimRegs(multiSphere, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
@@ -384,24 +374,20 @@ void SetupMultiSphere()
 
     CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, glossName), lightTransform);
 
-    // CreateSpecularPipeline(multiSphere, "SPEC_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, 0, 0);
-
     AddObjectToRenderWorld(world, multiSphere);
 }
 
 void SetupRoom()
 {
-    prim_t prim;
     color_t color;
 
-    CREATE_PRIM_STRUCT(prim, PRIM_TRIANGLE, PRIM_SHADE_GOURAUD, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, PRIM_UNFIXED);
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
     VECTOR object_position = {+0.0f, +0.0f, 0.0f, 0.0f};
 
     room = InitializeGameObject();
     ReadModelFile("MODELS\\ROOM.BIN", &room->vertexBuffer);
-    SetupGameObjectPrimRegs(room, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(room,  color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {25.0f, 25.0f, 25.0f, 1.0f};
 
@@ -423,10 +409,8 @@ void SetupRoom()
 
 void SetupShadowViewer()
 {
-    prim_t prim;
     color_t color;
 
-    CREATE_PRIM_STRUCT(prim, PRIM_TRIANGLE, PRIM_SHADE_GOURAUD, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, PRIM_UNFIXED);
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
     VECTOR pos = {+75.0f, +15.0f, -200.0f, 0.0f};
@@ -441,7 +425,7 @@ void SetupShadowViewer()
     dh = 1;
     CreateGrid(w, l, dw, dh, &shadowTexView->vertexBuffer);
 
-    SetupGameObjectPrimRegs(shadowTexView, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(shadowTexView, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
 
     u32 id = 0;
 #ifdef RESAMPLED
@@ -527,10 +511,7 @@ void UpdateTessGrid(GameObject *obj)
 
 void SetupTessObject()
 {
-    prim_t prim;
     color_t color;
-
-    CREATE_PRIM_STRUCT(prim, PRIM_TRIANGLE_STRIP, PRIM_SHADE_GOURAUD, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, PRIM_UNFIXED);
     // CREATE_ALPHA_REGS(blender, BLEND_COLOR_DEST, BLEND_COLOR_SOURCE, BLEND_COLOR_SOURCE, BLEND_ALPHA_DEST, 0x80);
     CREATE_RGBAQ_STRUCT(color, 0xFF, 0xFF, 0xFF, 0x80, 1.0f);
 
@@ -545,7 +526,7 @@ void SetupTessObject()
              scales,
              1.0f, lod_floor->ltm);
 
-    SetupGameObjectPrimRegs(lod_floor, prim, color, DRAW_RGBAQ_REGLIST, 2, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_floor, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid.extent.top);
 
@@ -573,7 +554,7 @@ void SetupTessObject()
              1.0f, lod_wall->ltm);
     PitchLTM(lod_wall->ltm, -90.0f);
 
-    SetupGameObjectPrimRegs(lod_wall, prim, color, DRAW_RGBAQ_REGLIST, 2, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_wall, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid2.extent.top);
 
@@ -713,17 +694,6 @@ int Render()
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
         DrawWorld(world);
-
-        GameObject *obj = box;
-
-        VU1Pipeline *pipe = GetPipelineByName("Clipper", obj);
-
-        if (pipe == NULL)
-        {
-            while (1);
-        }
-
-        RenderPipeline(obj, pipe);
 
         // DrawWorld(roomWorld);
 

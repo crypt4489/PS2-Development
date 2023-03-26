@@ -14,7 +14,39 @@
 #include "ps_vu1pipeline.h"
 #include "ps_morphtarget.h"
 
+void SetupGameObjectPrimRegs(GameObject *obj, color_t color, u32 renderState)
+{
+  OBJ_RENDER_STATE *render = &obj->renderState.state.render_state;
+  obj->renderState.color = color;
+  render->state = renderState;
+  if (render->TEXTURE_MAPPING)
+  {
+    obj->renderState.state.gs_reg_mask = DRAW_STQ2_REGLIST;
+    obj->renderState.state.gs_reg_count = 3;
+    obj->renderState.prim.mapping = DRAW_ENABLE;
+    obj->renderState.prim.mapping_type = PRIM_MAP_ST;
+  }
+  else
+  {
+    obj->renderState.state.gs_reg_mask = DRAW_RGBAQ_REGLIST;
+    obj->renderState.state.gs_reg_count = 2;
+    obj->renderState.prim.mapping = DRAW_DISABLE;
+    obj->renderState.prim.mapping_type = PRIM_MAP_UV;
+  }
 
+  if (render->ALPHA_ENABLE)
+  {
+    obj->renderState.prim.blending = DRAW_ENABLE;
+  }
+  else
+  {
+    obj->renderState.prim.blending = DRAW_DISABLE;
+  }
+  obj->renderState.prim.type = PRIM_TRIANGLE;
+  obj->renderState.prim.shading = PRIM_SHADE_GOURAUD;
+  obj->renderState.prim.antialiasing = obj->renderState.prim.fogging = DRAW_DISABLE;
+  obj->renderState.prim.colorfix = PRIM_UNFIXED;
+}
 
 MeshBuffers *CreateMaterial(MeshBuffers *buff, u32 start, u32 end, u32 id)
 {
@@ -81,64 +113,61 @@ GameObject *InitializeGameObject()
   return go;
 }
 
-qword_t * CreateMeshDMAUpload(qword_t *q, GameObject *obj, u32 drawSize, u16 drawCode, u32 matCount, qword_t *vu1_addr)
+qword_t *CreateMeshDMAUpload(qword_t *q, GameObject *obj, u32 drawSize, u16 drawCode, u32 matCount, qword_t *vu1_addr)
 {
-   
-    u32 msize = matCount;
 
-    if (msize == 0)
+  u32 msize = matCount;
+
+  if (msize == 0)
+  {
+    qword_t *dma_vif1 = q;
+    q++;
+
+    if ((drawCode & DRAW_MORPH) != 0)
     {
-        qword_t *dma_vif1 = q;
-        q++;
-
-        if ((drawCode & DRAW_MORPH) != 0)
-        {
-          q = CreateVU1TargetUpload(q, obj, 0, obj->vertexBuffer.vertexCount-1, drawSize, drawCode, vu1_addr);
-        }
-        else
-        {
-          q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount-1, drawSize, drawCode, vu1_addr);
-        }
-
-        u32 meshPipe = q - dma_vif1 - 1;
-
-        CreateDCODEMeshUpload(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
-    } 
-    else 
+      q = CreateVU1TargetUpload(q, obj, 0, obj->vertexBuffer.vertexCount - 1, drawSize, drawCode, vu1_addr);
+    }
+    else
     {
-      LinkedList *node = obj->vertexBuffer.materials;
-      for (u32 index = 0; index < msize; index++, node = node->next)
-      {
-
-        Material *mat = (Material *)node->data;
-
-        // q = CreateLoadByIdDCODETag(q, id);
-
-        q = CreateMaterialDCODETag(q, (u32)mat);
-
-        qword_t *dma_vif1 = q;
-        q++;
-
-        if ((drawCode & DRAW_MORPH) != 0)
-        {
-          q = CreateVU1TargetUpload(q, obj, mat->start, mat->end, drawSize, drawCode, vu1_addr);
-        }
-        else
-        {
-          q = CreateVU1VertexUpload(q, &obj->vertexBuffer, mat->start, mat->end, drawSize, drawCode, vu1_addr);
-        }
-
-        u32 meshPipe = q - dma_vif1 - 1;
-
-        CreateDCODEMeshUpload(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
-      }
+      q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount - 1, drawSize, drawCode, vu1_addr);
     }
 
-    
+    u32 meshPipe = q - dma_vif1 - 1;
 
-    return q;
+    CreateDCODEMeshUpload(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+  }
+  else
+  {
+    LinkedList *node = obj->vertexBuffer.materials;
+    for (u32 index = 0; index < msize; index++, node = node->next)
+    {
+
+      Material *mat = (Material *)node->data;
+
+      // q = CreateLoadByIdDCODETag(q, id);
+
+      q = CreateMaterialDCODETag(q, (u32)mat);
+
+      qword_t *dma_vif1 = q;
+      q++;
+
+      if ((drawCode & DRAW_MORPH) != 0)
+      {
+        q = CreateVU1TargetUpload(q, obj, mat->start, mat->end, drawSize, drawCode, vu1_addr);
+      }
+      else
+      {
+        q = CreateVU1VertexUpload(q, &obj->vertexBuffer, mat->start, mat->end, drawSize, drawCode, vu1_addr);
+      }
+
+      u32 meshPipe = q - dma_vif1 - 1;
+
+      CreateDCODEMeshUpload(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    }
+  }
+
+  return q;
 }
-
 
 qword_t *CreateVU1TargetUpload(qword_t *q, GameObject *obj, u32 start, u32 end, u32 drawSize, u8 code, qword_t *vu1_addrs)
 {
@@ -150,7 +179,7 @@ qword_t *CreateVU1TargetUpload(qword_t *q, GameObject *obj, u32 start, u32 end, 
 
   Interpolator *node = GetCurrentInterpolatorNode(obj->interpolator);
 
-  MeshBuffers *targetBeg = GetMorphMeshBuffer(obj->interpolator, node->begin);//obj->interpolator->morph_targets[node->begin];
+  MeshBuffers *targetBeg = GetMorphMeshBuffer(obj->interpolator, node->begin); // obj->interpolator->morph_targets[node->begin];
 
   MeshBuffers *targetEnd = GetMorphMeshBuffer(obj->interpolator, node->end);
 
@@ -181,7 +210,7 @@ qword_t *CreateVU1TargetUpload(qword_t *q, GameObject *obj, u32 start, u32 end, 
     q->sw[3] = thisIndicesCount;
     q++;
 
-    top+=1;
+    top += 1;
 
     q = PackBuffersVU1(q, targetBeg, thisIndicesCount, &top, indexOffset + start, code);
 
@@ -239,7 +268,7 @@ qword_t *CreateVU1VertexUpload(qword_t *q, MeshBuffers *buffer, u32 start, u32 e
     q->sw[0] = vu1_addrs->sw[0];
     q->sw[3] = thisIndicesCount;
     q++;
-    top +=1;
+    top += 1;
 
     q = PackBuffersVU1(q, buffer, thisIndicesCount, &top, indexOffset + start, code);
 

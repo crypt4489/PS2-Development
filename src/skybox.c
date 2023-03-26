@@ -31,16 +31,14 @@ static void UpdateSkybox(GameObject *obj)
 
 void InitSkybox()
 {
-    prim_t prim;
     color_t color;
 
-    CREATE_PRIM_STRUCT(prim, PRIM_TRIANGLE, PRIM_SHADE_GOURAUD, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, PRIM_UNFIXED);
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
     GameObject *skybox = InitializeGameObject();
     ReadModelFile("MODELS\\BOX16.BIN", &skybox->vertexBuffer);
     VECTOR skyboxPos = {0.0f, 15.0f, -25.0f, 1.0f};
-    SetupGameObjectPrimRegs(skybox, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(skybox, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -54,6 +52,7 @@ void InitSkybox()
     u32 end = 95;
 
     CreateMaterial(&skybox->vertexBuffer, beg, end, GetTextureIDByName(face1Name, g_Manager.texManager));
+
     CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(face2Name, g_Manager.texManager));
 
     CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(face3Name, g_Manager.texManager));
