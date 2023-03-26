@@ -378,11 +378,6 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
     SetActivePipeline(obj, pipeline);
 }
 
-
-
-
-
-
 qword_t *CreateVU1Callbacks(qword_t *tag, qword_t *q, VU1Pipeline *pipeline, u32 headerSize, u32 pCode, u32 dCode, ...)
 {
     va_list cbs_args;
@@ -433,9 +428,14 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
     u32 stage4, stage3, stage2, stage1;
     stage4 = stage3 = stage2 = stage1 = 0;
 
-    stage4 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericStage4);
-
     q->sw[3] = stage4;
+
+    if ((pipeCode & VU1StageClip) != 0)
+    {
+        q->sw[0] = stage4;
+        q->sw[3] = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericClipper);
+    }
+
     if ((pipeCode & VU1Stage3) != 0)
     {
         if ((drawCode & DRAW_SPECULAR) != 0 )
@@ -444,7 +444,15 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
         } else {
             stage3 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericLight3D);
         }
-        q->sw[3] = stage3;
+
+        if ((pipeCode & VU1StageClip) == 0)
+        {
+             q->sw[3] = stage3;
+        }
+        else
+        {
+            q->sw[0] = stage3;
+        }
     }
 
     if ((pipeCode & VU1Stage2) != 0)
@@ -457,8 +465,16 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
         {
             stage2 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericAnimTex);
         }
-        q->sw[3] = stage2;
+
         q->sw[2] = stage3;
+        if ((pipeCode & VU1StageClip) == 0)
+        {
+             q->sw[3] = stage2;
+        }
+        else
+        {
+            q->sw[0] = stage2;
+        }
     }
 
     if ((pipeCode & VU1Stage1) != 0)
@@ -471,18 +487,14 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
         {
             //stage1 =
         }
-        q->sw[3] = stage1;
+
         q->sw[1] = ((pipeCode & VU1Stage2) != 0 ? stage2 : (pipeCode & VU1Stage3) != 0 ? stage3
-                                                                                       : stage4);
+                                                                                       : (pipeCode & VU1Stage3) != 0 ? q->sw[3] : stage4);
+        q->sw[3] = stage1;
+
     }
 
-    if ((pipeCode & VU1StageClip) != 0)
-    {
-        q->sw[3] = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericClipper);
-        q->sw[0] = ((pipeCode & VU1Stage2) != 0 ? stage1 : (pipeCode & VU1Stage2) != 0
-                                                ? stage2 : (pipeCode & VU1Stage3) != 0
-                                                ? stage3 : stage4);
-    }
+
 }
 
 void CreateEnvMapPipeline(GameObject *obj, const char *name, u32 pipeCode, u16 drawCode, Texture *envMap, MATRIX envMatrix)

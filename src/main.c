@@ -333,7 +333,7 @@ void SetupSphere()
     sphere = InitializeGameObject();
     ReadModelFile("MODELS\\SPHERE.BIN", &sphere->vertexBuffer);
 
-    SetupGameObjectPrimRegs(sphere, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 1, 0, 1, 0));
+    SetupGameObjectPrimRegs(sphere, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 1, 0, 1, 0));
 
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
