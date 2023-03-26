@@ -66,6 +66,7 @@ enum VU1PipelineLocations
 
 enum VU1Stages
 {
+    VU1StageClip = 16,
     VU1Stage4 = 8,
     VU1Stage3 = 4,
     VU1Stage2 = 2,
@@ -115,7 +116,7 @@ typedef union dma_dcode_t
 enum DMATAG_CODES
 {
     DMA_CNT = 1,
-    DMA_CNTS = 0, //destination tag only 
+    DMA_CNTS = 0, //destination tag only
     DMA_NEXT = 2,
     DMA_END = 7,
     DMA_CALL = 5,
@@ -355,14 +356,16 @@ enum DrawTags
 #define RENDER_STATE(draw, cull, alpha_enable, alpha_state,                                                        \
                     tex_map, color_enable, z_enable, z_type,                                                       \
                     light_enable, bface, clip, envmp,                                                              \
-                    spec, animtex)                                                                                 \
+                    spec, animtex, morph, bones)                                                                                 \
         (u32)((draw)&0x00000001) << 0 | (u32)((cull)&0x00000001) << 1 |                                            \
         (u32)((alpha_enable)&0x00000001) << 3 | (u32)((alpha_state)&0x00000003) << 4 |                             \
         (u32)((tex_map)&0x00000001) << 6 | (u32)((color_enable)&0x00000001) << 7 |                                 \
         (u32)((z_enable)&0x00000001) << 8 | (u32)((z_type)&0x00000003) << 9 |                                      \
         (u32)((light_enable) & 0x00000001) << 11 | (u32)((bface) & 0x00000001) << 12 |                            \
         (u32)((clip) & 0x00000001) << 13 | (u32)((envmp) & 0x00000001) << 14  |                                  \
-        (u32)((spec) & 0x00000001) << 15 | (u32)((animtex) & 0x00000001) << 16                                   
+        (u32)((spec) & 0x00000001) << 15 | (u32)((animtex) & 0x00000001) << 16  |                                \
+        (u32)((morph) & 0x00000001) << 17 | (u32)((bones) & 0x00000001) << 18
+
 
 
 typedef union obj_render_state
@@ -384,7 +387,9 @@ typedef union obj_render_state
         unsigned int ENVIRONMENTMAP : 1;
         unsigned int SPECULAR : 1;
         unsigned int ANIMATION_TEXUTRE : 1;
-        unsigned int pad : 15;
+        unsigned int MORPH_TARGET : 1;
+        unsigned int SKELETAL_ANIMATION : 1;
+        unsigned int pad : 13;
     };
 
     unsigned int state;

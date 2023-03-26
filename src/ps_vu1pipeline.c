@@ -44,30 +44,7 @@ void CreatePipelineSizes(u32 code, u32 *numberOfCbs, u32 *vu1_header_size)
     *vu1_header_size = header;
 }
 
-u32 CreateDrawSizeandUploadCount(u32 dcode, u32 pcode, u32 *drawSize)
-{
-    u32 uploadCount = 1;
-    u32 lsize = 81;
-    if (dcode & DRAW_TEXTURE)
-    {
-        uploadCount++;
-    }
 
-    if (dcode & DRAW_NORMAL || dcode & DRAW_COLOR)
-    {
-        lsize = 54;
-        uploadCount++;
-    }
-
-    if (pcode & VU1Stage1)
-    {
-        lsize = 27;
-        uploadCount = 6;
-    }
-
-    *drawSize = lsize;
-    return uploadCount;
-}
 
 
 void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
@@ -103,7 +80,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
 
          else if (decode.code == DMA_DCODE_LOAD_ID_TEXTURE)
         {
-            
+
             u32 id = q->sw[1];
             //INFOLOG("texhere! %d", id);
             Texture *tex = GetTextureByID(id, g_Manager.texManager);

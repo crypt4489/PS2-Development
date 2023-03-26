@@ -9,7 +9,7 @@
 --enter
 --endenter
 
- 
+
     MatrixLoad{ globalMatrix, 4, vi00 }
     MatrixLoad{ EnvMapMatrix, 16, vi00 }
 
@@ -23,7 +23,7 @@ begin:
     ilw.w   vertCount,      0(iBase)              ; load vert count from scale vector
     iadd    stqData,       vertexData, vertCount   ; pointer to stq
     iadd    normData,    stqData,    vertCount   ; pointer for XGKICK
-  
+
 
     iadd vertexCounter, iBase, vertCount ; loop vertCount times
     vertexLoop:
@@ -49,21 +49,21 @@ begin:
 
         fsand res, 0x02
 
-        ibeq res, vi00, store_stq 
+        ibeq res, vi00, store_stq
 
         lq normal, 0(normData)
 
         Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
-       
+
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
         madd.xy         acc, EnvMapMatrix[1], normal[y]
         madd.xy         stq1, EnvMapMatrix[2], normal[z]
-        
+
         lq normal, 1(normData)
 
         Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
-       
+
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
         madd.xy         acc, EnvMapMatrix[1], normal[y]
@@ -73,30 +73,30 @@ begin:
         lq normal, 2(normData)
 
         Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
-       
+
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
         madd.xy         acc, EnvMapMatrix[1], normal[y]
         madd.xy         stq3, EnvMapMatrix[2], normal[z]
-       
-        
- 
-store_stq:
-    
 
-        sq.xy    stq1,         0(stqData)      
+
+
+store_stq:
+
+
+        sq.xy    stq1,         0(stqData)
         sq.xy    stq2,         1(stqData)
-        sq.xy    stq3,         2(stqData)     
+        sq.xy    stq3,         2(stqData)
 
         iaddiu          stqData,        stqData,     3
         iaddiu          normData,       normData,    3
         iaddiu          vertexData,     vertexData,  3
 
-        iaddi   vertexCounter,  vertexCounter,  -3	
-        ibne    vertexCounter,  iBase,   vertexLoop	
+        iaddi   vertexCounter,  vertexCounter,  -3
+        ibne    vertexCounter,  iBase,   vertexLoop
 
         .vsm
-           NOP             ilw.y   jmpProg,       0(iBase)
+           NOP             ilw.z   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
 

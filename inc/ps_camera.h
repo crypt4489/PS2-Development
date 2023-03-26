@@ -6,14 +6,13 @@
 void CameraLookAt(Camera *cam, VECTOR pos, VECTOR target, VECTOR up);
 
 void DumpCameraFrustum(Camera *cam);
-//void Strafe(Camera *cam, float d);
-//void Walk(Camera *cam, float d);
 
-//void Pitch(Camera *cam, float angle);
-//void RotateY(Camera *cam, float angle);
 void CreateCameraQuat(Camera *cam, VECTOR out);
 
-void SetGlobalDrawingCamera(Camera *cam);
+inline void SetGlobalDrawingCamera(Camera *cam)
+{
+    g_DrawCamera = cam;
+}
 
 int HandleCamMovement(Camera* cam, u32 type);
 

@@ -19,19 +19,19 @@ START:
 
 begin:
     xtop    iBase
- 
+
 
     iaddiu  vertexData,     iBase,      1           ; pointer to vertex data
     ilw.w   vertCount,      0(iBase)              ; load vert count from scale vector
     iadd    stqData,        vertexData, vertCount   ; pointer to stq
-  
 
-   
+
+
     iadd vertexCounter, iBase, vertCount ; loop vertCount times
     vertexLoop:
 
-    
-        lq stq,    0(stqData)      
+
+        lq stq,    0(stqData)
 
         MatrixMultiplyVertex{ stq, transformMatrix, stq }
 
@@ -40,15 +40,15 @@ begin:
         sq stq,      0(stqData)      ; STQ
 
 
-       
+
         iaddiu          stqData,        stqData,        1
-        
+
 
         iaddi   vertexCounter,  vertexCounter,  -1	; decrement the loop counter
         ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
 
         .vsm
-           NOP             ilw.y   jmpProg,       0(iBase)
+           NOP             ilw.z   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
 

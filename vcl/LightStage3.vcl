@@ -16,7 +16,7 @@
 START:
  ;//////////// --- Load data 1 --- /////////////
     ; Updated once per mesh
-  
+
     MatrixLoad{ globalMatrix, 4, vi00 }
 
     ;/////////////////////////////////////////////
@@ -31,7 +31,7 @@ begin:
 
     iaddiu  vertexData,     iBase,      1          ; pointer to vertex data
     ilw.w   vertCount,      0(iBase)
-    
+
     iadd    normData,       vertexData, vertCount   ; pointer to stq
     iadd    normData,       normData, vertCount   ; pointer to stq
 
@@ -47,8 +47,8 @@ begin:
     vertexLoop:
 
         ;////////// --- Load loop data --- //////////
-        lq vertex, 0(vertexData)    
-    
+        lq vertex, 0(vertexData)
+
 
         lq.xyz normal, 0(normData)
 
@@ -60,7 +60,7 @@ begin:
 
         ibeq lightLoop, vi00, write_color
 
-light_loop:       
+light_loop:
 
         iaddi lightLoop, lightLoop, -1
 
@@ -82,18 +82,18 @@ light_loop:
 
 compare_light_loop:
         ibne lightLoop, vi00, light_loop
-        
+
 write_color:
         loi 128
         addi.w outColor, vf00, I
         loi 255
         mini.xyz  outColor, outColor, I
-        max.xyz   outColor, outColor, vf00[x]  
+        max.xyz   outColor, outColor, vf00[x]
 
-       
-        sq outColor,    0(normData)      
-      
-        
+
+        sq outColor,    0(normData)
+
+
 
         iaddiu          vertexData,     vertexData,     1
         iaddiu          normData,       normData,       1
@@ -105,12 +105,12 @@ write_color:
 
     ;////////////////////////////////////////////
         .vsm
-           NOP             ilw.z   clipProg,       0(iBase)
+           NOP             iadd   clipProg,     vi00, vi00
            NOP             NOP
         .endvsm
     --barrier
 
-  
+
 
 directional_light:
 
@@ -129,7 +129,7 @@ directional_light:
         b compare_light_loop
 
  ambient_light:
-        lq.xyz ambient, 0(lightPointer)       
+        lq.xyz ambient, 0(lightPointer)
         add.xyz outColor, outColor, ambient
         iaddiu lightPointer, lightPointer, 1
         b compare_light_loop
@@ -140,7 +140,7 @@ spotlight:
         lq.xyz lightPos, 0(lightPointer)
         lq.xyzw lightColor, 1(lightPointer)
         lq.xyzw lightDir, 2(lightPointer)
- 
+
 
         sub.xyz  lightVec, worldPos, lightPos
         Normalize{ lightVec, lightVec, temp }
@@ -154,9 +154,9 @@ spotlight:
         fmand res, res
 
         ibne res, vi00, finish_spot
-        
 
- color_spot:    
+
+ color_spot:
         add.xyz   atten, vf00, vf00
 
          sub.xyz  lightDir, lightPos, worldPos
@@ -168,12 +168,12 @@ spotlight:
 
 
          Normalize{ lightDir, lightDir, temp }
-        
+
          VectorDotProduct{ tempColor, lightDir, normal }
 
-         max.x tempColor, tempColor, vf00[x] 
+         max.x tempColor, tempColor, vf00[x]
 
-        
+
 
         div         q,      dist[x],    lightColor[w]
 
@@ -188,7 +188,7 @@ spotlight:
         mul.w  lightDir, lightDir, lightDir
 
         sub.w denom,  vf00, lightDir[w]
-        
+
         sub.w spot, vf00, spot[x]
 
         div  q,  spot[w],  denom[w]
@@ -196,11 +196,11 @@ spotlight:
         sub.w  spot, vf00,  q
 
         max.w spot, spot, vf00[x]
-  
-       add.xyz spot, vf00, spot[w] 
-       
 
-      
+       add.xyz spot, vf00, spot[w]
+
+
+
        mul.xyz tempColor, lightColor, spot
        mul.xyz tempColor, tempColor, atten
        add.xyz outColor, outColor, tempColor
@@ -220,7 +220,7 @@ finish_spot:
         mfp.x    dist, p
 
          Normalize{ lightDir, lightDir, temp }
-        
+
         VectorDotProduct{ tempColor, lightDir, normal }
 
         max.x tempColor, tempColor, vf00[x]
@@ -241,7 +241,7 @@ finish_spot:
        mul.xyz tempColor, tempColor, atten
        add.xyz outColor, outColor, tempColor
 
-finish_pl:    
+finish_pl:
 
         iaddiu lightPointer, lightPointer, 2
         b compare_light_loop

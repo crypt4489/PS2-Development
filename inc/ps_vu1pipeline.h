@@ -5,7 +5,6 @@
 
 void CreatePipelineSizes(u32 code, u32 *numberOfCbs, u32 *vu1_header_size);
 u32 GetDoubleBufferOffset(u32 base);
-u32 CreateDrawSizeandUploadCount(u32 dcode, u32 pcode, u32 *drawSize);
 
 VU1Pipeline* GetPipelineByName(const char *name, GameObject *obj);
 

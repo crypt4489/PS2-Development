@@ -10,14 +10,15 @@
 
 Camera *g_DrawCamera = NULL;
 
-void SetGlobalDrawingCamera(Camera *cam)
-{
-    g_DrawCamera = cam;
-}
-
 void CreateCameraQuat(Camera *cam, VECTOR quat)
 {
     CreateQuatRotationAxes(*GetRightVectorLTM(cam->ltm), *GetUpVectorLTM(cam->ltm), *GetForwardVectorLTM(cam->ltm), quat);
+}
+
+Camera* EndRendering(Camera *cam)
+{
+    ClearDirtyLTM(cam->ltm);
+    return cam;
 }
 
 void InitCameraObb(Camera *cam, float x, float y, float z, u32 type)
@@ -33,7 +34,7 @@ void InitCameraObb(Camera *cam, float x, float y, float z, u32 type)
     bot[2] = -z;
     bot[3] = 1.0f;
 
-    cam->obb = (ObjectBounds*)malloc(sizeof(ObjectBounds));
+    cam->obb = (ObjectBounds *)malloc(sizeof(ObjectBounds));
 
     cam->obb->type = type;
 
@@ -86,14 +87,6 @@ void CleanCameraObject(Camera *cam)
 
         free(cam);
     }
-
-}
-
-
-Camera* EndRendering(Camera *cam)
-{
-    ClearDirtyLTM(cam->ltm);
-    return cam;
 }
 
 void UpdateCameraMatrix(Camera *cam)
@@ -104,14 +97,11 @@ void UpdateCameraMatrix(Camera *cam)
     vector_copy(P, *GetPositionVectorLTM(cam->ltm));
     vector_copy(U, *GetUpVectorLTM(cam->ltm));
 
-
     ScaleVectorXYZ(L, *GetForwardVectorLTM(cam->ltm), -1.0f);
     ScaleVectorXYZ(R, *GetRightVectorLTM(cam->ltm), -1.0f);
     float x = -DotProduct(R, P);
     float y = -DotProduct(U, P);
     float z = -DotProduct(L, P);
-
-
 
     cam->view[0] = R[0];
     cam->view[4] = R[1];
@@ -130,22 +120,20 @@ void UpdateCameraMatrix(Camera *cam)
     cam->view[14] = z;
     cam->view[15] = 1.0f;
 
-    
-
     // DumpMatrix(temp_out);
 }
 
 typedef void (*LTM_array)(float *, float);
 
-static LTM_array funcs[8] = { StrafeLTM, StrafeLTM, RotateYLTM, RotateYLTM, WalkLTM, WalkLTM, PitchLTM, PitchLTM };
-static float dirs[8]  = { +1.0f, -1.0f, +0.5f, -0.5f, +1.0f, -1.0f, -0.5f, +0.5f };
+static LTM_array funcs[8] = {StrafeLTM, StrafeLTM, RotateYLTM, RotateYLTM, WalkLTM, WalkLTM, PitchLTM, PitchLTM};
+static float dirs[8] = {+1.0f, -1.0f, +0.5f, -0.5f, +1.0f, -1.0f, -0.5f, +0.5f};
 
 int HandleCamMovement(Camera *cam, u32 type)
 {
     int ret = 0;
     if (type >= 1 && type <= 8)
     {
-        funcs[type-1](cam->ltm, dirs[type-1]);
+        funcs[type - 1](cam->ltm, dirs[type - 1]);
         ret = 1;
         SetDirtyLTM(cam->ltm);
     }
@@ -155,7 +143,6 @@ int HandleCamMovement(Camera *cam, u32 type)
 void CreateCameraWorldMatrix(Camera *cam, MATRIX output)
 {
     MATRIX temp_out;
-    matrix_unit(temp_out);
 
     temp_out[0] = cam->ltm[0];
     temp_out[1] = cam->ltm[1];
@@ -324,35 +311,6 @@ void FindPosAndNegVertexOBB(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal
 {
     vector_copy(nVertex, topExtent);
     vector_copy(pVertex, bottomExtent);
-/*
-    if (normal[0] >= 0.0f)
-    {
-        pVertex[0] = topExtent[0];
-    }
-    else
-    {
-        nVertex[0] = bottomExtent[0];
-    }
-
-    if (normal[1] >= 0.0f)
-    {
-
-        pVertex[1] = topExtent[1];
-    }
-    else
-    {
-        nVertex[1] = bottomExtent[1];
-    }
-
-    if (normal[2] >= 0.0f)
-    {
-
-        pVertex[2] = topExtent[2];
-    }
-    else
-    {
-        nVertex[2] = bottomExtent[2];
-    } */
 
     if (normal[0] > 0.0f)
     {
@@ -371,7 +329,7 @@ void FindPosAndNegVertexOBB(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal
     {
         pVertex[2] = topExtent[2];
         nVertex[2] = bottomExtent[2];
-    } 
+    }
 }
 
 int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
@@ -425,15 +383,15 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
           } */
 
-       //  DumpVector(cam->frus->sides[i].pointInPlane);
-         //     DumpVector(cam->frus->sides[i].planeEquation);
-           //   DEBUGLOG("%d ==================== %d\n", i, i);
+        //  DumpVector(cam->frus->sides[i].pointInPlane);
+        //     DumpVector(cam->frus->sides[i].planeEquation);
+        //   DEBUGLOG("%d ==================== %d\n", i, i);
 
         normalize(tempNormal, tempNormal);
 
         ComputePlane(tempPoint, tempNormal, tempPlane);
 
-       // DumpVector(tempPlane);
+        // DumpVector(tempPlane);
 
         VECTOR normalProjection;
 
@@ -443,15 +401,14 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
         if (DistanceFromPlane(tempPlane, pVert) < 0.0f)
         {
-             // DumpVector(tempPoint);
+            // DumpVector(tempPoint);
             //  DumpVector(tempNormal);
-             // DumpVector(cam->pos);
+            // DumpVector(cam->pos);
             //  DumpVector(cam->frus->sides[i].pointInPlane);
             // DumpVector(cam->frus->sides[i].planeEquation);
-            //  DEBUGLOG("%d ==================== %d\n", i, i);  
+            //  DEBUGLOG("%d ==================== %d\n", i, i);
             return 0;
         }
-
 
         if (DistanceFromPlane(tempPlane, nVert) < 0.0f)
         {
@@ -462,7 +419,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
             }
         }
     }
-   // DEBUGLOG("finished\n");
+    // DEBUGLOG("finished\n");
     return ret;
 }
 

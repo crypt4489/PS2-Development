@@ -101,6 +101,11 @@ void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, 
    
 }
 
+void UpdateCurrentTexNameInGS(GameManager *manager, const char *name)
+{
+    strncpy(manager->textureInVram->name, name, MAX_CHAR_TEXTURE_NAME);
+}
+
 void SetupManagerTexture()
 {
     CreateTexBuf(g_Manager.textureInVram, 256, GS_PSM_32);

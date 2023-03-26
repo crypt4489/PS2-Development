@@ -16,7 +16,7 @@
 START:
  ;//////////// --- Load data 1 --- /////////////
     ; Updated once per mesh
-  
+
     MatrixLoad{ globalMatrix, 4, vi00 }
 
     lq.xyz   camPos, 15(vi00)
@@ -33,7 +33,7 @@ begin:
 
     iaddiu  vertexData,     iBase,      1          ; pointer to vertex data
     ilw.w   vertCount,      0(iBase)
-    
+
     iadd    normData,       vertexData, vertCount   ; pointer to stq
     iadd    normData,       normData, vertCount   ; pointer to stq
 
@@ -48,10 +48,10 @@ begin:
     vertexLoop:
 
         ;////////// --- Load loop data --- //////////
-        lq vertex, 0(vertexData)    
-    
+        lq vertex, 0(vertexData)
+
         MatrixMultiplyVertex{ vertex, globalMatrix, vertex }
-        
+
         lq.xyz normal, 0(normData)
 
         add.xyz outColor, vf00, vf00
@@ -62,7 +62,7 @@ begin:
 
         ibeq lightLoop, vi00, write_color
 
-light_loop:       
+light_loop:
 
         iaddi lightLoop, lightLoop, -1
 
@@ -83,18 +83,18 @@ light_loop:
         iaddiu lightPointer, lightPointer, 1 ;skip ambient
 compare_light_loop:
         ibne lightLoop, vi00, light_loop
-        
+
 write_color:
         loi 128
         addi.w outColor, vf00, I
         loi 255
         mini.xyz  outColor, outColor, I
-        max.xyz   outColor, outColor, vf00[x]  
+        max.xyz   outColor, outColor, vf00[x]
 
-       
-        sq outColor,    0(normData)      
-      
-        
+
+        sq outColor,    0(normData)
+
+
 
         iaddiu          vertexData,     vertexData,     1
         iaddiu          normData,       normData,       1
@@ -106,12 +106,12 @@ write_color:
 
     ;////////////////////////////////////////////
         .vsm
-           NOP             ilw.z   clipProg,       0(iBase)
+           NOP             iadd     clipProg,   vi00, vi00
            NOP             NOP
         .endvsm
     --barrier
 
-  
+
 
 directional_light:
 
@@ -122,7 +122,7 @@ directional_light:
         add.xyz half, lightDir, toCam
         Normalize{ half, half, temp }
         VectorDotProduct{ spec, normal, half }
-        
+
         mul.x  spec, spec, spec
         mul.x  spec, spec, spec
         mul.x  spec, spec, spec

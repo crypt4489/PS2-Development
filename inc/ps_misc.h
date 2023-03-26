@@ -71,11 +71,11 @@ void ClearDirtyLTM(MATRIX m);
 float GetLastLTM(MATRIX m);
 void SetLastLTM(MATRIX m, float val);
 void SetLastAndDirtyLTM(MATRIX m, float w);
-void SetupLTM(VECTOR pos, VECTOR up, VECTOR right, 
-         VECTOR forward, VECTOR scales, 
+void SetupLTM(VECTOR pos, VECTOR up, VECTOR right,
+         VECTOR forward, VECTOR scales,
           float q, MATRIX ltm);
 
 void Pathify(const char *name, char *file);
 void AppendString(const char *input1, const char *input2, char *output, u32 max);
-void normalizePlane(VECTOR in, VECTOR out);
+void NormalizePlane(VECTOR in, VECTOR out);
 #endif

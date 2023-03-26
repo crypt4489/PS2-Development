@@ -81,15 +81,6 @@ GameObject *InitializeGameObject()
   return go;
 }
 
-void SetupGameObjectPrimRegs(GameObject *obj, prim_t p, color_t color, u32 regMask, u32 regCount, u32 renderState)
-{
-  obj->renderState.prim = p;
-  obj->renderState.color = color;
-  obj->renderState.state.gs_reg_mask = regMask;
-  obj->renderState.state.gs_reg_count = regCount;
-  obj->renderState.state.render_state.state = renderState;
-}
-
 qword_t * CreateMeshDMAUpload(qword_t *q, GameObject *obj, u32 drawSize, u16 drawCode, u32 matCount, qword_t *vu1_addr)
 {
    
@@ -268,6 +259,7 @@ qword_t *CreateVU1VertexUpload(qword_t *q, MeshBuffers *buffer, u32 start, u32 e
 
   return q;
 }
+
 qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u32 offset, u8 code)
 {
   q = add_unpack_data(q, *top, &(buffer->vertices[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));

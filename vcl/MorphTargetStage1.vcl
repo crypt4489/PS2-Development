@@ -15,41 +15,41 @@
 #vuprog VU1_GenericMorphTargetStage13D
 
 START:
-   
+
     lq.xy      interpolate,     11(vi00)
 
     xtop    iBase
 
-    iaddiu  vertexData,     iBase,      1          
-    ilw.w   vertCount,      0(iBase)              
-    iadd    stqData,        vertexData, vertCount   
-    iadd    colorData,    stqData,    vertCount 
-    iadd    morphVData,    colorData,  vertCount   
+    iaddiu  vertexData,     iBase,      1
+    ilw.w   vertCount,      0(iBase)
+    iadd    stqData,        vertexData, vertCount
+    iadd    colorData,    stqData,    vertCount
+    iadd    morphVData,    colorData,  vertCount
     iadd    morphSTQData,  morphVData, vertCount
     iadd    morphColorData, morphSTQData, vertCount
 
     iadd vertexCounter, iBase, vertCount ; loop vertCount times
     vertexLoop:
 
-      
-        lq vertex, 0(vertexData)    
+
+        lq vertex, 0(vertexData)
         lq stq,    0(stqData)
-        lq color,  0(colorData) 
+        lq color,  0(colorData)
 
         lq vertexM, 0(morphVData)
         lq stqM,  0(morphSTQData)
-        lq colorM, 0(morphColorData)   
-        
-           
+        lq colorM, 0(morphColorData)
 
-        Lerp3CompXY{ vertex, vertexM, interpolate }  
 
-        Lerp2CompXY{ stq, stqM, interpolate } 
 
-        Lerp3CompXY{ color, colorM, interpolate }                               
-      
+        Lerp3CompXY{ vertex, vertexM, interpolate }
 
-        sq vertex, 0(vertexData)    
+        Lerp2CompXY{ stq, stqM, interpolate }
+
+        Lerp3CompXY{ color, colorM, interpolate }
+
+
+        sq vertex, 0(vertexData)
         sq stq,    0(stqData)     ; XYZ2
         sq color, 0(colorData)
         ;////////////////////////////////////////////
@@ -65,7 +65,7 @@ START:
         ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
 
         .vsm
-           NOP             ilw.x   jmpProg,       0(iBase)
+           NOP             ilw.y   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
 
@@ -75,4 +75,3 @@ START:
     --endexit
 
 #endvuprog
-

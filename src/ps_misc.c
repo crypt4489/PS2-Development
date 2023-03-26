@@ -106,7 +106,7 @@ void normalize(VECTOR in, VECTOR out)
     out[3] = w;
 }
 
-void normalizePlane(VECTOR in, VECTOR out)
+void NormalizePlane(VECTOR in, VECTOR out)
 {
    // float w = in[3];
   /*  asm __volatile__(
@@ -470,7 +470,7 @@ void CreateOrthoGraphicMatrix(float xLow, float xHigh, float yLow, float yHigh, 
     temp[5] = 2.0f / (xHigh - yLow);
     temp[10] = -2.0f / (far - near);
 
-   
+
     matrix_copy(out, temp);
 }
 
@@ -869,10 +869,10 @@ void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR 
     work[0] = right[0] * scales[0];
     work[1] = right[1] * scales[0];
     work[2] = right[2] * scales[0];
-    
-    
 
-    
+
+
+
 
     work[4] = up[0] * scales[1];
     work[5] = up[1] * scales[1];
@@ -932,8 +932,8 @@ void SetLastAndDirtyLTM(MATRIX m, float w)
     SetLastLTM(m, w);
 }
 
-void SetupLTM(VECTOR pos, VECTOR up, VECTOR right, 
-         VECTOR forward, VECTOR scales, 
+void SetupLTM(VECTOR pos, VECTOR up, VECTOR right,
+         VECTOR forward, VECTOR scales,
           float q, MATRIX ltm)
 {
     SetPositionVectorLTM(ltm, pos);
@@ -968,9 +968,9 @@ void AppendString(const char *input1, const char *input2, char *output, u32 max)
 {
     const char *iter = input1;
     char *outIter = output;
-    
+
     u32 len = 0;
-    
+
     while(*iter != 0 && len < max)
     {
         *outIter = *iter;
@@ -980,7 +980,7 @@ void AppendString(const char *input1, const char *input2, char *output, u32 max)
     }
 
     iter = input2;
-    
+
     while(*iter != 0 && len < max)
     {
          *outIter = *iter;
@@ -1023,7 +1023,7 @@ static void GribbHartmann(MATRIX m)
     m_left_plane[2] = m[11] + m[8];
     m_left_plane[3] = m[15] + m[12];
 #endif
-    normalizePlane(m_left_plane, m_left_plane);
+    NormalizePlane(m_left_plane, m_left_plane);
 
     DumpVector(m_left_plane);
 
@@ -1041,7 +1041,7 @@ static void GribbHartmann(MATRIX m)
     m_right_plane[2] = m[11] - m[8];
     m_right_plane[3] = m[15] - m[12];
 #endif
-    normalizePlane(m_right_plane, m_right_plane);
+    NormalizePlane(m_right_plane, m_right_plane);
 
     DumpVector(m_right_plane);
 
@@ -1059,7 +1059,7 @@ static void GribbHartmann(MATRIX m)
     m_bottom_plane[2] = m[11] + m[9];
     m_bottom_plane[3] = m[15] + m[13];
 #endif
-    normalizePlane(m_bottom_plane, m_bottom_plane);
+    NormalizePlane(m_bottom_plane, m_bottom_plane);
 
     DumpVector(m_bottom_plane);
 
@@ -1077,7 +1077,7 @@ static void GribbHartmann(MATRIX m)
     m_top_plane[2] = m[11] - m[9];
     m_top_plane[3] = m[15] - m[13];
 #endif
-    normalizePlane(m_top_plane, m_top_plane);
+    NormalizePlane(m_top_plane, m_top_plane);
 
     DumpVector(m_top_plane);
 
@@ -1095,7 +1095,7 @@ static void GribbHartmann(MATRIX m)
     m_near_plane[2] = m[11] + m[10];
     m_near_plane[3] = m[15] + m[14];
 #endif
-    normalizePlane(m_near_plane, np);
+    NormalizePlane(m_near_plane, np);
     DumpVector(np);
 
     DEBUGLOG("#5");
@@ -1113,7 +1113,7 @@ static void GribbHartmann(MATRIX m)
     m_far_plane[3] = m[15] - m[14];
 #endif
 
-    normalizePlane(m_far_plane, tf);
+    NormalizePlane(m_far_plane, tf);
     DumpVector(tf);
 
     DEBUGLOG("#6");

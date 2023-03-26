@@ -40,7 +40,7 @@ void InitSkybox()
     GameObject *skybox = InitializeGameObject();
     ReadModelFile("MODELS\\BOX16.BIN", &skybox->vertexBuffer);
     VECTOR skyboxPos = {0.0f, 15.0f, -25.0f, 1.0f};
-    SetupGameObjectPrimRegs(skybox, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(skybox, prim, color, DRAW_STQ2_REGLIST, 3, RENDER_STATE(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -66,7 +66,7 @@ void InitSkybox()
 
     skybox->update_object = UpdateSkybox;
 
-    CreateGraphicsPipeline(skybox, GEN_PIPELINE_NAME, VU1Stage4, DRAW_VERTICES | DRAW_TEXTURE, 0, 0);
+    CreateGraphicsPipeline(skybox, GEN_PIPELINE_NAME);
 
     AddObjectToRenderWorld(world, skybox);
 }

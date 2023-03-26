@@ -17,18 +17,12 @@ LinkedList* AddToLinkedList(LinkedList *head, LinkedList *node);
 LinkedList* RemoveNodeFromList(LinkedList *head, LinkedList *node);
 void SwapManagerDMABuffers();
 LinkedList* CleanLinkedListNode(LinkedList *node);;
-
-
+void UpdateCurrentTexNameInGS(GameManager *manager, const char *name);
 void EndFrame();
 
 inline void SetGlobalManagerCam(Camera *cam)
 {
     g_Manager.mainCam = cam;
-};
-
-inline void UpdateCurrentTexNameInGS(GameManager *manager, const char *name)
-{
-    strncpy(manager->textureInVram->name, name, MAX_CHAR_TEXTURE_NAME);
 };
 
 #endif
