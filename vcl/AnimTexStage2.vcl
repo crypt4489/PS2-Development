@@ -23,6 +23,7 @@ begin:
 
     iaddiu  vertexData,     iBase,      1           ; pointer to vertex data
     ilw.w   vertCount,      0(iBase)              ; load vert count from scale vector
+    ibeq    vertCount,      vi00,       end
     iadd    stqData,        vertexData, vertCount   ; pointer to stq
 
 
@@ -47,6 +48,7 @@ begin:
         iaddi   vertexCounter,  vertexCounter,  -1	; decrement the loop counter
         ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
 
+end:
         .vsm
            NOP             ilw.z   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg

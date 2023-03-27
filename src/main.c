@@ -311,7 +311,7 @@ void SetupCube()
 
     CreateGraphicsPipeline(box, "Clipper");
 
-    CreateShadowMapVU1Pipeline(box, 8, DEFAULT_PIPELINE_SIZE);
+  //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
 
     AddObjectToRenderWorld(world, box);
 }
@@ -327,7 +327,7 @@ void SetupSphere()
     sphere = InitializeGameObject();
     ReadModelFile("MODELS\\SPHERE.BIN", &sphere->vertexBuffer);
 
-    SetupGameObjectPrimRegs(sphere, color,  RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 1, 0, 1, 0, 1, 0));
+    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 1, 0, 1, 0, 1, 0));
 
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 

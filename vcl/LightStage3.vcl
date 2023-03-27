@@ -32,6 +32,7 @@ begin:
     iaddiu  vertexData,     iBase,      1          ; pointer to vertex data
     ilw.w   vertCount,      0(iBase)
 
+
     iadd    normData,       vertexData, vertCount   ; pointer to stq
     iadd    normData,       normData, vertCount   ; pointer to stq
 
@@ -41,9 +42,15 @@ begin:
 
     iadd vertexCounter, iBase, vertCount ; loop vertCount times
 
+    ibeq    vertexCounter,      iBase,       end
+
     iadd lightLoop, lightCount, vi00
 
     sub.w  normal, vf00, vf00
+
+
+
+
     vertexLoop:
 
         ;////////// --- Load loop data --- //////////
@@ -79,39 +86,6 @@ light_loop:
         ibeq lightCheck, vi00, spotlight
 
         b ambient_light
-
-compare_light_loop:
-        ibne lightLoop, vi00, light_loop
-
-write_color:
-        loi 128
-        addi.w outColor, vf00, I
-        loi 255
-        mini.xyz  outColor, outColor, I
-        max.xyz   outColor, outColor, vf00[x]
-
-
-        sq outColor,    0(normData)
-
-
-
-        iaddiu          vertexData,     vertexData,     1
-        iaddiu          normData,       normData,       1
-        iadd            lightLoop,      lightCount,     vi00
-        iaddiu          lightPointer,   vi00,           21
-
-        iaddi   vertexCounter,  vertexCounter,  -1	; decrement the loop counter
-        ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
-
-    ;////////////////////////////////////////////
-        .vsm
-           NOP             iadd   clipProg,     vi00, vi00
-           NOP             NOP
-        .endvsm
-    --barrier
-
-
-
 directional_light:
 
         lq.xyz lightDir, 0(lightPointer)
@@ -245,6 +219,40 @@ finish_pl:
 
         iaddiu lightPointer, lightPointer, 2
         b compare_light_loop
+
+compare_light_loop:
+        ibne lightLoop, vi00, light_loop
+
+write_color:
+        loi 128
+        addi.w outColor, vf00, I
+        loi 255
+        mini.xyz  outColor, outColor, I
+        max.xyz   outColor, outColor, vf00[x]
+
+
+        sq outColor,    0(normData)
+
+
+
+        iaddiu          vertexData,     vertexData,     1
+        iaddiu          normData,       normData,       1
+        iadd            lightLoop,      lightCount,     vi00
+        iaddiu          lightPointer,   vi00,           21
+
+        iaddi   vertexCounter,  vertexCounter,  -1	; decrement the loop counter
+        ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
+
+end:
+        .vsm
+           NOP             iadd   clipProg,     vi00, vi00
+           NOP             NOP
+        .endvsm
+    --barrier
+
+
+
+
 
 
 

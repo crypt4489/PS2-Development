@@ -385,6 +385,8 @@ MeshBuffers* CreateGrid(int N, int M, float depth, float width, MeshBuffers *buf
 
     buffer->vertexCount = index_count;
 
+    DEBUGLOG("Grid indices count %d", buffer->vertexCount);
+
     buffer->indices = (u32 *)malloc(sizeof(int) * index_count);
     buffer->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
     buffer->vertices = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
@@ -722,146 +724,6 @@ void ComputeReflectionMatrix(VECTOR normal, MATRIX res)
     res[15] = 1;
 }
 
-void GetPositionVectorCopyLTM(MATRIX ltm, VECTOR out)
-{
-    out[0] = ltm[12];
-    out[1] = ltm[13];
-    out[2] = ltm[14];
-    out[3] = ltm[15];
-}
-void SetPositionVectorLTM(MATRIX ltm, VECTOR pos)
-{
-    ltm[12] = pos[0];
-    ltm[13] = pos[1];
-    ltm[14] = pos[2];
-    //ltm[15] = 1.0f;
-}
-void GetRightVectorCopyLTM(MATRIX ltm, VECTOR out)
-{
-    out[0] = ltm[0];
-    out[1] = ltm[1];
-    out[2] = ltm[2];
-    out[3] = 0.0f;
-}
-void GetUpVectorCopyLTM(MATRIX ltm, VECTOR out)
-{
-    out[0] = ltm[4];
-    out[1] = ltm[5];
-    out[2] = ltm[6];
-    out[3] = 0.0f;
-}
-void GetForwardVectorCopyLTM(MATRIX ltm, VECTOR out)
-{
-    out[0] = ltm[8];
-    out[1] = ltm[9];
-    out[2] = ltm[10];
-    out[3] = 0.0f;
-}
-void SetRightVectorLTM(MATRIX ltm, VECTOR right)
-{
-    ltm[0] = right[0];
-    ltm[1] = right[1];
-    ltm[2] = right[2];
-}
-void SetUpVectorLTM(MATRIX ltm, VECTOR up)
-{
-    ltm[4] = up[0];
-    ltm[5] = up[1];
-    ltm[6] = up[2];
-}
-void SetForwardVectorLTM(MATRIX ltm, VECTOR forward)
-{
-    ltm[8] = forward[0];
-    ltm[9] = forward[1];
-    ltm[10] = forward[2];
-}
-void SetScaleVectorLTM(MATRIX ltm, VECTOR scale)
-{
-    ltm[3] = scale[0];
-    ltm[7] = scale[1];
-    ltm[11] = scale[2];
-}
-void GetScaleVectorLTM(MATRIX ltm, VECTOR out)
-{
-    out[0] = ltm[3];
-    out[1] = ltm[7];
-    out[2] = ltm[11];
-    out[3] = 1.0f;
-}
-void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m)
-{
-    MATRIX work;
-     matrix_unit(work);
-    work[0] = ltm[0] * ltm[3];
-    work[5] = ltm[5] * ltm[7];
-    work[10] = ltm[10] * ltm[11];
-
-    work[1] = ltm[1] * ltm[3];
-    work[2] = ltm[2] * ltm[3];
-
-    work[4] = ltm[4] * ltm[7];
-    work[6] = ltm[6] * ltm[7];
-
-    work[8] = ltm[8] * ltm[11];
-    work[9] = ltm[9] * ltm[11];
-
-    work[12] = ltm[12];
-    work[13] = ltm[13];
-    work[14] = ltm[14];
-    work[15] = GetLastLTM(ltm);
-
-    matrix_copy(m, work);
-}
-void SetRotationVectorsLTM(MATRIX ltm, VECTOR up, VECTOR right, VECTOR forward)
-{
-    ltm[0] = right[0];
-    ltm[1] = right[1];
-    ltm[2] = right[2];
-
-    ltm[4] = up[0];
-    ltm[5] = up[1];
-    ltm[6] = up[2];
-
-    ltm[8] = forward[0];
-    ltm[9] = forward[1];
-    ltm[10] = forward[2];
-}
-void GetRotationVectorsLTM(MATRIX ltm, VECTOR up, VECTOR right, VECTOR forward)
-{
-    right[0] = ltm[0];
-    right[1] = ltm[1];
-    right[2] = ltm[2];
-
-    up[0] = ltm[4];
-    up[1] = ltm[5];
-    up[2] = ltm[6];
-
-    forward[0] = ltm[8];
-    forward[1] = ltm[9];
-    forward[2] = ltm[10];
-
-}
-
-VECTOR* GetRightVectorLTM(MATRIX m)
-{
-    return (VECTOR*)&m[0];
-}
-
-VECTOR* GetForwardVectorLTM(MATRIX m)
-{
-    return (VECTOR*)&m[8];
-}
-
-VECTOR* GetUpVectorLTM(MATRIX m)
-{
-    return (VECTOR*)&m[4];
-}
-
-VECTOR* GetPositionVectorLTM(MATRIX m)
-{
-    return (VECTOR*)&m[12];
-}
-
 void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR right, VECTOR scales, MATRIX m)
 {
     MATRIX work;
@@ -889,59 +751,6 @@ void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR 
 
     matrix_copy(m, work);
 }
-
-u32 GetDirtyLTM(MATRIX m)
-{
-    u32 *ptr = (u32*)&m[15];
-    return *ptr & 0x00000001;
-}
-
-void SetDirtyLTM(MATRIX m)
-{
-    u32 *ptr = (u32*)&m[15];
-    *ptr = *ptr | 0x00000001U;
-}
-
-void ClearDirtyLTM(MATRIX m)
-{
-    u32 *ptr = (u32*)&m[15];
-    *ptr = *ptr & 0xFFFFFF00U;
-}
-
-float GetLastLTM(MATRIX m)
-{
-    u32 *ptr = (u32*)&m[15];
-    u32 fixed = *ptr & 0xFFFFFF00U;
-    //DEBUGLOG("%d %x", fixed, *ptr);
-    fixed = fixed >> 8;
-    //DEBUGLOG("%d", fixed);
-    return (float)fixed/(float)(1U<<16);
-}
-void SetLastLTM(MATRIX m, float val)
-{
-    u32 fixed = val * (1U<<16);
-   // DEBUGLOG("fixed: %d", fixed);
-    u32 *ptr = (u32*)&m[15];
-    *ptr = *ptr & 0x00000001;
-    *ptr = *ptr | (fixed<<8U);
-   // DEBUGLOG("fixed: %x", *ptr);
-}
-void SetLastAndDirtyLTM(MATRIX m, float w)
-{
-    SetDirtyLTM(m);
-    SetLastLTM(m, w);
-}
-
-void SetupLTM(VECTOR pos, VECTOR up, VECTOR right,
-         VECTOR forward, VECTOR scales,
-          float q, MATRIX ltm)
-{
-    SetPositionVectorLTM(ltm, pos);
-    SetRotationVectorsLTM(ltm, up, right, forward);
-    SetScaleVectorLTM(ltm, scales);
-    SetLastAndDirtyLTM(ltm, q);
-}
-
 MeshBuffers *InitMeshBuffersStruct(u32 count, MeshBuffers *buffer)
 {
     buffer->vertices = (VECTOR*)malloc(sizeof(VECTOR)*count);

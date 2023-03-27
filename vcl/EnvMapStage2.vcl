@@ -21,6 +21,7 @@ begin:
 
     iaddiu  vertexData,     iBase,      1           ; pointer to vertex data
     ilw.w   vertCount,      0(iBase)              ; load vert count from scale vector
+    ibeq    vertCount,      vi00,       end
     iadd    stqData,       vertexData, vertCount   ; pointer to stq
     iadd    normData,    stqData,    vertCount   ; pointer for XGKICK
 
@@ -94,7 +95,7 @@ store_stq:
 
         iaddi   vertexCounter,  vertexCounter,  -3
         ibne    vertexCounter,  iBase,   vertexLoop
-
+end:
         .vsm
            NOP             ilw.z   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
