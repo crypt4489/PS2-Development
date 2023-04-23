@@ -15,6 +15,10 @@
 #define MAX_CHAR_PIPELINE_NAME 20
 #define MAX_FILE_NAME 35
 
+typedef struct vector_int
+{
+    u32 vector[4];
+} VectorInt;
 typedef struct vu1_program_t
 {
     union
@@ -226,6 +230,8 @@ struct mesh_buffers_t
     VECTOR *normals __attribute__((aligned(128)));
     VECTOR *texCoords __attribute__((aligned(128)));
     VECTOR *colors __attribute__((aligned(128)));
+    VectorInt *bones __attribute__((aligned(128)));
+    VECTOR *weights __attribute__((aligned(128)));
     u32 matCount;
     LinkedList *materials;
 };

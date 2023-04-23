@@ -4,13 +4,28 @@
 #include "ps_texture.h"
 #include "ps_misc.h"
 #include "ps_log.h"
+#include "ps_huffman.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 sceCdRMode sStreamMode;
 const u32 SectorSize = 2048;
 
 #define SECTOR_SIZE 2048
+
+static int IsFileCompressed(const char* filename)
+{
+    int len = strlen(filename);
+  //  DEBUGLOG("Print isCompressed %c %c %c %c", filename[len-6], filename[len-5], filename[len-4], filename[len-3]);
+    if (filename[len-6] == 0x43 && filename[len-5] == 0x42
+    && filename[len-4] == 0x49 && filename[len-3] == 0x4E)
+    {
+        return 1;
+    }
+
+    return 0;
+}
 
 void InitDVDDrive()
 {
@@ -54,14 +69,16 @@ sceCdlFILE *FindFileByName(const char *filename)
 
 u8 *ReadFileInFull(const char *filename, u32 *outSize)
 {
+    int compressed = IsFileCompressed(filename);
+
+    //DEBUGLOG("Compressed file ? %d", compressed);
+
     sceCdlFILE *loc_file_struct = FindFileByName(filename);
 
     if (loc_file_struct == NULL)
     {
         return NULL;
     }
-
-    *outSize = loc_file_struct->size;
 
     u32 starting_sec = loc_file_struct->lsn;
     u32 sectors = loc_file_struct->size / SECTOR_SIZE;
@@ -88,6 +105,13 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
         i++;
         head_of_copy += SECTOR_SIZE;
     }
+
+    if (compressed)
+    {
+        buffer = decompress(buffer, bufferSize, &bufferSize);
+    }
+
+    *outSize = bufferSize;
 
     return buffer;
 }
@@ -170,7 +194,7 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     u32 size = SWAP_ENDIAN(*input_int);
 
     Bin2Float copy;
-     
+
 
     // buffers->vertexCount = size;
     // buffers->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
@@ -331,7 +355,7 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         buffers->normals[i][3] = 0.0f;
 
-    
+
 
        // input_int++;
 
@@ -343,7 +367,7 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
 static u32 LoadIndices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
-    
+
     u32 *input_int = ptr;
 
     u32 size = SWAP_ENDIAN(*input_int);
@@ -360,7 +384,7 @@ static u32 LoadIndices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     for (int i = _start; i < _end; i++)
     {
-    
+
         u32 inner = SWAP_ENDIAN(*input_int);
         buffers->indices[i] = inner;
         input_int++;
@@ -370,8 +394,8 @@ static u32 LoadIndices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     return ((size+1) * 4);
 }
 
-static LoadFunc_Array loadFuncArray[8] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
-                                          LoadNormals, NULL, NULL, LoadMaterial};
+static LoadFunc_Array loadFuncArray[11] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
+                                          LoadNormals, NULL, NULL, LoadMaterial, NULL, NULL, NULL};
 
 void ReadModelFile(const char *filename, MeshBuffers *buffers)
 {
@@ -387,9 +411,9 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
     {
         iter += 2;
 
-       
+
         u16 code = (u16)(0xFF00 & (((u16)iter[0]) << 8)) | (0x00FF & (u16)iter[1]);
-    
+
         iter += 2;
 
         input_int = (u32 *)iter;
@@ -402,7 +426,7 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
         u32 index = 0;
         u32 end = vertSize;
 
-    
+
         while (iter[0] != 0xFF && iter[1] != 0xFF && iter[2] != 0x41 && iter[3] != 0x14)
         {
             // DEBUGLOG("%x", iter[0]);
