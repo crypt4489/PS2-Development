@@ -209,16 +209,9 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     u32 size = SWAP_ENDIAN(*input_int);
 
-    DEBUGLOG("Size in verts is %d", size);
-
     Bin2Float copy;
 
-
-    // buffers->vertexCount = size;
-    // buffers->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
     input_int += 1;
-
-    // DEBUGLOG("indy and end : %d %d", index, end);
 
     u32 _start = *start;
     u32 _end = *end;
@@ -548,7 +541,7 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
         u8 *bytePtr = (u8 *)input_int;
         Joint *joint = (Joint*)malloc(sizeof(Joint));
         joint->id = (*bytePtr++ & 0xff);
-        DEBUGLOG("%d %d", joint->id, size);
+        //DEBUGLOG("%d %d", joint->id, size);
         u32 nameSize = (*bytePtr++ & 0xff);
         for (u8 iter = 0; iter < nameSize; iter++)
         {
@@ -557,7 +550,7 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
         }
 
         joint->name[nameSize] = 0;
-        DEBUGLOG("%s", joint->name);
+      //  DEBUGLOG("%s", joint->name);
         input_int = (u32*)bytePtr;
         input_int = LoadMatrix(joint->offset, input_int);
         buffers->meshAnimationData->joints[i] = joint;
@@ -588,7 +581,7 @@ static u32* ReadAnimationNode(AnimationNode *node, u32 *input)
 
     u32 count = node->childrenCount = *bytePtr;
 
-    DEBUGLOG("%s %d", node->name, count);
+    //DEBUGLOG("%s %d", node->name, count);
 
     bytePtr++;
 
@@ -596,7 +589,7 @@ static u32* ReadAnimationNode(AnimationNode *node, u32 *input)
 
     input = LoadMatrix(node->transformation, input);
 
-    DumpMatrix(node->transformation);
+   // DumpMatrix(node->transformation);
 
     node->children = malloc(sizeof(AnimationNode*) * count);
 
@@ -631,7 +624,7 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     data->name[nameSize] = 0;
 
-    DEBUGLOG("%s", data->name);
+   // DEBUGLOG("%s", data->name);
 
     input_int = (u32*)bytePtr;
 
@@ -649,7 +642,7 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     input_int++;
 
-    DEBUGLOG("%f %f", data->ticksPerSecond, data->duration);
+    //DEBUGLOG("%f %f", data->ticksPerSecond, data->duration);
 
     input_int = ReadAnimationNode(data->root, input_int);
 
@@ -668,7 +661,7 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
 static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
-    DEBUGLOG("WE ARE HERE IN SRT");
+    //DEBUGLOG("WE ARE HERE IN SRT");
 
     u32 *input = ptr;
 
@@ -679,7 +672,7 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
     AnimationData *data = GetAnimationByIndex(buffers->meshAnimationData->animations,
                         buffers->meshAnimationData->animationsCount);
 
-    DEBUGLOG("%d %s", posSize, data->name);
+    //DEBUGLOG("%d %s", posSize, data->name);
 
 
 
@@ -856,8 +849,6 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
         buffers = AllocateMeshBuffersFromCode(buffers, code, vertSize);
         u32 index = 0;
         u32 end = vertSize;
-        u8 lastCode = 0;
-        u8 lastLastCode = 0;
 
         while (iter[0] != 0xFF && iter[1] != 0xFF && iter[2] != 0x41 && iter[3] != 0x14)
         {
@@ -875,21 +866,13 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
 
                 if (code <= 11)
                 {
-                    DEBUGLOG("%x", code);
+                    //DEBUGLOG("%x", code);
                     iter += loadFuncArray[code-1](input_int, buffers, &index, &end);
                 }
                 else
                 {
                     ERRORLOG("Jake is a stupid son of a bitch");
                 }
-
-                lastLastCode = lastCode;
-                lastCode = code;
-              /*  while(code == 0x0B)
-                {
-                    DEBUGLOG("%x", iter[0]);
-                } */
-
             }
         }
     }
