@@ -24,6 +24,7 @@ void CreateScaleMatrix(VECTOR scales, MATRIX output);
 void CreateWorldMatrix(MATRIX output, MATRIX scales, MATRIX rot, MATRIX trans);
 void DumpMatrix(MATRIX elem);
 void DumpVector(VECTOR elem);
+void DumpVectorInt(VectorInt elem);
 void VectorSubtractXYZ(VECTOR in, VECTOR in2, VECTOR out);
 void VectorAddXYZ(VECTOR in, VECTOR in2, VECTOR out);
 void dump_packet(qword_t *q);

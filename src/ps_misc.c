@@ -596,6 +596,12 @@ void DumpVector(VECTOR elem)
     printf("%f %f %f %f\n", elem[0], elem[1], elem[2], elem[3]);
 }
 
+
+void DumpVectorInt(VectorInt elem)
+{
+    printf("%d %d %d %d\n", elem[0], elem[1], elem[2], elem[3]);
+}
+
 void MatrixInverse(MATRIX src, MATRIX out)
 {
     MATRIX inv;

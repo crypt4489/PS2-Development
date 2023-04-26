@@ -325,9 +325,12 @@ void SetupSphere()
     VECTOR object_position = {-50.0f, 0.0f, 0.0f, 0.0f};
 
     sphere = InitializeGameObject();
-    ReadModelFile("MODELS\\SPHERE.BIN", &sphere->vertexBuffer);
 
-    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 1, 0, 1, 0, 1, 0));
+    DEBUGLOG("WE ARE HERE!");
+
+    ReadModelFile("MODELS\\BODY.CBIN", &sphere->vertexBuffer);
+
+    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
@@ -341,9 +344,11 @@ void SetupSphere()
 
     InitOBB(sphere, BBO_FIT);
 
-    CreateSphereTarget();
+   // CreateSphereTarget();
 
-    CreateSpecularPipeline(sphere, "SPEC_PIPE");
+   // CreateSpecularPipeline(sphere, "SPEC_PIPE");
+
+    CreateGraphicsPipeline(sphere, "DOES THIS WORK?");
 
     AddObjectToRenderWorld(world, sphere);
 }
@@ -717,7 +722,7 @@ int Render()
 
         UpdateLight();
 
-        UpdateSphereMorph();
+       // UpdateSphereMorph();
 
         snprintf(print_out, 20, "DREW FLETCHER %d", no_plugin);
 
@@ -819,8 +824,6 @@ void LoadInTextures()
 int main(int argc, char **argv)
 {
 
-    DEBUGLOG("what happened %d", 4);
-
     InitializeSystem();
 
     SetupWorldObjects();
@@ -837,7 +840,7 @@ int main(int argc, char **argv)
 
     DEBUGLOG("VU1 programs %f", endTime - startTime);
 
-    // while(1);
+
 
     startTime = getTicks(ts);
 

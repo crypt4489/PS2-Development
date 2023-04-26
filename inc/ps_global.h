@@ -14,11 +14,10 @@
 #define MAX_CHAR_TEXTURE_NAME 20
 #define MAX_CHAR_PIPELINE_NAME 20
 #define MAX_FILE_NAME 35
+#define MAX_ANIMATION_NAME 50
+#define MAX_JOINT_NAME 50
 
-typedef struct vector_int
-{
-    u32 vector[4];
-} VectorInt;
+typedef s32 VectorInt[4] __attribute__((__aligned__(16)));
 typedef struct vu1_program_t
 {
     union
@@ -209,6 +208,18 @@ struct material_node_t;
 typedef struct material_node_t Material;
 struct mesh_buffers_t;
 typedef struct mesh_buffers_t MeshBuffers;
+struct joint_t;
+typedef struct joint_t Joint;
+struct animation_node_t;
+typedef struct animation_node_t AnimationNode;
+struct animation_key_t;
+typedef struct animation_key_t AnimationKey;
+struct animation_key_holder_t;
+typedef struct animation_key_holder_t AnimationKeyHolder;
+struct animation_data_t;
+typedef struct animation_data_t AnimationData;
+struct animation_mesh_t;
+typedef struct animation_mesh_t AnimationMesh;
 struct pipelinecblist_t;
 typedef struct pipelinecblist_t PipelineCallback;
 struct vu_pipeline_t;
@@ -222,6 +233,56 @@ typedef struct worldcblist_t WorldCallback;
 
 typedef void (*world_callback)(RenderWorld *, GameObject *);
 
+struct animation_key_holder_t
+{
+    u32 id;
+    u32 count;
+    AnimationKey **keys;
+
+};
+struct animation_key_t
+{
+    float timeStamp;
+    VECTOR key;
+};
+
+struct joint_t
+{
+    char name[MAX_JOINT_NAME];
+    u32 id;
+    MATRIX offset;
+};
+
+struct animation_node_t
+{
+    char name[MAX_ANIMATION_NAME];
+    u32 childrenCount;
+    MATRIX transformation;
+    AnimationNode **children;
+};
+
+struct animation_data_t
+{
+    char name[MAX_ANIMATION_NAME];
+    float duration;
+    float ticksPerSecond;
+    AnimationNode *root;
+    u32 numPositionKeys;
+    u32 numRotationKeys;
+    u32 numScalingKeys;
+    AnimationKeyHolder **keyPositions;
+    AnimationKeyHolder **keyRotations;
+    AnimationKeyHolder **keyScalings;
+};
+
+struct animation_mesh_t
+{
+    u32 jointsCount;
+    u32 animationsCount;
+    LinkedList *animations;
+    Joint **joints;
+};
+
 struct mesh_buffers_t
 {
     u32 vertexCount;
@@ -234,6 +295,7 @@ struct mesh_buffers_t
     VECTOR *weights __attribute__((aligned(128)));
     u32 matCount;
     LinkedList *materials;
+    AnimationMesh *meshAnimationData;
 };
 
 struct material_node_t

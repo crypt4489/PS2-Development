@@ -5,6 +5,8 @@
 #include "ps_misc.h"
 #include "ps_log.h"
 #include "ps_huffman.h"
+#include "ps_animation.h"
+#include "ps_manager.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -108,8 +110,11 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
     if (compressed)
     {
+        u8 *old = buffer;
         buffer = decompress(buffer, bufferSize, &bufferSize);
+        free(old);
     }
+
 
     *outSize = bufferSize;
 
@@ -142,6 +147,17 @@ MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 siz
     if ((code & 0x10) != 0)
     {
         // buffers->indices = (u32 *)malloc(sizeof(u32) * size);
+    }
+
+    if ((code & 0x20) != 0)
+    {
+        //DEBUGLOG("AM I HERE WITH CREATING WEIGHTS and BONES");
+        buffers->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->bones = (VectorInt *)malloc(sizeof(VectorInt) * size);
+        buffers->meshAnimationData = (AnimationMesh*)malloc(sizeof(AnimationMesh));
+        buffers->meshAnimationData->animationsCount = buffers->meshAnimationData->jointsCount = 0;
+        buffers->meshAnimationData->animations = NULL;
+        buffers->meshAnimationData->joints = NULL;
     }
 
     buffers->materials = NULL;
@@ -192,6 +208,8 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     u32 *input_int = ptr;
 
     u32 size = SWAP_ENDIAN(*input_int);
+
+    DEBUGLOG("Size in verts is %d", size);
 
     Bin2Float copy;
 
@@ -358,8 +376,6 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
 
        // input_int++;
-
-         // DumpVector(buffers->normals[i]);
     }
 
     return 4 + (12 * size);
@@ -394,8 +410,422 @@ static u32 LoadIndices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     return ((size+1) * 4);
 }
 
+static u32 LoadWeights(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    float x, y, z, w;
+
+    u32 *input_int = ptr;
+
+    u32 size = SWAP_ENDIAN(*input_int);
+
+    Bin2Float copy;
+
+    input_int += 1;
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+
+        copy.int_x = SWAP_ENDIAN(*input_int);
+
+        x = copy.float_x;
+
+        buffers->weights[i][0] = x;
+
+        input_int++;
+
+        copy.int_x = SWAP_ENDIAN(*input_int);
+
+        y = copy.float_x;
+
+        buffers->weights[i][1] = y;
+
+        input_int++;
+
+        copy.int_x = SWAP_ENDIAN(*input_int);
+
+        z = copy.float_x;
+
+        buffers->weights[i][2] = z;
+
+        input_int++;
+        copy.int_x = SWAP_ENDIAN(*input_int);
+
+        w = copy.float_x;
+
+        buffers->weights[i][3] = w;
+
+        input_int++;
+
+       // VECTOR temp = *(buffers->weights[i]);
+    }
+
+   // DEBUGLOG("%x", *input_int);
+
+    return 4 + (16 * size);
+}
+
+static u32 LoadBones(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 size = SWAP_ENDIAN(*input_int);
+
+    input_int += 1;
+
+    // DEBUGLOG("indy and end : %d %d", index, end);
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+
+        s32 innerx = (*input_int & 0x000000ff);
+         if (innerx == 255)
+            innerx = -1;
+        buffers->bones[i][0] = innerx;
+
+
+        s32 innery = ((*input_int >> 8) & 0x000000ff);
+        if (innery == 255)
+            innery = -1;
+        buffers->bones[i][1] = innery;
+
+
+        s32 innerz = ((*input_int >> 16) & 0x000000ff);
+         if (innerz == 255)
+            innerz = -1;
+        buffers->bones[i][2] = innerz;
+
+
+        s32 innerw = ((*input_int >> 24) & 0x000000ff);
+        if (innerw == 255)
+            innerw = -1;
+        buffers->bones[i][3] = innerw;
+
+
+        input_int++;
+        DumpVectorInt(buffers->bones[i]);
+    }
+
+    return ((size+1) * 4);
+}
+
+static u32* LoadMatrix(MATRIX m, u32 *input)
+{
+    Bin2Float copy;
+
+    for (int i = 0; i<16; i++)
+    {
+        copy.int_x = SWAP_ENDIAN(*input);
+
+        m[i] = copy.float_x;
+
+        input++;
+    }
+
+    return input;
+}
+
+static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 *begin = input_int;
+
+    u32 size = SWAP_ENDIAN(*input_int);
+
+    buffers->meshAnimationData->jointsCount = size;
+    buffers->meshAnimationData->joints = malloc(sizeof(Joint*) * size);
+
+    input_int++;
+
+    for (int i = 0; i<size; i++)
+    {
+        u8 *bytePtr = (u8 *)input_int;
+        Joint *joint = (Joint*)malloc(sizeof(Joint));
+        joint->id = (*bytePtr++ & 0xff);
+        DEBUGLOG("%d %d", joint->id, size);
+        u32 nameSize = (*bytePtr++ & 0xff);
+        for (u8 iter = 0; iter < nameSize; iter++)
+        {
+            joint->name[iter] = *bytePtr;
+            bytePtr++;
+        }
+
+        joint->name[nameSize] = 0;
+        DEBUGLOG("%s", joint->name);
+        input_int = (u32*)bytePtr;
+        input_int = LoadMatrix(joint->offset, input_int);
+        buffers->meshAnimationData->joints[i] = joint;
+    }
+
+    u32 ret_val = input_int - begin;
+
+    return ret_val * 4;
+}
+
+static u32* ReadAnimationNode(AnimationNode *node, u32 *input)
+{
+    node = (AnimationNode*)malloc(sizeof(AnimationNode));
+
+    int nodeNameLength = SWAP_ENDIAN(*input);
+
+    input++;
+
+    u8 *bytePtr = (u8*)input;
+
+    for (u8 iter = 0; iter < nodeNameLength; iter++)
+    {
+        node->name[iter] = *bytePtr;
+        bytePtr++;
+    }
+
+    node->name[nodeNameLength] = 0;
+
+    u32 count = node->childrenCount = *bytePtr;
+
+    DEBUGLOG("%s %d", node->name, count);
+
+    bytePtr++;
+
+    input = (u32*)bytePtr;
+
+    input = LoadMatrix(node->transformation, input);
+
+    DumpMatrix(node->transformation);
+
+    node->children = malloc(sizeof(AnimationNode*) * count);
+
+    for (int child = 0; child<count; child++)
+    {
+       input = ReadAnimationNode(node->children[child], input);
+    }
+
+    return input;
+}
+
+static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+
+    AnimationData *data = (AnimationData*)malloc(sizeof(AnimationData));
+
+    u32 *input_int = ptr;
+
+    u32 *begin = input_int;
+
+    u32 nameSize =  SWAP_ENDIAN(*input_int);
+
+    input_int++;
+
+    u8 *bytePtr = (u8*)input_int;
+
+    for (u8 iter = 0; iter < nameSize; iter++)
+    {
+        data->name[iter] = *bytePtr;
+        bytePtr++;
+    }
+
+    data->name[nameSize] = 0;
+
+    DEBUGLOG("%s", data->name);
+
+    input_int = (u32*)bytePtr;
+
+    Bin2Float copy;
+
+    copy.int_x = SWAP_ENDIAN(*input_int);
+
+    data->duration = copy.float_x;
+
+    input_int++;
+
+    copy.int_x = SWAP_ENDIAN(*input_int);
+
+    data->ticksPerSecond = copy.float_x;
+
+    input_int++;
+
+    DEBUGLOG("%f %f", data->ticksPerSecond, data->duration);
+
+    input_int = ReadAnimationNode(data->root, input_int);
+
+
+
+    LinkedList *newAnim = CreateLinkedListItem(data);
+
+    buffers->meshAnimationData->animations = AddToLinkedList(buffers->meshAnimationData->animations, newAnim);
+
+    buffers->meshAnimationData->animationsCount++;
+
+    u32 ret_val = input_int - begin;
+
+    return ret_val * 4;
+}
+
+static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    DEBUGLOG("WE ARE HERE IN SRT");
+
+    u32 *input = ptr;
+
+    u32 *ret = ptr;
+
+    u32 posSize = SWAP_ENDIAN(*input);
+
+    AnimationData *data = GetAnimationByIndex(buffers->meshAnimationData->animations,
+                        buffers->meshAnimationData->animationsCount);
+
+    DEBUGLOG("%d %s", posSize, data->name);
+
+
+
+    data->numPositionKeys = posSize;
+    data->keyPositions = malloc(sizeof(AnimationKeyHolder*) * posSize);
+    input++;
+    Bin2Float copy;
+    for (int i = 0; i<posSize; i++)
+    {
+        AnimationKeyHolder *keyH = (AnimationKeyHolder*)malloc(sizeof(AnimationKeyHolder));
+        keyH->id = SWAP_ENDIAN(*input);
+        input++;
+        u32 size = SWAP_ENDIAN(*input);
+        input++;
+
+        keyH->count = size;
+        keyH->keys = malloc(sizeof(AnimationKey*) * size);
+        for (int j = 0; j<size; j++)
+        {
+            AnimationKey *key = (AnimationKey*)malloc(sizeof(AnimationKey));
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->timeStamp = copy.float_x;
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[0] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[1] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[2] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[3] = copy.float_x;
+            input++;
+
+
+            keyH->keys[j] = key;
+        }
+        data->keyPositions[i] = keyH;
+    }
+
+
+    u32 rotSize = SWAP_ENDIAN(*input);
+
+    data->numRotationKeys = rotSize;
+    data->keyRotations = malloc(sizeof(AnimationKeyHolder*) * rotSize);
+    input++;
+
+
+    for (int i = 0; i<rotSize; i++)
+    {
+        AnimationKeyHolder *keyH = (AnimationKeyHolder*)malloc(sizeof(AnimationKeyHolder));
+        keyH->id = SWAP_ENDIAN(*input);
+        input++;
+        u32 size = SWAP_ENDIAN(*input);
+        input++;
+
+        keyH->count = size;
+        keyH->keys = malloc(sizeof(AnimationKey*) * size);
+        for (int j = 0; j<size; j++)
+        {
+            AnimationKey *key = (AnimationKey*)malloc(sizeof(AnimationKey));
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->timeStamp = copy.float_x;
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[0] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[1] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[2] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[3] = copy.float_x;
+            input++;
+
+
+            keyH->keys[j] = key;
+        }
+        data->keyRotations[i] = keyH;
+    }
+
+
+    u32 scalSize = SWAP_ENDIAN(*input);
+
+    data->numScalingKeys = scalSize;
+    data->keyScalings = malloc(sizeof(AnimationKeyHolder*) * scalSize);
+    input++;
+
+
+    for (int i = 0; i<rotSize; i++)
+    {
+        AnimationKeyHolder *keyH = (AnimationKeyHolder*)malloc(sizeof(AnimationKeyHolder));
+        keyH->id = SWAP_ENDIAN(*input);
+        input++;
+
+        u32 size = SWAP_ENDIAN(*input);
+
+        input++;
+
+        keyH->count = size;
+        keyH->keys = malloc(sizeof(AnimationKey*) * size);
+        for (int j = 0; j<size; j++)
+        {
+            AnimationKey *key = (AnimationKey*)malloc(sizeof(AnimationKey));
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->timeStamp = copy.float_x;
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[0] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[1] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[2] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[3] = copy.float_x;
+            input++;
+
+
+
+            keyH->keys[j] = key;
+        }
+        data->keyScalings[i] = keyH;
+    }
+
+    return (input - ret) * 4;
+}
+
+
 static LoadFunc_Array loadFuncArray[11] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
-                                          LoadNormals, NULL, NULL, LoadMaterial, NULL, NULL, NULL};
+                                          LoadNormals, LoadBones, LoadWeights, LoadMaterial, LoadJoints, LoadAnimationData, LoadAnimationSRTs};
 
 void ReadModelFile(const char *filename, MeshBuffers *buffers)
 {
@@ -411,8 +841,9 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
     {
         iter += 2;
 
-
         u16 code = (u16)(0xFF00 & (((u16)iter[0]) << 8)) | (0x00FF & (u16)iter[1]);
+
+      //  DEBUGLOG("what's going on? %x", code);
 
         iter += 2;
 
@@ -425,25 +856,43 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
         buffers = AllocateMeshBuffersFromCode(buffers, code, vertSize);
         u32 index = 0;
         u32 end = vertSize;
-
+        u8 lastCode = 0;
+        u8 lastLastCode = 0;
 
         while (iter[0] != 0xFF && iter[1] != 0xFF && iter[2] != 0x41 && iter[3] != 0x14)
         {
-            // DEBUGLOG("%x", iter[0]);
             if (iter[0] == 0xAB && iter[1] == 0xAD && iter[2] == 0xBE && iter[3] == 0xEF)
             {
                 //  DEBUGLOG("%x", iter[0]);
+
+               // while(1);
                 iter += 4;
                 u8 code = iter[0];
                 iter += 1;
-                u32 size = 0;
                 input_int = (u32 *)iter;
-                //DEBUGLOG("%x", code);
-                iter += loadFuncArray[code-1](input_int, buffers, &index, &end);
+
+
+
+                if (code <= 11)
+                {
+                    DEBUGLOG("%x", code);
+                    iter += loadFuncArray[code-1](input_int, buffers, &index, &end);
+                }
+                else
+                {
+                    ERRORLOG("Jake is a stupid son of a bitch");
+                }
+
+                lastLastCode = lastCode;
+                lastCode = code;
+              /*  while(code == 0x0B)
+                {
+                    DEBUGLOG("%x", iter[0]);
+                } */
+
             }
         }
     }
-   // DEBUGLOG("finished?");
 
     free(buffer);
     // free(copy);

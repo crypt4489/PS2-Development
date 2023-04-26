@@ -12,7 +12,7 @@ static int n = 0;
 
 typedef struct huffman_node_t
 {
-	char c;
+	unsigned char c;
 	int freq;
 	struct huffman_node_t *left, *right;
 } HuffmanNode;
@@ -21,10 +21,10 @@ static HuffmanNode* CreateHuffmanNode();
 static int isLeaf(HuffmanNode* node);
 static void fillBuffer();
 static int readBoolean();
-static char readChar();
+static unsigned char readChar();
 static HuffmanNode* readDeocder();
 static void Print(HuffmanNode *node, int arr[], int top);
-static int readInt();
+static unsigned int readInt();
 static int isLeaf(HuffmanNode* node);
 static void cleanupTree(HuffmanNode *root);
 
@@ -43,8 +43,7 @@ static HuffmanNode* CreateHuffmanNode()
 
 static void fillBuffer()
 {
-	buffer = binary[iter];
-	iter++;
+	buffer = binary[iter++];
 	n = 8;
 }
 
@@ -56,7 +55,7 @@ static int readBoolean()
 	return ret;
 }
 
-static char readChar()
+static unsigned char readChar()
 {
 	if (n == 8)
 	{
@@ -65,7 +64,7 @@ static char readChar()
 		return (x & 0xff);
 	}
 
-	char x = buffer;
+	int x = buffer;
 
 	x <<= (8 - n);
 
@@ -76,6 +75,8 @@ static char readChar()
 	n = oldN;
 
 	x |= (buffer >> n);
+
+
 
 	return (x & 0xff);
 }
@@ -125,13 +126,13 @@ static void Print(HuffmanNode *node, int arr[], int top)
 	Print(node->right, arr, top + 1);
 }
 
-static int readInt()
+static unsigned int readInt()
 {
-	int x = 0;
+	unsigned int x = 0;
 
 	for (int i = 0; i < 4; i++)
 	{
-		char c = readChar();
+		unsigned char c = readChar();
 
 		x <<= 8;
 
@@ -181,9 +182,9 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 
 	int length = readInt();
 
-    u8 *buffer = (u8*)malloc(length);
+    u8 *bufferFile = (u8*)malloc(length);
 
-    if (buffer == NULL)
+    if (bufferFile == NULL)
     {
         ERRORLOG("Cannot allocate buffer for decompressed file");
     }
@@ -203,13 +204,18 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 			else
 				node = node->left;
 		}
-		buffer[index] = node->c;
+		bufferFile[index] = node->c;
 		index++;
 	}
 
     cleanupTree(root);
 
+    n = 0;
+    buffer = 0;
+    binary = NULL;
+    iter = 0;
+
     *bufferSize = length;
 
-    return buffer;
+    return bufferFile;
 }
