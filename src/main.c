@@ -32,7 +32,7 @@
 #include "ps_fast_maths.h"
 #include <stdlib.h>
 #include "ps_log.h"
-
+#include "ps_animation.h"
 
 extern u32 VU1_LightStage3_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_LightStage3_CodeEnd __attribute__((section(".vudata")));
@@ -58,8 +58,6 @@ extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 TimerStruct *ts;
 
 char print_out[20] = "DREW FLETCHER";
-
-void SetupImages();
 
 MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
 
@@ -177,14 +175,13 @@ static void update_cube(GameObject *cube)
     SetDirtyLTM(cube->ltm);
 }
 
-void SetupFont()
+static void SetupFont()
 {
     myFont = CreateFontStruct("FONTS\\TIMES.BMP", "FONTS\\TIMESNR.DAT", READ_BMP);
 }
 
-void SetupWorldObjects()
+static void SetupWorldObjects()
 {
-
     VECTOR camera_position = {0.0f, 10.0f, 20.00f, 1.00f};
 
     VECTOR at = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -214,7 +211,7 @@ void SetupWorldObjects()
     SetGlobalDrawingCamera(cam);
 }
 
-void CreateLights()
+static void CreateLights()
 {
 
     direct = CreateLightStruct(PS_DIRECTIONAL_LIGHT);
@@ -275,7 +272,7 @@ static void UpdateLight()
     // DumpMatrix(secondLight->ltm);
 }
 
-void SetupCube()
+static void SetupCube()
 {
     color_t color;
 
@@ -316,7 +313,7 @@ void SetupCube()
     AddObjectToRenderWorld(world, box);
 }
 
-void SetupSphere()
+static void SetupSphere()
 {
     color_t color;
 
@@ -330,7 +327,7 @@ void SetupSphere()
 
     ReadModelFile("MODELS\\BODY.CBIN", &sphere->vertexBuffer);
 
-    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0));
 
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
@@ -347,13 +344,18 @@ void SetupSphere()
    // CreateSphereTarget();
 
    // CreateSpecularPipeline(sphere, "SPEC_PIPE");
+    AnimationData *data = GetAnimationByIndex(sphere->vertexBuffer.meshAnimationData->animations, 2);
+   //DEBUGLOG("%s", data->name);
+    Animator *animator = CreateAnimator(data);
+    //DEBUGLOG("%s", animator->animation->name);
+    UpdateVU1BoneMatrices(NULL, animator, sphere->vertexBuffer.meshAnimationData->joints, sphere->vertexBuffer.meshAnimationData->jointsCount);
 
     CreateGraphicsPipeline(sphere, "DOES THIS WORK?");
 
     AddObjectToRenderWorld(world, sphere);
 }
 
-void SetupMultiSphere()
+static void SetupMultiSphere()
 {
     color_t color;
 
@@ -382,7 +384,7 @@ void SetupMultiSphere()
     AddObjectToRenderWorld(world, multiSphere);
 }
 
-void SetupRoom()
+static void SetupRoom()
 {
     color_t color;
 
@@ -412,7 +414,7 @@ void SetupRoom()
     AddObjectToRenderWorld(roomWorld, room);
 }
 
-void SetupShadowViewer()
+static void SetupShadowViewer()
 {
     color_t color;
 
@@ -489,7 +491,7 @@ float ComputeDistanceFromFinitePlane(GameObject *obj, VECTOR pos, VECTOR topExte
     return dist(distVec);
 }
 
-void UpdateTessGrid(GameObject *obj)
+static void UpdateTessGrid(GameObject *obj)
 {
     TessGrid *grid = (TessGrid *)obj->objData;
     float d = ComputeDistanceFromFinitePlane(obj, *GetPositionVectorLTM(cam->ltm), grid->extent.top, grid->extent.bottom);
@@ -514,7 +516,7 @@ void UpdateTessGrid(GameObject *obj)
     //  INFOLOG("total verts in row %d", totalVerts);
 }
 
-void SetupTessObject()
+static void SetupTessObject()
 {
     color_t color;
     // CREATE_ALPHA_REGS(blender, BLEND_COLOR_DEST, BLEND_COLOR_SOURCE, BLEND_COLOR_SOURCE, BLEND_ALPHA_DEST, 0x80);
@@ -577,7 +579,7 @@ void SetupTessObject()
     AddObjectToRenderWorld(world, lod_wall);
 }
 
-void SetupGameObjects()
+static void SetupGameObjects()
 {
     InitSkybox();
 
@@ -594,7 +596,7 @@ void SetupGameObjects()
     //  SetupTessObject();
 }
 
-void CleanUpGame()
+static void CleanUpGame()
 {
     CleanCameraObject(cam);
     DestoryRenderWorld(world);
@@ -604,7 +606,7 @@ void CleanUpGame()
 }
 
 int shadowRes = 8;
-void SetupShadowRenderTarget()
+static void SetupShadowRenderTarget()
 {
     u32 res = 1 << shadowRes;
 
@@ -629,7 +631,7 @@ void SetupShadowRenderTarget()
     UpdateCameraMatrix(&shadowCam);
 }
 
-void RenderShadowScene()
+static void RenderShadowScene()
 {
 
     SetGlobalDrawingCamera(&shadowCam);
@@ -732,7 +734,7 @@ int Render()
     return 0;
 }
 
-void SetupVU1Programs()
+static void SetupVU1Programs()
 {
 
     VU1Program *prog;
@@ -770,7 +772,7 @@ void SetupVU1Programs()
 
 }
 
-void LoadInTextures()
+static void LoadInTextures()
 {
     char _file[MAX_FILE_NAME];
 
@@ -823,7 +825,6 @@ void LoadInTextures()
 
 int main(int argc, char **argv)
 {
-
     InitializeSystem();
 
     SetupWorldObjects();

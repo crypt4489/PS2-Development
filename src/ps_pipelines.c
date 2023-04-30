@@ -79,6 +79,11 @@ static void CreateSizesFromRenderFlags(OBJ_RENDER_STATE renderState, u32 *pCode,
       //  *pCode = *pCode | VU1Stage3;
         *renderPasses = 2;
     }
+
+    if (renderState.SKELETAL_ANIMATION & 1)
+    {
+        *dCode = *dCode | DRAW_SKINNED;
+    }
 }
 
 static u32 CreateDrawSizeandUploadCount(u32 dcode, u32 pcode, u32 *drawSize)
@@ -98,7 +103,7 @@ static u32 CreateDrawSizeandUploadCount(u32 dcode, u32 pcode, u32 *drawSize)
 
     if (pcode & VU1StageClip)
     {
-        lsize = 54;
+        lsize = 36;
     }
 
     if (pcode & VU1Stage1)

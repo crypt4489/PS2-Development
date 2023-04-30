@@ -47,14 +47,16 @@ void VectorCopyXYZ(VECTOR in, VECTOR out);
 float DistanceFromPlane(VECTOR planeEquation, VECTOR point);
 void Matrix3VectorMultiply(VECTOR out, MATRIX m, VECTOR in);
 
-
+void Slerp(VECTOR q1, VECTOR q2, float delta, VECTOR out);
+void QuaternionNormalize(VECTOR in, VECTOR out);
 void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR right, VECTOR scales, MATRIX m);
 void CreateRotationAndCopyMatFromObjAxes(MATRIX out, VECTOR up, VECTOR forward, VECTOR right);
 MeshBuffers *InitMeshBuffersStruct(u32 count, MeshBuffers *buffer);
 
-
+void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components);
 
 void Pathify(const char *name, char *file);
 void AppendString(const char *input1, const char *input2, char *output, u32 max);
 void NormalizePlane(VECTOR in, VECTOR out);
+void ExtractVectorFromMatrix(MATRIX m, VECTOR trans, VECTOR rot, VECTOR scale);
 #endif

@@ -2,7 +2,7 @@
 
 
 #include "my_vcl.inc"
-   
+
 
 .init_vf_all
 .init_vi_all
@@ -47,10 +47,10 @@ finishSetup:
 
     mr32    camQuat, camQuat
 
-    QuaternionToMatrix{ out, camQuat }
+    QuaternionToMatrix{ tempMat, camQuat }
 
-    
-   
+    MatrixTranspose{ out, tempMat }
+
     mulx.xyz    nearP1, out[2], camProps
     add.xyz   nearP1,   nearP1,  camPos
     sub.xyz  planeVec, vf00, nearP1
@@ -60,17 +60,17 @@ finishSetup:
 
     MatrixLoad{ globalMatrix, 4, vi00 }nji8
 
-    iadd clippedVertices, vi00, vi00 
+    iadd clippedVertices, vi00, vi00
 
     iaddiu planes, vi00, 4
 
 
     vertexLoop:
 
-        
+
         iadd  clipData, vi00, vertexData
 
-        move.xyzw  stq1, vf00      
+        move.xyzw  stq1, vf00
         move.xyzw  stq2, vf00
         move.xyzw  stq3, vf00
 
@@ -78,13 +78,13 @@ finishSetup:
         move.xyzw  color2, vf00
         move.xyzw  color3, vf00
 
-        lq vertex1, 0(clipData)  
-        lq vertex2, 1(clipData) 
-        lq vertex3, 2(clipData) 
+        lq vertex1, 0(clipData)
+        lq vertex2, 1(clipData)
+        lq vertex3, 2(clipData)
 
-        MatrixMultiplyVertex{ gvertex1, globalMatrix, vertex1 }  
-        MatrixMultiplyVertex{ gvertex2, globalMatrix, vertex2 } 
-        MatrixMultiplyVertex{ gvertex3, globalMatrix, vertex3 } 
+        MatrixMultiplyVertex{ gvertex1, globalMatrix, vertex1 }
+        MatrixMultiplyVertex{ gvertex2, globalMatrix, vertex2 }
+        MatrixMultiplyVertex{ gvertex3, globalMatrix, vertex3 }
 
         SignedDistanceof3Vectors{ distance, gvertex1, gvertex2, gvertex3, plane }
 
@@ -94,7 +94,7 @@ finishSetup:
 
         fmand res, comp
 
-    
+
         ibeq res, comp, next_verts
 
         move.xyzw o_vertex1, vertex1
@@ -102,9 +102,9 @@ finishSetup:
         move.xyzw o_vertex2, vertex2
 
         move.xyzw o_vertex3, vertex3
-        iaddiu clippedVertices, clippedVertices, 3 
+        iaddiu clippedVertices, clippedVertices, 3
         ibne res, vi00, checkAB
-        
+
         bal  ret, write_to_clipbuffer
 
         ibeq    useSTQ,            vi00,           next_verts
@@ -112,15 +112,15 @@ finishSetup:
         bal     ret,            loadData
         bal     ret,            write_to_clipbuffer
 all_pass_color:
-    
+
         ibeq    useColor,            vi00,           next_verts
         iadd   clipData,       clipData,       vertCount
         bal     ret,            loadData
         bal     ret,            write_to_clipbuffer
         b       next_verts
 checkAB:
-        
-        
+
+
         iaddiu  comp, vi00, 0x00c0
 
         ibne res, comp, checkBC
@@ -148,15 +148,15 @@ checkAB:
         iadd   clipData,       clipData,        vertCount
         bal     ret,            loadData
         bal     ret,            ABIntersect
-        bal     ret,            write_to_clipbuffer       
+        bal     ret,            write_to_clipbuffer
 
-loadColorsAB:  
+loadColorsAB:
         ibeq    useColor,            vi00,           next_verts
         iadd   clipData,       clipData,       vertCount
         bal     ret,            loadData
         bal     ret,            ABIntersect
         bal     ret,            write_to_clipbuffer
-        b next_verts 
+        b next_verts
 ABIntersect:
         move.xyzw tempIntersect1, o_vertex3
 
@@ -167,7 +167,7 @@ ABIntersect:
 
         move.xyzw o_vertex1, tempCalc3
 
-        move.xyzw o_vertex2, tempCalc4 
+        move.xyzw o_vertex2, tempCalc4
 
         jr ret
 checkBC:
@@ -198,9 +198,9 @@ checkBC:
         iadd   clipData,       clipData,        vertCount
         bal     ret,            loadData
         bal     ret,            BCIntersect
-        bal     ret,            write_to_clipbuffer       
+        bal     ret,            write_to_clipbuffer
 
-loadColorsBC:  
+loadColorsBC:
         ibeq    useColor,            vi00,           next_verts
         iadd   clipData,       clipData,       vertCount
         bal     ret,            loadData
@@ -218,10 +218,10 @@ BCIntersect:
 
         move.xyzw o_vertex2, tempCalc3
 
-        move.xyzw o_vertex3, tempCalc4 
+        move.xyzw o_vertex3, tempCalc4
 
         jr ret
-checkCA:    
+checkCA:
         iaddiu comp, vi00, 0x00A0
 
         ibne  res, comp, checkA
@@ -249,9 +249,9 @@ checkCA:
         iadd   clipData,       clipData,        vertCount
         bal     ret,            loadData
         bal     ret,            CAIntersect
-        bal     ret,            write_to_clipbuffer       
+        bal     ret,            write_to_clipbuffer
 
-loadColorsCA:  
+loadColorsCA:
         ibeq    useColor,            vi00,           next_verts
         iadd   clipData,       clipData,       vertCount
         bal     ret,            loadData
@@ -269,7 +269,7 @@ CAIntersect:
 
         move.xyzw o_vertex1, tempCalc3
 
-        move.xyzw o_vertex3, tempCalc4 
+        move.xyzw o_vertex3, tempCalc4
 
         jr ret
 checkA:
@@ -301,7 +301,7 @@ checkA:
         move.xyzw o_vertex3, tempCalc1
 
         bal    ret, write_to_clipbuffer
-         
+
         ibeq    useSTQ,            vi00,           loadColorsA1
         iadd   clipData,       clipData,        vertCount
         bal     ret,            loadData
@@ -309,9 +309,9 @@ checkA:
         bal     ret,            write_to_clipbuffer
         move.xyz stq1,          tempCalc3
         move.xyz stq2,          tempIntersect1
-        move.xyz stq3,          tempCalc4      
+        move.xyz stq3,          tempCalc4
 
-loadColorsA1:  
+loadColorsA1:
         ibeq    useColor,            vi00,           write_A_p2
         iadd   clipData,       clipData,       vertCount
         bal     ret,            loadData
@@ -319,15 +319,15 @@ loadColorsA1:
         bal     ret,            write_to_clipbuffer
         move.xyz color1,          tempCalc3
         move.xyz color2,          tempIntersect1
-        move.xyz color3,          tempCalc4 
+        move.xyz color3,          tempCalc4
 write_A_p2:
         move.xyzw o_vertex1, tempCalc1
-        
+
 
         move.xyzw o_vertex2, vertex3
 
         move.xyzw o_vertex3, tempCalc2
-        
+
         bal    ret, write_to_clipbuffer
 
         ibeq    useSTQ,            vi00,           loadColorsA2
@@ -338,9 +338,9 @@ write_A_p2:
         move.xyzw o_vertex3, stq3
 
         bal     ret, write_to_clipbuffer
-loadColorsA2:  
+loadColorsA2:
         ibeq    useColor,            vi00,           next_verts
-       
+
         move.xyzw o_vertex1, color1
 
         move.xyzw o_vertex2, color2
@@ -350,7 +350,7 @@ loadColorsA2:
         bal     ret, write_to_clipbuffer
 
         b next_verts
-        
+
 AIntersect:
         move.xyzw tempIntersect1, o_vertex1
 
@@ -366,12 +366,12 @@ AIntersect:
 
         move.xyzw  tempIntersect1, o_vertex3
 
-        move.xyzw o_vertex3, tempCalc3 
+        move.xyzw o_vertex3, tempCalc3
 
 
         jr ret
 checkB:
-       
+
         iaddiu comp, vi00, 0x0040
 
         ibne  res, comp, checkC
@@ -406,9 +406,9 @@ checkB:
         bal     ret,            write_to_clipbuffer
         move.xyzw stq1,          tempCalc4
         move.xyzw stq2,          tempIntersect1
-        move.xyzw stq3,          tempCalc3      
+        move.xyzw stq3,          tempCalc3
 
-loadColorsB1:  
+loadColorsB1:
         ibeq    useColor,            vi00,           write_B_p2
         iadd   clipData,       clipData,       vertCount
         bal     ret,            loadData
@@ -416,14 +416,14 @@ loadColorsB1:
         bal     ret,            write_to_clipbuffer
         move.xyzw color1,          tempCalc4
         move.xyzw color2,          tempIntersect1
-        move.xyzw color3,          tempCalc3 
+        move.xyzw color3,          tempCalc3
 write_B_p2:
         move.xyzw o_vertex1, tempCalc2
 
         move.xyzw o_vertex2, vertex1
 
         move.xyzw o_vertex3, tempCalc1
-        
+
         bal    ret, write_to_clipbuffer
         ibeq    useSTQ,            vi00,           loadColorsB2
      move.xyzw o_vertex1, stq1
@@ -433,9 +433,9 @@ write_B_p2:
         move.xyzw o_vertex3, stq3
 
         bal     ret, write_to_clipbuffer
-loadColorsB2:  
+loadColorsB2:
         ibeq    useColor,            vi00,           next_verts
-       
+
         move.xyzw o_vertex1, color1
 
         move.xyzw o_vertex2, color2
@@ -445,7 +445,7 @@ loadColorsB2:
         bal     ret, write_to_clipbuffer
 
         b next_verts
-        
+
 BIntersect:
         move.xyzw tempIntersect1, o_vertex2
 
@@ -467,7 +467,7 @@ BIntersect:
 
 
 checkC:
-        
+
         iaddiu comp, vi00, 0x0020
 
         ibne  res, comp, next_verts
@@ -492,8 +492,8 @@ checkC:
 
         move.xyzw o_vertex3, tempCalc2
 
-        bal    ret, write_to_clipbuffer 
-        
+        bal    ret, write_to_clipbuffer
+
 
         ibeq    useSTQ,            vi00,           loadColorsC1
         iadd   clipData,       clipData,        vertCount
@@ -502,9 +502,9 @@ checkC:
         bal     ret,            write_to_clipbuffer
         move.xyzw stq1,          tempCalc4
         move.xyzw stq2,          tempIntersect1
-        move.xyzw stq3,          tempCalc3      
+        move.xyzw stq3,          tempCalc3
 
-loadColorsC1:  
+loadColorsC1:
         ibeq    useColor,            vi00,           write_C_p2
         iadd   clipData,       clipData,       vertCount
         bal     ret,            loadData
@@ -512,14 +512,14 @@ loadColorsC1:
         bal     ret,            write_to_clipbuffer
         move.xyzw color1,          tempCalc4
         move.xyzw color2,          tempIntersect1
-        move.xyzw color3,          tempCalc3 
+        move.xyzw color3,          tempCalc3
 write_C_p2:
         move.xyzw o_vertex1, tempCalc2
 
         move.xyzw o_vertex2, vertex1
 
         move.xyzw o_vertex3, tempCalc1
-        
+
          bal    ret, write_to_clipbuffer
 
         ibeq    useSTQ,            vi00,           loadColorsC2
@@ -530,9 +530,9 @@ write_C_p2:
         move.xyzw o_vertex3, stq3
 
         bal     ret, write_to_clipbuffer
-loadColorsC2:  
+loadColorsC2:
         ibeq    useColor,            vi00,           next_verts
-       
+
         move.xyzw o_vertex1, color1
 
         move.xyzw o_vertex2, color2
@@ -542,7 +542,7 @@ loadColorsC2:
         bal     ret, write_to_clipbuffer
 
         b next_verts
-        
+
 CIntersect:
         move.xyzw tempIntersect1, o_vertex3
 
@@ -558,7 +558,7 @@ CIntersect:
 
         move.xyzw o_vertex2, tempIntersect1
 
-        move.xyzw o_vertex3, tempCalc4 
+        move.xyzw o_vertex3, tempCalc4
 
         jr ret
 
@@ -578,9 +578,9 @@ CIntersect:
       jr ret2
 
     loadData:
-        lq      o_vertex1, 0(clipData) 
-        lq      o_vertex2, 1(clipData) 
-        lq      o_vertex3, 2(clipData) 
+        lq      o_vertex1, 0(clipData)
+        lq      o_vertex2, 1(clipData)
+        lq      o_vertex3, 2(clipData)
         jr      ret
     calculate_intersect:
         sub.x  negPlane, vf00, plane[w]
@@ -602,7 +602,7 @@ CIntersect:
         add.xyz tempCalc2, tempIntersect, temp2
         jr ret
     write_to_clipbuffer:
-          
+
         sq o_vertex1, 0(clippedBuffer)
         sq o_vertex2, 1(clippedBuffer)
         sq o_vertex3, 2(clippedBuffer)
@@ -611,12 +611,12 @@ CIntersect:
 
     next_verts:
         iaddiu   vertexData, vertexData, 3
-        iaddi   vertexCounter,  vertexCounter,  -3	
-        ibne    vertexCounter,  iBase,   vertexLoop	
+        iaddi   vertexCounter,  vertexCounter,  -3
+        ibne    vertexCounter,  iBase,   vertexLoop
         ibeq    clippedVertices, vi00, end
         bal      ret,  write_verts
 do_plane_check:
-        
+
         iaddiu  ret, vi00, 4
 
         ibne planes, ret, right_plane
@@ -630,23 +630,23 @@ do_plane_check:
         Normalize{ planeNormal, planeNormal, temp }
 
         VectorCrossProduct{ planeNormal, out[1], planeNormal }
-       
 
-       
+
+
 
         sub.xyz  planeVec, vf00, tempP1
         VectorDotProduct{ dot, planeVec, planeNormal }
         move.xyz plane, planeNormal
         mr32.w plane, dot
 
-        
-       
+
+
         iaddi planes, planes, -1
         iadd    vertexCounter, iBase, clippedVertices
         iadd clippedVertices, vi00, vi00
         b vertexLoop
 
-        
+
 right_plane:
         iaddiu  ret, vi00, 3
 
@@ -661,17 +661,17 @@ right_plane:
         Normalize{ planeNormal, planeNormal, temp }
 
         VectorCrossProduct{ out[1], planeNormal, planeNormal }
-       
 
-       
+
+
 
         sub.xyz  planeVec, vf00, tempP1
         VectorDotProduct{ dot, planeVec, planeNormal }
         move.xyz plane, planeNormal
         mr32.w plane, dot
 
-        
-       
+
+
         iaddi planes, planes, -1
         iadd    vertexCounter, iBase, clippedVertices
         iadd clippedVertices, vi00, vi00
@@ -691,7 +691,7 @@ bottom_plane:
         Normalize{ planeNormal, planeNormal, temp }
 
         VectorCrossProduct{ planeNormal, out[0], planeNormal }
-    
+
 
         sub.xyz  planeVec, vf00, tempP1
         VectorDotProduct{ dot, planeVec, planeNormal }
@@ -699,7 +699,7 @@ bottom_plane:
         mr32.w plane, dot
 
 
-       
+
         iaddi planes, planes, -1
         iadd    vertexCounter, iBase, clippedVertices
         iadd clippedVertices, vi00, vi00
@@ -718,19 +718,19 @@ top_plane:
         Normalize{ planeNormal, planeNormal, temp }
 
         VectorCrossProduct{ out[0], planeNormal, planeNormal }
-    
+
 
         sub.xyz  planeVec, vf00, tempP1
         VectorDotProduct{ dot, planeVec, planeNormal }
         move.xyz plane, planeNormal
         mr32.w plane, dot
 
-       
+
         iaddi planes, planes, -1
         iadd    vertexCounter, iBase, clippedVertices
         iadd clippedVertices, vi00, vi00
         b vertexLoop
-        
+
 
 finish_plane:
         b end
@@ -738,20 +738,20 @@ write_verts:
         iaddiu  vertexData,     iBase,      1
         iadd    clippedBuffer,  vertexData,  clippedVertices
         iadd    outPtr,         vertexData,  vertCount
-        ibeq    useSTQ,            vi00,           checkIfColorsClip   
+        ibeq    useSTQ,            vi00,           checkIfColorsClip
         iadd  clippedBuffer,     clippedBuffer,     clippedVertices
         iadd    outPtr,         outPtr,  vertCount
 checkIfColorsClip:
         ibeq    useColor,            vi00,           continueSetupClip
         iadd  clippedBuffer,     clippedBuffer,  clippedVertices
-        iadd  outPtr,            outPtr,         vertCount    
-continueSetupClip: 
+        iadd  outPtr,            outPtr,         vertCount
+continueSetupClip:
         iadd copyBack, vi00, clippedBuffer
         iadd clippedBuffer, vi00, outPtr
         iadd vertexCounter, clippedVertices, iBase
         ibeq vertexCounter, iBase, end
         iadd vertCount, vi00, clippedVertices
-        
+
 
         write_back:
 
@@ -765,7 +765,7 @@ continueSetupClip:
             sq vertex3, 2(outData)
 
             iaddiu clippedBuffer, clippedBuffer, 3
-            ibeq    useSTQ,     vi00,        storeColors  
+            ibeq    useSTQ,     vi00,        storeColors
             iadd   outData,     outData,     clippedVertices
             lq vertex1, 0(clippedBuffer)
             lq vertex2, 1(clippedBuffer)
@@ -785,22 +785,22 @@ storeColors:
             sq vertex1, 0(outData)
             sq vertex2, 1(outData)
             sq vertex3, 2(outData)
-            iaddiu clippedBuffer, clippedBuffer, 3 
+            iaddiu clippedBuffer, clippedBuffer, 3
 doneVerts:
-            iaddiu vertexData, vertexData, 3 
+            iaddiu vertexData, vertexData, 3
             iaddi  vertexCounter, vertexCounter, -3
 
             ibne  vertexCounter, iBase, write_back
         iaddiu  vertexData,     iBase,      1
         iadd clippedBuffer, vi00, copyBack
         jr ret
-end:  
-        isw.w   clippedVertices, 0(iBase)      
+end:
+        isw.w   clippedVertices, 0(iBase)
          .vsm
            NOP             ilw.x   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
-    
+
     --exit
     --endexit
 

@@ -63,7 +63,7 @@ void ReadFromVU1(u32 *start, int printOutSize, u32 usefloatornot)
     {
         bf_val.int_x = *ptr;
 
-        if (usefloatornot && i > 4)
+        if (usefloatornot)
         {
             printf("%f ", bf_val.float_x);
         }
@@ -153,15 +153,15 @@ void AddProgramToManager(VU1Manager *manager, VU1Program *program)
     }
 
     program->address = manager->basePointer;
-    
+
     program->programId = manager->programIdentifier;
-    
+
     manager->programs[program->programId] = program;
 
     u32 packetSize = SizeOfProgramPacket(program->codeStart, program->codeEnd);
 
     UploadProgramToVU1(program->codeStart, program->codeEnd, manager->basePointer, packetSize, program->size);
-    
+
     manager->programIdentifier++;
     manager->basePointer += program->size;
 
@@ -188,7 +188,7 @@ VU1Program *CreateVU1Program(u32 *codeStart, u32 *codeEnd, u32 stage)
 {
     VU1Program *prog = (VU1Program*)malloc(sizeof(VU1Program));
     prog->address = 0;
-    prog->programId = 0; 
+    prog->programId = 0;
     prog->stage = stage;
     prog->codeEnd = codeEnd;
     prog->codeStart = codeStart;

@@ -63,6 +63,7 @@ enum VU1PipelineLocations
 {
     VU1_LOCATION_GLOBAL_MATRIX = 4,
     VU1_LOCATION_SCALE_VECTOR = 8,
+    VU1_LOCATION_ANIMATION_VECTOR = 11,
     VU1_LOCATION_UV_TRANSFORM = 16,
     VU1_LOCATION_LIGHTS_BUFFER = 20,
 };
@@ -220,6 +221,8 @@ struct animation_data_t;
 typedef struct animation_data_t AnimationData;
 struct animation_mesh_t;
 typedef struct animation_mesh_t AnimationMesh;
+struct animator_t;
+typedef struct animator_t Animator;
 struct pipelinecblist_t;
 typedef struct pipelinecblist_t PipelineCallback;
 struct vu_pipeline_t;
@@ -281,6 +284,13 @@ struct animation_mesh_t
     u32 animationsCount;
     LinkedList *animations;
     Joint **joints;
+};
+
+struct animator_t
+{
+    AnimationData *animation;
+    float currentTime;
+    float deltaTime;
 };
 
 struct mesh_buffers_t

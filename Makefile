@@ -13,7 +13,7 @@ CEXT      := c
 VSMEXT    := vsm
 
 EE_BIN = test.elf
-IOP_MOD = sio2man.irx padman.irx #cdfs.irx
+IOP_MOD = sio2man.irx padman.irx
 
 EE_SRC_VSM := $(shell find $(VSM_DIR) -maxdepth 1 -type f -name *.$(VSMEXT))
 EE_OBJS :=  $(patsubst $(VSM_DIR)/%, $(OBJS_DIR)/%, $(EE_SRC_VSM:.$(VSMEXT)=.$(OBJEXT)))
@@ -39,7 +39,7 @@ include $(PS2SDK)/samples/Makefile.pref
 .PHONY : all clean compile directories disc irx update_win
 
 all: compile disc update_win
-	
+
 compile:
 	make
 

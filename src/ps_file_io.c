@@ -203,7 +203,7 @@ static u32 LoadMaterial(u32 *ptr, MeshBuffers *buff, u32 *start, u32 *end)
 
 static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
-    float x, y, z, w;
+    float x, y, z;
 
     u32 *input_int = ptr;
 
@@ -260,7 +260,7 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
 static u32 LoadTexCoords(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
-    float x, y, z;
+    float x, y;
 
     u32 *input_int = ptr;
 
@@ -297,20 +297,9 @@ static u32 LoadTexCoords(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         input_int++;
 
-      //  copy.int_x = SWAP_ENDIAN(*input_int);
-
-      //  z = copy.float_x;
-
         buffers->texCoords[i][2] = 1.0f;
 
-       // input_int++;
-      //  copy.int_x = SWAP_ENDIAN(*input_int);
-
         buffers->texCoords[i][3] = 0.0f;
-
-      //  input_int++;
-
-        //  DumpVector(buffers->vertices[i]);
     }
 
     return 4 + (8 * size);
@@ -501,7 +490,7 @@ static u32 LoadBones(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
 
         input_int++;
-        DumpVectorInt(buffers->bones[i]);
+        //DumpVectorInt(buffers->bones[i]);
     }
 
     return ((size+1) * 4);
@@ -550,9 +539,10 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
         }
 
         joint->name[nameSize] = 0;
-      //  DEBUGLOG("%s", joint->name);
+       // DEBUGLOG("%s", joint->name);
         input_int = (u32*)bytePtr;
         input_int = LoadMatrix(joint->offset, input_int);
+        //DumpMatrix(joint->offset);
         buffers->meshAnimationData->joints[i] = joint;
     }
 
@@ -561,9 +551,11 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     return ret_val * 4;
 }
 
-static u32* ReadAnimationNode(AnimationNode *node, u32 *input)
+static AnimationNode* ReadAnimationNode(u32 **input_ptr)
 {
-    node = (AnimationNode*)malloc(sizeof(AnimationNode));
+    AnimationNode *node = (AnimationNode*)malloc(sizeof(AnimationNode));
+
+    u32 *input = *input_ptr;
 
     int nodeNameLength = SWAP_ENDIAN(*input);
 
@@ -595,10 +587,12 @@ static u32* ReadAnimationNode(AnimationNode *node, u32 *input)
 
     for (int child = 0; child<count; child++)
     {
-       input = ReadAnimationNode(node->children[child], input);
+       // DEBUGLOG("----------------");
+      // node->children[child] = (AnimationNode*)malloc(sizeof(AnimationNode));
+       node->children[child] = ReadAnimationNode(&input);
     }
-
-    return input;
+    *input_ptr = input;
+    return node;
 }
 
 static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
@@ -643,9 +637,11 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
     input_int++;
 
     //DEBUGLOG("%f %f", data->ticksPerSecond, data->duration);
+    data->root = NULL;
 
-    input_int = ReadAnimationNode(data->root, input_int);
+    data->root = ReadAnimationNode( &input_int);
 
+  //  DEBUGLOG("%s", data->root->name);
 
 
     LinkedList *newAnim = CreateLinkedListItem(data);
@@ -743,10 +739,6 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
             key->timeStamp = copy.float_x;
             input++;
             copy.int_x = SWAP_ENDIAN(*input);
-            key->key[0] = copy.float_x;
-
-            input++;
-            copy.int_x = SWAP_ENDIAN(*input);
             key->key[1] = copy.float_x;
 
             input++;
@@ -756,6 +748,10 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
             input++;
             copy.int_x = SWAP_ENDIAN(*input);
             key->key[3] = copy.float_x;
+
+            input++;
+            copy.int_x = SWAP_ENDIAN(*input);
+            key->key[0] = copy.float_x;
             input++;
 
 

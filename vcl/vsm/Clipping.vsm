@@ -29,31 +29,38 @@ addColors:
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_7]
          NOP                                                        iadd          VI06,VI06,VI05                      
 finishSetup:
-; _LNOPT_w=[ another ] 25 [42 0] 44   [finishSetup]
+; _LNOPT_w=[ another ] 32 [54 0] 54   [finishSetup]
          addw.xyz      VF04,VF00,VF00w                              mr32          VF08,VF02                           
          NOP                                                        loi           0x3fb504f3                          
-         muli          VF06,VF08,I                                  lq.xyz        VF11,7(VI00)                               ;	STALL_LATENCY ?2
-         mula.xyz      ACC,VF08,VF08                                lq.xyz        VF10,6(VI00)                        
-         madd.xyz      VF05,VF08,VF08                               lq.xyz        VF09,5(VI00)                        
-         opmula.xyz    ACCxyz,VF06xyz,VF06xyz                       iadd          VI07,VI03,VI05                             ;	STALL_LATENCY ?1
-         maddw.xyz     VF07,VF06,VF06w                              iaddiu        VI09,VI00,0x00000004                
-         msubw.xyz     VF06,VF06,VF06w                              NOP                                               
-         addaw.xyz     ACC,VF00,VF00w                               NOP                                               
-         addx.y        VF02,VF00,VF07x                              NOP                                                      ;	STALL_LATENCY ?1
-         msubax.yz     ACC,VF04,VF05x                               mr32.x        VF02,VF06                           
-         msuby.z       VF02,VF04,VF05y                              NOP                                               
-         msubay.x      ACC,VF04,VF05y                               mr32.w        VF08,VF06                           
-         mulx.xyz      VF06,VF02,VF01x                              mr32.y        VF05,VF06                                  ;	STALL_LATENCY ?2
-         NOP                                                        mr32.z        VF04,VF08                           
-         add.xyz       VF06,VF06,VF03                               mr32.y        VF12,VF07                                  ;	STALL_LATENCY ?2
-         msubz.x       VF05,VF04,VF05z                              NOP                                               
-         sub.xyz       VF12,VF00,VF06                               mr32.x        VF04,VF12                                  ;	STALL_LATENCY ?2
-         msubz.y       VF04,VF04,VF05z                              NOP                                               
-         addy.z        VF05,VF00,VF07y                              NOP                                               
-         max.xyz       VF07,VF02,VF02                               NOP                                               
-         mul.xyz       VF02,VF12,VF02                               NOP                                               
-         addy.x        VF01,VF02,VF02y                              iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
-         addz.x        VF01,VF01,VF02z                              lq.xyz        VF08,4(VI00)                               ;	STALL_LATENCY ?3
+         muli          VF07,VF08,I                                  iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?2
+         mula.xyz      ACC,VF08,VF08                                lq.xyz        VF11,7(VI00)                        
+         madd.xyz      VF05,VF08,VF08                               lq.xyz        VF10,6(VI00)                        
+         opmula.xyz    ACCxyz,VF07xyz,VF07xyz                       lq.xyz        VF08,4(VI00)                               ;	STALL_LATENCY ?1
+         msubw.xyz     VF02,VF07,VF07w                              iadd          VI07,VI03,VI05                      
+         maddw.xyz     VF07,VF07,VF07w                              iaddiu        VI09,VI00,0x00000004                
+         addaw.xyz     ACC,VF00,VF00w                               mr32.w        VF08,VF02                                  ;	STALL_LATENCY ?2
+         msubax.yz     ACC,VF04,VF05x                               NOP                                               
+         msuby.z       VF06,VF04,VF05y                              mr32.y        VF12,VF02                           
+         addy.z        VF04,VF00,VF07y                              mr32.y        VF06,VF07                           
+         NOP                                                        mr32.z        VF07,VF08                           
+         msubay.x      ACC,VF04,VF05y                               mr32.x        VF02,VF02                           
+         msubz.x       VF04,VF04,VF05z                              mr32.x        VF05,VF12                           
+         max.z         VF02,VF06,VF06                               mr32.y        VF13,VF04                           
+         msubz.y       VF05,VF04,VF05z                              mr32.y        VF02,VF07                           
+         addx.z        VF05,VF00,VF02x                              NOP                                               
+         max.x         VF05,VF04,VF04                               move.x        VF04,VF05                           
+         addy.x        VF02,VF00,VF13y                              NOP                                               
+         max.y         VF02,VF02,VF02                               NOP                                               
+         addx.y        VF07,VF00,VF07x                              NOP                                               
+         mulx.xyz      VF06,VF02,VF01x                              mr32.x        VF07,VF06                                  ;	STALL_LATENCY ?2
+         addy.z        VF04,VF00,VF07y                              NOP                                               
+         add.xyz       VF06,VF06,VF03                               NOP                                                      ;	STALL_LATENCY ?2
+         sub.xyz       VF12,VF00,VF06                               NOP                                                      ;	STALL_LATENCY ?3
+         max.y         VF04,VF05,VF05                               NOP                                               
+         addx.y        VF05,VF00,VF07x                              NOP                                               
+         mul.xyz       VF02,VF12,VF02                               move.xyz      VF07,VF02                                  ;	STALL_LATENCY ?1
+         addy.x        VF01,VF02,VF02y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF01,VF01,VF02z                              lq.xyz        VF09,5(VI00)                               ;	STALL_LATENCY ?3
          NOP                                                        mr32.w        VF01,VF01                                  ;	STALL_LATENCY ?3
 vertexLoop:
 ; _LNOPT_w=[ normal2 ] 33 [35 0] 43   [vertexLoop]
@@ -732,7 +739,7 @@ end:
          NOP                                                        jr            VI01                
 		.align 4
 VU1_ClippingStage_CodeEnd:
-;	iCount=531
+;	iCount=538
 ; register stats:
 ;  14 VU User integer
 ;  32 VU User floating point

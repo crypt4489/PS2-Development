@@ -1,5 +1,6 @@
 #include "ps_misc.h"
 #include "ps_fast_maths.h"
+#include "ps_quat.h"
 #include "ps_log.h"
 
 #include <stdlib.h>
@@ -798,7 +799,7 @@ void AppendString(const char *input1, const char *input2, char *output, u32 max)
 
     while(*iter != 0 && len < max)
     {
-         *outIter = *iter;
+        *outIter = *iter;
         outIter++;
         iter++;
         len++;
@@ -814,7 +815,7 @@ void AppendString(const char *input1, const char *input2, char *output, u32 max)
 
 // #define DOES_THIS_WORK
 // incomplete
-static void GribbHartmann(MATRIX m)
+void GribbHartmann(MATRIX m)
 {
     // MATRIX m;
     // MatrixInverse(mat, m);
@@ -932,4 +933,104 @@ static void GribbHartmann(MATRIX m)
     DumpVector(tf);
 
     DEBUGLOG("#6");
+}
+
+void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components)
+{
+    float temp;
+    for (int i = 0; i<components; i++)
+    {
+        temp = in2[i] - in1[i];
+        temp = temp * delta;
+        output[i] = temp + in1[i];
+    }
+}
+
+void Slerp(VECTOR q1, VECTOR q2, float delta, VECTOR out)
+{
+    float dot4 = dotProductFour(q1, q2);
+    if (Abs(dot4) >= 1.0f)
+    {
+      //  DEBUGLOG("QUICK COPY");
+        vector_copy(out, q1);
+        return;
+    }
+
+    float halfTheta = ACos(dot4);
+    float sinHalfTheta = Sqrt(1.0f - dot4*dot4);
+
+    if (Abs(sinHalfTheta) < 0.001)
+    {
+       // DEBUGLOG("HERE");
+        out[0] = (q1[0] * 0.5f + q2[0] * 0.5);
+        out[1] = (q1[1] * 0.5f + q2[1] * 0.5);
+        out[2] = (q1[2] * 0.5f + q2[2] * 0.5);
+        out[3] = (q1[3] * 0.5f + q2[3] * 0.5);
+        return;
+    }
+
+    float ratioA = Sin((1.0f - delta) * halfTheta) / sinHalfTheta;
+    float ratioB = Sin(delta * halfTheta) / sinHalfTheta;
+    //DEBUGLOG("FINAL COPY");
+    out[0] = (q1[0] * ratioA + q2[0] * ratioB);
+    out[1] = (q1[1] * ratioA + q2[1] * ratioB);
+    out[2] = (q1[2] * ratioA + q2[2] * ratioB);
+    out[3] = (q1[3] * ratioA + q2[3] * ratioB);
+
+    return;
+}
+
+void QuaternionNormalize(VECTOR in, VECTOR out)
+{
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%1)\n"
+        "vsuba.xyzw $ACC, $vf0, $vf0\n"
+        "vmul.xyzw $vf2, $vf1, $vf1\n"
+        "vmaddax.w $ACC, $vf0, $vf2\n"
+        "vmadday.w $ACC, $vf0, $vf2\n"
+        "vmaddaz.w $ACC, $vf0, $vf2\n"
+        "vmaddw.w $vf2, $vf0, $vf2\n"
+        "vrsqrt $Q, $vf0w, $vf2w\n"
+        "vwaitq \n"
+        "vmulq.xyzw $vf1, $vf1, $Q \n"
+        "sqc2 $vf1, 0x00(%0) \n"
+        :
+        : "r"(out), "r"(in)
+        : "memory");
+}
+
+void ExtractVectorFromMatrix(MATRIX m, VECTOR trans, VECTOR rot, VECTOR scale)
+{
+    trans[0] = m[12];
+    trans[1] = m[13];
+    trans[2] = m[14];
+
+    float sx = dist(&m[0]);
+    float sy = dist(&m[4]);
+    float sz = dist(&m[8]);
+
+    scale[0] = sx;
+    scale[1] = sy;
+    scale[2] = sz;
+
+    MATRIX mat;
+    mat[0] = m[0] / sx;
+    mat[1] = m[1] / sx;
+    mat[2] = m[2] / sx;
+
+
+    mat[4] = m[4] / sy;
+    mat[5] = m[5] / sy;
+    mat[6] = m[6] / sy;
+
+    mat[8] = m[8] / sz;
+    mat[9] = m[9] / sz;
+    mat[10] = m[10] / sz;
+
+
+    CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rot);
+
+   // DumpVector(rot);
+   // DumpVector(trans);
+   // DumpVector(scale);
 }

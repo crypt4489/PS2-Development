@@ -193,8 +193,8 @@ void CreateCameraFrustum(Camera *cam)
     // VectorSubtractXYZ(cam->pos, tempScale, nearCenter);
     tempOut[3] = nearCenter[3] = farCenter[3] = 1.0f;
 
-    SetupPlane(forward, nearCenter, &frus->sides[0]);
-    SetupPlane(tempScale, farCenter, &frus->sides[1]);
+    SetupPlane(tempScale, nearCenter, &frus->sides[0]);
+    SetupPlane(forward, farCenter, &frus->sides[1]);
 
     // side top
 

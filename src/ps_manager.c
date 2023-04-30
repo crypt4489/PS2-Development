@@ -33,7 +33,7 @@ void InitializeSystem()
 
     InitPad(port, slot, padBuf);
 
-    InitializeManager(640, 480, 1, 1000, 10); 
+    InitializeManager(640, 480, 1, 1000, 10);
 
     SetupVU1INTEHandler();
 }
@@ -57,13 +57,13 @@ void CreateManagerRenderTargets()
 
     SetupRenderTarget(g_Manager.targetDisplay, 1, 0);
 
-    SetupRenderTarget(g_Manager.targetBack, 0, 0); 
+    SetupRenderTarget(g_Manager.targetBack, 0, 0);
 }
 
 
 void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize)
 {
-    
+
 
     g_Manager.ScreenHeight = height;
     g_Manager.ScreenWidth = width;
@@ -98,7 +98,7 @@ void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, 
 
     SetupManagerTexture();
 
-   
+
 }
 
 void UpdateCurrentTexNameInGS(GameManager *manager, const char *name)
@@ -188,8 +188,6 @@ void ClearManagerTexList(GameManager *manager)
     manager->texManager->globalIndex = 0;
 }
 
-
-
 void ClearManagerStruct(GameManager *manager)
 {
     if (manager->texManager) free(manager->texManager);
@@ -220,6 +218,7 @@ LinkedList* CreateLinkedListItem(void *data)
     node->data = data;
     return node;
 }
+
 LinkedList *AddToLinkedList(LinkedList *head, LinkedList *node)
 {
     if (head == NULL)
@@ -243,7 +242,7 @@ LinkedList* RemoveNodeFromList(LinkedList *head, LinkedList *node)
 {
     LinkedList *iter = head;
     LinkedList *prev = head;
-    
+
     while(iter != node)
     {
         prev = iter;
@@ -251,7 +250,7 @@ LinkedList* RemoveNodeFromList(LinkedList *head, LinkedList *node)
         if (iter == NULL)
         {
             return head;
-        }  
+        }
     }
 
     if (iter == head)
