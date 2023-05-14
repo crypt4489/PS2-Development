@@ -26,7 +26,7 @@ static void StripFilePath(const char *filepath, char *texname)
         temp++;
     }
 
-    
+
     int i = 0;
     while(*temp != 0)
     {
@@ -265,7 +265,7 @@ void ParseTextureUpload(qword_t *in)
             else
             {
                 ERRORLOG("WE MADE IT HERE!");
-                dump_packet(in);
+                dump_packet(in, 256, 0);
                 while (1)
                     ;
                 loop = 0;

@@ -13,6 +13,7 @@
 #include "ps_vif.h"
 #include "ps_vu1pipeline.h"
 #include "ps_morphtarget.h"
+#include "ps_log.h"
 
 void SetupGameObjectPrimRegs(GameObject *obj, color_t color, u32 renderState)
 {
@@ -308,6 +309,19 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
     q = add_unpack_data(q, *top, &(buffer->normals[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
+  }
+
+  if (code & DRAW_SKINNED)
+  {
+    //DEBUGLOG("HERREREERERERER!!!");
+    q = add_unpack_data(q, *top, &(buffer->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    *top += count;
+
+    q = add_unpack_data(q, *top, &(buffer->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    *top += count;
+
   }
 
   return q;

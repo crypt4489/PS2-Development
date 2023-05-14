@@ -63,15 +63,23 @@ void CreateVector(float x, float y, float z, float w, VECTOR out)
     out[3] = w;
 }
 
-void dump_packet(qword_t *q)
+void dump_packet(qword_t *q, int max, int usefloat)
 {
     qword_t *iter = q;
     ; //= obj->pipeline_dma;
     int i = 0;
-    while (iter->sw[0] != DMA_DCODE_END)
+    while (iter->sw[0] != DMA_DCODE_END && i < max)
     {
-        float f =  ((float*)iter->sw)[3];
-        DEBUGLOG("%x %x %x %f", iter->sw[0], iter->sw[1], iter->sw[2], f);
+        if (usefloat)
+        {
+            float f =  ((float*)iter->sw)[3];
+            float f1 = ((float*)iter->sw)[0];
+            float f2 = ((float*)iter->sw)[1];
+            float f3 = ((float*)iter->sw)[2];
+            DEBUGLOG("%d %f %f %f %f", i, f1, f2, f3, f);
+        } else {
+            DEBUGLOG("%d %x %x %x %x", i, iter->sw[0], iter->sw[1], iter->sw[2], iter->sw[3]);
+        }
         iter++;
         i++;
     }
@@ -999,7 +1007,7 @@ void QuaternionNormalize(VECTOR in, VECTOR out)
         : "memory");
 }
 
-void ExtractVectorFromMatrix(MATRIX m, VECTOR trans, VECTOR rot, VECTOR scale)
+void ExtractVectorFromMatrix(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
 {
     trans[0] = m[12];
     trans[1] = m[13];
@@ -1030,7 +1038,53 @@ void ExtractVectorFromMatrix(MATRIX m, VECTOR trans, VECTOR rot, VECTOR scale)
 
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rot);
 
-   // DumpVector(rot);
+  //  DumpVector(rot);
    // DumpVector(trans);
    // DumpVector(scale);
+}
+
+void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
+{
+    matrix_unit(m);
+    CreateRotationMatFromQuat(rot, m);
+
+    float sx = scale[0];
+    float sy = scale[1];
+    float sz = scale[2];
+
+    m[0] = m[0] * sx;
+    m[1] = m[1] * sx;
+    m[2] = m[2] * sx;
+
+
+    m[4] = m[4] * sy;
+    m[5] = m[5] * sy;
+    m[6] = m[6] * sy;
+
+    m[8] = m[8] * sz;
+    m[9] = m[9] * sz;
+    m[10] = m[10] * sz;
+
+    m[12] = trans[0];
+    m[13] = trans[1];
+    m[14] = trans[2];
+    m[15] = 1.0f;
+  //  DumpVector(rot);
+   // DumpVector(trans);
+   // DumpVector(scale);
+}
+
+void MatrixMultiply(MATRIX output, MATRIX input, MATRIX input1)
+{
+    for (int i = 0; i<4; i++)
+    {
+        for (int j = 0; j<4; i++)
+        {
+            output[i+j] = 0.0f;
+            for (int k = 0; k<4; k++)
+            {
+                output[i+j] += input[i+k] * input1[k+j];
+            }
+        }
+    }
 }

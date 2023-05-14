@@ -124,6 +124,7 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 size)
 {
     buffers->vertexCount = size;
+    buffers->meshAnimationData = NULL;
     if ((code & 0x01) != 0)
     {
         buffers->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);

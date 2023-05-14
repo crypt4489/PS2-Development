@@ -55,6 +55,9 @@ extern u32 VU1_ClippingStage_CodeEnd __attribute__((section(".vudata")));
 extern u32 VU1_ClipStage4_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 
+extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
+
 TimerStruct *ts;
 
 char print_out[20] = "DREW FLETCHER";
@@ -182,17 +185,17 @@ static void SetupFont()
 
 static void SetupWorldObjects()
 {
-    VECTOR camera_position = {0.0f, 10.0f, 20.00f, 1.00f};
+    VECTOR camera_position = {150.0f, 300.0f, +200.00f, 1.00f};
 
-    VECTOR at = {0.0f, 0.0f, 0.0f, 1.0f};
+    VECTOR at = {-50.0f, 0.0f, 0.0f, 0.0f};
 
-    cam = InitCamera(640, 480, 1.0f, 750.0, graph_aspect_ratio(), 60.0f);
+    cam = InitCamera(640, 480, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
 
     InitCameraObb(cam, 10.0f, 10.0f, 10.0f, BBO_FIT);
 
     CameraLookAt(cam, camera_position, at, up);
 
-    CreateProjectionMatrix(cam->proj, cam->width, cam->height, cam->aspect, 0.1f, 750.0f, cam->angle);
+    CreateProjectionMatrix(cam->proj, cam->width, cam->height, cam->aspect, 0.1f, 1500.0f, cam->angle);
 
     UpdateCameraMatrix(cam);
 
@@ -319,17 +322,17 @@ static void SetupSphere()
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
-    VECTOR object_position = {-50.0f, 0.0f, 0.0f, 0.0f};
+    VECTOR object_position = {0.0f, 0.0f, 0.0f, 0.0f};
 
     sphere = InitializeGameObject();
 
     DEBUGLOG("WE ARE HERE!");
 
-    ReadModelFile("MODELS\\BODY.CBIN", &sphere->vertexBuffer);
+    ReadModelFile("MODELS\\BODY.BIN", &sphere->vertexBuffer);
 
-    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1));
 
-    VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
+    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
              scales,
@@ -343,12 +346,11 @@ static void SetupSphere()
 
    // CreateSphereTarget();
 
-   // CreateSpecularPipeline(sphere, "SPEC_PIPE");
     AnimationData *data = GetAnimationByIndex(sphere->vertexBuffer.meshAnimationData->animations, 2);
-   //DEBUGLOG("%s", data->name);
+
     Animator *animator = CreateAnimator(data);
-    //DEBUGLOG("%s", animator->animation->name);
-    UpdateVU1BoneMatrices(NULL, animator, sphere->vertexBuffer.meshAnimationData->joints, sphere->vertexBuffer.meshAnimationData->jointsCount);
+
+    sphere->objAnimator = animator;
 
     CreateGraphicsPipeline(sphere, "DOES THIS WORK?");
 
@@ -581,13 +583,13 @@ static void SetupTessObject()
 
 static void SetupGameObjects()
 {
-    InitSkybox();
+  //  InitSkybox();
 
-    SetupCube();
+  //  SetupCube();
 
     SetupSphere();
 
-    // SetupMultiSphere();
+   //  SetupMultiSphere();
 
     // SetupShadowViewer();
 
@@ -690,17 +692,26 @@ static void RenderShadowScene()
 
 int Render()
 {
+    float lastTime = 0.0f;
 
     for (;;)
     {
+        float currentTime = getTicks(&ts) * 1000.0f;
+
+        float delta = (currentTime - lastTime) * (60.0 / 480.0);
 
         UpdatePad();
 
+        UpdateAnimator(sphere->objAnimator, delta);
+
+        lastTime = currentTime;
         UpdateGlossTransform();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
         DrawWorld(world);
+
+
 
         // DrawWorld(roomWorld);
 
@@ -708,9 +719,9 @@ int Render()
 
         //while(PollVU1DoneProcessing(&g_Manager) < 0);
 
-        // ReadFromVU1(vu1_data_address + (*vif1_top * 4), 513 * 4, 1);
+     // ReadFromVU1(vu1_data_address + (*vif1_top * 0), 16 * 4, 1);
 
-       //while(1);
+//while(1);
 
         PrintText(myFont, print_out, -310, -220);
 
@@ -718,11 +729,18 @@ int Render()
 
         EndFrame();
 
+        //sphere->objAnimator->currentTime += 0.1f;
 
+        //if (sphere->objAnimator->currentTime >= 1.0f)
+        //{
+         //   sphere->objAnimator->currentTime = 0.0f;
+        //}
 
         // while(1);
 
         UpdateLight();
+
+
 
        // UpdateSphereMorph();
 
@@ -738,7 +756,6 @@ static void SetupVU1Programs()
 {
 
     VU1Program *prog;
-
 
     prog = CreateVU1Program(&VU1_ClipStage4_CodeStart, &VU1_ClipStage4_CodeEnd, 0); // 0
 
@@ -768,8 +785,9 @@ static void SetupVU1Programs()
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 
+    prog = CreateVU1Program(&VU1_GenericBonesAnimStage1_CodeStart, &VU1_GenericBonesAnimStage1_CodeEnd, 0); // 6
 
-
+    AddProgramToManager(g_Manager.vu1Manager, prog);
 }
 
 static void LoadInTextures()

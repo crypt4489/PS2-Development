@@ -57,6 +57,7 @@ enum VU1Programs
     VU1GenericAnimTex,
     VU1GenericSpecular,
     VU1GenericClipper,
+    VU1GenericSkinned
 };
 
 enum VU1PipelineLocations
@@ -300,9 +301,9 @@ struct mesh_buffers_t
     VECTOR *vertices __attribute__((aligned(128)));
     VECTOR *normals __attribute__((aligned(128)));
     VECTOR *texCoords __attribute__((aligned(128)));
-    VECTOR *colors __attribute__((aligned(128)));
     VectorInt *bones __attribute__((aligned(128)));
     VECTOR *weights __attribute__((aligned(128)));
+    VECTOR *colors __attribute__((aligned(128)));
     u32 matCount;
     LinkedList *materials;
     AnimationMesh *meshAnimationData;
@@ -529,6 +530,7 @@ struct gameobject_t
     VU1Pipeline *activePipeline;
     ObjectRenderState renderState;
     MorphTargetBuffer *interpolator;
+    Animator *objAnimator;
 };
 
 typedef struct RenderTarget

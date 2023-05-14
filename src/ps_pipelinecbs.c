@@ -19,6 +19,7 @@
 #include "ps_quat.h"
 #include "ps_camera.h"
 #include "ps_log.h"
+#include "ps_animation.h"
 
 typedef struct interpolator_callback_data_t
 {
@@ -57,10 +58,18 @@ void SetupBlendingCXT(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pi
   q->dw[1] = obj->renderState.state.gs_reg_mask;
 }
 
+void SetupPerBoneAnimationVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
+{
+  u32* headerLocation = (u32*)arg;
+  pipeline_loc += VU1_LOCATION_ANIMATION_VECTOR;
+  qword_t *q = pipeline_loc;
+  q->sw[0] = *headerLocation;
+}
+
 void SetupPerMorphDrawVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
   u32 index = obj->interpolator->currInterpNode;
-  pipeline_loc += 11;
+  pipeline_loc += VU1_LOCATION_ANIMATION_VECTOR;
   qword_t *q = pipeline_loc;
   ((float *)q->sw)[0] = obj->interpolator->interpolators[index]->position;
   ((float *)q->sw)[1] = (1.0f - obj->interpolator->interpolators[index]->position);
@@ -101,6 +110,36 @@ qword_t *CreateMorphPipelineCallbacks(qword_t *tag, qword_t *q, VU1Pipeline *pip
   PipelineCallback *setupVU1Morph = CreatePipelineCBNode(SetupPerMorphDrawVU1Header, q, NULL);
 
   tag = AddPipelineCallbackNodeQword(pipeline, setupVU1Morph, tag, q);
+
+  return tag;
+}
+
+qword_t *CreateSkinnedAnimationCallbacks(qword_t *tag, qword_t *q, VU1Pipeline *pipeline, u32 headerLocation)
+{
+  u32 *val = (u32*)malloc(sizeof(u32));
+
+  *val = headerLocation;
+
+  PipelineCallback *setupVU1Bones = CreatePipelineCBNode(SetupPerBoneAnimationVU1Header, q, val);
+
+  tag = AddPipelineCallbackNodeQword(pipeline, setupVU1Bones, tag, q);
+
+  return tag;
+}
+
+void UpdateBoneVectorsDrawVU1(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
+{
+
+  Animator *anim = obj->objAnimator;
+  UpdateVU1BoneMatrices(pipeline_loc, anim, obj->vertexBuffer.meshAnimationData->joints, obj->vertexBuffer.meshAnimationData->jointsCount);
+
+}
+
+qword_t *CreateBonesVectorsDMAUpload(qword_t *tag, qword_t *q, VU1Pipeline *pipeline)
+{
+  PipelineCallback *setupVU1BonesDMA = CreatePipelineCBNode(UpdateBoneVectorsDrawVU1, q, NULL);
+
+  tag = AddPipelineCallbackNodeQword(pipeline, setupVU1BonesDMA, tag, q);
 
   return tag;
 }

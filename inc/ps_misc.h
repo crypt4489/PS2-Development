@@ -27,7 +27,6 @@ void DumpVector(VECTOR elem);
 void DumpVectorInt(VectorInt elem);
 void VectorSubtractXYZ(VECTOR in, VECTOR in2, VECTOR out);
 void VectorAddXYZ(VECTOR in, VECTOR in2, VECTOR out);
-void dump_packet(qword_t *q);
 qword_t *vector_to_qword(qword_t *q, VECTOR v);
 void computeNormal(VECTOR v0, VECTOR v1, VECTOR v2, VECTOR out);
 float dotProductFour(VECTOR in1, VECTOR in2);
@@ -58,5 +57,9 @@ void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components)
 void Pathify(const char *name, char *file);
 void AppendString(const char *input1, const char *input2, char *output, u32 max);
 void NormalizePlane(VECTOR in, VECTOR out);
-void ExtractVectorFromMatrix(MATRIX m, VECTOR trans, VECTOR rot, VECTOR scale);
+void ExtractVectorFromMatrix(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m);
+void dump_packet(qword_t *q, int max, int usefloat);
+void MatrixMultiply(MATRIX output, MATRIX input, MATRIX input1);
+
+void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m);
 #endif

@@ -83,6 +83,7 @@ static void CreateSizesFromRenderFlags(OBJ_RENDER_STATE renderState, u32 *pCode,
     if (renderState.SKELETAL_ANIMATION & 1)
     {
         *dCode = *dCode | DRAW_SKINNED;
+        *pCode = *pCode | VU1Stage1;
     }
 }
 
@@ -109,7 +110,15 @@ static u32 CreateDrawSizeandUploadCount(u32 dcode, u32 pcode, u32 *drawSize)
     if (pcode & VU1Stage1)
     {
         lsize = 27;
-        uploadCount = 6;
+
+        if (dcode & DRAW_MORPH)
+        {
+            uploadCount = uploadCount * 2;
+        }
+        else if (dcode & DRAW_SKINNED)
+        {
+            uploadCount += 2;
+        }
     }
 
     *drawSize = lsize;
@@ -274,9 +283,9 @@ void create_pipeline_tess_grid_vu1pipeline(GameObject *obj, u32 programNumber, u
 
 void CreateGraphicsPipeline(GameObject *obj, const char* name)
 {
-    u32 sizeOfDCode, headerSize, cbsNums, sizeOfPipeline, drawSize, pipeCode = VU1Stage4;
+    u32 totalHeader, sizeOfDCode, headerSize, cbsNums, sizeOfPipeline, drawSize, pipeCode = VU1Stage4;
     u16 drawCode = DRAW_VERTICES;
-    sizeOfDCode = headerSize = cbsNums = sizeOfPipeline = drawSize = 0;
+    totalHeader = sizeOfDCode = headerSize = cbsNums = sizeOfPipeline = drawSize = 0;
 
     u32 msize = obj->vertexBuffer.matCount;
 
@@ -291,6 +300,13 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
     }
 
     CreatePipelineSizes(pipeCode, &cbsNums, &headerSize); //
+    totalHeader = headerSize;
+    if (obj->vertexBuffer.meshAnimationData != NULL && ((drawCode & DRAW_SKINNED) != 0))
+    {
+        u32 boneCount = obj->vertexBuffer.meshAnimationData->jointsCount * 3;
+        totalHeader += boneCount;
+        cbsNums += 1;
+    }
 
     u32 upload = CreateDrawSizeandUploadCount(drawCode, pipeCode, &drawSize);
 
@@ -300,7 +316,9 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
 
     u32 uploadLoop = CreateUpload(obj->vertexBuffer.materials, drawSize, msize);
 
-    sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + headerSize + 8 + RenderPassesForAnim(renderPasses, pipeCode);
+    DEBUGLOG("%d %d", uploadLoop, upload);
+
+    sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + totalHeader + 8 + RenderPassesForAnim(renderPasses, pipeCode);
 
     DEBUGLOG("size of pipe : %d", sizeOfPipeline);
 
@@ -321,7 +339,7 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
 
     q++;
 
-    q = InitDoubleBufferingQWord(q, headerSize, GetDoubleBufferOffset(headerSize)); // 2
+    q = InitDoubleBufferingQWord(q, totalHeader, GetDoubleBufferOffset(headerSize)); // 2
 
     qword_t *per_obj_tag = q;
 
@@ -339,14 +357,11 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
 
     q += 2; //(obj-> tex == NULL ? 4 : 14); //7
 
-    q = CreateDMATag(q, DMA_END, headerSize, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, headerSize, VIF_CMD_UNPACK(0, 3, 0), 1), 0); // 8
+    q = CreateDMATag(q, DMA_END, totalHeader, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, totalHeader, VIF_CMD_UNPACK(0, 3, 0), 1), 0); // 8
 
    dcode_callback_tags = CreateVU1Callbacks(dcode_callback_tags, q, pipeline, headerSize, pipeCode, drawCode);
 
-
-
-
-    q += headerSize;
+    q += totalHeader;
 
     sizeOfDCode = q - dcode_tag_vif1 - 1;
 
@@ -366,7 +381,8 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
     // total qwords cbsNums + vu1upload + matQword
     if ((pipeCode & VU1Stage1) != 0)
     {
-        q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+        if ((drawCode & DRAW_MORPH) != 0)
+            q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
     }
 
 
@@ -376,9 +392,9 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
 
     pipeline->q = pipeline_dma;
 
-   // dump_packet(pipeline->q);
+   // dump_packet(pipeline->q, 3000, 0);
 
-
+   // while(1);
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
 }
@@ -418,11 +434,10 @@ qword_t *CreateVU1Callbacks(qword_t *tag, qword_t *q, VU1Pipeline *pipeline, u32
         }
         else if ((dCode & DRAW_SKINNED) != 0)
         {
-
+            tag = CreateSkinnedAnimationCallbacks(tag, q, pipeline, headerSize);
+            tag = CreateBonesVectorsDMAUpload(tag, q+headerSize, pipeline);
         }
     }
-
-
 
     va_end(cbs_args);
     return tag;
@@ -447,6 +462,7 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
         {
             stage3 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericSpecular);
         } else {
+            DEBUGLOG("HERE!");
             stage3 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericLight3D);
         }
 
@@ -490,11 +506,12 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
         }
         else if ((drawCode & DRAW_SKINNED) != 0)
         {
-            //stage1 =
+            DEBUGLOG("hererere");
+            stage1 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericSkinned);
         }
 
         q->sw[1] = ((pipeCode & VU1Stage2) != 0 ? stage2 : (pipeCode & VU1Stage3) != 0 ? stage3
-                                                                                       : (pipeCode & VU1Stage3) != 0 ? q->sw[3] : stage4);
+                                                     : (pipeCode & VU1Stage3) != 0 ? q->sw[3] : stage4);
         q->sw[3] = stage1;
 
     }
@@ -574,33 +591,28 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name, u32 pipeCode, u16 d
 
     q = CreateDMATag(q, DMA_END, headerSize, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, headerSize, VIF_CMD_UNPACK(0, 3, 0), 1), 0); // 8
 
-   dcode_callback_tags = CreateVU1Callbacks(dcode_callback_tags, q, pipeline, headerSize, pipeCode | VU1Stage2, drawCode, envMatrix);
-
-
-
-
+    dcode_callback_tags = CreateVU1Callbacks(dcode_callback_tags, q, pipeline, headerSize, pipeCode | VU1Stage2, drawCode, envMatrix);
 
     q += headerSize;
 
     sizeOfDCode = q - dcode_tag_vif1 - 1;
-
-
     // DEBUGLOG("%d", sizeOfDCode);
 
     CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfDCode);
 
     CreateVU1ProgramsList(vu1_addr, pipeCode, drawCode);
 
-
-
     // vu1upload =  headerSize + 8
 
     // matQword = matCount * 3 + (((vertexCount / drawSize) + 1) * (uploadCount + 2)
 
     // total qwords cbsNums + vu1upload + matQword
-     if ((pipeCode & VU1Stage1) != 0)
+    if ((pipeCode & VU1Stage1) != 0)
     {
-        q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+        if ((drawCode & DRAW_MORPH) != 0)
+            q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+       // else if ((drawCode & DRAW_SKINNED) != 0)
+
     }
 
     q = CreateMeshDMAUpload(q, obj, drawSize, drawCode, obj->vertexBuffer.matCount, vu1_addr);
@@ -615,9 +627,7 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name, u32 pipeCode, u16 d
 
     q++;
 
-
-
-     q = CreateDMATag(q, DMA_CNT, 4, 0, 0, 0);
+    q = CreateDMATag(q, DMA_CNT, 4, 0, 0, 0);
 
     q = CreateDirectTag(q, 3, 0);
 
@@ -642,8 +652,6 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name, u32 pipeCode, u16 d
     q = CreateMeshDMAUpload(q, obj, drawSize, DRAW_NORMAL | DRAW_VERTICES | DRAW_TEXTURE, 0, &env_vu1);
 
   //  q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount-1, drawSize, DRAW_NORMAL | DRAW_VERTICES | DRAW_TEXTURE, &env_vu1);
-
-
 
     CreateDCODETag(q, DMA_DCODE_END);
 
@@ -760,9 +768,12 @@ void CreateSpecularPipeline(GameObject *obj, const char *name)
     // matQword = matCount * 3 + (((vertexCount / drawSize) + 1) * (uploadCount + 2)
 
     // total qwords cbsNums + vu1upload + matQword
-     if ((pipeCode & VU1Stage1) != 0)
+    if ((pipeCode & VU1Stage1) != 0)
     {
-        q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+        if ((drawCode & DRAW_MORPH) != 0)
+            q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+       // else if ((drawCode & DRAW_SKINNED) != 0)
+
     }
 
     q = CreateMeshDMAUpload(q, obj, drawSize, drawCode, obj->vertexBuffer.matCount, vu1_addr);
@@ -797,9 +808,12 @@ void CreateSpecularPipeline(GameObject *obj, const char *name)
 
     CreateDCODEDmaTransferTag(spec_upload, DMA_CHANNEL_VIF1, 1, 1, q- spec_upload - 1);
 
-    if ((pipeCode & VU1Stage1) != 0)
+   if ((pipeCode & VU1Stage1) != 0)
     {
-        q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+        if ((drawCode & DRAW_MORPH) != 0)
+            q = CreateMorphInterpolatorDMAUpload(q, q+1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+       // else if ((drawCode & DRAW_SKINNED) != 0)
+
     }
 
     q = CreateMeshDMAUpload(q, obj, drawSize, drawCode, obj->vertexBuffer.matCount, env_vu1);
