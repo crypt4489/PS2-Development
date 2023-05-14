@@ -13,5 +13,6 @@ vcl/vclpp
 vcl/vsm/old_112722/
 vcl/vsm/old_3162023/
 test.iso
+*.c_old
 # Except this file
 !.gitignore
