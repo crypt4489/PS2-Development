@@ -14,7 +14,7 @@ void UpdateVU1BoneMatrices(qword_t *q, Animator *animator, Joint **joints, u32 n
 void CalculateBoneTransformVU1( qword_t *q, AnimationData *data,
                                 AnimationNode *node, Joint **joints, u32 numJoints,
                                 MATRIX transform,
-                                float animationTime, int level);
+                                float animationTime);
 void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float animationTime);
 Animator *CreateAnimator(AnimationData *data);
 

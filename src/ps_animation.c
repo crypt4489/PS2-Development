@@ -143,7 +143,6 @@ void UpdateAnimator(Animator *animator, float animationTime)
     {
         animator->currentTime += animator->animation->ticksPerSecond * animationTime;
         animator->currentTime = Mod(animator->currentTime, animator->animation->duration);
-        //DEBUGLOG("%f %f %f", animator->currentTime, animator->animation->ticksPerSecond, animator->animation->duration);
     }
 }
 
@@ -154,7 +153,7 @@ void UpdateVU1BoneMatrices(qword_t *q, Animator *animator, Joint **joints, u32 n
     matrix_unit(parent);
 
     CalculateBoneTransformVU1(q, animator->animation, animator->animation->root, joints, numJoints,
-    parent, animator->currentTime, 0);
+    parent, animator->currentTime);
   //  DEBUGLOG("Printing Bones!");
 }
 
@@ -170,22 +169,7 @@ void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float animati
     holder = data->keyScalings[index];
     InterpolateScalings(animationTime, holder, holder->count, scale);
 
-   // matrix_unit(transform);
-
-   // matrix_multiply(transform, transform, trans);
-   // matrix_multiply(transform, trans, rot);
-    //matrix_multiply(transform, scale, transform);
     CreateWorldMatrixFromQuatScalesTrans(trans, rot, scale, transform);
-  //  DumpMatrix(trans);
-    //DEBUGLOG("------------------");
-
-    //DumpMatrix(rot);
-    //DEBUGLOG("------------------");
-
-    //DumpMatrix(scale);
-    //DEBUGLOG("------------------");
-
-    //DumpMatrix(transform);
 }
 
 static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
@@ -201,7 +185,7 @@ static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
     scaleVec[1] = sy;
     scaleVec[2] = sz;
 
-     MATRIX mat;
+    MATRIX mat;
     mat[0] = final[0] / sx;
     mat[1] = final[1] / sx;
     mat[2] = final[2] / sx;
@@ -215,11 +199,7 @@ static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
     mat[9] = final[9] / sz;
     mat[10] = final[10] / sz;
 
-
-
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rotVec);
-
-
     u32 offset = 3 * index;
     qword_t *write = q + offset;
    // write = vector_to_qword(write, trans);
@@ -231,16 +211,13 @@ static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
     write++;
     memcpy(write, scaleVec, sizeof(float) * 4);
 
-   // memcpy(write, &final[12], sizeof(float) * 4);
-   // write++;
     return q;
 }
 
 void CalculateBoneTransformVU1( qword_t *q, AnimationData *data,
                                 AnimationNode *node, Joint **joints, u32 numJoints,
-                                MATRIX transform, float animationTime, int level)
+                                MATRIX transform, float animationTime)
 {
-
     MATRIX globalTrans;
 
     Joint *joint = FindJointByName(joints, numJoints, node->name);
@@ -280,7 +257,7 @@ void CalculateBoneTransformVU1( qword_t *q, AnimationData *data,
 
     //matrix_copy(transform, globalTrans);
     for (int i = 0; i<node->childrenCount; i++)
-        CalculateBoneTransformVU1(q, data, node->children[i], joints, numJoints, globalTrans, animationTime, level+1);
+        CalculateBoneTransformVU1(q, data, node->children[i], joints, numJoints, globalTrans, animationTime);
 }
 
 Animator *CreateAnimator(AnimationData *data)
