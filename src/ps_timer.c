@@ -18,9 +18,9 @@ int TimerZeroInterrupt(s32 cause, void *arg, void *addr)
     return -1;
 }
 
-TimerStruct* TimerZeroEnable(TimerStruct *timer0)
+TimerStruct* TimerZeroEnable()
 {
-    timer0 = (TimerStruct *)malloc(sizeof(TimerStruct));
+    TimerStruct *timer0 = (TimerStruct *)malloc(sizeof(TimerStruct));
     *R_EE_T0_HOLD = 0;
     timer0->ctr = 0;
     s32 id =  AddIntcHandler2(9, TimerZeroInterrupt, 0, timer0);

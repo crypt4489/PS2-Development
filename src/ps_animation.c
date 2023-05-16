@@ -143,7 +143,7 @@ void UpdateAnimator(Animator *animator, float animationTime)
     {
         animator->currentTime += animator->animation->ticksPerSecond * animationTime;
         animator->currentTime = Mod(animator->currentTime, animator->animation->duration);
-
+        //DEBUGLOG("%f %f %f", animator->currentTime, animator->animation->ticksPerSecond, animator->animation->duration);
     }
 }
 
@@ -190,7 +190,7 @@ void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float animati
 
 static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
 {
-    VECTOR rotVec, scaleVec, transVec;
+    VECTOR rotVec, scaleVec;
     scaleVec[3] = 0.0f;
 
     float sx = dist(&final[0]);
@@ -215,15 +215,10 @@ static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
     mat[9] = final[9] / sz;
     mat[10] = final[10] / sz;
 
-   // DumpVector(&mat[0]);
-    //DumpVector(&mat[4]);
-   // DumpVector(&mat[8]);
+
 
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rotVec);
 
-    MATRIX temp;
-    CreateWorldMatrixFromQuatScalesTrans(&final[12], rotVec, scaleVec, temp);
-   // DumpMatrix(temp);
 
     u32 offset = 3 * index;
     qword_t *write = q + offset;
@@ -246,15 +241,9 @@ void CalculateBoneTransformVU1( qword_t *q, AnimationData *data,
                                 MATRIX transform, float animationTime, int level)
 {
 
-
-   // DEBUGLOG("%s", node->name);
-
-   // DumpMatrix(node->transformation);
-
-   MATRIX globalTrans;
+    MATRIX globalTrans;
 
     Joint *joint = FindJointByName(joints, numJoints, node->name);
-
 
     matrix_unit(globalTrans);
     if (joint != NULL)
@@ -306,48 +295,4 @@ Animator *CreateAnimator(AnimationData *data)
     animator->currentTime = 0.0f;
     animator->deltaTime = 0.0f;
     return animator;
-}
-void DummyFunc(MeshBuffers *buffer)
-{
-    u32 count = buffer->vertexCount;
-    static int cooked = 1;
-    for (u32 i = 0; i<count; i++)
-    {
-        VECTOR pos;
-        pos[0] = 0;
-        pos[1] = 0;
-        pos[2] = 0;
-        pos[3] = 0;
-       // float temp = buffer->vertices[i][1];
-       // buffer->vertices[i][1] = buffer->vertices[i][2];
-       // buffer->vertices[i][2] = -temp;
-
-        //DumpVectorInt(buffer->bones[i]);
-        for (int j = 0; j<4; j++)
-        {
-            u32 boneID = buffer->bones[i][j];
-            if (boneID == -1)
-                continue;
-
-            VECTOR local;
-           // MatrixVectorMultiply(local, globalTranss[boneID], buffer->vertices[i]);
-            pos[0] += local[0] * buffer->weights[i][j];
-            pos[1] += local[1] * buffer->weights[i][j];
-            pos[2] += local[2] * buffer->weights[i][j];
-            pos[3] += local[3] * buffer->weights[i][j];
-        }
-        if (i < 1000)
-            DumpVector(buffer->vertices[i]);
-        buffer->vertices[i][0] = pos[0];
-        buffer->vertices[i][1] = pos[1];
-        buffer->vertices[i][2] = pos[2];
-        buffer->vertices[i][3] = pos[3];
-
-        if (cooked && i < 1000)
-        {
-            DumpVector(buffer->vertices[i]);
-            DEBUGLOG("%d", i);
-        }
-        //cooked = 0;
-    }
 }

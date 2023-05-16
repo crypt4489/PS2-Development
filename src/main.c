@@ -693,18 +693,28 @@ static void RenderShadowScene()
 int Render()
 {
     float lastTime = 0.0f;
-
+    float lastTimeFrame = getTicks(ts);
+    u32 frameCounter = 0;
     for (;;)
     {
-        float currentTime = getTicks(&ts) * 1000.0f;
+        float currentTime = getTicks(ts);
 
-        float delta = (currentTime - lastTime) * (60.0 / 480.0);
+        if (currentTime > ( lastTimeFrame + 1000.0f ))
+        {
+            DEBUGLOG("frame per second %d", frameCounter);
+            lastTimeFrame = currentTime;
+            frameCounter = 0;
+        }
+
+        float delta = (currentTime - lastTime) * 0.001f;
+        lastTime = currentTime;
+       // DEBUGLOG("%f %f %f", currentTime, delta, totalWhat);
 
         UpdatePad();
 
         UpdateAnimator(sphere->objAnimator, delta);
 
-        lastTime = currentTime;
+
         UpdateGlossTransform();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
@@ -747,6 +757,8 @@ int Render()
         snprintf(print_out, 20, "DREW FLETCHER %d", no_plugin);
 
         no_plugin++;
+
+        frameCounter++;
     }
 
     return 0;
@@ -847,7 +859,7 @@ int main(int argc, char **argv)
 
     SetupWorldObjects();
 
-    ts = TimerZeroEnable(ts);
+    ts = TimerZeroEnable();
 
     float totalTime;
 

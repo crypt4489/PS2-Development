@@ -8,7 +8,7 @@ typedef struct
     s32 id;
 }TimerStruct;
 int TimerZeroInterrupt(s32 cause, void *arg, void *addr);
-TimerStruct* TimerZeroEnable(TimerStruct *timer0);
+TimerStruct* TimerZeroEnable();
 void TimerZeroDisable(TimerStruct *timer);
 float getTicks(TimerStruct *ts);
 #endif
