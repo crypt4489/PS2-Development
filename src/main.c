@@ -328,7 +328,7 @@ static void SetupSphere()
 
     DEBUGLOG("WE ARE HERE!");
 
-    ReadModelFile("MODELS\\BODY.BIN", &sphere->vertexBuffer);
+    ReadModelFile("MODELS\\BODY.CBIN", &sphere->vertexBuffer);
 
     SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1));
 
@@ -583,7 +583,7 @@ static void SetupTessObject()
 
 static void SetupGameObjects()
 {
-  //  InitSkybox();
+    InitSkybox();
 
   //  SetupCube();
 

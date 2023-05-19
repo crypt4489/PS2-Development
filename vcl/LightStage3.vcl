@@ -110,10 +110,10 @@ directional_light:
 
 
 spotlight:
-         MatrixMultiplyVertex{ worldPos, globalMatrix, vertex }
+        MatrixMultiplyVertex{ worldPos, globalMatrix, vertex }
         lq.xyz lightPos, 0(lightPointer)
-        lq.xyzw lightColor, 1(lightPointer)
-        lq.xyzw lightDir, 2(lightPointer)
+        lq lightColor, 1(lightPointer)
+        lq lightDir, 2(lightPointer)
 
 
         sub.xyz  lightVec, worldPos, lightPos
@@ -185,7 +185,7 @@ finish_spot:
  point_light:
         MatrixMultiplyVertex{ worldPos, globalMatrix, vertex }
         lq.xyz lightPos, 0(lightPointer)
-        lq.xyzw lightColor, 1(lightPointer)
+        lq lightColor, 1(lightPointer)
 
         sub.xyz  lightDir, lightPos, worldPos
 

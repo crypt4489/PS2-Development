@@ -56,7 +56,6 @@ boneLoop:
         iadd            boneTransformLocation,  boneTransformLocation, boneID
        ; iadd            boneTransformLocation,  boneTransformLocation, boneID
 
-        lq.xyz          pos, 0(boneTransformLocation)
         lq              rot, 1(boneTransformLocation)
         lq.xyz          scale, 2(boneTransformLocation)
         mr32        rot, rot
@@ -65,7 +64,7 @@ boneLoop:
         mulx.xyz    boneTransform[0], boneTransform[0], scale[x]
         muly.xyz    boneTransform[1], boneTransform[1], scale[y]
         mulz.xyz    boneTransform[2], boneTransform[2], scale[z]
-        move.xyz    boneTransform[3], pos
+        lq          boneTransform[3], 0(boneTransformLocation)
 
         MatrixMultiplyVertex{ pos, boneTransform, vertex }
 

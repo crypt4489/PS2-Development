@@ -6,9 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-
-//static VECTOR transVec, rotVec, scaleVec;
-static MATRIX final, nodeTrans;;
+static MATRIX final, nodeTrans;
 
 AnimationData * GetAnimationByIndex(LinkedList *animations, u32 index)
 {
@@ -64,10 +62,7 @@ void InterpolatePosition(float animationTime, AnimationKeyHolder *keyHolder, u32
                                         animationTime );
     VECTOR pos;
     LerpNum(keyHolder->keys[p0Index]->key, keyHolder->keys[p1Index]->key, pos, scaleFactor, 3);
-    //DEBUGLOG("POSSSESES");
-   // DumpVector(pos);
-   // CreateTranslationMatrix(pos, output);
-   vector_copy(output, pos);
+    vector_copy(output, pos);
 }
 
 void InterpolateRotation(float animationTime, AnimationKeyHolder *keyHolder, u32 numRotations, VECTOR output)
@@ -75,8 +70,6 @@ void InterpolateRotation(float animationTime, AnimationKeyHolder *keyHolder, u32
     VECTOR quat;
     if (numRotations == 1)
     {
-       // QuaternionNormalize(keyHolder->keys[0]->key, quat);
-       // CreateRotationMatFromQuat(keyHolder->keys[0]->key, output);
         vector_copy(output, keyHolder->keys[0]->key);
         return;
     }
@@ -88,9 +81,6 @@ void InterpolateRotation(float animationTime, AnimationKeyHolder *keyHolder, u32
                                         keyHolder->keys[p1Index]->timeStamp,
                                         animationTime );
     Slerp(keyHolder->keys[p0Index]->key, keyHolder->keys[p1Index]->key, scaleFactor, quat);
-   // DumpVector(quat);
-    //QuaternionNormalize(quat, quat);
-   // CreateRotationMatFromQuat(quat, output);
     vector_copy(output, quat);
 }
 
@@ -98,8 +88,6 @@ void InterpolateScalings(float animationTime, AnimationKeyHolder *keyHolder, u32
 {
     if (numScalings == 1)
     {
-        //vector_copy(output, keyHolder->keys[0]->key);
-        //CreateScaleMatrix(keyHolder->keys[0]->key, output);
         vector_copy(output, keyHolder->keys[0]->key);
         return;
     }
@@ -112,8 +100,6 @@ void InterpolateScalings(float animationTime, AnimationKeyHolder *keyHolder, u32
                                         animationTime );
     VECTOR scales;
     LerpNum(keyHolder->keys[p0Index]->key, keyHolder->keys[p1Index]->key, scales, scaleFactor, 3);
-    //DumpVector(scales);
-  //  CreateScaleMatrix(scales, output);
     vector_copy(output, scales);
 }
 
@@ -190,7 +176,6 @@ static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
     mat[1] = final[1] / sx;
     mat[2] = final[2] / sx;
 
-
     mat[4] = final[4] / sy;
     mat[5] = final[5] / sy;
     mat[6] = final[6] / sy;
@@ -200,11 +185,10 @@ static qword_t* LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
     mat[10] = final[10] / sz;
 
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rotVec);
+
     u32 offset = 3 * index;
     qword_t *write = q + offset;
-   // write = vector_to_qword(write, trans);
-    //write = vector_to_qword(write, rot);
-   // write = vector_to_qword(write, scale);
+
     memcpy(write, &final[12], sizeof(float) * 4);
     write++;
     memcpy(write, rotVec, sizeof(float) * 4);

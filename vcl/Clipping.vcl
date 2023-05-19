@@ -58,7 +58,7 @@ finishSetup:
     move.xyz plane, out[2]
     mr32.w plane, dot
 
-    MatrixLoad{ globalMatrix, 4, vi00 }nji8
+    MatrixLoad{ globalMatrix, 4, vi00 }
 
     iadd clippedVertices, vi00, vi00
 
@@ -70,13 +70,13 @@ finishSetup:
 
         iadd  clipData, vi00, vertexData
 
-        move.xyzw  stq1, vf00
-        move.xyzw  stq2, vf00
-        move.xyzw  stq3, vf00
+        move  stq1, vf00
+        move  stq2, vf00
+        move  stq3, vf00
 
-        move.xyzw  color1, vf00
-        move.xyzw  color2, vf00
-        move.xyzw  color3, vf00
+        move  color1, vf00
+        move  color2, vf00
+        move  color3, vf00
 
         lq vertex1, 0(clipData)
         lq vertex2, 1(clipData)
@@ -97,11 +97,11 @@ finishSetup:
 
         ibeq res, comp, next_verts
 
-        move.xyzw o_vertex1, vertex1
+        move o_vertex1, vertex1
 
-        move.xyzw o_vertex2, vertex2
+        move o_vertex2, vertex2
 
-        move.xyzw o_vertex3, vertex3
+        move o_vertex3, vertex3
         iaddiu clippedVertices, clippedVertices, 3
         ibne res, vi00, checkAB
 
@@ -125,11 +125,11 @@ checkAB:
 
         ibne res, comp, checkBC
 
-        move.xyzw tempIntersect, vertex3
+        move tempIntersect, vertex3
 
-        move.xyzw tempCalc1, vertex1
+        move tempCalc1, vertex1
 
-        move.xyzw tempCalc2, vertex2
+        move tempCalc2, vertex2
 
         move.xyz gIntersect, gvertex3
 
@@ -139,9 +139,9 @@ checkAB:
 
         bal    ret, calculate_intersect
 
-        move.xyzw o_vertex1, tempCalc1
+        move o_vertex1, tempCalc1
 
-        move.xyzw o_vertex2, tempCalc2
+        move o_vertex2, tempCalc2
 
         bal  ret, write_to_clipbuffer
         ibeq    useSTQ,            vi00,           loadColorsAB
@@ -158,16 +158,16 @@ loadColorsAB:
         bal     ret,            write_to_clipbuffer
         b next_verts
 ABIntersect:
-        move.xyzw tempIntersect1, o_vertex3
+        move tempIntersect1, o_vertex3
 
-        move.xyzw tempCalc3, o_vertex1
+        move tempCalc3, o_vertex1
 
-        move.xyzw tempCalc4, o_vertex2
+        move tempCalc4, o_vertex2
         bal     ret2,       lerpValues
 
-        move.xyzw o_vertex1, tempCalc3
+        move o_vertex1, tempCalc3
 
-        move.xyzw o_vertex2, tempCalc4
+        move o_vertex2, tempCalc4
 
         jr ret
 checkBC:
@@ -175,11 +175,11 @@ checkBC:
 
         ibne  res, comp, checkCA
 
-         move.xyzw tempIntersect, vertex1
+         move tempIntersect, vertex1
 
-        move.xyzw tempCalc1, vertex2
+        move tempCalc1, vertex2
 
-        move.xyzw tempCalc2, vertex3
+        move tempCalc2, vertex3
 
         move.xyz gIntersect, gvertex1
 
@@ -189,9 +189,9 @@ checkBC:
 
         bal    ret, calculate_intersect
 
-        move.xyzw o_vertex2, tempCalc1
+        move o_vertex2, tempCalc1
 
-        move.xyzw o_vertex3, tempCalc2
+        move o_vertex3, tempCalc2
 
         bal ret, write_to_clipbuffer
         ibeq    useSTQ,            vi00,           loadColorsBC
@@ -208,17 +208,17 @@ loadColorsBC:
         bal     ret,            write_to_clipbuffer
         b next_verts
 BCIntersect:
-        move.xyzw tempIntersect1, o_vertex1
+        move tempIntersect1, o_vertex1
 
-        move.xyzw tempCalc3, o_vertex2
+        move tempCalc3, o_vertex2
 
-        move.xyzw tempCalc4, o_vertex3
+        move tempCalc4, o_vertex3
 
         bal     ret2,       lerpValues
 
-        move.xyzw o_vertex2, tempCalc3
+        move o_vertex2, tempCalc3
 
-        move.xyzw o_vertex3, tempCalc4
+        move o_vertex3, tempCalc4
 
         jr ret
 checkCA:
@@ -226,11 +226,11 @@ checkCA:
 
         ibne  res, comp, checkA
 
-        move.xyzw tempIntersect, vertex2
+        move tempIntersect, vertex2
 
-        move.xyzw tempCalc1, vertex1
+        move tempCalc1, vertex1
 
-        move.xyzw tempCalc2, vertex3
+        move tempCalc2, vertex3
 
         move.xyz gIntersect, gvertex2
 
@@ -240,9 +240,9 @@ checkCA:
 
         bal    ret, calculate_intersect
 
-        move.xyzw o_vertex1, tempCalc1
+        move o_vertex1, tempCalc1
 
-        move.xyzw o_vertex3, tempCalc2
+        move o_vertex3, tempCalc2
 
         bal  ret, write_to_clipbuffer
         ibeq    useSTQ,            vi00,           loadColorsCA
@@ -259,17 +259,17 @@ loadColorsCA:
         bal     ret,            write_to_clipbuffer
         b next_verts
 CAIntersect:
-        move.xyzw tempIntersect1, o_vertex2
+        move tempIntersect1, o_vertex2
 
-        move.xyzw tempCalc3, o_vertex1
+        move tempCalc3, o_vertex1
 
-        move.xyzw tempCalc4, o_vertex3
+        move tempCalc4, o_vertex3
 
         bal     ret2,       lerpValues
 
-        move.xyzw o_vertex1, tempCalc3
+        move o_vertex1, tempCalc3
 
-        move.xyzw o_vertex3, tempCalc4
+        move o_vertex3, tempCalc4
 
         jr ret
 checkA:
@@ -280,11 +280,11 @@ checkA:
 
         ibne  res, comp, checkB
 
-        move.xyzw tempIntersect, vertex1
+        move tempIntersect, vertex1
 
-        move.xyzw tempCalc1, vertex2
+        move tempCalc1, vertex2
 
-        move.xyzw tempCalc2, vertex3
+        move tempCalc2, vertex3
 
         move.xyz gIntersect, gvertex1
 
@@ -294,11 +294,11 @@ checkA:
 
         bal    ret, calculate_intersect
 
-        move.xyzw o_vertex1, vertex2
+        move o_vertex1, vertex2
 
-        move.xyzw o_vertex2, vertex3
+        move o_vertex2, vertex3
 
-        move.xyzw o_vertex3, tempCalc1
+        move o_vertex3, tempCalc1
 
         bal    ret, write_to_clipbuffer
 
@@ -321,52 +321,52 @@ loadColorsA1:
         move.xyz color2,          tempIntersect1
         move.xyz color3,          tempCalc4
 write_A_p2:
-        move.xyzw o_vertex1, tempCalc1
+        move o_vertex1, tempCalc1
 
 
-        move.xyzw o_vertex2, vertex3
+        move o_vertex2, vertex3
 
-        move.xyzw o_vertex3, tempCalc2
+        move o_vertex3, tempCalc2
 
         bal    ret, write_to_clipbuffer
 
         ibeq    useSTQ,            vi00,           loadColorsA2
-        move.xyzw o_vertex1, stq1
+        move o_vertex1, stq1
 
-        move.xyzw o_vertex2, stq2
+        move o_vertex2, stq2
 
-        move.xyzw o_vertex3, stq3
+        move o_vertex3, stq3
 
         bal     ret, write_to_clipbuffer
 loadColorsA2:
         ibeq    useColor,            vi00,           next_verts
 
-        move.xyzw o_vertex1, color1
+        move o_vertex1, color1
 
-        move.xyzw o_vertex2, color2
+        move o_vertex2, color2
 
-        move.xyzw o_vertex3, color3
+        move o_vertex3, color3
 
         bal     ret, write_to_clipbuffer
 
         b next_verts
 
 AIntersect:
-        move.xyzw tempIntersect1, o_vertex1
+        move tempIntersect1, o_vertex1
 
-        move.xyzw tempCalc3, o_vertex2
+        move tempCalc3, o_vertex2
 
-        move.xyzw tempCalc4, o_vertex3
+        move tempCalc4, o_vertex3
 
         bal     ret2,       lerpValues
 
-      move.xyzw o_vertex1, o_vertex2
+      move o_vertex1, o_vertex2
 
-        move.xyzw o_vertex2, o_vertex3
+        move o_vertex2, o_vertex3
 
-        move.xyzw  tempIntersect1, o_vertex3
+        move  tempIntersect1, o_vertex3
 
-        move.xyzw o_vertex3, tempCalc3
+        move o_vertex3, tempCalc3
 
 
         jr ret
@@ -376,11 +376,11 @@ checkB:
 
         ibne  res, comp, checkC
 
-        move.xyzw tempIntersect, vertex2
+        move tempIntersect, vertex2
 
-        move.xyzw tempCalc1, vertex1
+        move tempCalc1, vertex1
 
-        move.xyzw tempCalc2, vertex3
+        move tempCalc2, vertex3
 
         move.xyz gIntersect, gvertex2
 
@@ -390,11 +390,11 @@ checkB:
 
         bal    ret, calculate_intersect
 
-       move.xyzw o_vertex1, vertex3
+       move o_vertex1, vertex3
 
-        move.xyzw o_vertex2, vertex1
+        move o_vertex2, vertex1
 
-        move.xyzw o_vertex3, tempCalc2
+        move o_vertex3, tempCalc2
 
         bal    ret, write_to_clipbuffer
 
@@ -404,9 +404,9 @@ checkB:
         bal     ret,            loadData
         bal     ret,            BIntersect
         bal     ret,            write_to_clipbuffer
-        move.xyzw stq1,          tempCalc4
-        move.xyzw stq2,          tempIntersect1
-        move.xyzw stq3,          tempCalc3
+        move stq1,          tempCalc4
+        move stq2,          tempIntersect1
+        move stq3,          tempCalc3
 
 loadColorsB1:
         ibeq    useColor,            vi00,           write_B_p2
@@ -414,54 +414,54 @@ loadColorsB1:
         bal     ret,            loadData
         bal     ret,            BIntersect
         bal     ret,            write_to_clipbuffer
-        move.xyzw color1,          tempCalc4
-        move.xyzw color2,          tempIntersect1
-        move.xyzw color3,          tempCalc3
+        move color1,          tempCalc4
+        move color2,          tempIntersect1
+        move color3,          tempCalc3
 write_B_p2:
-        move.xyzw o_vertex1, tempCalc2
+        move o_vertex1, tempCalc2
 
-        move.xyzw o_vertex2, vertex1
+        move o_vertex2, vertex1
 
-        move.xyzw o_vertex3, tempCalc1
+        move o_vertex3, tempCalc1
 
         bal    ret, write_to_clipbuffer
         ibeq    useSTQ,            vi00,           loadColorsB2
-     move.xyzw o_vertex1, stq1
+     move o_vertex1, stq1
 
-        move.xyzw o_vertex2, stq2
+        move o_vertex2, stq2
 
-        move.xyzw o_vertex3, stq3
+        move o_vertex3, stq3
 
         bal     ret, write_to_clipbuffer
 loadColorsB2:
         ibeq    useColor,            vi00,           next_verts
 
-        move.xyzw o_vertex1, color1
+        move o_vertex1, color1
 
-        move.xyzw o_vertex2, color2
+        move o_vertex2, color2
 
-        move.xyzw o_vertex3, color3
+        move o_vertex3, color3
 
         bal     ret, write_to_clipbuffer
 
         b next_verts
 
 BIntersect:
-        move.xyzw tempIntersect1, o_vertex2
+        move tempIntersect1, o_vertex2
 
-        move.xyzw tempCalc3, o_vertex1
+        move tempCalc3, o_vertex1
 
-        move.xyzw tempCalc4, o_vertex3
+        move tempCalc4, o_vertex3
 
         bal     ret2,       lerpValues
 
-        move.xyzw tempIntersect1, o_vertex1
+        move tempIntersect1, o_vertex1
 
-        move.xyzw o_vertex1, o_vertex3
+        move o_vertex1, o_vertex3
 
-        move.xyzw o_vertex2, tempIntersect1
+        move o_vertex2, tempIntersect1
 
-        move.xyzw o_vertex3, tempCalc4
+        move o_vertex3, tempCalc4
 
         jr ret
 
@@ -472,11 +472,11 @@ checkC:
 
         ibne  res, comp, next_verts
 
-        move.xyzw tempIntersect, vertex3
+        move tempIntersect, vertex3
 
-        move.xyzw tempCalc1, vertex1
+        move tempCalc1, vertex1
 
-        move.xyzw tempCalc2, vertex2
+        move tempCalc2, vertex2
 
         move.xyz gIntersect, gvertex3
 
@@ -486,11 +486,11 @@ checkC:
 
         bal    ret, calculate_intersect
 
-        move.xyzw o_vertex1, vertex2
+        move o_vertex1, vertex2
 
-        move.xyzw o_vertex2, vertex1
+        move o_vertex2, vertex1
 
-        move.xyzw o_vertex3, tempCalc2
+        move o_vertex3, tempCalc2
 
         bal    ret, write_to_clipbuffer
 
@@ -500,9 +500,9 @@ checkC:
         bal     ret,            loadData
         bal     ret,            CIntersect
         bal     ret,            write_to_clipbuffer
-        move.xyzw stq1,          tempCalc4
-        move.xyzw stq2,          tempIntersect1
-        move.xyzw stq3,          tempCalc3
+        move stq1,          tempCalc4
+        move stq2,          tempIntersect1
+        move stq3,          tempCalc3
 
 loadColorsC1:
         ibeq    useColor,            vi00,           write_C_p2
@@ -510,70 +510,70 @@ loadColorsC1:
         bal     ret,            loadData
         bal     ret,            CIntersect
         bal     ret,            write_to_clipbuffer
-        move.xyzw color1,          tempCalc4
-        move.xyzw color2,          tempIntersect1
-        move.xyzw color3,          tempCalc3
+        move color1,          tempCalc4
+        move color2,          tempIntersect1
+        move color3,          tempCalc3
 write_C_p2:
-        move.xyzw o_vertex1, tempCalc2
+        move o_vertex1, tempCalc2
 
-        move.xyzw o_vertex2, vertex1
+        move o_vertex2, vertex1
 
-        move.xyzw o_vertex3, tempCalc1
+        move o_vertex3, tempCalc1
 
          bal    ret, write_to_clipbuffer
 
         ibeq    useSTQ,            vi00,           loadColorsC2
-        move.xyzw o_vertex1, stq1
+        move o_vertex1, stq1
 
-        move.xyzw o_vertex2, stq2
+        move o_vertex2, stq2
 
-        move.xyzw o_vertex3, stq3
+        move o_vertex3, stq3
 
         bal     ret, write_to_clipbuffer
 loadColorsC2:
         ibeq    useColor,            vi00,           next_verts
 
-        move.xyzw o_vertex1, color1
+        move o_vertex1, color1
 
-        move.xyzw o_vertex2, color2
+        move o_vertex2, color2
 
-        move.xyzw o_vertex3, color3
+        move o_vertex3, color3
 
         bal     ret, write_to_clipbuffer
 
         b next_verts
 
 CIntersect:
-        move.xyzw tempIntersect1, o_vertex3
+        move tempIntersect1, o_vertex3
 
-        move.xyzw tempCalc3, o_vertex1
+        move tempCalc3, o_vertex1
 
-        move.xyzw tempCalc4, o_vertex2
+        move tempCalc4, o_vertex2
 
         bal     ret2,       lerpValues
 
-        move.xyzw tempIntersect1, o_vertex1
+        move tempIntersect1, o_vertex1
 
-        move.xyzw o_vertex1, o_vertex2
+        move o_vertex1, o_vertex2
 
-        move.xyzw o_vertex2, tempIntersect1
+        move o_vertex2, tempIntersect1
 
-        move.xyzw o_vertex3, tempCalc4
+        move o_vertex3, tempCalc4
 
         jr ret
 
     lerpValues:
-      sub.xyzw  temp, tempCalc3, tempIntersect1
+      sub  temp, tempCalc3, tempIntersect1
 
-      mul.xyzw  temp, temp, inter[x]
+      mul  temp, temp, inter[x]
 
-      add.xyzw tempCalc3, tempIntersect1, temp
+      add tempCalc3, tempIntersect1, temp
 
-        sub.xyzw  temp, tempCalc4, tempIntersect1
+        sub  temp, tempCalc4, tempIntersect1
 
-      mul.xyzw  temp, temp, inter[y]
+      mul  temp, temp, inter[y]
 
-      add.xyzw tempCalc4, tempIntersect1, temp
+      add tempCalc4, tempIntersect1, temp
 
       jr ret2
 

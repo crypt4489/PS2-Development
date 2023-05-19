@@ -868,7 +868,7 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
                 }
                 else
                 {
-                    ERRORLOG("Jake is a stupid son of a bitch");
+                    ERRORLOG("Unsupported load mesh code");
                 }
             }
         }

@@ -1,7 +1,7 @@
 #ifndef PERLIN_H
 #define PERLIN_H
 
-#include "psxgte.h"
+#include "psxmath.h"
 #include "irx_imports.h"
 int Fade(int t);
 int lerp(int x, int y, int w);
