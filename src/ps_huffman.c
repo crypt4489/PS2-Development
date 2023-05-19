@@ -5,7 +5,7 @@
 
 #define MAX_TREE 100
 
-static u8* binary = NULL;
+static u8 *binary = NULL;
 static u8 buffer;
 static int iter = 0;
 static int n = 0;
@@ -17,20 +17,20 @@ typedef struct huffman_node_t
 	struct huffman_node_t *left, *right;
 } HuffmanNode;
 
-static HuffmanNode* CreateHuffmanNode();
-static int isLeaf(HuffmanNode* node);
+static HuffmanNode *CreateHuffmanNode();
+static int isLeaf(HuffmanNode *node);
 static void fillBuffer();
 static int readBoolean();
 static unsigned char readChar();
-static HuffmanNode* readDeocder();
+static HuffmanNode *readDeocder();
 static void Print(HuffmanNode *node, int arr[], int top);
 static unsigned int readInt();
-static int isLeaf(HuffmanNode* node);
+static int isLeaf(HuffmanNode *node);
 static void cleanupTree(HuffmanNode *root);
 
-static HuffmanNode* CreateHuffmanNode()
+static HuffmanNode *CreateHuffmanNode()
 {
-	HuffmanNode* node = (HuffmanNode*)malloc(sizeof(HuffmanNode));
+	HuffmanNode *node = (HuffmanNode *)malloc(sizeof(HuffmanNode));
 
 	if (node == NULL)
 	{
@@ -51,7 +51,8 @@ static int readBoolean()
 {
 	n--;
 	int ret = ((buffer >> n) & 1);
-	if (n == 0) fillBuffer();
+	if (n == 0)
+		fillBuffer();
 	return ret;
 }
 
@@ -76,18 +77,16 @@ static unsigned char readChar()
 
 	x |= (buffer >> n);
 
-
-
 	return (x & 0xff);
 }
 
-static HuffmanNode* readDeocder()
+static HuffmanNode *readDeocder()
 {
 	int bit = readBoolean();
-	//printf("%d\n", bit);
+	// printf("%d\n", bit);
 	if (bit)
 	{
-		HuffmanNode* node = CreateHuffmanNode();
+		HuffmanNode *node = CreateHuffmanNode();
 		node->c = readChar();
 		node->freq = -1;
 		node->left = node->right = NULL;
@@ -95,7 +94,7 @@ static HuffmanNode* readDeocder()
 	}
 	else
 	{
-		HuffmanNode* node = CreateHuffmanNode();
+		HuffmanNode *node = CreateHuffmanNode();
 		node->c = '-';
 		node->freq = -1;
 		node->left = readDeocder();
@@ -103,7 +102,6 @@ static HuffmanNode* readDeocder()
 		return node;
 	}
 }
-
 
 static void Print(HuffmanNode *node, int arr[], int top)
 {
@@ -142,8 +140,7 @@ static unsigned int readInt()
 	return x;
 }
 
-
-static int isLeaf(HuffmanNode* node)
+static int isLeaf(HuffmanNode *node)
 {
 	if (node->left == NULL && node->right == NULL)
 	{
@@ -155,43 +152,45 @@ static int isLeaf(HuffmanNode* node)
 
 static void cleanupTree(HuffmanNode *root)
 {
-    if (root)
-    {
-        if (isLeaf(root))
-        {
-            free(root);
-            return;
-        } else {
-            cleanupTree(root->left);
-            cleanupTree(root->right);
-            free(root);
-        }
-    }
+	if (root)
+	{
+		if (isLeaf(root))
+		{
+			free(root);
+			return;
+		}
+		else
+		{
+			cleanupTree(root->left);
+			cleanupTree(root->right);
+			free(root);
+		}
+	}
 }
 
 u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 {
-    binary = input;
+	binary = input;
 
-    fillBuffer();
+	fillBuffer();
 
-    HuffmanNode *root =  readDeocder();
+	HuffmanNode *root = readDeocder();
 
-    //int arr[MAX_TREE];
-	//int top = 0;
+	// int arr[MAX_TREE];
+	// int top = 0;
 
 	int length = readInt();
 
-    u8 *bufferFile = (u8*)malloc(length);
+	u8 *bufferFile = (u8 *)malloc(length);
 
-    if (bufferFile == NULL)
-    {
-        ERRORLOG("Cannot allocate buffer for decompressed file");
-    }
+	if (bufferFile == NULL)
+	{
+		ERRORLOG("Cannot allocate buffer for decompressed file");
+	}
 
-    INFOLOG("decompressed length %d", length);
+	INFOLOG("decompressed length %d", length);
 
-    int index = 0;
+	int index = 0;
 
 	for (int i = 0; i < length; i++)
 	{
@@ -208,14 +207,14 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 		index++;
 	}
 
-    cleanupTree(root);
+	cleanupTree(root);
 
-    n = 0;
-    buffer = 0;
-    binary = NULL;
-    iter = 0;
+	n = 0;
+	buffer = 0;
+	binary = NULL;
+	iter = 0;
 
-    *bufferSize = length;
+	*bufferSize = length;
 
-    return bufferFile;
+	return bufferFile;
 }
