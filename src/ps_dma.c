@@ -27,7 +27,7 @@ qword_t *CreateDMATag(qword_t *q, u32 code, u32 size, u32 w2, u32 w3, u32 spr, .
         addr = va_arg(tag_args, u32);
     }
 
-   
+
     q->dw[0] = DMATAG(size, 0, code, 0, addr, 0);
     q->sw[2] = w2;
     q->sw[3] = w3;
@@ -42,11 +42,13 @@ qword_t *CreateDirectTag(qword_t *q, u32 size, u32 inte)
     q++;
     return q;
 }
+
 qword_t *AddSizeToDMATag(qword_t *q, u32 size)
 {
     q->sw[0] = (q->sw[0] | (size & 0x0000FFFF));
     return q;
 }
+
 qword_t *AddSizeToDirectTag(qword_t *q, u32 size)
 {
     q->sw[3] = (q->sw[3] | (size & 0x0000FFFF));
@@ -100,6 +102,7 @@ DMABuffers *CreateDMABuffers(u32 size)
     buffer->currPointer = buffer->dma_chains[0]->data;
     return buffer;
 }
+
 DMABuffers *SwitchDMABuffers(DMABuffers *bufferstruct)
 {
     if (bufferstruct->bufferId == 0)
@@ -115,11 +118,13 @@ DMABuffers *SwitchDMABuffers(DMABuffers *bufferstruct)
 
     return bufferstruct;
 }
+
 qword_t *ResetBufferPointer(packet_t *pack)
 {
     packet_reset(pack);
     return pack->data;
 }
+
 void DestroyDMABuffers(DMABuffers *buff)
 {
     free(buff->dma_chains[0]);
@@ -176,4 +181,3 @@ void SubmitDMABuffersAsPipeline(qword_t *q, void *data)
     ParsePipelineDMA(data, g_Manager.dmabuffers->currPointer);
     g_Manager.dmabuffers->currPointer = q;
 }
-

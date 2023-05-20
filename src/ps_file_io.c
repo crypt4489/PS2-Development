@@ -1,5 +1,8 @@
 #include "ps_file_io.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "ps_gameobject.h"
 #include "ps_texture.h"
 #include "ps_misc.h"
@@ -8,11 +11,7 @@
 #include "ps_animation.h"
 #include "ps_manager.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 sceCdRMode sStreamMode;
-const u32 SectorSize = 2048;
 
 #define SECTOR_SIZE 2048
 
