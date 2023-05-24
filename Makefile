@@ -13,7 +13,7 @@ CEXT      := c
 VSMEXT    := vsm
 
 EE_BIN = test.elf
-IOP_MOD = sio2man.irx padman.irx
+IOP_MOD = sio2man.irx padman.irx sound.irx libsd.irx
 
 EE_SRC_VSM := $(shell find $(VSM_DIR) -maxdepth 1 -type f -name *.$(VSMEXT))
 EE_OBJS :=  $(patsubst $(VSM_DIR)/%, $(OBJS_DIR)/%, $(EE_SRC_VSM:.$(VSMEXT)=.$(OBJEXT)))
@@ -26,7 +26,7 @@ EE_LIBS=-ldma -lgraph -ldraw -lmath3d -lkernel -lpacket -ldebug -lpad -lcdvd -lp
 
 PS2SDK=/usr/local/ps2dev/ps2sdk
 
-LOG_LEVEL ?= 3
+LOG_LEVEL?=3
 
 EE_CFLAGS += -DPS_LOG_LVL=$(LOG_LEVEL) -Wall -Wno-strict-aliasing -Wno-char-subscripts --std=gnu99 -I$(INC_DIR)
 EE_LDFLAGS = -L$(PSDSDK)/ee/common/lib -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib

@@ -295,7 +295,7 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
 
     if (msize == 0)
     {
-        ERRORLOG("bounce out no materials");
+        ERRORLOG("no materials. must be at least 1");
         return;
     }
 
@@ -316,11 +316,9 @@ void CreateGraphicsPipeline(GameObject *obj, const char* name)
 
     u32 uploadLoop = CreateUpload(obj->vertexBuffer.materials, drawSize, msize);
 
-    DEBUGLOG("%d %d", uploadLoop, upload);
-
     sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + totalHeader + 8 + RenderPassesForAnim(renderPasses, pipeCode);
 
-    DEBUGLOG("size of pipe : %d", sizeOfPipeline);
+    //DEBUGLOG("size of pipe : %d", sizeOfPipeline);
 
     qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * sizeOfPipeline);
 
@@ -462,7 +460,6 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
         {
             stage3 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericSpecular);
         } else {
-            DEBUGLOG("HERE!");
             stage3 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericLight3D);
         }
 
@@ -506,7 +503,6 @@ void CreateVU1ProgramsList(qword_t *q, u32 pipeCode, u16 drawCode)
         }
         else if ((drawCode & DRAW_SKINNED) != 0)
         {
-            DEBUGLOG("hererere");
             stage1 = GetProgramAddressVU1Manager(g_Manager.vu1Manager, VU1GenericSkinned);
         }
 
@@ -530,7 +526,7 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name, u32 pipeCode, u16 d
 
     if (msize == 0)
     {
-        ERRORLOG("bounce out no materials");
+        ERRORLOG("no materials. must be at least 1");
         return;
     }
 
@@ -552,7 +548,7 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name, u32 pipeCode, u16 d
 
     sizeOfPipeline = sizeOfPipeline +  UploadSize(uploadLoop, upload) + 1 + 3 + 10;
 
-    DEBUGLOG("size of pipe : %d", sizeOfPipeline);
+    //DEBUGLOG("size of pipe : %d", sizeOfPipeline);
 
     qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * sizeOfPipeline);
 
@@ -676,7 +672,7 @@ void CreateSpecularPipeline(GameObject *obj, const char *name)
 
     if (msize == 0)
     {
-        ERRORLOG("bounce out no materials");
+        ERRORLOG("no materials. must be at least 1");
         return;
     }
 
@@ -707,7 +703,7 @@ void CreateSpecularPipeline(GameObject *obj, const char *name)
 
 
 
-    DEBUGLOG("size of pipe : %d", sizeOfPipeline);
+    //DEBUGLOG("size of pipe : %d", sizeOfPipeline);
 
     qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * sizeOfPipeline);
 

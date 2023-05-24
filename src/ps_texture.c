@@ -12,9 +12,6 @@
 #include <gs_gp.h>
 #include <stdlib.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-
 static void StripFilePath(const char *filepath, char *texname)
 {
     const char *temp = strrchr(filepath, 92);
@@ -73,7 +70,7 @@ u32 compareTextureNames(Texture *tex1, Texture *tex2)
 
 void addStringNameToTexture(Texture *tex, const char *buffer)
 {
-    strncpy(tex->name, buffer, MAX_CHAR_TEXTURE_NAME);
+    memcpy(tex->name, buffer, strlen(buffer));
 }
 
 void CleanTextureStruct(Texture *tex)
@@ -327,5 +324,3 @@ Texture *SetTextureFilter(Texture *tex, u8 filter)
 
     return tex;
 }
-
-#pragma GCC diagnostic pop

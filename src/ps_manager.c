@@ -1,7 +1,6 @@
 #include "ps_manager.h"
 
 #include <string.h>
-
 #include <graph.h>
 #include <stdlib.h>
 
@@ -14,9 +13,7 @@
 #include "ps_pad.h"
 #include "ps_file_io.h"
 #include "ps_log.h"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#include "ps_timer.h"
 
 GameManager g_Manager;
 
@@ -92,18 +89,18 @@ void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, 
 
     g_Manager.dmabuffers = CreateDMABuffers(bufferSize);
     g_Manager.vu1Manager = CreateVU1Manager(programSize);
-
+    g_Manager.FPS = 0;
+    g_Manager.timer = TimerZeroEnable();
+    g_Manager.currentTime = g_Manager.lastTime = getTicks(g_Manager.timer);
 
     CreateManagerRenderTargets();
 
     SetupManagerTexture();
-
-
 }
 
 void UpdateCurrentTexNameInGS(GameManager *manager, const char *name)
 {
-    strncpy(manager->textureInVram->name, name, MAX_CHAR_TEXTURE_NAME);
+    memcpy(manager->textureInVram->name, name, strlen(name));
 }
 
 void SetupManagerTexture()
@@ -113,6 +110,7 @@ void SetupManagerTexture()
     CreateTexStructs(g_Manager.textureInVram, g_Manager.textureInVram->width, g_Manager.textureInVram->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 0);
 
     CreateClutBuf(&g_Manager.textureInVram->clut, 16, GS_PSM_32);
+
     g_Manager.textureInVram->clut.start = 0;
 	g_Manager.textureInVram->clut.load_method = CLUT_LOAD;
 	g_Manager.textureInVram->clut.psm = GS_PSM_32;
@@ -122,12 +120,26 @@ void SetupManagerTexture()
 
 void EndFrame()
 {
+    static u32 frameCounter = 0;
+
     graph_wait_vsync();
 
     if (g_Manager.enableDoubleBuffer != 0)
         SwapManagerDrawBuffers();
 
     SwapManagerDMABuffers();
+
+    g_Manager.currentTime = getTicks(g_Manager.timer);
+
+    if (g_Manager.currentTime > ( g_Manager.lastTime + 1000.0f ))
+    {
+        g_Manager.FPS = frameCounter;
+        DEBUGLOG("frames per second %d", g_Manager.FPS);
+        g_Manager.lastTime = g_Manager.currentTime;
+        frameCounter = 0;
+    }
+
+    frameCounter++;
 }
 
 
@@ -281,5 +293,3 @@ void SwapManagerDMABuffers()
 {
     g_Manager.dmabuffers = SwitchDMABuffers(g_Manager.dmabuffers);
 }
-
-#pragma GCC diagnostic pop

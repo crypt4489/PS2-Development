@@ -9,9 +9,6 @@
 #include "ps_misc.h"
 #include "ps_log.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-
 u32 GetDoubleBufferOffset(u32 base)
 {
     u32 half = (1024 - base) / 2;
@@ -247,7 +244,7 @@ VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses
     node->callBackSize = sizeOfCBS;
     node->currentRenderPass = 0;
     node->renderPasses = renderPasses;
-    strncpy(node->name, name, MAX_CHAR_PIPELINE_NAME);
+    memcpy(node->name, name, strlen(name));
     return node;
 }
 
@@ -287,5 +284,3 @@ qword_t *AddPipelineCallbackNodeQword(VU1Pipeline *pipeline, PipelineCallback *n
     b++;
     return b;
 }
-
-#pragma GCC diagnostic pop

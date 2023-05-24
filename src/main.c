@@ -25,14 +25,16 @@
 #include "ps_dma.h"
 #include "ps_morphtarget.h"
 #include "ps_pipelines.h"
+#include "ps_fast_maths.h"
+#include "ps_log.h"
+#include "ps_animation.h"
+#include "ps_sound.h"
 #include <math.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <graph.h>
-#include "ps_fast_maths.h"
 #include <stdlib.h>
-#include "ps_log.h"
-#include "ps_animation.h"
+
 
 extern u32 VU1_LightStage3_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_LightStage3_CodeEnd __attribute__((section(".vudata")));
@@ -326,8 +328,6 @@ static void SetupSphere()
 
     sphere = InitializeGameObject();
 
-    DEBUGLOG("WE ARE HERE!");
-
     ReadModelFile("MODELS\\BODY.CBIN", &sphere->vertexBuffer);
 
     SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1));
@@ -438,7 +438,6 @@ static void SetupShadowViewer()
 
     u32 id = 0;
 #ifdef RESAMPLED
-
     id = resampledTexture->id;
 #else
     id = shadowTexture->id;
@@ -515,7 +514,7 @@ static void UpdateTessGrid(GameObject *obj)
 
     // int totalVerts = xDim+1 * 2;
 
-    //  INFOLOG("total verts in row %d", totalVerts);
+    //  INFOLOG("total verts in row %d", totalVerg_Manager.timer);
 }
 
 static void SetupTessObject()
@@ -692,30 +691,19 @@ static void RenderShadowScene()
 
 int Render()
 {
-    float lastTime = 0.0f;
-    float lastTimeFrame = getTicks(ts);
-    u32 frameCounter = 0;
+    float lastTime = getTicks(g_Manager.timer);
+
     for (;;)
     {
-        float currentTime = getTicks(ts);
-
-        if (currentTime > ( lastTimeFrame + 1000.0f ))
-        {
-            DEBUGLOG("frame per second %d", frameCounter);
-            lastTimeFrame = currentTime;
-            frameCounter = 0;
-        }
-
+        float currentTime = getTicks(g_Manager.timer);
         float delta = (currentTime - lastTime) * 0.001f;
         lastTime = currentTime;
-       // DEBUGLOG("%f %f %f", currentTime, delta, totalWhat);
 
         UpdatePad();
 
         UpdateAnimator(sphere->objAnimator, delta);
 
-
-        UpdateGlossTransform();
+        //UpdateGlossTransform();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
@@ -739,15 +727,6 @@ int Render()
 
         EndFrame();
 
-        //sphere->objAnimator->currentTime += 0.1f;
-
-        //if (sphere->objAnimator->currentTime >= 1.0f)
-        //{
-         //   sphere->objAnimator->currentTime = 0.0f;
-        //}
-
-        // while(1);
-
         UpdateLight();
 
 
@@ -757,8 +736,6 @@ int Render()
         snprintf(print_out, 20, "DREW FLETCHER %d", no_plugin);
 
         no_plugin++;
-
-        frameCounter++;
     }
 
     return 0;
@@ -859,25 +836,21 @@ int main(int argc, char **argv)
 
     SetupWorldObjects();
 
-    ts = TimerZeroEnable();
-
     float totalTime;
 
-    float startTime = totalTime = getTicks(ts);
+    float startTime = totalTime = getTicks(g_Manager.timer);
 
     SetupVU1Programs();
 
-    float endTime = getTicks(ts);
+    float endTime = getTicks(g_Manager.timer);
 
     DEBUGLOG("VU1 programs %f", endTime - startTime);
 
-
-
-    startTime = getTicks(ts);
+    startTime = getTicks(g_Manager.timer);
 
     LoadInTextures();
 
-    endTime = getTicks(ts);
+    endTime = getTicks(g_Manager.timer);
 
     DEBUGLOG("texes %f", endTime - startTime);
 
@@ -885,25 +858,27 @@ int main(int argc, char **argv)
 
     CreateLights();
 
-    startTime = getTicks(ts);
+    startTime = getTicks(g_Manager.timer);
 
     SetupGameObjects();
 
-    endTime = getTicks(ts);
+    endTime = getTicks(g_Manager.timer);
 
     DEBUGLOG("gos %f", endTime - startTime);
 
     SetupFont();
 
-    endTime = getTicks(ts);
+    endTime = getTicks(g_Manager.timer);
 
     DEBUGLOG("total %f", endTime - totalTime);
+
+    init_sound_rpc();
 
     Render();
 
     CleanUpGame();
 
-    TimerZeroDisable(ts);
+    TimerZeroDisable(g_Manager.timer);
 
     SleepThread();
 

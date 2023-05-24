@@ -559,6 +559,16 @@ struct dma_buffers_t
     int bufferId;
 };
 
+
+struct timer_struct_t;
+typedef struct timer_struct_t TimerStruct;
+
+struct timer_struct_t
+{
+    u32 ctr;
+    s32 id;
+};
+
 typedef struct
 {
     RenderTarget *targetBack;
@@ -574,6 +584,9 @@ typedef struct
     color_t bgkc;
     u32 ScreenWidth, ScreenHeight;
     u32 ScreenWHalf, ScreenHHalf;
+    float lastTime, currentTime;
+    u32 FPS;
+    TimerStruct *timer;
 } GameManager;
 
 typedef struct waves_t
