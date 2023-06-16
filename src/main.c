@@ -34,7 +34,15 @@
 #include <malloc.h>
 #include <graph.h>
 #include <stdlib.h>
+#include <audsrv.h>
+#include <sifrpc.h>
+#include <loadfile.h>
+#include <iopheap.h>
+#include <kernel.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 extern u32 VU1_LightStage3_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_LightStage3_CodeEnd __attribute__((section(".vudata")));
@@ -59,6 +67,9 @@ extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 
 extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_SphereMapStage2_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_SphereMapStage2_CodeEnd __attribute__((section(".vudata")));
 
 TimerStruct *ts;
 
@@ -93,11 +104,12 @@ const char *glossName = "GLOSS.PNG";
 const char *worldName = "WORLD.PNG";
 const char *wallName = "WALL.PNG";
 
-GameObject *box;
-GameObject *sphere;
-GameObject *room;
-GameObject *body;
-GameObject *multiSphere;
+GameObject *box = NULL;
+GameObject *body = NULL;
+GameObject *sphere = NULL;
+GameObject *room = NULL;
+GameObject *body = NULL;
+GameObject *multiSphere = NULL;
 
 static float lodGrid[4] = {150.0f, 125.0f, 75.0f, 50.0f};
 
@@ -313,12 +325,12 @@ static void SetupCube()
 
     CreateGraphicsPipeline(box, "Clipper");
 
-  //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
+    //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
 
     AddObjectToRenderWorld(world, box);
 }
 
-static void SetupSphere()
+static void SetupBody()
 {
     color_t color;
 
@@ -326,35 +338,33 @@ static void SetupSphere()
 
     VECTOR object_position = {0.0f, 0.0f, 0.0f, 0.0f};
 
-    sphere = InitializeGameObject();
+    body = InitializeGameObject();
 
-    ReadModelFile("MODELS\\BODY.CBIN", &sphere->vertexBuffer);
+    ReadModelFile("MODELS\\BODY.CBIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(sphere, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1));
+    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1));
 
-    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
+    VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
              scales,
-             1.0f, sphere->ltm);
+             1.0f, body->ltm);
 
-    CreateMaterial(&sphere->vertexBuffer, 0, sphere->vertexBuffer.vertexCount - 1, 10);
+    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.vertexCount - 1, 10);
 
-    sphere->update_object = NULL;
+    body->update_object = NULL;
 
-    InitOBB(sphere, BBO_FIT);
+    InitOBB(body, BBO_FIT);
 
-   // CreateSphereTarget();
+    // CreateSphereTarget();
 
-    AnimationData *data = GetAnimationByIndex(sphere->vertexBuffer.meshAnimationData->animations, 2);
+    AnimationData *data = GetAnimationByIndex(body->vertexBuffer.meshAnimationData->animations, 2);
 
-    Animator *animator = CreateAnimator(data);
+    body->objAnimator = CreateAnimator(data);
 
-    sphere->objAnimator = animator;
+    CreateGraphicsPipeline(body, "DOES THIS WORK?");
 
-    CreateGraphicsPipeline(sphere, "DOES THIS WORK?");
-
-    AddObjectToRenderWorld(world, sphere);
+    AddObjectToRenderWorld(world, body);
 }
 
 static void SetupMultiSphere()
@@ -367,7 +377,7 @@ static void SetupMultiSphere()
 
     multiSphere = InitializeGameObject();
     ReadModelFile("MODELS\\MULTISPHERE.BIN", &multiSphere->vertexBuffer);
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0));
 
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
@@ -383,6 +393,8 @@ static void SetupMultiSphere()
 
     CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, glossName), lightTransform);
 
+    // CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
+
     AddObjectToRenderWorld(world, multiSphere);
 }
 
@@ -396,10 +408,9 @@ static void SetupRoom()
 
     room = InitializeGameObject();
     ReadModelFile("MODELS\\ROOM.BIN", &room->vertexBuffer);
-    SetupGameObjectPrimRegs(room,  color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(room, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {25.0f, 25.0f, 25.0f, 1.0f};
-
 
     SetupLTM(object_position, up, right, forward,
              scales,
@@ -454,7 +465,6 @@ static void SetupShadowViewer()
     // create_pipeline_obj_vu1pipeline(shadowTexView, VU1GenericTex3D, 1000);
 
     CreateGraphicsPipeline(shadowTexView, GEN_PIPELINE_NAME);
-
 }
 
 float ComputeDistanceFromFinitePlane(GameObject *obj, VECTOR pos, VECTOR topExtent, VECTOR bottomExtent)
@@ -529,7 +539,6 @@ static void SetupTessObject()
 
     VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
 
-
     SetupLTM(tempPos2, up, right, forward,
              scales,
              1.0f, lod_floor->ltm);
@@ -584,15 +593,15 @@ static void SetupGameObjects()
 {
     InitSkybox();
 
-  //  SetupCube();
+    //  SetupCube();
 
-    SetupSphere();
+    SetupBody();
 
-   //  SetupMultiSphere();
+    SetupMultiSphere();
 
     // SetupShadowViewer();
 
-     // SetupRoom();
+    // SetupRoom();
 
     //  SetupTessObject();
 }
@@ -700,26 +709,24 @@ int Render()
         lastTime = currentTime;
 
         UpdatePad();
+        if (body)
+            UpdateAnimator(body->objAnimator, delta);
 
-        UpdateAnimator(sphere->objAnimator, delta);
-
-        //UpdateGlossTransform();
+        UpdateGlossTransform();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
         DrawWorld(world);
 
-
-
         // DrawWorld(roomWorld);
 
         // RenderShadowScene();
 
-        //while(PollVU1DoneProcessing(&g_Manager) < 0);
+        // while(PollVU1DoneProcessing(&g_Manager) < 0);
 
-     // ReadFromVU1(vu1_data_address + (*vif1_top * 0), 16 * 4, 1);
+        // ReadFromVU1(vu1_data_address + (*vif1_top * 0), 16 * 4, 1);
 
-//while(1);
+        // while(1);
 
         PrintText(myFont, print_out, -310, -220);
 
@@ -729,9 +736,9 @@ int Render()
 
         UpdateLight();
 
+        //  UpdateGlossTransform();
 
-
-       // UpdateSphereMorph();
+        // UpdateSphereMorph();
 
         snprintf(print_out, 20, "DREW FLETCHER %d", no_plugin);
 
@@ -774,7 +781,11 @@ static void SetupVU1Programs()
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 
-    prog = CreateVU1Program(&VU1_GenericBonesAnimStage1_CodeStart, &VU1_GenericBonesAnimStage1_CodeEnd, 0); // 6
+    prog = CreateVU1Program(&VU1_GenericBonesAnimStage1_CodeStart, &VU1_GenericBonesAnimStage1_CodeEnd, 0); // 7
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_SphereMapStage2_CodeStart, &VU1_SphereMapStage2_CodeEnd, 0); // 8
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 }
@@ -872,15 +883,37 @@ int main(int argc, char **argv)
 
     DEBUGLOG("total %f", endTime - totalTime);
 
-    init_sound_rpc();
+    audsrv_adpcm_t sample;
+
+    VagFile *vag = LoadVagFile("SOUNDS\\MUSIC.VAG");
+
+    SifInitRpc(0);
+    int ret;
+    printf("sample: kicking IRXs\n");
+    ret = SifLoadModule("cdrom0:\\LIBSD.IRX", 0, NULL);
+    printf("libsd loadmodule %d\n", ret);
+
+    printf("sample: loading audsrv\n");
+    ret = SifLoadModule("cdrom0:\\AUDSRV.IRX", 0, NULL);
+    printf("audsrv loadmodule %d\n", ret);
+
+    ret = audsrv_init();
+
+    audsrv_adpcm_init();
+
+    audsrv_set_volume(MAX_VOLUME);
+
+    audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength);
+    DEBUGLOG("%d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size);
+    int channel = audsrv_ch_play_adpcm(-1, &sample);
+    audsrv_adpcm_set_volume(channel, MAX_VOLUME);
 
     Render();
 
     CleanUpGame();
 
-    TimerZeroDisable(g_Manager.timer);
-
     SleepThread();
 
     return 0;
 }
+#pragma GCC diagnostic pop

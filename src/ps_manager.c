@@ -121,6 +121,7 @@ void SetupManagerTexture()
 void EndFrame()
 {
     static u32 frameCounter = 0;
+    static u8 init = 0;
 
     graph_wait_vsync();
 
@@ -129,16 +130,22 @@ void EndFrame()
 
     SwapManagerDMABuffers();
 
-    g_Manager.currentTime = getTicks(g_Manager.timer);
-
-    if (g_Manager.currentTime > ( g_Manager.lastTime + 1000.0f ))
+    if (init)
     {
-        g_Manager.FPS = frameCounter;
-        DEBUGLOG("frames per second %d", g_Manager.FPS);
-        g_Manager.lastTime = g_Manager.currentTime;
-        frameCounter = 0;
-    }
+        g_Manager.currentTime = getTicks(g_Manager.timer);
 
+        if (g_Manager.currentTime > ( g_Manager.lastTime + 1000.0f ))
+        {
+            g_Manager.FPS = frameCounter;
+            DEBUGLOG("frames per second %d", g_Manager.FPS);
+            g_Manager.lastTime = g_Manager.currentTime;
+            frameCounter = 0;
+        }
+    } else
+    {
+        g_Manager.lastTime = getTicks(g_Manager.timer);
+        init = 1;
+    }
     frameCounter++;
 }
 
@@ -207,6 +214,7 @@ void ClearManagerStruct(GameManager *manager)
     if (manager->dmabuffers->dma_chains[0]) packet_free(manager->dmabuffers->dma_chains[0]);
     if (manager->dmabuffers->dma_chains[1]) packet_free(manager->dmabuffers->dma_chains[1]);
     if (manager->dmabuffers) free(manager->dmabuffers);
+    if (manager->timer) TimerZeroDisable(g_Manager.timer);
 }
 
 Texture* GetTexObjFromTexList(GameManager *manager, int index)

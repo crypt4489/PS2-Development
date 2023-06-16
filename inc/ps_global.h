@@ -57,7 +57,8 @@ enum VU1Programs
     VU1GenericAnimTex,
     VU1GenericSpecular,
     VU1GenericClipper,
-    VU1GenericSkinned
+    VU1GenericSkinned,
+    VU1GenericSphere
 };
 
 enum VU1PipelineLocations
@@ -428,7 +429,8 @@ enum DrawTags
     DRAW_SKINNED = 0x020,
     DRAW_ANIM_TEX = 0x040,
     DRAW_ENVMAP = 0x080,
-    DRAW_SPECULAR = 0x100
+    DRAW_SPECULAR = 0x100,
+    DRAW_SPHERE = 0x200
 };
 
 
@@ -451,24 +453,24 @@ typedef union obj_render_state
 {
     struct
     {
-        unsigned int DRAWING_OPTION : 1;
-        unsigned int CULLING_OPTION : 1;
-        unsigned int CULLING_VISIBLE : 1;
-        unsigned int ALPHA_ENABLE : 1;
-        unsigned int ALPHA_STATE : 2;
-        unsigned int TEXTURE_MAPPING : 1;
-        unsigned int COLOR_ENABLE : 1;
-        unsigned int Z_ENABLE : 1;
-        unsigned int Z_TYPE : 2;
-        unsigned int LIGHTING_ENABLE : 1;
-        unsigned int BACKFACE_CULLING : 1;
-        unsigned int CLIPPING : 1;
-        unsigned int ENVIRONMENTMAP : 1;
-        unsigned int SPECULAR : 1;
-        unsigned int ANIMATION_TEXUTRE : 1;
-        unsigned int MORPH_TARGET : 1;
-        unsigned int SKELETAL_ANIMATION : 1;
-        unsigned int pad : 13;
+        unsigned int DRAWING_OPTION : 1; //1
+        unsigned int CULLING_OPTION : 1; //2
+        unsigned int CULLING_VISIBLE : 1; //3
+        unsigned int ALPHA_ENABLE : 1; //4
+        unsigned int ALPHA_STATE : 2; //5-6
+        unsigned int TEXTURE_MAPPING : 1; //7
+        unsigned int COLOR_ENABLE : 1; //8
+        unsigned int Z_ENABLE : 1; //9
+        unsigned int Z_TYPE : 2; //10-11
+        unsigned int LIGHTING_ENABLE : 1; //12
+        unsigned int BACKFACE_CULLING : 1; //13
+        unsigned int CLIPPING : 1; //14
+        unsigned int ENVIRONMENTMAP : 1; //15
+        unsigned int SPECULAR : 1; //16
+        unsigned int ANIMATION_TEXUTRE : 1; //17
+        unsigned int MORPH_TARGET : 1; //18
+        unsigned int SKELETAL_ANIMATION : 1;//19
+        unsigned int pad : 13;//20-32
     };
 
     unsigned int state;

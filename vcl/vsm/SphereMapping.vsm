@@ -1,0 +1,62 @@
+; =================================================
+; flowMon::Emit() vcl 1.4beta7 produced this code:
+		.vu
+		.align 4
+		.global	VU1_SphereMapStage2_CodeStart
+		.global	VU1_SphereMapStage2_CodeEnd
+VU1_SphereMapStage2_CodeStart:
+__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SphereMapping_vcl_4:
+; _LNOPT_w=[ normal2 ] 9 [9 0] 9   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SphereMapping_vcl_4]
+         NOP                                                        lq.xyz        VF01,4(VI00)                        
+         NOP                                                        xtop          VI01                                
+         NOP                                                        lq.xyz        VF02,5(VI00)                        
+         NOP                                                        ilw.w         VI03,0(VI01)                        
+         NOP                                                        lq.xyz        VF03,6(VI00)                        
+         NOP                                                        lq.xyz        VF04,7(VI00)                        
+         NOP                                                        lq.xyz        VF05,15(VI00)                       
+         NOP                                                        ibeq          VI03,VI00,end                       
+         NOP                                                        iaddiu        VI02,VI01,0x00000001                
+; _LNOPT_w=[ normal2 ] 3 [3 0] 3   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SphereMapping_vcl_5]
+         NOP                                                        iadd          VI04,VI02,VI03                      
+         NOP                                                        iadd          VI05,VI04,VI03                      
+         NOP                                                        iadd          VI06,VI01,VI03                      
+vertexLoop:
+; _LNOPT_w=[ normal2 ] 28 [90 23] 91   [vertexLoop]
+         NOP                                                        lq            VF06,0(VI02)                        
+         mulax.xyz     ACC,VF01,VF06x                               loi           0x40000000                                 ;	STALL_LATENCY ?3
+         madday.xyz    ACC,VF02,VF06y                               isubiu        VI06,VI06,1                         
+         maddaz.xyz    ACC,VF03,VF06z                               iaddiu        VI02,VI02,0x00000001                
+         maddw.xyz     VF06,VF04,VF06w                              NOP                                               
+         sub.xyz       VF06,VF06,VF05                               lq.xyz        VF07,0(VI05)                               ;	STALL_LATENCY ?3
+         mul.xyz       VF08,VF07,VF06                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF08,VF08,VF08y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF08,VF08,VF08z                              NOP                                                      ;	STALL_LATENCY ?3
+         muli.x        VF08,VF08,I                                  loi           0x40000000                                 ;	STALL_LATENCY ?3
+         mulx.xyz      VF07,VF07,VF08x                              NOP                                                      ;	STALL_LATENCY ?3
+         sub.xyz       VF06,VF06,VF07                               NOP                                                      ;	STALL_LATENCY ?3
+         addw.z        VF06,VF06,VF00w                              NOP                                                      ;	STALL_LATENCY ?3
+         mul.xyz       VF07,VF06,VF06                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF07,VF07,VF07y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF07,VF07,VF07z                              NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        sqrt          Q,VF07x                                    ;	STALL_LATENCY ?3
+         addq.x        VF07,VF00,Q                                  waitq                                                    ;	STALL_LATENCY ?6
+         muli.x        VF07,VF07,I                                  NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        div           Q,VF00w,VF07x                              ;	STALL_LATENCY ?3
+         addq.x        VF07,VF00,Q                                  waitq                                                    ;	STALL_LATENCY ?6
+         mulx.x        VF06,VF06,VF07x                              NOP                                                      ;	STALL_LATENCY ?3
+         mulx.y        VF06,VF06,VF07x                              NOP                                               
+         addw.z        VF06,VF00,VF00w                              loi           0x3f000000                          
+         addi.x        VF06,VF06,I                                  iaddiu        VI04,VI04,0x00000001                       ;	STALL_LATENCY ?1
+         addi.y        VF06,VF06,I                                  iaddiu        VI05,VI05,0x00000001                
+         NOP                                                        ibne          VI06,VI01,vertexLoop                
+         NOP                                                        sq.xyz        VF06,-1(VI04)                              ;	STALL_LATENCY ?2
+end:
+; _LNOPT_w=[ ] 2 [4 0] 2   [end]
+         NOP                                                        ilw.z         VI01,0(VI01)                        
+         NOP                                                        jr            VI01                
+		.align 4
+VU1_SphereMapStage2_CodeEnd:
+;	iCount=42
+; register stats:
+;   7 VU User integer
+;   9 VU User floating point

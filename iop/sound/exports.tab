@@ -1,0 +1,13 @@
+DECLARE_EXPORT_TABLE(sound, 1, 1)
+        DECLARE_EXPORT(_start)
+        DECLARE_EXPORT(_retonly)
+        DECLARE_EXPORT(_retonly)
+        DECLARE_EXPORT(_retonly)
+
+        /* 4 */
+        DECLARE_EXPORT(read_from_iop)
+        DECLARE_EXPORT(InitSoundIOP)
+        DECLARE_EXPORT(LoadSampleToSPU)
+END_EXPORT_TABLE
+
+void _retonly() {}

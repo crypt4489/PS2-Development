@@ -118,10 +118,12 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             qwc = decode.qwc;
             tte = decode.tte;
             type = decode.type;
-            q++;
-            //  ERRORLOG("%d %d %d", channel, qwc, tte);
+           // q++;
+           //   ERRORLOG("%x %x %x", q->sw[0], q->sw[1], q->sw[2]);
             //  dump_packet(pipe->q);
             // while(1);
+
+            q++;
 
             SubmitToDMAController(q, channel, type, qwc, tte);
             q += qwc;

@@ -13,7 +13,7 @@ CEXT      := c
 VSMEXT    := vsm
 
 EE_BIN = test.elf
-IOP_MOD = sio2man.irx padman.irx sound.irx libsd.irx
+IOP_MOD = sio2man.irx padman.irx sound.irx libsd.irx audsrv.irx
 
 EE_SRC_VSM := $(shell find $(VSM_DIR) -maxdepth 1 -type f -name *.$(VSMEXT))
 EE_OBJS :=  $(patsubst $(VSM_DIR)/%, $(OBJS_DIR)/%, $(EE_SRC_VSM:.$(VSMEXT)=.$(OBJEXT)))
@@ -22,7 +22,7 @@ EE_SRC_C += $(shell find $(SRC_DIR) -maxdepth 1 -type f -name *.$(CEXT))
 EE_OBJS += $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(EE_SRC_C:.$(CEXT)=.$(OBJEXT)))
 
 EE_DVP = dvp-as
-EE_LIBS=-ldma -lgraph -ldraw -lmath3d -lkernel -lpacket -ldebug -lpad -lcdvd -lpng -lz -lunzip
+EE_LIBS=-ldma -lgraph -ldraw -lmath3d -lkernel -lpacket -ldebug -lpad -lcdvd -lpng -lz -lunzip -laudsrv
 
 PS2SDK=/usr/local/ps2dev/ps2sdk
 
