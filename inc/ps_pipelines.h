@@ -10,4 +10,5 @@ void create_pipeline_tess_grid_vu1pipeline(GameObject *obj, u32 programNumber, u
 void CreateEnvMapPipeline(GameObject *obj, const char *name, u32 pipeCode, u16 drawCode, Texture *envMap, MATRIX envMatrix);
 void CreateSpecularPipeline(GameObject *obj, const char *name);
 void CreateClipperGraphicsPipeline(GameObject *obj, const char* name);
+void CreateAlphaMapPipeline(GameObject *obj, const char *name, Texture *alphaMap);
 #endif

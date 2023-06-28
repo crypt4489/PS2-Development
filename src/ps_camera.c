@@ -15,7 +15,7 @@ void CreateCameraQuat(Camera *cam, VECTOR quat)
     CreateQuatRotationAxes(*GetRightVectorLTM(cam->ltm), *GetUpVectorLTM(cam->ltm), *GetForwardVectorLTM(cam->ltm), quat);
 }
 
-Camera* EndRendering(Camera *cam)
+Camera *EndRendering(Camera *cam)
 {
     ClearDirtyLTM(cam->ltm);
     return cam;
@@ -54,10 +54,10 @@ void CameraLookAt(Camera *cam, VECTOR pos, VECTOR target, VECTOR up)
 {
     VECTOR camLook, camRight, camUp;
 
-    camLook[0] = -pos[0] + target[0];
-    camLook[1] = -pos[1] + target[1];
-    camLook[2] = -pos[2] + target[2];
-    camLook[3] = -pos[3] + target[3];
+    camLook[0] = -target[0] + pos[0];
+    camLook[1] = -target[1] + pos[1];
+    camLook[2] = -target[2] + pos[2];
+    camLook[3] = -target[3] + pos[3];
 
     normalize(camLook, camLook);
 
@@ -91,14 +91,13 @@ void CleanCameraObject(Camera *cam)
 
 void UpdateCameraMatrix(Camera *cam)
 {
-
     VECTOR R, U, L, P;
 
     vector_copy(P, *GetPositionVectorLTM(cam->ltm));
     vector_copy(U, *GetUpVectorLTM(cam->ltm));
+    vector_copy(L, *GetForwardVectorLTM(cam->ltm));
+    vector_copy(R, *GetRightVectorLTM(cam->ltm));
 
-    ScaleVectorXYZ(L, *GetForwardVectorLTM(cam->ltm), -1.0f);
-    ScaleVectorXYZ(R, *GetRightVectorLTM(cam->ltm), -1.0f);
     float x = -DotProduct(R, P);
     float y = -DotProduct(U, P);
     float z = -DotProduct(L, P);
@@ -126,7 +125,7 @@ void UpdateCameraMatrix(Camera *cam)
 typedef void (*LTM_array)(float *, float);
 
 static LTM_array funcs[8] = {StrafeLTM, StrafeLTM, RotateYLTM, RotateYLTM, WalkLTM, WalkLTM, PitchLTM, PitchLTM};
-static float dirs[8] = {+1.0f, -1.0f, +0.5f, -0.5f, +1.0f, -1.0f, -0.5f, +0.5f};
+static float dirs[8] = {-1.0f, +1.0f, +0.5f, -0.5f, -1.0f, +1.0f, +0.5f, -0.5f};
 
 int HandleCamMovement(Camera *cam, u32 type)
 {
@@ -187,11 +186,11 @@ void CreateCameraFrustum(Camera *cam)
 
     ScaleVectorXYZ(tempScale, forward, -1.0f);
 
-    ScaleVectorXYZ(farCenter, forward, cam->far);
+    ScaleVectorXYZ(farCenter, tempScale, cam->far);
     // VectorSubtractXYZ(cam->pos, tempScale, farCenter);
-    ScaleVectorXYZ(nearCenter, forward, cam->near);
+    ScaleVectorXYZ(nearCenter, tempScale, cam->near);
     // VectorSubtractXYZ(cam->pos, tempScale, nearCenter);
-    tempOut[3] = nearCenter[3] = farCenter[3] = 1.0f;
+    tempOut[3] = tempScale[3] = nearCenter[3] = farCenter[3] = 1.0f;
 
     SetupPlane(tempScale, nearCenter, &frus->sides[0]);
     SetupPlane(forward, farCenter, &frus->sides[1]);
@@ -207,7 +206,7 @@ void CreateCameraFrustum(Camera *cam)
 
     normalize(tempNormal, tempNormal);
 
-    CrossProduct(right, tempNormal, tempNormal);
+    CrossProduct(tempNormal, right, tempNormal);
 
     SetupPlane(tempNormal, tempOut, &frus->sides[2]);
 
@@ -221,7 +220,7 @@ void CreateCameraFrustum(Camera *cam)
 
     normalize(tempNormal, tempNormal);
 
-    CrossProduct(tempNormal, right, tempNormal);
+    CrossProduct(right, tempNormal, tempNormal);
 
     SetupPlane(tempNormal, tempOut, &frus->sides[3]);
 
@@ -234,7 +233,7 @@ void CreateCameraFrustum(Camera *cam)
     VectorCopyXYZ(tempOut, tempNormal);
     normalize(tempNormal, tempNormal);
 
-    CrossProduct(up, tempNormal, tempNormal);
+    CrossProduct(tempNormal, up, tempNormal);
 
     SetupPlane(tempNormal, tempOut, &frus->sides[4]);
 
@@ -248,7 +247,7 @@ void CreateCameraFrustum(Camera *cam)
 
     normalize(tempNormal, tempNormal);
 
-    CrossProduct(tempNormal, up, tempNormal);
+    CrossProduct(up, tempNormal, tempNormal);
 
     SetupPlane(tempNormal, tempOut, &frus->sides[5]);
 
@@ -362,14 +361,13 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
     VECTOR *objUp = GetUpVectorLTM(obj->ltm);
     VECTOR *objForward = GetForwardVectorLTM(obj->ltm);
     VECTOR *objRight = GetRightVectorLTM(obj->ltm);
-
+    // DumpCameraFrustum(cam);
     for (int i = 0; i < 6; i++)
     {
         VECTOR pVert, nVert, tempPlane, tempNormal, tempPoint;
 
         Matrix3VectorMultiply(tempNormal, camMatrix, cam->frus->sides[i].planeEquation);
         MatrixVectorMultiply(tempPoint, camMatrix, cam->frus->sides[i].pointInPlane);
-
         /*  if (i == 4 || i == 5)
           {
 
@@ -401,11 +399,13 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
         if (DistanceFromPlane(tempPlane, pVert) < 0.0f)
         {
-            // DumpVector(tempPoint);
-            //  DumpVector(tempNormal);
-            // DumpVector(cam->pos);
-            //  DumpVector(cam->frus->sides[i].pointInPlane);
-            // DumpVector(cam->frus->sides[i].planeEquation);
+            // DumpVector(pVert);
+            //  DumpVector(tempPoint);
+            // DumpVector(tempNormal);
+            //  DumpVector(*GetPositionVectorLTM(cam->ltm));
+            // DumpVector(*GetForwardVectorLTM(cam->ltm));
+            //   DumpVector(cam->frus->sides[i].pointInPlane);
+            //  DumpVector(cam->frus->sides[i].planeEquation);
             //  DEBUGLOG("%d ==================== %d\n", i, i);
             return 0;
         }
@@ -413,6 +413,15 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
         if (DistanceFromPlane(tempPlane, nVert) < 0.0f)
         {
             ret = 2;
+
+            // DumpVector(pVert);
+            //  DumpVector(tempPoint);
+            //  DumpVector(tempNormal);
+            // DumpVector(*GetPositionVectorLTM(cam->ltm));
+            // DumpVector(*GetForwardVectorLTM(cam->ltm));
+            //  DumpVector(cam->frus->sides[i].pointInPlane);
+            // DumpVector(cam->frus->sides[i].planeEquation);
+            // DEBUGLOG("%d =======NEG============= %d\n", i, i);
             if (i == 0)
             {
                 return 0;

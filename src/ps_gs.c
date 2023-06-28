@@ -244,6 +244,20 @@ void load_texture_32(Texture *texture, u32 *pixels)
 	packet_free(packet);
 }
 
+qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context)
+{
+	PACK_GIFTAG(q, GS_SET_FRAME(frame->address>>11,frame->width>>6,frame->psm,mask), GS_REG_FRAME + context);
+	q++;
+	return q;
+}
+
+qword_t *SetZBufferMask(qword_t *q, zbuffer_t *z, u32 mask, u32 context)
+{
+	PACK_GIFTAG(q, GS_SET_ZBUF(z->address>>11,z->zsm, mask), GS_REG_ZBUF + context);
+	q++;
+	return q;
+}
+
 qword_t *setup_texture(Texture *texture, qword_t *q)
 {
 	q = draw_texture_sampling(q, 0, &texture->lod);

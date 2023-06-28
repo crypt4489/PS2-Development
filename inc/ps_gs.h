@@ -21,7 +21,8 @@ void load_texture_32(Texture *texture, u32 *pixels);
 void init_tex_structs(Texture *texture, clutbuffer_t* clut, int width, int height, int psm, u32 components);
 qword_t* setup_texture(Texture *texture, qword_t *q);
 qword_t* CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr);
-
+qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context);
+qword_t *SetZBufferMask(qword_t *q, zbuffer_t *z, u32 mask, u32 context);
 void init_drawing_environment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish);
 void copy_vram_from_vram(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm);
 void copy_vram_to_memory(int address, int width, int height, int x, int y, int psm, u32* buffer);

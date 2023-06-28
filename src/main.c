@@ -68,8 +68,8 @@ extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
 
-extern u32 VU1_SphereMapStage2_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_SphereMapStage2_CodeEnd __attribute__((section(".vudata")));
+extern u32 VU1_SphereMappingStage2_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_SphereMappingStage2_CodeEnd __attribute__((section(".vudata")));
 
 TimerStruct *ts;
 
@@ -100,49 +100,127 @@ const char *face3Name = "FACE3.PNG";
 const char *face4Name = "FACE4.PNG";
 const char *face5Name = "FACE5.PNG";
 const char *face6Name = "FACE6.PNG";
-const char *glossName = "GLOSS.PNG";
+const char *glossName = "SPHERE.PNG";
 const char *worldName = "WORLD.PNG";
 const char *wallName = "WALL.PNG";
+const char *alphaMap = "ALPHA_MAP.PNG";
 
 GameObject *box = NULL;
 GameObject *body = NULL;
 GameObject *sphere = NULL;
 GameObject *room = NULL;
-GameObject *body = NULL;
 GameObject *multiSphere = NULL;
 
 static float lodGrid[4] = {150.0f, 125.0f, 75.0f, 50.0f};
 
-RenderWorld *world;
-RenderWorld *roomWorld;
+RenderWorld *world = NULL;
+RenderWorld *roomWorld = NULL;
 
-Camera *cam;
+Camera *cam = NULL;
 
-LightStruct *ambient;
-LightStruct *direct;
-LightStruct *secondLight;
-LightStruct *point;
-LightStruct *ambientRoom;
-LightStruct *spotLight;
+LightStruct *ambient = NULL;
+LightStruct *direct = NULL;
+LightStruct *secondLight = NULL;
+LightStruct *point = NULL;
+LightStruct *ambientRoom = NULL;
+LightStruct *spotLight = NULL;
 
 float rad = 5.0f;
 float highAngle = 90.0f;
 float lowAngle = 0.0f;
 
-RenderTarget *shadowTarget, *resampledTarget;
-Texture *shadowTexture, *resampledTexture;
+RenderTarget *shadowTarget = NULL, *resampledTarget = NULL;
+Texture *shadowTexture = NULL, *resampledTexture = NULL;
 Camera shadowCam;
 
-GameObject *shadowTexView;
-Texture *targetTex;
+GameObject *shadowTexView = NULL;
+Texture *targetTex = NULL;
 
 int alpha = 0x80;
 
 // #define RESAMPLED
 
-int no_plugin = 0;
+int FrameCounter = 0;
 
 MeshBuffers sphereTarget;
+
+static void doTheThing()
+{
+    MATRIX screen, m, camMatrix;
+    CreateWorldMatrixLTM(multiSphere->ltm, m);
+    matrix_unit(screen);
+
+    matrix_multiply(screen, screen, m);
+    matrix_multiply(screen, screen, cam->view);
+
+    matrix_copy(m, screen);
+
+    MatrixInverse(screen, m);
+
+    // DumpMatrix(m);
+    //  CreateNormalizedTextureCoordinateMatrix(m);
+    m[8] *= -1.0f;
+    m[9] *= -1.0f;
+    m[10] *= -1.0f;
+    // m[3] = m[7] = m[11] = 0.0f;
+    // DumpMatrix(m);
+    MatrixTranspose(m);
+    for (int i = 0; i < multiSphere->vertexBuffer.vertexCount; i++)
+    {
+        VECTOR incident, incidentNormal;
+        MatrixVectorMultiply(incident, screen, multiSphere->vertexBuffer.vertices[i]);
+        normalize(incident, incidentNormal);
+        // DumpVector(incidentNormal);
+        VECTOR outNormal, reflect;
+        Matrix3VectorMultiply(outNormal, m, multiSphere->vertexBuffer.normals[i]);
+        normalize(outNormal, outNormal);
+        // DumpVector(outNormal);
+
+        reflect[0] = outNormal[0] * incidentNormal[0];
+        reflect[1] = outNormal[1] * incidentNormal[1];
+        reflect[2] = outNormal[2] * incidentNormal[2];
+
+        float dot = reflect[0] + reflect[1] + reflect[2];
+
+        VECTOR output;
+        ScaleVectorXYZ(output, outNormal, dot * 2.0f);
+        VectorSubtractXYZ(incidentNormal, output, reflect);
+
+        reflect[2] = reflect[2] + 1.0f;
+
+        float toSqr;
+
+        VECTOR temp;
+
+        temp[0] = reflect[0] * reflect[0];
+        temp[1] = reflect[1] * reflect[1];
+        temp[2] = reflect[2] * reflect[2];
+
+        toSqr = temp[0] + temp[1] + temp[2];
+
+        float sqr = Sqrt(toSqr);
+
+        float sqrB = sqr;
+
+        sqr *= 2.0f;
+
+        // multiSphere->vertexBuffer.texCoords[i][0] = (outNormal[0] / 2.0f) + 0.5;
+        // multiSphere->vertexBuffer.texCoords[i][1] = (outNormal[1] / 2.0f) + 0.5;
+
+        multiSphere->vertexBuffer.texCoords[i][0] = (reflect[0] / sqr) + 0.5;
+        multiSphere->vertexBuffer.texCoords[i][1] = (reflect[1] / sqr) + 0.5;
+
+        if (i > multiSphere->vertexBuffer.vertexCount - 30)
+        {
+            // DEBUGLOG("%f", sqr);
+            //
+            /*   DumpVector(multiSphere->vertexBuffer.texCoords[i]);
+                DumpVector(multiSphere->vertexBuffer.normals[i]);
+                DumpVector(outNormal);
+                DEBUGLOG(""); */
+        }
+    }
+}
 
 static void UpdateGlossTransform()
 {
@@ -199,9 +277,9 @@ static void SetupFont()
 
 static void SetupWorldObjects()
 {
-    VECTOR camera_position = {150.0f, 300.0f, +200.00f, 1.00f};
+    VECTOR camera_position = {55.0f, 0.0f, +120.00f, 1.00f};
 
-    VECTOR at = {-50.0f, 0.0f, 0.0f, 0.0f};
+    VECTOR at = {+50.0f, 0.0f, +100.0f, 0.0f};
 
     cam = InitCamera(640, 480, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
 
@@ -297,9 +375,7 @@ static void SetupCube()
 
     box = InitializeGameObject();
     // ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0));
-
-    DEBUGLOG("Here is the render state 0x%x", box->renderState.state.render_state.state);
+    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 
     int w, l;
     float dw, dh;
@@ -308,7 +384,7 @@ static void SetupCube()
     dw = 100;
     dh = 100;
     CreateGrid(w, l, dw, dh, &box->vertexBuffer);
-    u32 id = GetTextureIDByName(NewYorkName, g_Manager.texManager);
+    u32 id = GetTextureIDByName(alphaMap, g_Manager.texManager);
 
     CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.vertexCount - 1, id);
 
@@ -319,7 +395,7 @@ static void SetupCube()
     SetupLTM(pos, forward, right, up,
              scales,
              1.0f, box->ltm);
-    box->update_object = update_cube;
+    box->update_object = NULL;
 
     InitOBB(box, BBO_FIXED);
 
@@ -342,7 +418,7 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.CBIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1));
+    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0));
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -373,12 +449,11 @@ static void SetupMultiSphere()
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
-    VECTOR object_position = {+50.0f, 0.0f, 0.0f, 0.0f};
+    VECTOR object_position = {+50.0f, 0.0f, +100.0f, 0.0f};
 
     multiSphere = InitializeGameObject();
-    ReadModelFile("MODELS\\MULTISPHERE.BIN", &multiSphere->vertexBuffer);
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0));
-
+    ReadModelFile("MODELS\\SPHERE.BIN", &multiSphere->vertexBuffer);
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1));
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
@@ -387,13 +462,19 @@ static void SetupMultiSphere()
 
     multiSphere->update_object = NULL;
 
+    // multiSphere->vertexBuffer.vertexCount -= 240;
+
+    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
+
     InitOBB(multiSphere, BBO_FIT);
 
     matrix_unit(lightTransform);
 
-    CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, glossName), lightTransform);
+    // CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, alphaMap), lightTransform);
 
     // CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
+
+    CreateAlphaMapPipeline(multiSphere, "ALPHAMAP", GetTexByName(g_Manager.texManager, alphaMap));
 
     AddObjectToRenderWorld(world, multiSphere);
 }
@@ -408,7 +489,7 @@ static void SetupRoom()
 
     room = InitializeGameObject();
     ReadModelFile("MODELS\\ROOM.BIN", &room->vertexBuffer);
-    SetupGameObjectPrimRegs(room, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(room, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {25.0f, 25.0f, 25.0f, 1.0f};
 
@@ -445,7 +526,7 @@ static void SetupShadowViewer()
     dh = 1;
     CreateGrid(w, l, dw, dh, &shadowTexView->vertexBuffer);
 
-    SetupGameObjectPrimRegs(shadowTexView, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(shadowTexView, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     u32 id = 0;
 #ifdef RESAMPLED
@@ -543,7 +624,7 @@ static void SetupTessObject()
              scales,
              1.0f, lod_floor->ltm);
 
-    SetupGameObjectPrimRegs(lod_floor, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_floor, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid.extent.top);
 
@@ -571,7 +652,7 @@ static void SetupTessObject()
              1.0f, lod_wall->ltm);
     PitchLTM(lod_wall->ltm, -90.0f);
 
-    SetupGameObjectPrimRegs(lod_wall, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_wall, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid2.extent.top);
 
@@ -591,12 +672,11 @@ static void SetupTessObject()
 
 static void SetupGameObjects()
 {
+
     InitSkybox();
 
-    //  SetupCube();
-
+    SetupCube();
     SetupBody();
-
     SetupMultiSphere();
 
     // SetupShadowViewer();
@@ -714,7 +794,7 @@ int Render()
 
         UpdateGlossTransform();
 
-        ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
+        ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x00);
 
         DrawWorld(world);
 
@@ -724,9 +804,9 @@ int Render()
 
         // while(PollVU1DoneProcessing(&g_Manager) < 0);
 
-        // ReadFromVU1(vu1_data_address + (*vif1_top * 0), 16 * 4, 1);
+        // DumpCameraFrustum(cam);
 
-        // while(1);
+        //  ReadFromVU1(vu1_data_address + (*vif1_tops * 0), 16 * 4, 0);
 
         PrintText(myFont, print_out, -310, -220);
 
@@ -736,13 +816,9 @@ int Render()
 
         UpdateLight();
 
-        //  UpdateGlossTransform();
+        snprintf(print_out, 20, "DREW FLETCHER %d", FrameCounter);
 
-        // UpdateSphereMorph();
-
-        snprintf(print_out, 20, "DREW FLETCHER %d", no_plugin);
-
-        no_plugin++;
+        FrameCounter++;
     }
 
     return 0;
@@ -785,7 +861,7 @@ static void SetupVU1Programs()
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 
-    prog = CreateVU1Program(&VU1_SphereMapStage2_CodeStart, &VU1_SphereMapStage2_CodeEnd, 0); // 8
+    prog = CreateVU1Program(&VU1_SphereMappingStage2_CodeStart, &VU1_SphereMappingStage2_CodeEnd, 0); // 8
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 }
@@ -798,47 +874,52 @@ static void LoadInTextures()
 
     AppendString(_folder, waterName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_BMP, 0x80, 1, TEX_ADDRESS_WRAP);
+    AddAndCreateTexture(_file, READ_BMP, 1, 0x80, TEX_ADDRESS_WRAP);
 
     AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0x80, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, face2Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0x80, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, face3Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0x80, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, face4Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0x80, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, face5Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0x80, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, face6Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0x80, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, NewYorkName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0x80, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, glossName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0xFF, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0xFF, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
 
     AppendString(_folder, wallName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 0xFF, 1, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+
+    AppendString(_folder, alphaMap, _file, MAX_FILE_NAME);
+
+    AddAndCreateAlphaMap(_file, READ_PNG, TEX_ADDRESS_CLAMP);
+
 }
 
 int main(int argc, char **argv)
@@ -901,12 +982,10 @@ int main(int argc, char **argv)
 
     audsrv_adpcm_init();
 
-    audsrv_set_volume(MAX_VOLUME);
-
     audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength);
     DEBUGLOG("%d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size);
-    int channel = audsrv_ch_play_adpcm(-1, &sample);
-    audsrv_adpcm_set_volume(channel, MAX_VOLUME);
+    // int channel = audsrv_ch_play_adpcm(-1, &sample);
+    // audsrv_adpcm_set_volume(channel, MAX_VOLUME);
 
     Render();
 

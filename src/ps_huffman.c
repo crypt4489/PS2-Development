@@ -22,7 +22,7 @@ static int isLeaf(HuffmanNode *node);
 static void fillBuffer();
 static int readBoolean();
 static unsigned char readChar();
-static HuffmanNode *readDeocder();
+static HuffmanNode *readDecoder();
 //static void Print(HuffmanNode *node, int arr[], int top);
 static unsigned int readInt();
 static int isLeaf(HuffmanNode *node);
@@ -80,7 +80,7 @@ static unsigned char readChar()
 	return (x & 0xff);
 }
 
-static HuffmanNode *readDeocder()
+static HuffmanNode *readDecoder()
 {
 	int bit = readBoolean();
 	// printf("%d\n", bit);
@@ -97,8 +97,8 @@ static HuffmanNode *readDeocder()
 		HuffmanNode *node = CreateHuffmanNode();
 		node->c = '-';
 		node->freq = -1;
-		node->left = readDeocder();
-		node->right = readDeocder();
+		node->left = readDecoder();
+		node->right = readDecoder();
 		return node;
 	}
 }
@@ -175,7 +175,7 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 
 	fillBuffer();
 
-	HuffmanNode *root = readDeocder();
+	HuffmanNode *root = readDecoder();
 
 	// int arr[MAX_TREE];
 	// int top = 0;

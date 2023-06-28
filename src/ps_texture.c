@@ -88,6 +88,44 @@ void CleanTextureStruct(Texture *tex)
     free(tex);
 }
 
+Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode)
+{
+    Texture *alphaMap = AddAndCreateTexture(filePath, readType, 0, 0, mode);
+
+    u32 size = 0;
+    u8 *pixels = NULL;
+
+    if (alphaMap->type == GS_PSM_8)
+    {
+        size = 256 * 4;
+        pixels = alphaMap->clut_buffer;
+    }
+    else if (alphaMap->type == GS_PSM_32)
+    {
+        size = alphaMap->height * alphaMap->width * 4;
+        pixels = alphaMap->pixels;
+    }
+
+    if (pixels == NULL || size == 0)
+    {
+        ERRORLOG("Something went wrong with the alpha map");
+        return alphaMap;
+    }
+
+    for (int i = 0; i<size; i+=4)
+    {
+        //DEBUGLOG("%x %x %x %x", alpha->pixels[i], alpha->pixels[i+1], alpha->pixels[i+2], alpha->pixels[i+3]);
+        if (pixels[i] < 0x80)
+        {
+            pixels[i+3] = 0;
+        } else {
+            pixels[i+3] = 0xFF;
+        }
+    }
+
+    return alphaMap;
+}
+
 Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode)
 {
     char _file[MAX_FILE_NAME];

@@ -71,6 +71,16 @@ inline qword_t *CreateDCODEMeshUpload(qword_t *q, u32 channel, u32 tte, u32 type
     return q;
 };
 
+inline qword_t *CreateDCODEDrawFinish(qword_t *q, u32 channel, u32 tte, u32 type, u32 qwc)
+{
+    q->sw[0] = DMA_DCODE_DRAW_FINISH;
+    q->sw[1] = DMA_DCODE(channel, qwc, tte, type);
+    q->sw[2] = DMA_DCODE(channel, qwc, tte, type);
+    q->sw[3] = DMA_DCODE(channel, qwc, tte, type);
+    q++;
+    return q;
+};
+
 inline qword_t *UpdateSizeOfDCODE(qword_t *q, u32 qwc)
 {
     q->sw[0] = (q->sw[0] | ((qwc & 0x00007FFF) << 1));

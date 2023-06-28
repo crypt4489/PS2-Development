@@ -150,7 +150,6 @@ void DrawWorld(RenderWorld *world)
             RenderPipeline(obj, obj->activePipeline);
         }
 
-    
         ClearDirtyLTM(obj->ltm);
 
         node = node->next;
@@ -158,7 +157,6 @@ void DrawWorld(RenderWorld *world)
 
     g_DrawWorld = NULL;
 
-    
 }
 
 RenderWorld *AddWorldCallback(RenderWorld *world)

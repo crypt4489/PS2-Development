@@ -82,12 +82,11 @@ enum VU1Stages
 #define GEN_PIPELINE_NAME "GEN_PIPELINE"
 #define LIGHT_PIPELINE_NAME "LIGHT_PIPELINE"
 
-
-#define SWAP_ENDIAN(num) \
-    ((num>>24)&0xff) | \
-                    ((num<<8)&0xff0000) | \
-                    ((num>>8)&0xff00) | \
-                    ((num<<24)&0xff000000)
+#define SWAP_ENDIAN(num)          \
+    ((num >> 24) & 0xff) |        \
+        ((num << 8) & 0xff0000) | \
+        ((num >> 8) & 0xff00) |   \
+        ((num << 24) & 0xff000000)
 
 #define DMA_DCODE(channel, qwc, tte, type)                        \
     (u32)((tte)&0x00000001) << 0 | (u32)((qwc)&0x00007FFF) << 1 | \
@@ -101,7 +100,8 @@ enum DMA_DCODE
     DMA_DCODE_LOAD_MATERIAL = 0xFF128767,
     DMA_DCODE_CALLBACK_FUNC = 0xFF369453,
     DMA_DCODE_SKIP_QWORDS = 0xFF369454,
-    DMA_DCODE_UPLOAD_MESH = 0xFF369455
+    DMA_DCODE_UPLOAD_MESH = 0xFF369455,
+    DMA_DCODE_DRAW_FINISH = 0xFF748992
 };
 
 typedef union dma_dcode_t
@@ -122,7 +122,7 @@ typedef union dma_dcode_t
 enum DMATAG_CODES
 {
     DMA_CNT = 1,
-    DMA_CNTS = 0, //destination tag only
+    DMA_CNTS = 0, // destination tag only
     DMA_NEXT = 2,
     DMA_END = 7,
     DMA_CALL = 5,
@@ -143,7 +143,6 @@ enum TextureReadType
     READ_BMP = 0,
     READ_PNG = 1
 };
-
 
 #define TEX_ADDRESS_CLAMP 0
 #define TEX_ADDRESS_WRAP 1
@@ -167,8 +166,6 @@ typedef struct Texture
     u16 mode;
     u16 type;
 } Texture;
-
-
 
 enum ObjectBoundingTypes
 {
@@ -200,7 +197,6 @@ typedef struct linked_list_t
     struct linked_list_t *next;
     void *data;
 } LinkedList;
-
 
 struct morph_target_handle_t;
 typedef struct morph_target_handle_t MorphTargetBuffer;
@@ -243,7 +239,6 @@ struct animation_key_holder_t
     u32 id;
     u32 count;
     AnimationKey **keys;
-
 };
 struct animation_key_t
 {
@@ -332,7 +327,7 @@ typedef void (*morph_target_callback)(MorphTargetBuffer *);
 
 struct morph_target_handle_t
 {
-    MeshBuffers **morph_targets; //0 is always base
+    MeshBuffers **morph_targets; // 0 is always base
     morph_target_callback mtCb;
     u16 meshCap;
     u16 meshCount;
@@ -417,8 +412,6 @@ typedef struct camera_t
     MATRIX ltm;
 } Camera;
 
-
-
 enum DrawTags
 {
     DRAW_VERTICES = 0x001,
@@ -430,47 +423,44 @@ enum DrawTags
     DRAW_ANIM_TEX = 0x040,
     DRAW_ENVMAP = 0x080,
     DRAW_SPECULAR = 0x100,
-    DRAW_SPHERE = 0x200
+    DRAW_SPHERE = 0x200,
+    DRAW_ALPHAMAP = 0x400
 };
 
-
-#define RENDER_STATE(draw, cull, alpha_enable, alpha_state,                                                        \
-                    tex_map, color_enable, z_enable, z_type,                                                       \
-                    light_enable, bface, clip, envmp,                                                              \
-                    spec, animtex, morph, bones)                                                                                 \
-        (u32)((draw)&0x00000001) << 0 | (u32)((cull)&0x00000001) << 1 |                                            \
-        (u32)((alpha_enable)&0x00000001) << 3 | (u32)((alpha_state)&0x00000003) << 4 |                             \
-        (u32)((tex_map)&0x00000001) << 6 | (u32)((color_enable)&0x00000001) << 7 |                                 \
-        (u32)((z_enable)&0x00000001) << 8 | (u32)((z_type)&0x00000003) << 9 |                                      \
-        (u32)((light_enable) & 0x00000001) << 11 | (u32)((bface) & 0x00000001) << 12 |                            \
-        (u32)((clip) & 0x00000001) << 13 | (u32)((envmp) & 0x00000001) << 14  |                                  \
-        (u32)((spec) & 0x00000001) << 15 | (u32)((animtex) & 0x00000001) << 16  |                                \
-        (u32)((morph) & 0x00000001) << 17 | (u32)((bones) & 0x00000001) << 18
-
-
+#define RENDER_STATE(draw, cull, alpha_enable, alpha_state,                                                                                        \
+                     tex_map, color_enable, z_enable, z_type,                                                                                      \
+                     light_enable, bface, clip, envmp,                                                                                             \
+                     spec, animtex, morph, bones, sphere, alphamap)                                                                                \
+    (u32)((draw)&0x00000001) << 0 | (u32)((cull)&0x00000001) << 1 | (u32)((alpha_enable)&0x00000001) << 3 | (u32)((alpha_state)&0x00000003) << 4 | \
+        (u32)((tex_map)&0x00000001) << 6 | (u32)((color_enable)&0x00000001) << 7 | (u32)((z_enable)&0x00000001) << 8 |                             \
+        (u32)((z_type)&0x00000003) << 9 | (u32)((light_enable)&0x00000001) << 11 | (u32)((bface)&0x00000001) << 12 |                               \
+        (u32)((clip)&0x00000001) << 13 | (u32)((envmp)&0x00000001) << 14 | (u32)((spec)&0x00000001) << 15 | (u32)((animtex)&0x00000001) << 16 |    \
+        (u32)((morph)&0x00000001) << 17 | (u32)((bones)&0x00000001) << 18 | (u32)((sphere)&0x00000001) << 19 | (u32)((alphamap)&0x00000001) << 20
 
 typedef union obj_render_state
 {
     struct
     {
-        unsigned int DRAWING_OPTION : 1; //1
-        unsigned int CULLING_OPTION : 1; //2
-        unsigned int CULLING_VISIBLE : 1; //3
-        unsigned int ALPHA_ENABLE : 1; //4
-        unsigned int ALPHA_STATE : 2; //5-6
-        unsigned int TEXTURE_MAPPING : 1; //7
-        unsigned int COLOR_ENABLE : 1; //8
-        unsigned int Z_ENABLE : 1; //9
-        unsigned int Z_TYPE : 2; //10-11
-        unsigned int LIGHTING_ENABLE : 1; //12
-        unsigned int BACKFACE_CULLING : 1; //13
-        unsigned int CLIPPING : 1; //14
-        unsigned int ENVIRONMENTMAP : 1; //15
-        unsigned int SPECULAR : 1; //16
-        unsigned int ANIMATION_TEXUTRE : 1; //17
-        unsigned int MORPH_TARGET : 1; //18
-        unsigned int SKELETAL_ANIMATION : 1;//19
-        unsigned int pad : 13;//20-32
+        unsigned int DRAWING_OPTION : 1;     // 1
+        unsigned int CULLING_OPTION : 1;     // 2
+        unsigned int CULLING_VISIBLE : 1;    // 3
+        unsigned int ALPHA_ENABLE : 1;       // 4
+        unsigned int ALPHA_STATE : 2;        // 5-6
+        unsigned int TEXTURE_MAPPING : 1;    // 7
+        unsigned int COLOR_ENABLE : 1;       // 8
+        unsigned int Z_ENABLE : 1;           // 9
+        unsigned int Z_TYPE : 2;             // 10-11
+        unsigned int LIGHTING_ENABLE : 1;    // 12
+        unsigned int BACKFACE_CULLING : 1;   // 13
+        unsigned int CLIPPING : 1;           // 14
+        unsigned int ENVIRONMENTMAP : 1;     // 15
+        unsigned int SPECULAR : 1;           // 16
+        unsigned int ANIMATION_TEXUTRE : 1;  // 17
+        unsigned int MORPH_TARGET : 1;       // 18
+        unsigned int SKELETAL_ANIMATION : 1; // 19
+        unsigned int SPHERE_MAPPING : 1;     // 20
+        unsigned int ALPHA_MAPPING : 1;      // 21
+        unsigned int pad : 11;               // 22-32
     };
 
     unsigned int state;
@@ -519,8 +509,6 @@ struct render_world_t
     Camera *cam;
 };
 
-
-
 struct gameobject_t
 {
     MATRIX ltm;
@@ -543,13 +531,11 @@ typedef struct RenderTarget
 
 typedef struct
 {
-    u32 globalIndex;  //unique identifier
+    u32 globalIndex;  // unique identifier
     u32 count;        // global tex count
     int currIndex;    // current texture loaded into memory
     LinkedList *list; // list of textures;
 } TexManager;
-
-
 
 struct dma_buffers_t;
 typedef struct dma_buffers_t DMABuffers;
@@ -560,7 +546,6 @@ struct dma_buffers_t
     qword_t *currPointer;
     int bufferId;
 };
-
 
 struct timer_struct_t;
 typedef struct timer_struct_t TimerStruct;

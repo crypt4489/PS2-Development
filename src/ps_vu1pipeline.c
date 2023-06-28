@@ -22,16 +22,16 @@ void CreatePipelineSizes(u32 code, u32 *numberOfCbs, u32 *vu1_header_size)
 
     if ((code & VU1Stage1) != 0)
     {
-        size+=1;
+        size += 1;
     }
 
-    if ((code & VU1Stage2)  != 0)
+    if ((code & VU1Stage2) != 0)
     {
         header += 4;
         size++;
     }
 
-    if ((code & VU1Stage3)  != 0)
+    if ((code & VU1Stage3) != 0)
     {
         header = 36;
         size++;
@@ -40,9 +40,6 @@ void CreatePipelineSizes(u32 code, u32 *numberOfCbs, u32 *vu1_header_size)
     *numberOfCbs = size;
     *vu1_header_size = header;
 }
-
-
-
 
 void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
 {
@@ -58,11 +55,11 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             loop = 0;
             break;
         }
-         else if (decode.code == DMA_DCODE_LOAD_MATERIAL)
+        else if (decode.code == DMA_DCODE_LOAD_MATERIAL)
         {
-            Material *mat = (Material*)q->sw[1];
+            Material *mat = (Material *)q->sw[1];
             u32 id = mat->materialId;
-            //INFOLOG("texhere! %d", id);
+            // INFOLOG("texhere! %d", id);
             Texture *tex = GetTextureByID(id, g_Manager.texManager);
             q++;
             if (tex != NULL)
@@ -75,11 +72,11 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             }
         }
 
-         else if (decode.code == DMA_DCODE_LOAD_ID_TEXTURE)
+        else if (decode.code == DMA_DCODE_LOAD_ID_TEXTURE)
         {
 
             u32 id = q->sw[1];
-            //INFOLOG("texhere! %d", id);
+            // INFOLOG("texhere! %d", id);
             Texture *tex = GetTextureByID(id, g_Manager.texManager);
             q++;
             if (tex != NULL)
@@ -110,16 +107,30 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             q++;
             SubmitToDMAController(q, channel, type, qwc, tte);
             q += qwc;
-            pipe->currentRenderPass+=1;
+            pipe->currentRenderPass += 1;
         }
+        else if (decode.code == DMA_DCODE_DRAW_FINISH)
+        {
+            DMA_DCODE_STRUCT temp;
+            temp.code = q->sw[1];
+            channel = temp.chann;
+            tte = temp.tte;
+            type = temp.type;
+            qwc = temp.qwc;
+            q++;
+            SubmitToDMAController(q, channel, type, qwc, tte);
+            q += qwc;
+            draw_wait_finish();
+        }
+
         else
         {
             channel = decode.chann;
             qwc = decode.qwc;
             tte = decode.tte;
             type = decode.type;
-           // q++;
-           //   ERRORLOG("%x %x %x", q->sw[0], q->sw[1], q->sw[2]);
+            // q++;
+            //    ERRORLOG("%x %x %x", q->sw[0], q->sw[1], q->sw[2]);
             //  dump_packet(pipe->q);
             // while(1);
 
@@ -146,7 +157,7 @@ void ExecutePipelineCBs(GameObject *obj, VU1Pipeline *pipe)
 
 void RenderPipeline(GameObject *obj, VU1Pipeline *active_pipe)
 {
-   // dump_packet(active_pipe->q);
+    // dump_packet(active_pipe->q);
     ParsePipeline(obj, active_pipe);
 }
 
@@ -235,10 +246,10 @@ VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses
     {
         node->cbs[i] = NULL;
     }
-    node->programs = malloc(sizeof(qword_t*) * renderPasses);
-    for (int i = 0; i<renderPasses; i++)
+    node->programs = malloc(sizeof(qword_t *) * renderPasses);
+    for (int i = 0; i < renderPasses; i++)
     {
-        node->programs[i] = (qword_t*)malloc(sizeof(qword_t));
+        node->programs[i] = (qword_t *)malloc(sizeof(qword_t));
     }
     node->next = NULL;
     node->q = NULL;

@@ -38,7 +38,7 @@ void InitSkybox()
     GameObject *skybox = InitializeGameObject();
     ReadModelFile("MODELS\\BOX16.CBIN", &skybox->vertexBuffer);
     VECTOR skyboxPos = {0.0f, 15.0f, -25.0f, 1.0f};
-    SetupGameObjectPrimRegs(skybox, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(skybox, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
 
