@@ -19,8 +19,9 @@ START:
 
     MatrixLoad{ globalMatrix, 4, vi00 }
 
-    ;/////////////////////////////////////////////
+    MatrixInverse{ temp, globalMatrix }
 
+    MatrixTranspose{ normalMatrix, temp }
 
     ilw.x lightCount,       20(vi00)
     iaddiu lightPointer, vi00, 21
@@ -61,7 +62,7 @@ begin:
 
         add.xyz outColor, vf00, vf00
 
-        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
+        Matrix3MultiplyVertex3{ normal, normalMatrix, normal }
 
         Normalize{ normal, normal, temp }
 

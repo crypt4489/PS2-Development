@@ -37,6 +37,10 @@ begin:
         lq vertex2, 1(vertexData)
         lq vertex3, 2(vertexData)
 
+        MatrixMultiplyVertex{ vertex1, globalMatrix, vertex1 }
+        MatrixMultiplyVertex{ vertex2, globalMatrix, vertex2 }
+        MatrixMultiplyVertex{ vertex3, globalMatrix, vertex3 }
+
         sub.xyz        tw_vert12, vertex2, vertex1
         sub.xyz        tw_vert13, vertex3, vertex1
         opmula.xyz     ACC,       tw_vert12, tw_vert13
@@ -54,16 +58,12 @@ begin:
 
         lq normal, 0(normData)
 
-        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
-
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
         madd.xy         acc, EnvMapMatrix[1], normal[y]
         madd.xy         stq1, EnvMapMatrix[2], normal[z]
 
         lq normal, 1(normData)
-
-        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
 
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
@@ -73,7 +73,6 @@ begin:
 
         lq normal, 2(normData)
 
-        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
 
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]

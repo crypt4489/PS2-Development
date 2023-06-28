@@ -51,12 +51,14 @@ finishSetup:
 
     MatrixTranspose{ out, tempMat }
 
-    mulx.xyz    nearP1, out[2], camProps
+    sub.xyz     plane, vf00,  out[2]
+    mulx.xyz    nearP1, plane, camProps
     add.xyz   nearP1,   nearP1,  camPos
     sub.xyz  planeVec, vf00, nearP1
-    VectorDotProduct{ dot, planeVec, out[2] }
-    move.xyz plane, out[2]
+    VectorDotProduct{ dot, planeVec, plane }
     mr32.w plane, dot
+
+    sq  plane, 0(vi00)
 
     MatrixLoad{ globalMatrix, 4, vi00 }
 
@@ -629,7 +631,7 @@ do_plane_check:
 
         Normalize{ planeNormal, planeNormal, temp }
 
-        VectorCrossProduct{ planeNormal, out[1], planeNormal }
+        VectorCrossProduct{  out[1], planeNormal, planeNormal }
 
 
 
@@ -639,7 +641,7 @@ do_plane_check:
         move.xyz plane, planeNormal
         mr32.w plane, dot
 
-
+        sq    plane, 1(vi00)
 
         iaddi planes, planes, -1
         iadd    vertexCounter, iBase, clippedVertices
@@ -660,7 +662,7 @@ right_plane:
 
         Normalize{ planeNormal, planeNormal, temp }
 
-        VectorCrossProduct{ out[1], planeNormal, planeNormal }
+        VectorCrossProduct{ planeNormal,  out[1], planeNormal }
 
 
 
@@ -690,7 +692,7 @@ bottom_plane:
 
         Normalize{ planeNormal, planeNormal, temp }
 
-        VectorCrossProduct{ planeNormal, out[0], planeNormal }
+        VectorCrossProduct{ out[0], planeNormal,  planeNormal }
 
 
         sub.xyz  planeVec, vf00, tempP1
@@ -717,7 +719,7 @@ top_plane:
 
         Normalize{ planeNormal, planeNormal, temp }
 
-        VectorCrossProduct{ out[0], planeNormal, planeNormal }
+        VectorCrossProduct{  planeNormal, out[0], planeNormal }
 
 
         sub.xyz  planeVec, vf00, tempP1

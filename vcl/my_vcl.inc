@@ -36,12 +36,11 @@
 #endmacro
 
 #macro Reflect: output, in_normal, incident
-   mul.xyz        dotproduct, in_normal,  incident 
+   mul.xyz        dotproduct, in_normal,  incident
    add.x          dotproduct, dotproduct, dotproduct[y]
    add.x          dotproduct, dotproduct, dotproduct[z]
 
-   loi            2.0
-   muli.x         dotproduct, dotproduct, I
+   add.x          dotproduct, dotproduct, dotproduct
    mul.xyz        output, in_normal, dotproduct[x]
    sub.xyz        output, incident, output
 #endmacro
@@ -152,33 +151,33 @@
 #endmacro
 
 #macro Lerp2CompXY: lerpStart, lerpEnd, factor
-      
+
       mul.xy  lerpEnd, lerpEnd, factor[y]
 
       mul.xy  lerpStart, lerpStart, factor[x]
 
       add.xy lerpStart, lerpStart, lerpEnd
-      
+
 #endmacro
 
 #macro Lerp2Comp: lerpStart, lerpEnd, factor
-      
+
       sub.xy  lerpEnd, lerpEnd, lerpStart
 
       mul.xy  lerpEnd, lerpEnd, factor[x]
 
       add.xy lerpStart, lerpStart, lerpEnd
-      
+
 #endmacro
 
 #macro Lerp3Comp: lerpStart, lerpEnd, factor
-      
+
       sub.xyz  lerpEnd, lerpEnd, lerpStart
 
       mul.xyz  lerpEnd, lerpEnd, factor[x]
 
       add.xyz lerpStart, lerpStart, lerpEnd
-      
+
 #endmacro
 
 #macro MatrixTranspose: matresult, matrixsrc
@@ -201,19 +200,19 @@
    mr32.y         matresult[3], vclsmlftemp
    add.x          matresult[2], vf00, vclsmlftemp[y]
 
-   add.x         matresult[0], matrixsrc[0], vf00[x]            
-   add.y         matresult[1], matrixsrc[1], vf00[x]              
-   add.z         matresult[2], matrixsrc[2], vf00[x]              
-   add.w         matresult[3], matrixsrc[3], vf00[x]             
+   add.x         matresult[0], matrixsrc[0], vf00[x]
+   add.y         matresult[1], matrixsrc[1], vf00[x]
+   add.z         matresult[2], matrixsrc[2], vf00[x]
+   add.w         matresult[3], matrixsrc[3], vf00[x]
 #endmacro
 
 #macro  MatrixInverse: matdest, matsrc
-   opmula.xyz     acc, matsrc[2], matsrc[3]      
+   opmula.xyz     acc, matsrc[2], matsrc[3]
    opmsub.xyz     c0,  matsrc[3], matsrc[2]
-   mul.xyz        acc, matsrc[2], matsrc[3][w]   
+   mul.xyz        acc, matsrc[2], matsrc[3][w]
    msub.xyz       c1,  matsrc[3], matsrc[2][w]
 
-   mul.xyz        t0, c0, matsrc[1]               
+   mul.xyz        t0, c0, matsrc[1]
 
    opmula.xyz     acc, matsrc[1], c1
    madd.xyz       acc, c0, matsrc[1][w]
@@ -224,13 +223,13 @@
    msub.w         acc,         vf00, t0[y]
    msub.w         matdest[0], vf00, t0[z]
 
-   mul.xyz        t0, c0, matsrc[0]              
+   mul.xyz        t0, c0, matsrc[0]
 
    opmula.xyz     acc, c1, matsrc[0]
    msub.xyz       acc, c0, matsrc[0][w]
    opmsub.xyz     matdest[1], matsrc[0], c1
 
-   mul            det, matsrc[0], matdest[0]     
+   mul            det, matsrc[0], matdest[0]
 
    mul.w          acc,         vf00, t0[x]
    madd.w         acc,         vf00, t0[y]
@@ -240,14 +239,14 @@
    madd.w         acc, vf00,  det[y]
    madd.w         det, vf00,  det[z]
 
-   opmula.xyz     acc, matsrc[0], matsrc[1]      
+   opmula.xyz     acc, matsrc[0], matsrc[1]
    opmsub.xyz     c0,  matsrc[1], matsrc[0]
-   mul.xyz        acc, matsrc[0], matsrc[1][w]   
+   mul.xyz        acc, matsrc[0], matsrc[1][w]
    msub.xyz       c1,  matsrc[1], matsrc[0][w]
 
    div            Q, vf00[w], det[w]
 
-   mul.xyz        t0, c0, matsrc[3]               
+   mul.xyz        t0, c0, matsrc[3]
 
    opmula.xyz     acc, matsrc[3], c1
    madd.xyz       acc, c0, matsrc[3][w]
@@ -258,7 +257,7 @@
    msub.w         acc,         vf00, t0[y]
    msub.w         matdest[2], vf00, t0[z]
 
-   mul.xyz        t0, c0, matsrc[2]               
+   mul.xyz        t0, c0, matsrc[2]
 
    opmula.xyz     acc, c1, matsrc[2]
    msub.xyz       acc, c0, matsrc[2][w]
@@ -275,30 +274,30 @@
 #endmacro
 
 #macro QuaternionToMatrix: matresult, quaternion
-   mula.xyz       ACC,  quaternion, quaternion            
+   mula.xyz       ACC,  quaternion, quaternion
 
    loi            1.414213562
-   muli           vclsmlftemp, quaternion, I                
+   muli           vclsmlftemp, quaternion, I
 
-   mr32.w         matresult[0], vf00                        
-   mr32.w         matresult[1], vf00                       
-   mr32.w         matresult[2], vf00                        
-   move           matresult[3], vf00                       
+   mr32.w         matresult[0], vf00
+   mr32.w         matresult[1], vf00
+   mr32.w         matresult[2], vf00
+   move           matresult[3], vf00
 
-   madd.xyz       vcl_2qq, quaternion, quaternion          
-   addw.xyz       Vector111, vf00, vf00                      
+   madd.xyz       vcl_2qq, quaternion, quaternion
+   addw.xyz       Vector111, vf00, vf00
 
-   opmula.xyz     ACC,  vclsmlftemp, vclsmlftemp            
-   msubw.xyz      vclsmlftemp2, vclsmlftemp, vclsmlftemp     
-   maddw.xyz      vclsmlftemp3, vclsmlftemp, vclsmlftemp     
-   addaw.xyz      ACC,  vf00, vf00                          
-   msubax.yz      ACC,  Vector111, vcl_2qq                   
+   opmula.xyz     ACC,  vclsmlftemp, vclsmlftemp
+   msubw.xyz      vclsmlftemp2, vclsmlftemp, vclsmlftemp
+   maddw.xyz      vclsmlftemp3, vclsmlftemp, vclsmlftemp
+   addaw.xyz      ACC,  vf00, vf00
+   msubax.yz      ACC,  Vector111, vcl_2qq
 
-   msuby.z        matresult[2], Vector111, vcl_2qq         
-   msubay.x       ACC, Vector111, vcl_2qq                   
-   msubz.y        matresult[1], Vector111, vcl_2qq          
+   msuby.z        matresult[2], Vector111, vcl_2qq
+   msubay.x       ACC, Vector111, vcl_2qq
+   msubz.y        matresult[1], Vector111, vcl_2qq
    mr32.y         matresult[0], vclsmlftemp2
-   msubz.x        matresult[0], Vector111, vcl_2qq          
+   msubz.x        matresult[0], Vector111, vcl_2qq
    mr32.x         matresult[2], vclsmlftemp2
    addy.z         matresult[0], vf00, vclsmlftemp3
    mr32.w         vclsmlftemp, vclsmlftemp2
@@ -310,25 +309,25 @@
 #endmacro
 
 #macro GetForwardQuat: quaternion, out
-   mula.xyz       ACC,  quaternion, quaternion            
+   mula.xyz       ACC,  quaternion, quaternion
 
    loi            1.414213562
-   muli           vclsmlftemp, quaternion, I                
+   muli           vclsmlftemp, quaternion, I
 
-   mr32.w         out, vf00                        
-                    
+   mr32.w         out, vf00
 
-   madd.xyz       vcl_2qq, quaternion, quaternion          
-   addw.xyz       Vector111, vf00, vf00                      
 
-   opmula.xyz     ACC,  vclsmlftemp, vclsmlftemp            
-   msubw.xyz      vclsmlftemp2, vclsmlftemp, vclsmlftemp     
-   maddw.xyz      vclsmlftemp3, vclsmlftemp, vclsmlftemp     
-   addaw.xyz      ACC,  vf00, vf00                          
-   msubax.yz      ACC,  Vector111, vcl_2qq                   
-       
-   msubay.x       ACC, Vector111, vcl_2qq                   
-   msubz.y        out, Vector111, vcl_2qq          
+   madd.xyz       vcl_2qq, quaternion, quaternion
+   addw.xyz       Vector111, vf00, vf00
+
+   opmula.xyz     ACC,  vclsmlftemp, vclsmlftemp
+   msubw.xyz      vclsmlftemp2, vclsmlftemp, vclsmlftemp
+   maddw.xyz      vclsmlftemp3, vclsmlftemp, vclsmlftemp
+   addaw.xyz      ACC,  vf00, vf00
+   msubax.yz      ACC,  Vector111, vcl_2qq
+
+   msubay.x       ACC, Vector111, vcl_2qq
+   msubz.y        out, Vector111, vcl_2qq
    mr32.w         vclsmlftemp, vclsmlftemp2
    mr32.z         out, vclsmlftemp
    mr32.y         vclsmlftemp3, vclsmlftemp3
@@ -337,30 +336,30 @@
 #endmacro
 
 #macro QuatToGlobalMatrix: matresult, quaternion, pos
-   mula.xyz       ACC,  quaternion, quaternion            
+   mula.xyz       ACC,  quaternion, quaternion
 
    loi            1.414213562
-   muli           vclsmlftemp, quaternion, I                
+   muli           vclsmlftemp, quaternion, I
 
-   mr32.w         matresult[0], vf00                        
-   mr32.w         matresult[1], vf00                       
-   mr32.w         matresult[2], vf00                        
-   move           matresult[3], vf00                       
+   mr32.w         matresult[0], vf00
+   mr32.w         matresult[1], vf00
+   mr32.w         matresult[2], vf00
+   move           matresult[3], vf00
 
-   madd.xyz       vcl_2qq, quaternion, quaternion          
-   addw.xyz       Vector111, vf00, vf00                      
+   madd.xyz       vcl_2qq, quaternion, quaternion
+   addw.xyz       Vector111, vf00, vf00
 
-   opmula.xyz     ACC,  vclsmlftemp, vclsmlftemp            
-   msubw.xyz      vclsmlftemp2, vclsmlftemp, vclsmlftemp     
-   maddw.xyz      vclsmlftemp3, vclsmlftemp, vclsmlftemp     
-   addaw.xyz      ACC,  vf00, vf00                          
-   msubax.yz      ACC,  Vector111, vcl_2qq                   
+   opmula.xyz     ACC,  vclsmlftemp, vclsmlftemp
+   msubw.xyz      vclsmlftemp2, vclsmlftemp, vclsmlftemp
+   maddw.xyz      vclsmlftemp3, vclsmlftemp, vclsmlftemp
+   addaw.xyz      ACC,  vf00, vf00
+   msubax.yz      ACC,  Vector111, vcl_2qq
 
-   msuby.z        matresult[2], Vector111, vcl_2qq         
-   msubay.x       ACC, Vector111, vcl_2qq                   
-   msubz.y        matresult[1], Vector111, vcl_2qq          
+   msuby.z        matresult[2], Vector111, vcl_2qq
+   msubay.x       ACC, Vector111, vcl_2qq
+   msubz.y        matresult[1], Vector111, vcl_2qq
    mr32.y         matresult[0], vclsmlftemp2
-   msubz.x        matresult[0], Vector111, vcl_2qq          
+   msubz.x        matresult[0], Vector111, vcl_2qq
    mr32.x         matresult[2], vclsmlftemp2
    addy.z         matresult[0], vf00, vclsmlftemp3
    mr32.w         vclsmlftemp, vclsmlftemp2
@@ -368,6 +367,25 @@
    addx.y         matresult[2], vf00, vclsmlftemp3
    mr32.y         vclsmlftemp3, vclsmlftemp3
    mr32.x         matresult[1], vclsmlftemp3
-   move.xyz       matresult[3],  pos 
+   move.xyz       matresult[3],  pos
 
+#endmacro
+
+#macro MatrixMultiply: matresult, matleft, matright
+   mul            acc,           matright[0], matleft[0][x]
+   madd           acc,           matright[1], matleft[0][y]
+   madd           acc,           matright[2], matleft[0][z]
+   madd           matresult[0],  matright[3], matleft[0][w]
+   mul            acc,           matright[0], matleft[1][x]
+   madd           acc,           matright[1], matleft[1][y]
+   madd           acc,           matright[2], matleft[1][z]
+   madd           matresult[1],  matright[3], matleft[1][w]
+   mul            acc,           matright[0], matleft[2][x]
+   madd           acc,           matright[1], matleft[2][y]
+   madd           acc,           matright[2], matleft[2][z]
+   madd           matresult[2],  matright[3], matleft[2][w]
+   mul            acc,           matright[0], matleft[3][x]
+   madd           acc,           matright[1], matleft[3][y]
+   madd           acc,           matright[2], matleft[3][z]
+   madd           matresult[3],  matright[3], matleft[3][w]
 #endmacro

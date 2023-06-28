@@ -7,739 +7,742 @@
 VU1_ClippingStage_CodeStart:
 START:
 ; _LNOPT_w=[ normal2 ] 13 [13 0] 13   [START]
-         NOP                                                        ilw.w         VI02,12(VI00)                       
-         NOP                                                        iaddiu        VI01,VI00,0x00000040                
-         NOP                                                        iaddiu        VI06,VI00,0x00000080                
-         NOP                                                        xtop          VI03                                
-         NOP                                                        iand          VI01,VI02,VI01                      
-         NOP                                                        iaddiu        VI04,VI03,0x00000001                
-         NOP                                                        ilw.w         VI05,0(VI03)                        
-         NOP                                                        lq.xyz        VF01,13(VI00)                       
-         NOP                                                        lq            VF02,14(VI00)                       
-         NOP                                                        lq.xyz        VF03,15(VI00)                       
-         NOP                                                        iand          VI02,VI02,VI06                      
-         NOP                                                        ibeq          VI01,VI00,addColors                 
-         NOP                                                        iadd          VI06,VI04,VI05                      
+         NOP                                                        ilw.w         VI02,12(VI00)
+         NOP                                                        iaddiu        VI01,VI00,0x00000040
+         NOP                                                        iaddiu        VI06,VI00,0x00000080
+         NOP                                                        xtop          VI03
+         NOP                                                        iand          VI01,VI02,VI01
+         NOP                                                        iaddiu        VI04,VI03,0x00000001
+         NOP                                                        ilw.w         VI05,0(VI03)
+         NOP                                                        lq.xyz        VF01,13(VI00)
+         NOP                                                        lq            VF02,14(VI00)
+         NOP                                                        lq.xyz        VF03,15(VI00)
+         NOP                                                        iand          VI02,VI02,VI06
+         NOP                                                        ibeq          VI01,VI00,addColors
+         NOP                                                        iadd          VI06,VI04,VI05
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_5]
-         NOP                                                        iadd          VI06,VI06,VI05                      
+         NOP                                                        iadd          VI06,VI06,VI05
 addColors:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [addColors]
-         NOP                                                        ibeq          VI02,VI00,finishSetup               
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,finishSetup
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_7]
-         NOP                                                        iadd          VI06,VI06,VI05                      
+         NOP                                                        iadd          VI06,VI06,VI05
 finishSetup:
-; _LNOPT_w=[ another ] 32 [54 0] 54   [finishSetup]
-         addw.xyz      VF04,VF00,VF00w                              mr32          VF08,VF02                           
-         NOP                                                        loi           0x3fb504f3                          
-         muli          VF07,VF08,I                                  iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?2
-         mula.xyz      ACC,VF08,VF08                                lq.xyz        VF11,7(VI00)                        
-         madd.xyz      VF05,VF08,VF08                               lq.xyz        VF10,6(VI00)                        
-         opmula.xyz    ACCxyz,VF07xyz,VF07xyz                       lq.xyz        VF08,4(VI00)                               ;	STALL_LATENCY ?1
-         msubw.xyz     VF02,VF07,VF07w                              iadd          VI07,VI03,VI05                      
-         maddw.xyz     VF07,VF07,VF07w                              iaddiu        VI09,VI00,0x00000004                
-         addaw.xyz     ACC,VF00,VF00w                               mr32.w        VF08,VF02                                  ;	STALL_LATENCY ?2
-         msubax.yz     ACC,VF04,VF05x                               NOP                                               
-         msuby.z       VF06,VF04,VF05y                              mr32.y        VF12,VF02                           
-         addy.z        VF04,VF00,VF07y                              mr32.y        VF06,VF07                           
-         NOP                                                        mr32.z        VF07,VF08                           
-         msubay.x      ACC,VF04,VF05y                               mr32.x        VF02,VF02                           
-         msubz.x       VF04,VF04,VF05z                              mr32.x        VF05,VF12                           
-         max.z         VF02,VF06,VF06                               mr32.y        VF13,VF04                           
-         msubz.y       VF05,VF04,VF05z                              mr32.y        VF02,VF07                           
-         addx.z        VF05,VF00,VF02x                              NOP                                               
-         max.x         VF05,VF04,VF04                               move.x        VF04,VF05                           
-         addy.x        VF02,VF00,VF13y                              NOP                                               
-         max.y         VF02,VF02,VF02                               NOP                                               
-         addx.y        VF07,VF00,VF07x                              NOP                                               
-         mulx.xyz      VF06,VF02,VF01x                              mr32.x        VF07,VF06                                  ;	STALL_LATENCY ?2
-         addy.z        VF04,VF00,VF07y                              NOP                                               
-         add.xyz       VF06,VF06,VF03                               NOP                                                      ;	STALL_LATENCY ?2
-         sub.xyz       VF12,VF00,VF06                               NOP                                                      ;	STALL_LATENCY ?3
-         max.y         VF04,VF05,VF05                               NOP                                               
-         addx.y        VF05,VF00,VF07x                              NOP                                               
-         mul.xyz       VF02,VF12,VF02                               move.xyz      VF07,VF02                                  ;	STALL_LATENCY ?1
+; _LNOPT_w=[ another ] 33 [62 0] 62   [finishSetup]
+         addw.xyz      VF06,VF00,VF00w                              mr32          VF08,VF02
+         NOP                                                        loi           0x3fb504f3
+         muli          VF04,VF08,I                                  iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?2
+         mula.xyz      ACC,VF08,VF08                                lq.xyz        VF10,6(VI00)
+         madd.xyz      VF05,VF08,VF08                               lq.xyz        VF09,5(VI00)
+         opmula.xyz    ACCxyz,VF04xyz,VF04xyz                       lq.xyz        VF08,4(VI00)                               ;	STALL_LATENCY ?1
+         msubw.xyz     VF07,VF04,VF04w                              iadd          VI07,VI03,VI05
+         maddw.xyz     VF04,VF04,VF04w                              NOP
+         addaw.xyz     ACC,VF00,VF00w                               NOP
+         msubax.yz     ACC,VF06,VF05x                               mr32.w        VF08,VF07                                  ;	STALL_LATENCY ?1
+         msuby.z       VF06,VF06,VF05y                              NOP
+         msubay.x      ACC,VF06,VF05y                               mr32.y        VF02,VF07
+         addy.z        VF07,VF00,VF04y                              mr32.y        VF05,VF04
+         msubz.x       VF05,VF06,VF05z                              mr32.z        VF04,VF08
+         NOP                                                        mr32.y        VF12,VF07                                  ;	STALL_LATENCY ?2
+         msubz.y       VF04,VF06,VF05z                              mr32.y        VF06,VF04
+         max.z         VF06,VF06,VF06                               mr32.x        VF07,VF07
+         addy.x        VF06,VF00,VF12y                              NOP                                                      ;	STALL_LATENCY ?1
+         max.y         VF06,VF06,VF06                               NOP
+         addx.z        VF05,VF00,VF07x                              mr32.x        VF07,VF05
+         addx.y        VF07,VF00,VF04x                              NOP
+         sub.xyz       VF06,VF00,VF06                               NOP                                                      ;	STALL_LATENCY ?1
+         addx.y        VF05,VF00,VF07x                              NOP
+         addy.z        VF04,VF00,VF07y                              NOP
+         mulx.xyz      VF07,VF06,VF01x                              NOP                                                      ;	STALL_LATENCY ?1
+         add.xyz       VF07,VF07,VF03                               NOP                                                      ;	STALL_LATENCY ?3
+         sub.xyz       VF02,VF00,VF07                               mr32.x        VF04,VF02                                  ;	STALL_LATENCY ?3
+         mul.xyz       VF02,VF02,VF06                               move.x        VF04,VF04                                  ;	STALL_LATENCY ?3
          addy.x        VF01,VF02,VF02y                              NOP                                                      ;	STALL_LATENCY ?3
-         addz.x        VF01,VF01,VF02z                              lq.xyz        VF09,5(VI00)                               ;	STALL_LATENCY ?3
-         NOP                                                        mr32.w        VF01,VF01                                  ;	STALL_LATENCY ?3
+         addz.x        VF01,VF01,VF02z                              lq.xyz        VF11,7(VI00)                               ;	STALL_LATENCY ?3
+         NOP                                                        mr32.w        VF06,VF01                                  ;	STALL_LATENCY ?3
+         max.y         VF04,VF04,VF04                               iaddiu        VI09,VI00,0x00000004
+         max.x         VF05,VF05,VF05                               NOP                              ;	STALL_LATENCY ?2
 vertexLoop:
 ; _LNOPT_w=[ normal2 ] 33 [35 0] 43   [vertexLoop]
-         max           VF02,VF00,VF00                               iaddiu        VI10,VI04,0                         
-         NOP                                                        lq            VF17,0(VI10)                        
+         max           VF02,VF00,VF00                               iaddiu        VI10,VI04,0
+         NOP                                                        lq            VF17,0(VI10)
          mulax.xyz     ACC,VF08,VF17x                               lq            VF18,1(VI10)                               ;	STALL_LATENCY ?3
-         madday.xyz    ACC,VF09,VF17y                               NOP                                               
-         maddaz.xyz    ACC,VF10,VF17z                               NOP                                               
-         maddw.xyz     VF20,VF11,VF17w                              NOP                                               
-         mulax.xyz     ACC,VF08,VF18x                               lq            VF19,2(VI10)                        
-         madday.xyz    ACC,VF09,VF18y                               NOP                                               
-         maddaz.xyz    ACC,VF10,VF18z                               NOP                                               
-         maddw.xyz     VF21,VF11,VF18w                              NOP                                               
-         mulax.xyz     ACC,VF08,VF19x                               NOP                                               
-         madday.xyz    ACC,VF09,VF19y                               NOP                                               
-         maddaz.xyz    ACC,VF10,VF19z                               NOP                                               
-         maddw.xyz     VF22,VF11,VF19w                              NOP                                               
-         mul.xyz       VF23,VF20,VF07                               NOP                                               
-         mul.xyz       VF25,VF21,VF07                               NOP                                               
-         mul.xyz       VF24,VF22,VF07                               NOP                                                      ;	STALL_LATENCY ?1
-         addy.x        VF01,VF23,VF23y                              NOP                                               
-         addx.y        VF25,VF25,VF25x                              NOP                                               
+         madday.xyz    ACC,VF09,VF17y                               NOP
+         maddaz.xyz    ACC,VF10,VF17z                               NOP
+         maddw.xyz     VF20,VF11,VF17w                              NOP
+         mulax.xyz     ACC,VF08,VF18x                               lq            VF19,2(VI10)
+         madday.xyz    ACC,VF09,VF18y                               NOP
+         maddaz.xyz    ACC,VF10,VF18z                               NOP
+         maddw.xyz     VF21,VF11,VF18w                              NOP
+         mulax.xyz     ACC,VF08,VF19x                               NOP
+         madday.xyz    ACC,VF09,VF19y                               NOP
+         maddaz.xyz    ACC,VF10,VF19z                               NOP
+         maddw.xyz     VF22,VF11,VF19w                              NOP
+         mul.xyz       VF23,VF20,VF06                               NOP
+         mul.xyz       VF25,VF21,VF06                               NOP
+         mul.xyz       VF24,VF22,VF06                               NOP                                                      ;	STALL_LATENCY ?1
+         addy.x        VF01,VF23,VF23y                              NOP
+         addx.y        VF25,VF25,VF25x                              NOP
          addx.z        VF24,VF24,VF24x                              NOP                                                      ;	STALL_LATENCY ?1
-         addz.x        VF01,VF01,VF23z                              NOP                                               
-         addz.y        VF23,VF25,VF25z                              NOP                                               
+         addz.x        VF01,VF01,VF23z                              NOP
+         addz.y        VF23,VF25,VF25z                              NOP
          addy.z        VF23,VF24,VF24y                              NOP                                                      ;	STALL_LATENCY ?1
-         addw.x        VF23,VF01,VF01w                              NOP                                               
-         addw.y        VF23,VF23,VF01w                              NOP                                               
-         addw.z        VF23,VF23,VF01w                              NOP                                                      ;	STALL_LATENCY ?1
+         addw.x        VF23,VF01,VF06w                              NOP
+         addw.y        VF23,VF23,VF06w                              NOP
+         addw.z        VF23,VF23,VF06w                              NOP                                                      ;	STALL_LATENCY ?1
          add.xyz       VF00,VF23,VF00                               NOP                                                      ;	STALL_LATENCY ?3
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF12,VF00,VF00                               iaddiu        VI12,VI00,0x000000e0                
-         max           VF13,VF00,VF00                               fmand         VI11,VI12                           
-         max           VF14,VF00,VF00                               ibeq          VI11,VI12,next_verts                
-         max           VF15,VF00,VF00                               move          VF16,VF00                           
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF12,VF00,VF00                               iaddiu        VI12,VI00,0x000000e0
+         max           VF13,VF00,VF00                               fmand         VI11,VI12
+         max           VF14,VF00,VF00                               ibeq          VI11,VI12,next_verts
+         max           VF15,VF00,VF00                               move          VF16,VF00
 ; _LNOPT_w=[ normal2 ] 3 [4 0] 3   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_10]
-         NOP                                                        move          VF24,VF18                           
-         max           VF23,VF17,VF17                               ibne          VI11,VI00,checkAB                   
-         max           VF25,VF19,VF19                               iaddiu        VI08,VI08,0x00000003                
+         NOP                                                        move          VF24,VF18
+         max           VF23,VF17,VF17                               ibne          VI11,VI00,checkAB
+         max           VF25,VF19,VF19                               iaddiu        VI08,VI08,0x00000003
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_11]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_12]
-         NOP                                                        ibeq          VI01,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_13]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_14]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [all_pass_color]
-         NOP                                                        ibeq          VI02,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_16]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_17]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_18]
-         NOP                                                        b             next_verts                          
-         NOP                                                        NOP                                               
+         NOP                                                        b             next_verts
+         NOP                                                        NOP
 checkAB:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [checkAB]
-         NOP                                                        iaddiu        VI12,VI00,0x000000c0                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI11,VI12,checkBC                   
-         NOP                                                        NOP                                               
+         NOP                                                        iaddiu        VI12,VI00,0x000000c0
+         NOP                                                        NOP
+         NOP                                                        ibne          VI11,VI12,checkBC
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_21]
-         NOP                                                        move          VF27,VF17                           
-         max.xyz       VF26,VF19,VF19                               move.xyz      VF29,VF22                           
-         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect            
-         max           VF28,VF18,VF18                               move.xyz      VF31,VF21                           
+         NOP                                                        move          VF27,VF17
+         max.xyz       VF26,VF19,VF19                               move.xyz      VF29,VF22
+         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect
+         max           VF28,VF18,VF18                               move.xyz      VF31,VF21
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_22]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF23,VF27,VF27                               bal           VI11,write_to_clipbuffer            
-         max           VF24,VF28,VF28                               NOP                                               
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF23,VF27,VF27                               bal           VI11,write_to_clipbuffer
+         max           VF24,VF28,VF28                               NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_23]
-         NOP                                                        ibeq          VI01,VI00,loadColorsAB              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsAB
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_24]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_25]
-         NOP                                                        bal           VI11,ABIntersect                    
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,ABIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_26]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 loadColorsAB:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsAB]
-         NOP                                                        ibeq          VI02,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_29]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_30]
-         NOP                                                        bal           VI11,ABIntersect                    
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,ABIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_31]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_32]
-         NOP                                                        b             next_verts                          
-         NOP                                                        NOP                                               
+         NOP                                                        b             next_verts
+         NOP                                                        NOP
 ABIntersect:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [ABIntersect]
-         max           VF21,VF23,VF23                               bal           VI12,lerpValues                     
-         max           VF18,VF25,VF25                               move          VF22,VF24                           
+         max           VF21,VF23,VF23                               bal           VI12,lerpValues
+         max           VF18,VF25,VF25                               move          VF22,VF24
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_35]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF23,VF26,VF26                               jr            VI11                                
-         max           VF24,VF29,VF29                               NOP                                               
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF23,VF26,VF26                               jr            VI11
+         max           VF24,VF29,VF29                               NOP
 checkBC:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [checkBC]
-         NOP                                                        iaddiu        VI12,VI00,0x00000060                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI11,VI12,checkCA                   
-         NOP                                                        NOP                                               
+         NOP                                                        iaddiu        VI12,VI00,0x00000060
+         NOP                                                        NOP
+         NOP                                                        ibne          VI11,VI12,checkCA
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_38]
-         NOP                                                        move          VF27,VF18                           
-         max.xyz       VF26,VF17,VF17                               move.xyz      VF29,VF20                           
-         max.xyz       VF30,VF21,VF21                               bal           VI11,calculate_intersect            
-         max           VF28,VF19,VF19                               move.xyz      VF31,VF22                           
+         NOP                                                        move          VF27,VF18
+         max.xyz       VF26,VF17,VF17                               move.xyz      VF29,VF20
+         max.xyz       VF30,VF21,VF21                               bal           VI11,calculate_intersect
+         max           VF28,VF19,VF19                               move.xyz      VF31,VF22
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_39]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF24,VF27,VF27                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF28,VF28                               NOP                                               
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF24,VF27,VF27                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF28,VF28                               NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_40]
-         NOP                                                        ibeq          VI01,VI00,loadColorsBC              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsBC
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_41]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_42]
-         NOP                                                        bal           VI11,BCIntersect                    
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,BCIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_43]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 loadColorsBC:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsBC]
-         NOP                                                        ibeq          VI02,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_46]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_47]
-         NOP                                                        bal           VI11,BCIntersect                    
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,BCIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_48]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_49]
-         NOP                                                        b             next_verts                          
-         NOP                                                        NOP                                               
+         NOP                                                        b             next_verts
+         NOP                                                        NOP
 BCIntersect:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [BCIntersect]
-         max           VF18,VF23,VF23                               bal           VI12,lerpValues                     
-         max           VF22,VF25,VF25                               move          VF21,VF24                           
+         max           VF18,VF23,VF23                               bal           VI12,lerpValues
+         max           VF22,VF25,VF25                               move          VF21,VF24
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_52]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF24,VF26,VF26                               jr            VI11                                
-         max           VF25,VF29,VF29                               NOP                                               
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF24,VF26,VF26                               jr            VI11
+         max           VF25,VF29,VF29                               NOP
 checkCA:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [checkCA]
-         NOP                                                        iaddiu        VI12,VI00,0x000000a0                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI11,VI12,checkA                    
-         NOP                                                        NOP                                               
+         NOP                                                        iaddiu        VI12,VI00,0x000000a0
+         NOP                                                        NOP
+         NOP                                                        ibne          VI11,VI12,checkA
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_55]
-         NOP                                                        move          VF27,VF17                           
-         max.xyz       VF26,VF18,VF18                               move.xyz      VF29,VF21                           
-         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect            
-         max           VF28,VF19,VF19                               move.xyz      VF31,VF22                           
+         NOP                                                        move          VF27,VF17
+         max.xyz       VF26,VF18,VF18                               move.xyz      VF29,VF21
+         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect
+         max           VF28,VF19,VF19                               move.xyz      VF31,VF22
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_56]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF23,VF27,VF27                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF28,VF28                               NOP                                               
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF23,VF27,VF27                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF28,VF28                               NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_57]
-         NOP                                                        ibeq          VI01,VI00,loadColorsCA              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsCA
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_58]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_59]
-         NOP                                                        bal           VI11,CAIntersect                    
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,CAIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_60]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 loadColorsCA:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsCA]
-         NOP                                                        ibeq          VI02,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_63]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_64]
-         NOP                                                        bal           VI11,CAIntersect                    
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,CAIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_65]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_66]
-         NOP                                                        b             next_verts                          
-         NOP                                                        NOP                                               
+         NOP                                                        b             next_verts
+         NOP                                                        NOP
 CAIntersect:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [CAIntersect]
-         max           VF18,VF24,VF24                               bal           VI12,lerpValues                     
-         max           VF22,VF25,VF25                               move          VF21,VF23                           
+         max           VF18,VF24,VF24                               bal           VI12,lerpValues
+         max           VF22,VF25,VF25                               move          VF21,VF23
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_69]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF23,VF26,VF26                               jr            VI11                                
-         max           VF25,VF29,VF29                               NOP                                               
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF23,VF26,VF26                               jr            VI11
+         max           VF25,VF29,VF29                               NOP
 checkA:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [checkA]
-         NOP                                                        iaddiu        VI12,VI00,0x00000080                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI11,VI12,checkB                    
-         NOP                                                        iaddiu        VI08,VI08,0x00000003                
+         NOP                                                        iaddiu        VI12,VI00,0x00000080
+         NOP                                                        NOP
+         NOP                                                        ibne          VI11,VI12,checkB
+         NOP                                                        iaddiu        VI08,VI08,0x00000003
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_72]
-         NOP                                                        move          VF27,VF18                           
-         max.xyz       VF26,VF17,VF17                               move.xyz      VF29,VF20                           
-         max.xyz       VF30,VF21,VF21                               bal           VI11,calculate_intersect            
-         max           VF28,VF19,VF19                               move.xyz      VF31,VF22                           
+         NOP                                                        move          VF27,VF18
+         max.xyz       VF26,VF17,VF17                               move.xyz      VF29,VF20
+         max.xyz       VF30,VF21,VF21                               bal           VI11,calculate_intersect
+         max           VF28,VF19,VF19                               move.xyz      VF31,VF22
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_73]
-         max           VF23,VF18,VF18                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF27,VF27                               move          VF24,VF19                           
+         max           VF23,VF18,VF18                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF27,VF27                               move          VF24,VF19
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_74]
-         NOP                                                        ibeq          VI01,VI00,loadColorsA1              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsA1
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_75]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_76]
-         NOP                                                        bal           VI11,AIntersect                     
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,AIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_77]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_78]
-         max.xyz       VF02,VF26,VF26                               NOP                                               
-         max.xyz       VF13,VF29,VF29                               move.xyz      VF12,VF18                           
+         max.xyz       VF02,VF26,VF26                               NOP
+         max.xyz       VF13,VF29,VF29                               move.xyz      VF12,VF18
 loadColorsA1:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsA1]
-         NOP                                                        ibeq          VI02,VI00,write_A_p2                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,write_A_p2
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_80]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_81]
-         NOP                                                        bal           VI11,AIntersect                     
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,AIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_82]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_83]
-         max.xyz       VF14,VF26,VF26                               NOP                                               
-         max.xyz       VF16,VF29,VF29                               move.xyz      VF15,VF18                           
+         max.xyz       VF14,VF26,VF26                               NOP
+         max.xyz       VF16,VF29,VF29                               move.xyz      VF15,VF18
 write_A_p2:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [write_A_p2]
-         max           VF23,VF27,VF27                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF28,VF28                               move          VF24,VF19                           
+         max           VF23,VF27,VF27                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF28,VF28                               move          VF24,VF19
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_85]
-         NOP                                                        ibeq          VI01,VI00,loadColorsA2              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsA2
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_86]
-         max           VF23,VF02,VF02                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF13,VF13                               move          VF24,VF12                           
+         max           VF23,VF02,VF02                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF13,VF13                               move          VF24,VF12
 loadColorsA2:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsA2]
-         NOP                                                        ibeq          VI02,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_89]
-         max           VF23,VF14,VF14                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF16,VF16                               move          VF24,VF15                           
+         max           VF23,VF14,VF14                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF16,VF16                               move          VF24,VF15
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_90]
-         NOP                                                        b             next_verts                          
-         NOP                                                        NOP                                               
+         NOP                                                        b             next_verts
+         NOP                                                        NOP
 AIntersect:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [AIntersect]
-         max           VF18,VF23,VF23                               bal           VI12,lerpValues                     
-         max           VF22,VF25,VF25                               move          VF21,VF24                           
+         max           VF18,VF23,VF23                               bal           VI12,lerpValues
+         max           VF22,VF25,VF25                               move          VF21,VF24
 ; _LNOPT_w=[ normal2 ] 3 [4 0] 3   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_93]
-         max           VF23,VF24,VF24                               NOP                                               
-         max           VF18,VF25,VF25                               jr            VI11                                
-         max           VF25,VF26,VF26                               move          VF24,VF25                           
+         max           VF23,VF24,VF24                               NOP
+         max           VF18,VF25,VF25                               jr            VI11
+         max           VF25,VF26,VF26                               move          VF24,VF25
 checkB:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [checkB]
-         NOP                                                        iaddiu        VI12,VI00,0x00000040                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI11,VI12,checkC                    
-         NOP                                                        NOP                                               
+         NOP                                                        iaddiu        VI12,VI00,0x00000040
+         NOP                                                        NOP
+         NOP                                                        ibne          VI11,VI12,checkC
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_96]
-         NOP                                                        move          VF27,VF17                           
-         max.xyz       VF26,VF18,VF18                               move.xyz      VF29,VF21                           
-         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect            
-         max           VF28,VF19,VF19                               move.xyz      VF31,VF22                           
+         NOP                                                        move          VF27,VF17
+         max.xyz       VF26,VF18,VF18                               move.xyz      VF29,VF21
+         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect
+         max           VF28,VF19,VF19                               move.xyz      VF31,VF22
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_97]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF23,VF19,VF19                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF28,VF28                               move          VF24,VF17                           
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF23,VF19,VF19                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF28,VF28                               move          VF24,VF17
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_98]
-         NOP                                                        ibeq          VI01,VI00,loadColorsB1              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsB1
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_99]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_100]
-         NOP                                                        bal           VI11,BIntersect                     
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,BIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_101]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_102]
-         max           VF02,VF29,VF29                               NOP                                               
-         max           VF13,VF26,VF26                               move          VF12,VF18                           
+         max           VF02,VF29,VF29                               NOP
+         max           VF13,VF26,VF26                               move          VF12,VF18
 loadColorsB1:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsB1]
-         NOP                                                        ibeq          VI02,VI00,write_B_p2                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,write_B_p2
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_104]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_105]
-         NOP                                                        bal           VI11,BIntersect                     
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,BIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_106]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_107]
-         max           VF14,VF29,VF29                               NOP                                               
-         max           VF16,VF26,VF26                               move          VF15,VF18                           
+         max           VF14,VF29,VF29                               NOP
+         max           VF16,VF26,VF26                               move          VF15,VF18
 write_B_p2:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [write_B_p2]
-         max           VF23,VF28,VF28                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF27,VF27                               move          VF24,VF17                           
+         max           VF23,VF28,VF28                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF27,VF27                               move          VF24,VF17
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_109]
-         NOP                                                        ibeq          VI01,VI00,loadColorsB2              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsB2
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_110]
-         max           VF23,VF02,VF02                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF13,VF13                               move          VF24,VF12                           
+         max           VF23,VF02,VF02                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF13,VF13                               move          VF24,VF12
 loadColorsB2:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsB2]
-         NOP                                                        ibeq          VI02,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_113]
-         max           VF23,VF14,VF14                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF16,VF16                               move          VF24,VF15                           
+         max           VF23,VF14,VF14                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF16,VF16                               move          VF24,VF15
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_114]
-         NOP                                                        b             next_verts                          
-         NOP                                                        NOP                                               
+         NOP                                                        b             next_verts
+         NOP                                                        NOP
 BIntersect:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [BIntersect]
-         max           VF18,VF24,VF24                               bal           VI12,lerpValues                     
-         max           VF22,VF25,VF25                               move          VF21,VF23                           
+         max           VF18,VF24,VF24                               bal           VI12,lerpValues
+         max           VF22,VF25,VF25                               move          VF21,VF23
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_117]
-         max           VF18,VF23,VF23                               move          VF23,VF25                           
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF25,VF29,VF29                               jr            VI11                                
-         max           VF24,VF18,VF18                               NOP                                               
+         max           VF18,VF23,VF23                               move          VF23,VF25
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF25,VF29,VF29                               jr            VI11
+         max           VF24,VF18,VF18                               NOP
 checkC:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [checkC]
-         NOP                                                        iaddiu        VI12,VI00,0x00000020                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI11,VI12,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        iaddiu        VI12,VI00,0x00000020
+         NOP                                                        NOP
+         NOP                                                        ibne          VI11,VI12,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_120]
-         NOP                                                        move          VF27,VF17                           
-         max.xyz       VF26,VF19,VF19                               move.xyz      VF29,VF22                           
-         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect            
-         max           VF28,VF18,VF18                               move.xyz      VF31,VF21                           
+         NOP                                                        move          VF27,VF17
+         max.xyz       VF26,VF19,VF19                               move.xyz      VF29,VF22
+         max.xyz       VF30,VF20,VF20                               bal           VI11,calculate_intersect
+         max           VF28,VF18,VF18                               move.xyz      VF31,VF21
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_121]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF23,VF18,VF18                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF28,VF28                               move          VF24,VF17                           
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF23,VF18,VF18                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF28,VF28                               move          VF24,VF17
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_122]
-         NOP                                                        ibeq          VI01,VI00,loadColorsC1              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsC1
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_123]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_124]
-         NOP                                                        bal           VI11,CIntersect                     
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,CIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_125]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_126]
-         max           VF02,VF29,VF29                               NOP                                               
-         max           VF13,VF26,VF26                               move          VF12,VF18                           
+         max           VF02,VF29,VF29                               NOP
+         max           VF13,VF26,VF26                               move          VF12,VF18
 loadColorsC1:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsC1]
-         NOP                                                        ibeq          VI02,VI00,write_C_p2                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,write_C_p2
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_128]
-         NOP                                                        bal           VI11,loadData                       
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        bal           VI11,loadData
+         NOP                                                        iadd          VI10,VI10,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_129]
-         NOP                                                        bal           VI11,CIntersect                     
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,CIntersect
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_130]
-         NOP                                                        bal           VI11,write_to_clipbuffer            
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI11,write_to_clipbuffer
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_131]
-         max           VF14,VF29,VF29                               NOP                                               
-         max           VF16,VF26,VF26                               move          VF15,VF18                           
+         max           VF14,VF29,VF29                               NOP
+         max           VF16,VF26,VF26                               move          VF15,VF18
 write_C_p2:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [write_C_p2]
-         max           VF23,VF28,VF28                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF27,VF27                               move          VF24,VF17                           
+         max           VF23,VF28,VF28                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF27,VF27                               move          VF24,VF17
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_133]
-         NOP                                                        ibeq          VI01,VI00,loadColorsC2              
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI01,VI00,loadColorsC2
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_134]
-         max           VF23,VF02,VF02                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF13,VF13                               move          VF24,VF12                           
+         max           VF23,VF02,VF02                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF13,VF13                               move          VF24,VF12
 loadColorsC2:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColorsC2]
-         NOP                                                        ibeq          VI02,VI00,next_verts                
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,next_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_137]
-         max           VF23,VF14,VF14                               bal           VI11,write_to_clipbuffer            
-         max           VF25,VF16,VF16                               move          VF24,VF15                           
+         max           VF23,VF14,VF14                               bal           VI11,write_to_clipbuffer
+         max           VF25,VF16,VF16                               move          VF24,VF15
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_138]
-         NOP                                                        b             next_verts                          
-         NOP                                                        NOP                                               
+         NOP                                                        b             next_verts
+         NOP                                                        NOP
 CIntersect:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [CIntersect]
-         max           VF21,VF23,VF23                               bal           VI12,lerpValues                     
-         max           VF18,VF25,VF25                               move          VF22,VF24                           
+         max           VF21,VF23,VF23                               bal           VI12,lerpValues
+         max           VF18,VF25,VF25                               move          VF22,VF24
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_141]
-         max           VF18,VF23,VF23                               NOP                                               
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         max           VF25,VF29,VF29                               jr            VI11                                
-         max           VF24,VF18,VF18                               move          VF23,VF24                           
+         max           VF18,VF23,VF23                               NOP
+         NOP                                                        NOP
+         NOP                                                        NOP
+         max           VF25,VF29,VF29                               jr            VI11
+         max           VF24,VF18,VF18                               move          VF23,VF24
 lerpValues:
 ; _LNOPT_w=[ normal2 ] 9 [9 0] 13   [lerpValues]
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         NOP                                                        NOP                                               
-         sub           VF21,VF21,VF18                               NOP                                               
-         sub           VF22,VF22,VF18                               NOP                                               
+         NOP                                                        NOP
+         NOP                                                        NOP
+         NOP                                                        NOP
+         sub           VF21,VF21,VF18                               NOP
+         sub           VF22,VF22,VF18                               NOP
          mulx          VF21,VF21,VF01x                              NOP                                                      ;	STALL_LATENCY ?2
-         muly          VF22,VF22,VF20y                              NOP                                               
+         muly          VF22,VF22,VF20y                              NOP
          add           VF26,VF18,VF21                               jr            VI12                                       ;	STALL_LATENCY ?2
-         add           VF29,VF18,VF22                               NOP                                               
+         add           VF29,VF18,VF22                               NOP
 loadData:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [loadData]
-         NOP                                                        lq            VF23,0(VI10)                        
-         NOP                                                        lq            VF24,1(VI10)                        
-         NOP                                                        jr            VI11                                
-         NOP                                                        lq            VF25,2(VI10)                        
+         NOP                                                        lq            VF23,0(VI10)
+         NOP                                                        lq            VF24,1(VI10)
+         NOP                                                        jr            VI11
+         NOP                                                        lq            VF25,2(VI10)
 calculate_intersect:
 ; _LNOPT_w=[ normal2 ] 23 [32 0] 41   [calculate_intersect]
-         NOP                                                        NOP                                               
-         mul.xyz       VF21,VF07,VF29                               NOP                                               
-         sub.xyz       VF30,VF30,VF29                               NOP                                               
-         sub.xyz       VF20,VF31,VF29                               NOP                                               
+         NOP                                                        NOP
+         mul.xyz       VF21,VF06,VF29                               NOP
+         sub.xyz       VF30,VF30,VF29                               NOP
+         sub.xyz       VF20,VF31,VF29                               NOP
          addy.x        VF21,VF21,VF21y                              NOP                                                      ;	STALL_LATENCY ?1
-         mul.xyz       VF29,VF30,VF07                               NOP                                               
-         subw.x        VF01,VF00,VF01w                              NOP                                               
+         mul.xyz       VF29,VF30,VF06                               NOP
+         subw.x        VF01,VF00,VF06w                              NOP
          addz.x        VF21,VF21,VF21z                              NOP                                                      ;	STALL_LATENCY ?1
-         addy.x        VF29,VF29,VF29y                              NOP                                               
-         mul.xyz       VF20,VF20,VF07                               NOP                                               
+         addy.x        VF29,VF29,VF29y                              NOP
+         mul.xyz       VF20,VF20,VF06                               NOP
          subx.x        VF01,VF01,VF21x                              NOP                                                      ;	STALL_LATENCY ?1
-         addz.x        VF29,VF29,VF29z                              NOP                                               
-         addy.x        VF20,VF20,VF20y                              NOP                                               
+         addz.x        VF29,VF29,VF29z                              NOP
+         addy.x        VF20,VF20,VF20y                              NOP
          sub.xyz       VF27,VF27,VF26                               div           Q,VF01x,VF29x                              ;	STALL_LATENCY ?2
-         addz.x        VF20,VF20,VF20z                              NOP                                               
+         addz.x        VF20,VF20,VF20z                              NOP
          addq.x        VF01,VF00,Q                                  div           Q,VF01x,VF20x                              ;	STALL_LATENCY_THRUPUT ?5
          mulx.xyz      VF27,VF27,VF01x                              NOP                                                      ;	STALL_LATENCY ?3
-         sub.xyz       VF28,VF28,VF26                               NOP                                               
+         sub.xyz       VF28,VF28,VF26                               NOP
          addq.y        VF20,VF00,Q                                  waitq                                                    ;	STALL_LATENCY ?1
-         add.xyz       VF27,VF26,VF27                               NOP                                               
+         add.xyz       VF27,VF26,VF27                               NOP
          muly.xyz      VF28,VF28,VF20y                              NOP                                                      ;	STALL_LATENCY ?2
-         NOP                                                        jr            VI11                                
+         NOP                                                        jr            VI11
          add.xyz       VF28,VF26,VF28                               NOP                                                      ;	STALL_LATENCY ?2
 write_to_clipbuffer:
 ; _LNOPT_w=[ normal2 ] 6 [5 0] 6   [write_to_clipbuffer]
-         NOP                                                        NOP                                               
-         NOP                                                        iaddiu        VI06,VI06,0x00000003                
-         NOP                                                        sq            VF23,-3(VI06)                       
-         NOP                                                        sq            VF24,-2(VI06)                       
-         NOP                                                        jr            VI11                                
-         NOP                                                        sq            VF25,-1(VI06)                       
+         NOP                                                        NOP
+         NOP                                                        iaddiu        VI06,VI06,0x00000003
+         NOP                                                        sq            VF23,-3(VI06)
+         NOP                                                        sq            VF24,-2(VI06)
+         NOP                                                        jr            VI11
+         NOP                                                        sq            VF25,-1(VI06)
 next_verts:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [next_verts]
-         NOP                                                        isubiu        VI07,VI07,3                         
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI07,VI03,vertexLoop                
-         NOP                                                        iaddiu        VI04,VI04,0x00000003                
+         NOP                                                        isubiu        VI07,VI07,3
+         NOP                                                        NOP
+         NOP                                                        ibne          VI07,VI03,vertexLoop
+         NOP                                                        iaddiu        VI04,VI04,0x00000003
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_152]
-         NOP                                                        ibeq          VI08,VI00,end                       
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI08,VI00,end
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_153]
-         NOP                                                        bal           VI07,write_verts                    
-         NOP                                                        NOP                                               
+         NOP                                                        bal           VI07,write_verts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [do_plane_check]
-         NOP                                                        iaddiu        VI07,VI00,0x00000004                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI09,VI07,right_plane               
-         NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 15 [59 0] 59   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_155]
-         muly.xyz      VF07,VF05,VF01y                              iadd          VI07,VI03,VI08                      
-         add.xyz       VF07,VF06,VF07                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
-         sub.xyz       VF02,VF07,VF03                               NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        iaddiu        VI07,VI00,0x00000004
+         NOP                                                        NOP
+         NOP                                                        ibne          VI09,VI07,right_plane
+         NOP                                                        NOP
+; _LNOPT_w=[ normal2 ] 17 [63 0] 63   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_155]
+         muly.xyz      VF06,VF05,VF01y                              isubiu        VI09,VI09,1
+         add.xyz       VF06,VF07,VF06                               iadd          VI07,VI03,VI08                             ;	STALL_LATENCY ?3
+         sub.xyz       VF02,VF06,VF03                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
          mul.xyz       VF12,VF02,VF02                               NOP                                                      ;	STALL_LATENCY ?3
          addy.x        VF01,VF12,VF12y                              NOP                                                      ;	STALL_LATENCY ?3
          addz.x        VF01,VF01,VF12z                              NOP                                                      ;	STALL_LATENCY ?3
-         sub.xyz       VF07,VF00,VF07                               rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
-         mulq.xyz      VF02,VF02,Q                                  waitq                                                    ;	STALL_LATENCY ?12
-         opmula.xyz    ACCxyz,VF02xyz,VF04xyz                       NOP                                                      ;	STALL_LATENCY ?3
-         opmsub.xyz    VF02xyz,VF04xyz,VF02xyz                      NOP                                               
-         mul.xyz       VF02,VF07,VF02                               move.xyz      VF07,VF02                                  ;	STALL_LATENCY ?3
+         NOP                                                        rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
+         mulq.xyz      VF12,VF02,Q                                  waitq                                                    ;	STALL_LATENCY ?12
+         sub.xyz       VF02,VF00,VF06                               NOP
+         opmula.xyz    ACCxyz,VF04xyz,VF12xyz                       NOP                                                      ;	STALL_LATENCY ?2
+         opmsub.xyz    VF06xyz,VF12xyz,VF04xyz                      NOP
+         mul.xyz       VF02,VF02,VF06                               move.xyz      VF06,VF06                                  ;	STALL_LATENCY ?3
          addy.x        VF01,VF02,VF02y                              NOP                                                      ;	STALL_LATENCY ?3
-         addz.x        VF01,VF01,VF02z                              isubiu        VI09,VI09,1                                ;	STALL_LATENCY ?3
-         NOP                                                        b             vertexLoop                          
-         NOP                                                        mr32.w        VF01,VF01                                  ;	STALL_LATENCY ?2
+         addz.x        VF01,VF01,VF02z                              NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        mr32.w        VF06,VF01                                  ;	STALL_LATENCY ?3
+         NOP                                                        b             vertexLoop
+         NOP                                                        NOP                               ;	STALL_LATENCY ?2
 right_plane:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [right_plane]
-         NOP                                                        iaddiu        VI07,VI00,0x00000003                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI09,VI07,bottom_plane              
-         NOP                                                        NOP                                               
+         NOP                                                        iaddiu        VI07,VI00,0x00000003
+         NOP                                                        NOP
+         NOP                                                        ibne          VI09,VI07,bottom_plane
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 15 [59 0] 59   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_158]
-         muly.xyz      VF07,VF05,VF01y                              iadd          VI07,VI03,VI08                      
-         sub.xyz       VF07,VF06,VF07                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
-         sub.xyz       VF02,VF07,VF03                               NOP                                                      ;	STALL_LATENCY ?3
+         muly.xyz      VF06,VF05,VF01y                              iadd          VI07,VI03,VI08
+         sub.xyz       VF06,VF07,VF06                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
+         sub.xyz       VF02,VF06,VF03                               NOP                                                      ;	STALL_LATENCY ?3
          mul.xyz       VF12,VF02,VF02                               NOP                                                      ;	STALL_LATENCY ?3
          addy.x        VF01,VF12,VF12y                              NOP                                                      ;	STALL_LATENCY ?3
          addz.x        VF01,VF01,VF12z                              NOP                                                      ;	STALL_LATENCY ?3
-         sub.xyz       VF07,VF00,VF07                               rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
+         sub.xyz       VF06,VF00,VF06                               rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
          mulq.xyz      VF02,VF02,Q                                  waitq                                                    ;	STALL_LATENCY ?12
-         opmula.xyz    ACCxyz,VF04xyz,VF02xyz                       NOP                                                      ;	STALL_LATENCY ?3
-         opmsub.xyz    VF02xyz,VF02xyz,VF04xyz                      NOP                                               
-         mul.xyz       VF02,VF07,VF02                               move.xyz      VF07,VF02                                  ;	STALL_LATENCY ?3
+         opmula.xyz    ACCxyz,VF02xyz,VF04xyz                       NOP                                                      ;	STALL_LATENCY ?3
+         opmsub.xyz    VF02xyz,VF04xyz,VF02xyz                      NOP
+         mul.xyz       VF02,VF06,VF02                               move.xyz      VF06,VF02                                  ;	STALL_LATENCY ?3
          addy.x        VF01,VF02,VF02y                              NOP                                                      ;	STALL_LATENCY ?3
          addz.x        VF01,VF01,VF02z                              isubiu        VI09,VI09,1                                ;	STALL_LATENCY ?3
-         NOP                                                        b             vertexLoop                          
-         NOP                                                        mr32.w        VF01,VF01                                  ;	STALL_LATENCY ?2
+         NOP                                                        b             vertexLoop
+         NOP                                                        mr32.w        VF06,VF01                                  ;	STALL_LATENCY ?2
 bottom_plane:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [bottom_plane]
-         NOP                                                        iaddiu        VI07,VI00,0x00000002                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI09,VI07,top_plane                 
-         NOP                                                        NOP                                               
+         NOP                                                        iaddiu        VI07,VI00,0x00000002
+         NOP                                                        NOP
+         NOP                                                        ibne          VI09,VI07,top_plane
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 15 [59 0] 59   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_161]
-         mulz.xyz      VF07,VF04,VF01z                              iadd          VI07,VI03,VI08                      
-         sub.xyz       VF07,VF06,VF07                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
-         sub.xyz       VF02,VF07,VF03                               NOP                                                      ;	STALL_LATENCY ?3
+         mulz.xyz      VF06,VF04,VF01z                              iadd          VI07,VI03,VI08
+         sub.xyz       VF06,VF07,VF06                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
+         sub.xyz       VF02,VF06,VF03                               NOP                                                      ;	STALL_LATENCY ?3
          mul.xyz       VF12,VF02,VF02                               NOP                                                      ;	STALL_LATENCY ?3
          addy.x        VF01,VF12,VF12y                              NOP                                                      ;	STALL_LATENCY ?3
          addz.x        VF01,VF01,VF12z                              NOP                                                      ;	STALL_LATENCY ?3
-         sub.xyz       VF07,VF00,VF07                               rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
-         mulq.xyz      VF02,VF02,Q                                  waitq                                                    ;	STALL_LATENCY ?12
-         opmula.xyz    ACCxyz,VF02xyz,VF05xyz                       NOP                                                      ;	STALL_LATENCY ?3
-         opmsub.xyz    VF02xyz,VF05xyz,VF02xyz                      NOP                                               
-         mul.xyz       VF02,VF07,VF02                               move.xyz      VF07,VF02                                  ;	STALL_LATENCY ?3
-         addy.x        VF01,VF02,VF02y                              NOP                                                      ;	STALL_LATENCY ?3
-         addz.x        VF01,VF01,VF02z                              isubiu        VI09,VI09,1                                ;	STALL_LATENCY ?3
-         NOP                                                        b             vertexLoop                          
-         NOP                                                        mr32.w        VF01,VF01                                  ;	STALL_LATENCY ?2
-top_plane:
-; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [top_plane]
-         NOP                                                        iaddiu        VI07,VI00,0x00000001                
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI09,VI07,finish_plane              
-         NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 15 [59 0] 59   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_164]
-         mulz.xyz      VF07,VF04,VF01z                              iadd          VI07,VI03,VI08                      
-         add.xyz       VF07,VF06,VF07                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
-         sub.xyz       VF02,VF07,VF03                               NOP                                                      ;	STALL_LATENCY ?3
-         mul.xyz       VF12,VF02,VF02                               NOP                                                      ;	STALL_LATENCY ?3
-         addy.x        VF01,VF12,VF12y                              NOP                                                      ;	STALL_LATENCY ?3
-         addz.x        VF01,VF01,VF12z                              NOP                                                      ;	STALL_LATENCY ?3
-         sub.xyz       VF07,VF00,VF07                               rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
+         sub.xyz       VF06,VF00,VF06                               rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
          mulq.xyz      VF02,VF02,Q                                  waitq                                                    ;	STALL_LATENCY ?12
          opmula.xyz    ACCxyz,VF05xyz,VF02xyz                       NOP                                                      ;	STALL_LATENCY ?3
-         opmsub.xyz    VF02xyz,VF02xyz,VF05xyz                      NOP                                               
-         mul.xyz       VF02,VF07,VF02                               move.xyz      VF07,VF02                                  ;	STALL_LATENCY ?3
+         opmsub.xyz    VF02xyz,VF02xyz,VF05xyz                      NOP
+         mul.xyz       VF02,VF06,VF02                               move.xyz      VF06,VF02                                  ;	STALL_LATENCY ?3
          addy.x        VF01,VF02,VF02y                              NOP                                                      ;	STALL_LATENCY ?3
          addz.x        VF01,VF01,VF02z                              isubiu        VI09,VI09,1                                ;	STALL_LATENCY ?3
-         NOP                                                        b             vertexLoop                          
-         NOP                                                        mr32.w        VF01,VF01                                  ;	STALL_LATENCY ?2
+         NOP                                                        b             vertexLoop
+         NOP                                                        mr32.w        VF06,VF01                                  ;	STALL_LATENCY ?2
+top_plane:
+; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [top_plane]
+         NOP                                                        iaddiu        VI07,VI00,0x00000001
+         NOP                                                        NOP
+         NOP                                                        ibne          VI09,VI07,finish_plane
+         NOP                                                        NOP
+; _LNOPT_w=[ normal2 ] 15 [59 0] 59   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_164]
+         mulz.xyz      VF06,VF04,VF01z                              iadd          VI07,VI03,VI08
+         add.xyz       VF06,VF07,VF06                               iaddiu        VI08,VI00,0                                ;	STALL_LATENCY ?3
+         sub.xyz       VF02,VF06,VF03                               NOP                                                      ;	STALL_LATENCY ?3
+         mul.xyz       VF12,VF02,VF02                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF01,VF12,VF12y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF01,VF01,VF12z                              NOP                                                      ;	STALL_LATENCY ?3
+         sub.xyz       VF06,VF00,VF06                               rsqrt         Q,VF00w,VF01x                              ;	STALL_LATENCY ?3
+         mulq.xyz      VF02,VF02,Q                                  waitq                                                    ;	STALL_LATENCY ?12
+         opmula.xyz    ACCxyz,VF02xyz,VF05xyz                       NOP                                                      ;	STALL_LATENCY ?3
+         opmsub.xyz    VF02xyz,VF05xyz,VF02xyz                      NOP
+         mul.xyz       VF02,VF06,VF02                               move.xyz      VF06,VF02                                  ;	STALL_LATENCY ?3
+         addy.x        VF01,VF02,VF02y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF01,VF01,VF02z                              isubiu        VI09,VI09,1                                ;	STALL_LATENCY ?3
+         NOP                                                        b             vertexLoop
+         NOP                                                        mr32.w        VF06,VF01                                  ;	STALL_LATENCY ?2
 finish_plane:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [finish_plane]
-         NOP                                                        b             end                                 
-         NOP                                                        NOP                                               
+         NOP                                                        b             end
+         NOP                                                        NOP
 write_verts:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [write_verts]
-         NOP                                                        iaddiu        VI04,VI03,0x00000001                
-         NOP                                                        iadd          VI06,VI04,VI08                      
-         NOP                                                        ibeq          VI01,VI00,checkIfColorsClip         
-         NOP                                                        iadd          VI10,VI04,VI05                      
+         NOP                                                        iaddiu        VI04,VI03,0x00000001
+         NOP                                                        iadd          VI06,VI04,VI08
+         NOP                                                        ibeq          VI01,VI00,checkIfColorsClip
+         NOP                                                        iadd          VI10,VI04,VI05
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_169]
-         NOP                                                        iadd          VI06,VI06,VI08                      
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        iadd          VI06,VI06,VI08
+         NOP                                                        iadd          VI10,VI10,VI05
 checkIfColorsClip:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [checkIfColorsClip]
-         NOP                                                        ibeq          VI02,VI00,continueSetupClip         
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,continueSetupClip
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_171]
-         NOP                                                        iadd          VI06,VI06,VI08                      
-         NOP                                                        iadd          VI10,VI10,VI05                      
+         NOP                                                        iadd          VI06,VI06,VI08
+         NOP                                                        iadd          VI10,VI10,VI05
 continueSetupClip:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [continueSetupClip]
-         NOP                                                        iadd          VI13,VI08,VI03                      
-         NOP                                                        iaddiu        VI11,VI06,0                         
-         NOP                                                        ibeq          VI13,VI03,end                       
-         NOP                                                        iaddiu        VI12,VI10,0                         
+         NOP                                                        iadd          VI13,VI08,VI03
+         NOP                                                        iaddiu        VI11,VI06,0
+         NOP                                                        ibeq          VI13,VI03,end
+         NOP                                                        iaddiu        VI12,VI10,0
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_173]
-         NOP                                                        iaddiu        VI05,VI08,0                         
+         NOP                                                        iaddiu        VI05,VI08,0
 write_back:
 ; _LNOPT_w=[ normal2 ] 9 [9 0] 9   [write_back]
-         NOP                                                        lq            VF12,0(VI12)                        
-         NOP                                                        lq            VF07,1(VI12)                        
-         NOP                                                        lq            VF02,2(VI12)                        
-         NOP                                                        iaddiu        VI06,VI04,0                         
-         NOP                                                        sq            VF12,0(VI06)                        
-         NOP                                                        sq            VF07,1(VI06)                        
-         NOP                                                        sq            VF02,2(VI06)                        
-         NOP                                                        ibeq          VI01,VI00,storeColors               
-         NOP                                                        iaddiu        VI12,VI12,0x00000003                
+         NOP                                                        lq            VF12,0(VI12)
+         NOP                                                        lq            VF06,1(VI12)
+         NOP                                                        lq            VF02,2(VI12)
+         NOP                                                        iaddiu        VI06,VI04,0
+         NOP                                                        sq            VF12,0(VI06)
+         NOP                                                        sq            VF06,1(VI06)
+         NOP                                                        sq            VF02,2(VI06)
+         NOP                                                        ibeq          VI01,VI00,storeColors
+         NOP                                                        iaddiu        VI12,VI12,0x00000003
 ; _LNOPT_w=[ normal2 ] 8 [8 0] 8   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_175]
-         NOP                                                        lq            VF12,0(VI12)                        
-         NOP                                                        lq            VF07,1(VI12)                        
-         NOP                                                        lq            VF02,2(VI12)                        
-         NOP                                                        iadd          VI06,VI06,VI08                      
-         NOP                                                        sq            VF12,0(VI06)                        
-         NOP                                                        sq            VF07,1(VI06)                        
-         NOP                                                        sq            VF02,2(VI06)                        
-         NOP                                                        iaddiu        VI12,VI12,0x00000003                
+         NOP                                                        lq            VF12,0(VI12)
+         NOP                                                        lq            VF06,1(VI12)
+         NOP                                                        lq            VF02,2(VI12)
+         NOP                                                        iadd          VI06,VI06,VI08
+         NOP                                                        sq            VF12,0(VI06)
+         NOP                                                        sq            VF06,1(VI06)
+         NOP                                                        sq            VF02,2(VI06)
+         NOP                                                        iaddiu        VI12,VI12,0x00000003
 storeColors:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [storeColors]
-         NOP                                                        ibeq          VI02,VI00,doneVerts                 
-         NOP                                                        NOP                                               
+         NOP                                                        ibeq          VI02,VI00,doneVerts
+         NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 8 [8 0] 8   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_177]
-         NOP                                                        lq            VF12,0(VI12)                        
-         NOP                                                        lq            VF07,1(VI12)                        
-         NOP                                                        lq            VF02,2(VI12)                        
-         NOP                                                        iadd          VI06,VI06,VI08                      
-         NOP                                                        sq            VF12,0(VI06)                        
-         NOP                                                        sq            VF07,1(VI06)                        
-         NOP                                                        sq            VF02,2(VI06)                        
-         NOP                                                        iaddiu        VI12,VI12,0x00000003                
+         NOP                                                        lq            VF12,0(VI12)
+         NOP                                                        lq            VF06,1(VI12)
+         NOP                                                        lq            VF02,2(VI12)
+         NOP                                                        iadd          VI06,VI06,VI08
+         NOP                                                        sq            VF12,0(VI06)
+         NOP                                                        sq            VF06,1(VI06)
+         NOP                                                        sq            VF02,2(VI06)
+         NOP                                                        iaddiu        VI12,VI12,0x00000003
 doneVerts:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [doneVerts]
-         NOP                                                        isubiu        VI13,VI13,3                         
-         NOP                                                        NOP                                               
-         NOP                                                        ibne          VI13,VI03,write_back                
-         NOP                                                        iaddiu        VI04,VI04,0x00000003                
+         NOP                                                        isubiu        VI13,VI13,3
+         NOP                                                        NOP
+         NOP                                                        ibne          VI13,VI03,write_back
+         NOP                                                        iaddiu        VI04,VI04,0x00000003
 ; _LNOPT_w=[ normal2 ] 3 [3 0] 3   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_179]
-         NOP                                                        iaddiu        VI04,VI03,0x00000001                
-         NOP                                                        jr            VI07                                
-         NOP                                                        iaddiu        VI06,VI11,0                         
+         NOP                                                        iaddiu        VI04,VI03,0x00000001
+         NOP                                                        jr            VI07
+         NOP                                                        iaddiu        VI06,VI11,0
 end:
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [end]
-         NOP                                                        isw.w         VI08,0(VI03)                        
+         NOP                                                        isw.w         VI08,0(VI03)
 ; _LNOPT_w=[ ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_Clipping_vcl_182]
-         NOP                                                        ilw.x         VI01,0(VI03)                        
-         NOP                                                        jr            VI01                
+         NOP                                                        ilw.x         VI01,0(VI03)
+         NOP                                                        jr            VI01
 		.align 4
 VU1_ClippingStage_CodeEnd:
-;	iCount=538
+;	iCount=541
 ; register stats:
 ;  14 VU User integer
 ;  32 VU User floating point
