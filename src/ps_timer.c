@@ -12,18 +12,18 @@ float getTicks(TimerStruct *ts)
 
 int TimerZeroInterrupt(s32 cause, void *arg, void *addr)
 {
-    TimerStruct *ts = (TimerStruct*)arg;
+    TimerStruct *ts = (TimerStruct *)arg;
     ts->ctr++;
     *R_EE_T0_MODE |= 1 << 11;
     return -1;
 }
 
-TimerStruct* TimerZeroEnable()
+TimerStruct *TimerZeroEnable()
 {
     TimerStruct *timer0 = (TimerStruct *)malloc(sizeof(TimerStruct));
     *R_EE_T0_HOLD = 0;
     timer0->ctr = 0;
-    s32 id =  AddIntcHandler2(9, TimerZeroInterrupt, 0, timer0);
+    s32 id = AddIntcHandler2(9, TimerZeroInterrupt, 0, timer0);
     timer0->id = id;
     EnableIntc(9);
     *R_EE_T0_COUNT = 0;

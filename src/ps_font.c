@@ -55,12 +55,13 @@ unsigned char *RewriteAlphaTexBuffer(unsigned char *buffer, int dimX, int dimY)
         char temp = buffer[i];
         if (temp == 0)
         {
-            buffer[i] = buffer[i+1] = buffer[i+2] = 0xFF;
-            buffer[i+3] = 0;
-        } else {
+            buffer[i] = buffer[i + 1] = buffer[i + 2] = 0xFF;
+            buffer[i + 3] = 0;
+        }
+        else
+        {
             buffer[i + 3] = temp >> 3;
         }
-       
     }
     return buffer;
 }
@@ -90,8 +91,6 @@ Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type
 
     font->color = color;
     font->prim = prim;
-
-    
 
     myFontTex = AddAndCreateTexture(fontName, read_type, 1, 0x80, TEX_ADDRESS_CLAMP);
 
@@ -144,7 +143,6 @@ void CreateFontWidths(Font *font_struct, const char *filePath)
     Pathify(filePath, _file);
     u8 *buffer = ReadFileInFull(_file, &size);
 
-    
     if (buffer == NULL)
     {
         return;
@@ -152,42 +150,40 @@ void CreateFontWidths(Font *font_struct, const char *filePath)
 
     u8 *ptr = buffer;
 
-    u32 temp = *((u32*)buffer);
+    u32 temp = *((u32 *)buffer);
 
     font_struct->picWidth = (u16)temp;
 
-    buffer+=4;
+    buffer += 4;
 
-    temp = *((u32*)buffer);
+    temp = *((u32 *)buffer);
 
-    font_struct->picHeight= (u16)temp;
+    font_struct->picHeight = (u16)temp;
 
-    buffer+=4;
+    buffer += 4;
 
-    temp = *((u32*)buffer);
+    temp = *((u32 *)buffer);
 
     font_struct->cellWidth = (u8)temp;
 
-    buffer+=4;
+    buffer += 4;
 
-    temp = *((u32*)buffer);
+    temp = *((u32 *)buffer);
 
     font_struct->cellHeight = (u8)temp;
 
-    buffer+=4;
+    buffer += 4;
 
     font_struct->startingChar = *buffer;
 
     buffer++;
 
-    u32 charSize = (font_struct->picWidth / font_struct->cellWidth) * (font_struct->picHeight / font_struct->cellHeight); 
+    u32 charSize = (font_struct->picWidth / font_struct->cellWidth) * (font_struct->picHeight / font_struct->cellHeight);
 
-   // DEBUGLOG(" %d %d %d %d %d %d", charSize, font_struct->startingChar, font_struct->picHeight, font_struct->picWidth, font_struct->cellHeight, font_struct->cellWidth);
-
-    
+    // DEBUGLOG(" %d %d %d %d %d %d", charSize, font_struct->startingChar, font_struct->picHeight, font_struct->picWidth, font_struct->cellHeight, font_struct->cellWidth);
 
     char *fontWidths = (char *)malloc(charSize);
-    //DEBUGLOG("size %d", size);
+    // DEBUGLOG("size %d", size);
     memcpy(fontWidths, buffer, charSize);
     font_struct->widthSize = charSize;
     font_struct->fontWidths = fontWidths;
@@ -217,9 +213,11 @@ unsigned char *RewriteAlphaClutBuffer(unsigned char *buffer)
         char temp = buffer[i];
         if (temp == 0)
         {
-            buffer[i] = buffer[i+1] = buffer[i+2] = 0xFF;
-            buffer[i+3] = 0;
-        } else {
+            buffer[i] = buffer[i + 1] = buffer[i + 2] = 0xFF;
+            buffer[i + 3] = 0;
+        }
+        else
+        {
             buffer[i + 3] = temp >> 3;
         }
     }
@@ -239,9 +237,9 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
 
     u32 qwSize = (textlen * 6) + 6;
 
-        u8 red = font_struct->color.r;
+    u8 red = font_struct->color.r;
     u8 green = font_struct->color.g;
-    u8 blue = font_struct->color.b; 
+    u8 blue = font_struct->color.b;
     u8 alpha = font_struct->color.a;
 
     qword_t *dmatag = ret;
@@ -263,7 +261,6 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
     PACK_GIFTAG(ret, GS_SET_TEX0(font_struct->fontTex->texbuf.address >> 6, font_struct->fontTex->texbuf.width >> 6, font_struct->fontTex->texbuf.psm, font_struct->fontTex->texbuf.info.width, font_struct->fontTex->texbuf.info.height, font_struct->fontTex->texbuf.info.components, font_struct->fontTex->texbuf.info.function, font_struct->fontTex->clut.address >> 6, font_struct->fontTex->clut.psm, font_struct->fontTex->clut.storage_mode, font_struct->fontTex->clut.start, font_struct->fontTex->clut.load_method), (context == 0) ? GS_REG_TEX0 : GS_REG_TEX0_2);
     ret++;
 
-
     u32 regCount = 3;
 
     u64 regFlag = regCount == 3 ? DRAW_RGBAQ_UV_REGLIST : ((u64)DRAW_UV_REGLIST) << 8 | DRAW_UV_REGLIST;
@@ -274,26 +271,24 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
     u32 line = 0;
     u32 uvOffset = 8;
     u32 lineHeight = 20;
-   // u32 lastLine = 0;
-
-
+    // u32 lastLine = 0;
 
     u32 cellX = font_struct->cellWidth;
-    //u32 cellWHalf = cellX / 2;
-    u32 cellY = font_struct->cellHeight; 
-    char start = font_struct->startingChar; 
+    // u32 cellWHalf = cellX / 2;
+    u32 cellY = font_struct->cellHeight;
+    char start = font_struct->startingChar;
 
     int LETTERSPERROW = font_struct->picWidth / cellX;
 
     for (u32 letter = 0; letter < textlen; letter++)
     {
 
-        char cLetter = text[letter]-start;
+        char cLetter = text[letter] - start;
 
         // If the letter is 'Newline' move down a line
         if (cLetter == '\n')
         {
-            //lastLine = line;
+            // lastLine = line;
             ++line;
             lastx = x;
             continue;
@@ -301,7 +296,7 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
 
         int letterwidth = font_struct->fontWidths[cLetter];
 
-       // DEBUGLOG("%d %d %d %d", letterwidth, cLetter, text[letter], start);
+        // DEBUGLOG("%d %d %d %d", letterwidth, cLetter, text[letter], start);
 
         int tx = (cLetter % LETTERSPERROW);
         int ty = (cLetter / LETTERSPERROW);
@@ -319,7 +314,6 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
         int top = y + (line * lineHeight);
         int bottom = y + (line * lineHeight) + lineHeight;
 
-
         PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u0, v0));
         ret++;
 
@@ -332,7 +326,7 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
         ret++;
         PACK_GIFTAG(ret, GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
         ret++;
-    
+
         PACK_GIFTAG(ret, GIF_SET_UV(u1, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
 
         ret++;
@@ -340,7 +334,7 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
         lastx += letterwidth;
     }
 
- //   DEBUGLOG("---------------------------");
+    //   DEBUGLOG("---------------------------");
 
     CreateDMATag(dmatag, DMA_END, ret - dmatag - 1, 0, 0, 0);
 

@@ -10,7 +10,7 @@ void StrafeLTMMove(MATRIX ltm, float d, VECTOR newPos)
 
     right = GetRightVectorLTM(ltm);
     pos = GetPositionVectorLTM(ltm);
-    
+
     VECTOR tempOut;
 
     tempOut[0] = d * (*right)[0] + (*pos)[0];
@@ -28,11 +28,7 @@ void WalkLTMMove(MATRIX ltm, float d, VECTOR newPos)
     forward = GetForwardVectorLTM(ltm);
     pos = GetPositionVectorLTM(ltm);
 
-
-
     VECTOR tempOut;
-
-
 
     tempOut[0] = d * (*forward)[0] + (*pos)[0];
     tempOut[1] = d * (*forward)[1] + (*pos)[1];
@@ -42,7 +38,6 @@ void WalkLTMMove(MATRIX ltm, float d, VECTOR newPos)
     vector_copy(newPos, tempOut);
 }
 
-
 void StrafeLTM(MATRIX ltm, float d)
 {
 
@@ -50,13 +45,13 @@ void StrafeLTM(MATRIX ltm, float d)
 
     right = GetRightVectorLTM(ltm);
     pos = GetPositionVectorLTM(ltm);
-    
+
     VECTOR tempOut;
 
     tempOut[0] = d * (*right)[0] + (*pos)[0];
     tempOut[1] = d * (*right)[1] + (*pos)[1];
     tempOut[2] = d * (*right)[2] + (*pos)[2];
-       
+
     SetPositionVectorLTM(ltm, tempOut);
 }
 
@@ -67,10 +62,7 @@ void WalkLTM(MATRIX ltm, float d)
     forward = GetForwardVectorLTM(ltm);
     pos = GetPositionVectorLTM(ltm);
 
-
-
     VECTOR tempOut;
-
 
     tempOut[0] = d * (*forward)[0] + (*pos)[0];
     tempOut[1] = d * (*forward)[1] + (*pos)[1];
@@ -79,17 +71,13 @@ void WalkLTM(MATRIX ltm, float d)
     SetPositionVectorLTM(ltm, tempOut);
 }
 
-
-
 void RotateYLTM(MATRIX ltm, float angle)
 {
-    VECTOR* upL, *forward, *right;
-     
-    
+    VECTOR *upL, *forward, *right;
+
     upL = GetUpVectorLTM(ltm);
     forward = GetForwardVectorLTM(ltm);
-    right = GetRightVectorLTM(ltm);   
-    
+    right = GetRightVectorLTM(ltm);
 
     MATRIX rotation;
 
@@ -106,7 +94,6 @@ void RotateYLTM(MATRIX ltm, float angle)
     Matrix3VectorMultiply(*right, rotation, *right);
 
     normalize(*forward, *forward);
-    
 }
 
 void PitchLTM(MATRIX ltm, float angle)
@@ -127,8 +114,5 @@ void PitchLTM(MATRIX ltm, float angle)
 
     Matrix3VectorMultiply(*up, rotation, *up);
 
-   
     normalize(*forward, *forward);
-    
-
 }

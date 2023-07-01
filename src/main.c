@@ -375,7 +375,7 @@ static void SetupCube()
 
     box = InitializeGameObject();
     // ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 
     int w, l;
     float dw, dh;
@@ -384,7 +384,7 @@ static void SetupCube()
     dw = 100;
     dh = 100;
     CreateGrid(w, l, dw, dh, &box->vertexBuffer);
-    u32 id = GetTextureIDByName(alphaMap, g_Manager.texManager);
+    u32 id = GetTextureIDByName(NewYorkName, g_Manager.texManager);
 
     CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.vertexCount - 1, id);
 
@@ -418,7 +418,7 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.CBIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0));
+    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0));
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -453,7 +453,7 @@ static void SetupMultiSphere()
 
     multiSphere = InitializeGameObject();
     ReadModelFile("MODELS\\SPHERE.BIN", &multiSphere->vertexBuffer);
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 0, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1));
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1));
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
@@ -677,8 +677,8 @@ static void SetupGameObjects()
 
     SetupCube();
     SetupBody();
-    SetupMultiSphere();
 
+    SetupMultiSphere();
     // SetupShadowViewer();
 
     // SetupRoom();
@@ -919,7 +919,6 @@ static void LoadInTextures()
     AppendString(_folder, alphaMap, _file, MAX_FILE_NAME);
 
     AddAndCreateAlphaMap(_file, READ_PNG, TEX_ADDRESS_CLAMP);
-
 }
 
 int main(int argc, char **argv)

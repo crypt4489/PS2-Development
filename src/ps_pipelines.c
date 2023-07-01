@@ -791,19 +791,19 @@ void CreateAlphaMapPipeline(GameObject *obj, const char *name, Texture *alphaMap
 
     q = CreateMeshDMAUpload(q, obj, drawSize, DRAW_TEXTURE | DRAW_VERTICES, 0, vu1_addr);
 
-    q = CreateDCODEDmaTransferTag(q, DMA_CHANNEL_VIF1, 1, 1, 7);
+    q = CreateDCODEDmaTransferTag(q, DMA_CHANNEL_VIF1, 1, 1, 6);
 
-    q = CreateDMATag(q, DMA_END, 6, 0, 0, 0);
+    q = CreateDMATag(q, DMA_END, 5, 0, 0, 0);
 
-    q = CreateDirectTag(q, 5, 1);
+    q = CreateDirectTag(q, 4, 1);
 
-    q = CreateGSSetTag(q, 4, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+    q = CreateGSSetTag(q, 3, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
 
     PipelineCallback *setupAlphaBlend = CreatePipelineCBNode(SetupAlphaMapPass2, q, NULL);
 
     dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupAlphaBlend, dcode_callback_tags, q);
 
-    q += 4;
+    q += 3;
 
     q = CreateMeshDMAUpload(q, obj, drawSize, DRAW_TEXTURE | DRAW_VERTICES, 0, vu1_addr);
 

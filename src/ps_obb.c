@@ -1,5 +1,7 @@
-#include <stdarg.h>
 #include "ps_obb.h"
+
+#include <stdarg.h>
+
 #include "ps_vumanager.h"
 #include "ps_vif.h"
 #include "ps_manager.h"
@@ -7,7 +9,6 @@
 #include "ps_fast_maths.h"
 #include <stdlib.h>
 extern volatile u32 *vu1_data_address;
-
 
 void DestroyOBB(ObjectBounds *bound)
 {
@@ -19,7 +20,6 @@ void DestroyOBB(ObjectBounds *bound)
     }
 }
 
-
 void InitOBB(GameObject *obj, int type)
 {
     float xMin, yMin, zMin, xMax, yMax, zMax;
@@ -28,7 +28,7 @@ void InitOBB(GameObject *obj, int type)
 
     MATRIX world;
 
-    obj->obb = (ObjectBounds*)malloc(sizeof(ObjectBounds));
+    obj->obb = (ObjectBounds *)malloc(sizeof(ObjectBounds));
 
     if (type == BBO_FIT || type == BBO_FIXED)
     {
@@ -180,58 +180,51 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         BoundingBox *box1 = (BoundingBox *)obb1->obb;
         BoundingBox *box2 = (BoundingBox *)obb2->obb;
         VECTOR newAxisX, newAxisY, newAxisZ, pos, outCenter1, outHalf1, outCenter2, outHalf2, boxVector, obj1Scales;
-    
 
-
-         GetScaleVectorLTM(obj1->ltm, obj1Scales);
+        GetScaleVectorLTM(obj1->ltm, obj1Scales);
 
         vector_copy(pos, va_arg(vectorArgs, float *));
         vector_copy(newAxisX, va_arg(vectorArgs, float *));
         vector_copy(newAxisY, va_arg(vectorArgs, float *));
         vector_copy(newAxisZ, va_arg(vectorArgs, float *));
 
-
-
         FindCenterAndHalfOBB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
         FindCenterAndHalfAABB(box2, outCenter2, outHalf2);
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, newAxisX, newAxisY, newAxisZ, right, up, forward);
-    } 
+    }
     else if (obb1->type == BBO_FIXED && obb2->type == BBO_FIXED)
     {
         BoundingBox *box1 = (BoundingBox *)obb1->obb;
         BoundingBox *box2 = (BoundingBox *)obb2->obb;
         VECTOR newAxisX, newAxisY, newAxisZ, pos, outCenter1, outHalf1, outCenter2, outHalf2, boxVector, obj1Scales, obj2Scales;
         VECTOR *obj2Pos, *obj2Up, *obj2Forward, *obj2Right;
-       
 
         obj2Pos = GetPositionVectorLTM(obj2->ltm);
         obj2Right = GetRightVectorLTM(obj2->ltm);
         obj2Forward = GetForwardVectorLTM(obj2->ltm);
         obj2Up = GetUpVectorLTM(obj2->ltm);
 
+        GetScaleVectorLTM(obj1->ltm, obj1Scales);
+        GetScaleVectorLTM(obj2->ltm, obj2Scales);
 
-         GetScaleVectorLTM(obj1->ltm, obj1Scales);
-         GetScaleVectorLTM(obj2->ltm, obj2Scales);
-
-         vector_copy(pos, va_arg(vectorArgs, float *));
+        vector_copy(pos, va_arg(vectorArgs, float *));
         vector_copy(newAxisX, va_arg(vectorArgs, float *));
         vector_copy(newAxisY, va_arg(vectorArgs, float *));
         vector_copy(newAxisZ, va_arg(vectorArgs, float *));
 
-
         FindCenterAndHalfOBB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
-       FindCenterAndHalfOBB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
+        FindCenterAndHalfOBB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, newAxisX, newAxisY, newAxisZ, *obj2Right, *obj2Up, *obj2Forward);
-    } else if (obb1->type == BBO_FIT && obb2->type == BBO_FIXED)
+    }
+    else if (obb1->type == BBO_FIT && obb2->type == BBO_FIXED)
     {
         BoundingBox *box1 = (BoundingBox *)obb1->obb;
         BoundingBox *box2 = (BoundingBox *)obb2->obb;
         VECTOR top1, bottom1, move;
         VECTOR outCenter1, outHalf1, outCenter2, outHalf2, boxVector, obj2Scales;
         VECTOR *obj2Pos, *obj2Up, *obj2Forward, *obj2Right;
-       
 
         obj2Pos = GetPositionVectorLTM(obj2->ltm);
         obj2Right = GetRightVectorLTM(obj2->ltm);
@@ -271,21 +264,21 @@ int PerformSAT(VECTOR pos, VECTOR half1, VECTOR half2, VECTOR xAxis1, VECTOR yAx
     CrossProduct(zAxis1, yAxis2, z1y2);
     CrossProduct(zAxis1, zAxis2, z1z2);
 
-    int ret = (CheckSeparatingPlane(pos, xAxis1, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, yAxis1, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2)  ||
-    CheckSeparatingPlane(pos, zAxis1, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2)  ||
-    CheckSeparatingPlane(pos, xAxis2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, yAxis2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2)  ||
-    CheckSeparatingPlane(pos, zAxis2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, x1x2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, x1y2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, x1z2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, y1x2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, y1y2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, y1z2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, z1x2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, z1y2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2) ||
-    CheckSeparatingPlane(pos, z1z2, half1, half2, xAxis1,  yAxis1, zAxis1, xAxis2, yAxis2,  zAxis2));
+    int ret = (CheckSeparatingPlane(pos, xAxis1, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, yAxis1, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, zAxis1, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, xAxis2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, yAxis2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, zAxis2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, x1x2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, x1y2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, x1z2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, y1x2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, y1y2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, y1z2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, z1x2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, z1y2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
+               CheckSeparatingPlane(pos, z1z2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2));
 
     if (ret == 0)
     {
@@ -336,13 +329,13 @@ void FindCenterAndHalfOBB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAx
 {
     VECTOR center, worldTop, worldBottom;
     MATRIX world;
-   // MATRIX rot, trans, tempGlobal;
-   /* matrix_unit(rot);
-    matrix_unit(tempGlobal);
-    matrix_unit(trans);
-    CreateRotationAndCopyMatFromObjAxes(rot, yAxis, zAxis, xAxis);
-    CreateTranslationMatrix(pos, trans);
-    CreateWorldMatrix(tempGlobal, scale, rot, trans); */
+    // MATRIX rot, trans, tempGlobal;
+    /* matrix_unit(rot);
+     matrix_unit(tempGlobal);
+     matrix_unit(trans);
+     CreateRotationAndCopyMatFromObjAxes(rot, yAxis, zAxis, xAxis);
+     CreateTranslationMatrix(pos, trans);
+     CreateWorldMatrix(tempGlobal, scale, rot, trans); */
     CreateWorldMatrixFromVectors(pos, yAxis, zAxis, xAxis, scale, world);
     MatrixVectorMultiply(worldTop, world, box->top);
     MatrixVectorMultiply(worldBottom, world, box->bottom);

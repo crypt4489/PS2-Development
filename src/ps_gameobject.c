@@ -313,7 +313,7 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
 
   if (code & DRAW_SKINNED)
   {
-    //DEBUGLOG("HERREREERERERER!!!");
+    // DEBUGLOG("HERREREERERERER!!!");
     q = add_unpack_data(q, *top, &(buffer->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
@@ -321,7 +321,6 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
     q = add_unpack_data(q, *top, &(buffer->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
-
   }
 
   return q;

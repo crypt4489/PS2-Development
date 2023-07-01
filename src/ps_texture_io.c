@@ -1,14 +1,15 @@
 #include "ps_texture_io.h"
-#include "ps_file_io.h"
-#include "ps_texture.h"
-#include "ps_log.h"
-#include "ps_gs.h"
 
 #include <png.h>
 
 #include <string.h>
 #include <malloc.h>
 #include <stdlib.h>
+
+#include "ps_file_io.h"
+#include "ps_texture.h"
+#include "ps_log.h"
+#include "ps_gs.h"
 
 void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char alpha)
 {
@@ -17,7 +18,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
 
     u8 *iter = buffer;
 
-   memcpy(&bmfh, iter, sizeof(BitmapFileHeader));
+    memcpy(&bmfh, iter, sizeof(BitmapFileHeader));
 
     if (bmfh.bfType != BITMAP_ID)
     {
@@ -43,7 +44,9 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     else if (image_depth == 24)
     {
         tex->psm = GS_PSM_24;
-    } else if (image_depth == 32) {
+    }
+    else if (image_depth == 32)
+    {
         tex->psm = GS_PSM_32;
     }
     else
@@ -71,7 +74,9 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
             if (useAlpha)
             {
                 pPtr[3] = alpha;
-            } else{
+            }
+            else
+            {
                 if ((pPtr[0] == alpha) && (pPtr[1] == alpha) && (pPtr[2] == alpha))
                 {
                     pPtr[3] = 0;
@@ -80,10 +85,10 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
             ((u32 *)swizz_clut)[index] = clut[i];
         }
 
-       for (int i = 0; i<256; i++)
-       {
-            ((int*)tex->clut_buffer)[i] = swizz_clut[i];
-       }
+        for (int i = 0; i < 256; i++)
+        {
+            ((int *)tex->clut_buffer)[i] = swizz_clut[i];
+        }
     }
 
     int image_size;
@@ -97,7 +102,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
         image_size = bmfh.bfSize - bmfh.bfOffBits;
     }
 
-    tex->pixels = memalign(32, image_size);//(unsigned char *)malloc(sizeof(unsigned char) * image_size);
+    tex->pixels = memalign(32, image_size); //(unsigned char *)malloc(sizeof(unsigned char) * image_size);
 
     unsigned int uLine;
     unsigned int bottomLine = tex->height - 1;
@@ -105,20 +110,20 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
 
     int bytesPerRow = tex->width * (bmih.biBitCount / 8);
 
-    int offset = 0; //uLine * bytesPerRow;
+    int offset = 0; // uLine * bytesPerRow;
 
     uLine = bottomLine;
 
-    u8 *currline = buffer+((bmfh.bfOffBits)+ (uLine * bytesPerRow));
+    u8 *currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
 
     for (i = 0; i <= bottomLine; i++)
     {
 
-        memcpy(&(tex->pixels[offset]), currline,  bytesPerRow);
+        memcpy(&(tex->pixels[offset]), currline, bytesPerRow);
 
         --uLine;
 
-        currline = buffer+((bmfh.bfOffBits)+ (uLine * bytesPerRow));
+        currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
 
         offset += bytesPerRow;
     }
@@ -137,7 +142,6 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     }
 
 end:
-    
 }
 
 void LoadPng(u8 *data, Texture *tex, u32 size)
@@ -161,7 +165,7 @@ void LoadPng(u8 *data, Texture *tex, u32 size)
 
     tex->pixels = (unsigned char *)malloc(PNG_IMAGE_SIZE(image));
 
-    if (png_image_finish_read(&image, NULL, tex->pixels, 0, NULL) != 0) 
+    if (png_image_finish_read(&image, NULL, tex->pixels, 0, NULL) != 0)
     {
         return;
     }
@@ -174,9 +178,7 @@ void LoadPng(u8 *data, Texture *tex, u32 size)
     }
 
     return;
-
 }
-
 
 Texture *ReadTexFile(const char *fileName, const char *nameOfTex, u32 readType, u8 alpha, u8 useAlpha)
 {
@@ -192,7 +194,7 @@ Texture *ReadTexFile(const char *fileName, const char *nameOfTex, u32 readType, 
     if (readType == READ_BMP)
     {
         LoadBitmap(buffer, tex, useAlpha, alpha);
-    } 
+    }
     else if (readType == READ_PNG)
     {
         LoadPng(buffer, tex, size);

@@ -9,7 +9,7 @@ void SetLastAndDirtyLTM(MATRIX m, float w)
 void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m)
 {
     MATRIX work;
-     matrix_unit(work);
+    matrix_unit(work);
     work[0] = ltm[0] * ltm[3];
     work[5] = ltm[5] * ltm[7];
     work[10] = ltm[10] * ltm[11];
@@ -32,8 +32,8 @@ void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m)
 }
 
 void SetupLTM(VECTOR pos, VECTOR up, VECTOR right,
-         VECTOR forward, VECTOR scales,
-          float q, MATRIX ltm)
+              VECTOR forward, VECTOR scales,
+              float q, MATRIX ltm)
 {
     SetPositionVectorLTM(ltm, pos);
     SetRotationVectorsLTM(ltm, up, right, forward);

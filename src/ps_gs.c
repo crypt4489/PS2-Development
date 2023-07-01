@@ -40,7 +40,7 @@ void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int contex
 	// Set black background
 	graph_set_bgcolor(manager->bgkc.r, manager->bgkc.g, manager->bgkc.b);
 
-	//graph_set_framebuffer_filtered(frame->address, frame->width, frame->psm, 0, 0);
+	// graph_set_framebuffer_filtered(frame->address, frame->width, frame->psm, 0, 0);
 
 	graph_enable_output();
 }
@@ -246,14 +246,14 @@ void load_texture_32(Texture *texture, u32 *pixels)
 
 qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context)
 {
-	PACK_GIFTAG(q, GS_SET_FRAME(frame->address>>11,frame->width>>6,frame->psm,mask), GS_REG_FRAME + context);
+	PACK_GIFTAG(q, GS_SET_FRAME(frame->address >> 11, frame->width >> 6, frame->psm, mask), GS_REG_FRAME + context);
 	q++;
 	return q;
 }
 
 qword_t *SetZBufferMask(qword_t *q, zbuffer_t *z, u32 mask, u32 context)
 {
-	PACK_GIFTAG(q, GS_SET_ZBUF(z->address>>11,z->zsm, mask), GS_REG_ZBUF + context);
+	PACK_GIFTAG(q, GS_SET_ZBUF(z->address >> 11, z->zsm, mask), GS_REG_ZBUF + context);
 	q++;
 	return q;
 }
@@ -265,17 +265,15 @@ qword_t *setup_texture(Texture *texture, qword_t *q)
 	return q;
 }
 
-qword_t* CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr)
+qword_t *CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr)
 {
 	PACK_GIFTAG(q, GIF_SET_TAG(count, eop, 0, 0, type, nreg), regaddr);
 	q++;
 	return q;
 }
 
-
 void init_drawing_environment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish)
 {
-
 
 	qword_t *q = InitializeDMAObject();
 
@@ -287,8 +285,8 @@ void init_drawing_environment(framebuffer_t *frame, zbuffer_t *z, int hheight, i
 
 	q = draw_setup_environment(q, context, frame, z);
 
-	//PACK_GIFTAG(q,GS_SET_COLCLAMP(GS_DISABLE),GS_REG_COLCLAMP);
-	//q++;
+	// PACK_GIFTAG(q,GS_SET_COLCLAMP(GS_DISABLE),GS_REG_COLCLAMP);
+	// q++;
 
 	// Now reset the primitive origin to 2048-width/2,2048-height/2.
 	q = draw_primitive_xyoffset(q, context, (2048 - hwidth), (2048 - hheight));
@@ -298,10 +296,9 @@ void init_drawing_environment(framebuffer_t *frame, zbuffer_t *z, int hheight, i
 
 	// Now send the packet, no need to wait since it's the first.
 
-	AddSizeToDMATag(dmatag, q-dmatag-1);
+	AddSizeToDMATag(dmatag, q - dmatag - 1);
 
 	SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
-
 }
 
 void copy_vram_from_vram(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm)
@@ -625,25 +622,25 @@ qword_t *draw_enable_tests_alpha(qword_t *q, int context, int alpha, u32 method)
 	return q;
 }
 
-qword_t *SetupZTestGS(qword_t* q, int z_test_method, int z_test_enable, char alphaValue, char alpha_test_method, char frameBufferTest, char alpha_test_enable, char alpha_test, int context)
+qword_t *SetupZTestGS(qword_t *q, int z_test_method, int z_test_enable, char alphaValue, char alpha_test_method, char frameBufferTest, char alpha_test_enable, char alpha_test, int context)
 {
 	PACK_GIFTAG(q, GS_SET_TEST(DRAW_ENABLE, alpha_test_method, alphaValue, frameBufferTest, alpha_test_enable, alpha_test, z_test_enable, z_test_method), context == 0 ? GS_REG_TEST : GS_REG_TEST_2);
-    q++;
-    return q;
+	q++;
+	return q;
 }
-qword_t* SetupRGBAQGS(qword_t *b, color_t color)
+qword_t *SetupRGBAQGS(qword_t *b, color_t color)
 {
 	PACK_GIFTAG(b, GIF_SET_RGBAQ(color.r, color.g, color.b, color.a, (int)color.q), GIF_REG_RGBAQ);
-    b++;
-    return b;
+	b++;
+	return b;
 }
-qword_t* SetupAlphaGS(qword_t *q, blend_t *blend, int context)
+qword_t *SetupAlphaGS(qword_t *q, blend_t *blend, int context)
 {
 	PACK_GIFTAG(q, GS_SET_ALPHA(blend->color1, blend->color2, blend->alpha, blend->color3, blend->fixed_alpha), (context == 0) ? GS_REG_ALPHA : GS_REG_ALPHA_2);
-    q++;
+	q++;
 
-  /*  PACK_GIFTAG(q, GS_SET_PABE(DRAW_ENABLE), GS_REG_PABE);
-    q++; */
+	/*  PACK_GIFTAG(q, GS_SET_PABE(DRAW_ENABLE), GS_REG_PABE);
+	  q++; */
 
 	return q;
 }

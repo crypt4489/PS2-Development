@@ -19,13 +19,14 @@ static void StripFilePath(const char *filepath, char *texname)
     if (temp == NULL)
     {
         temp = filepath;
-    } else {
+    }
+    else
+    {
         temp++;
     }
 
-
     int i = 0;
-    while(*temp != 0)
+    while (*temp != 0)
     {
         texname[i] = *temp;
         temp++;
@@ -37,7 +38,7 @@ static void StripFilePath(const char *filepath, char *texname)
 
 u32 GetTextureIDByName(const char *name, TexManager *texManager)
 {
-    Texture *tex = GetTexByName(texManager, name );
+    Texture *tex = GetTexByName(texManager, name);
     if (tex == NULL)
         return 0;
     return tex->id;
@@ -47,16 +48,15 @@ Texture *GetTextureByID(u32 id, TexManager *texManager)
 {
     LinkedList *node = texManager->list;
     Texture *tex = NULL;
-    while(node != NULL)
+    while (node != NULL)
     {
-        tex = (Texture*)node->data;
+        tex = (Texture *)node->data;
         if (tex->id == id)
             break;
         node = node->next;
     }
     return tex;
 }
-
 
 u32 compareTextureNames(Texture *tex1, Texture *tex2)
 {
@@ -112,14 +112,16 @@ Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode)
         return alphaMap;
     }
 
-    for (int i = 0; i<size; i+=4)
+    for (int i = 0; i < size; i += 4)
     {
-        //DEBUGLOG("%x %x %x %x", alpha->pixels[i], alpha->pixels[i+1], alpha->pixels[i+2], alpha->pixels[i+3]);
+        // DEBUGLOG("%x %x %x %x", alpha->pixels[i], alpha->pixels[i+1], alpha->pixels[i+2], alpha->pixels[i+3]);
         if (pixels[i] < 0x80)
         {
-            pixels[i+3] = 0;
-        } else {
-            pixels[i+3] = 0xFF;
+            pixels[i + 3] = 0;
+        }
+        else
+        {
+            pixels[i + 3] = 0xFF;
         }
     }
 
@@ -322,7 +324,6 @@ void SetupTexRegistersGIF(Texture *tex)
     {
         q = draw_texture_flush(q);
     }
-
 
     SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }

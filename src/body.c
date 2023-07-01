@@ -33,8 +33,8 @@ int HandleBodyMovement(GameObject *obj, u32 type)
             collision_check = CheckCollision(obj, check, newPos, *right, *up, *forward);
             if (!(collision_check))
             {
-               SetPositionVectorLTM(obj->ltm, newPos);
-               ret |= 1;
+                SetPositionVectorLTM(obj->ltm, newPos);
+                ret |= 1;
             }
         }
 
@@ -45,7 +45,8 @@ int HandleBodyMovement(GameObject *obj, u32 type)
             collision_check = CheckCollision(obj, check, *right);
             if (!(collision_check))
             {
-                StrafeLTM(obj->ltm, +1.0f);;
+                StrafeLTM(obj->ltm, +1.0f);
+                ;
                 ret |= 1;
             }
         }

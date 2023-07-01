@@ -15,7 +15,7 @@ static u32 currData;
 u32 port = 0;
 u32 slot = 0;
 struct padButtonStatus buttons;
-extern char* print_out;
+extern char *print_out;
 
 extern GameObject *box;
 extern GameObject *sphere;
@@ -27,13 +27,12 @@ extern Camera *cam;
 extern RenderWorld *world;
 extern LightStruct *point;
 extern LightStruct *spotLight;
-//extern float rad;
+// extern float rad;
 
 float localHighAngle = 90.0f;
 float localLowAngle = 25.0f;
 VECTOR pointpos = {+0.0f, +0.0f, 0.0f, 0.0f};
 extern int alpha;
-
 
 void UpdatePad()
 {
@@ -97,104 +96,99 @@ void UpdatePad()
             UpdateCameraMatrix(cam);
         }
 
-
         if (new_pad & PAD_SQUARE)
         {
-         //  localHighAngle+=5.5f;
-          // SetLightHighAngle(spotLight, localHighAngle);
-         //  INFOLOG("hi %f",localHighAngle);
-         pointpos[0] += 0.5f;
-         SetPositionVectorLTM(spotLight->ltm, pointpos);
-         DumpVector(pointpos);
-           
+            //  localHighAngle+=5.5f;
+            // SetLightHighAngle(spotLight, localHighAngle);
+            //  INFOLOG("hi %f",localHighAngle);
+            pointpos[0] += 0.5f;
+            SetPositionVectorLTM(spotLight->ltm, pointpos);
+            DumpVector(pointpos);
         }
         if (new_pad & PAD_CIRCLE)
         {
-       //   localHighAngle-=5.5f;
-        //   SetLightHighAngle(spotLight, localHighAngle);
-         //  INFOLOG("hi %f",localHighAngle);
-         pointpos[0] -= 0.5f;
-         SetPositionVectorLTM(spotLight->ltm, pointpos);
-         DumpVector(pointpos);
+            //   localHighAngle-=5.5f;
+            //   SetLightHighAngle(spotLight, localHighAngle);
+            //  INFOLOG("hi %f",localHighAngle);
+            pointpos[0] -= 0.5f;
+            SetPositionVectorLTM(spotLight->ltm, pointpos);
+            DumpVector(pointpos);
         }
         if (new_pad & PAD_TRIANGLE)
         {
-          //  localLowAngle+=5.5f;
-           // SetLightRadius(point, localLowAngle);
-           //  INFOLOG("low %f",localLowAngle);
-                pointpos[1] += 0.5f;
-     SetPositionVectorLTM(spotLight->ltm, pointpos);
-         DumpVector(pointpos);
+            //  localLowAngle+=5.5f;
+            // SetLightRadius(point, localLowAngle);
+            //  INFOLOG("low %f",localLowAngle);
+            pointpos[1] += 0.5f;
+            SetPositionVectorLTM(spotLight->ltm, pointpos);
+            DumpVector(pointpos);
         }
         if (new_pad & PAD_CROSS)
         {
-          //   localLowAngle-=5.5f;
-          // SetLightRadius(point, localLowAngle);
-         //  INFOLOG("low %f", localLowAngle);
-              pointpos[1] -= 0.5f;
-        SetPositionVectorLTM(spotLight->ltm, pointpos);
-         DumpVector(pointpos);
+            //   localLowAngle-=5.5f;
+            // SetLightRadius(point, localLowAngle);
+            //  INFOLOG("low %f", localLowAngle);
+            pointpos[1] -= 0.5f;
+            SetPositionVectorLTM(spotLight->ltm, pointpos);
+            DumpVector(pointpos);
         }
 
         if (new_pad & PAD_L1)
         {
-                pointpos[2] += 0.5f;
-         SetPositionVectorLTM(spotLight->ltm, pointpos);
-         DumpVector(pointpos);
+            pointpos[2] += 0.5f;
+            SetPositionVectorLTM(spotLight->ltm, pointpos);
+            DumpVector(pointpos);
         }
 
         if (new_pad & PAD_R1)
         {
-                pointpos[2] -= 0.5f;
-         SetPositionVectorLTM(spotLight->ltm, pointpos);
-         DumpVector(pointpos);
+            pointpos[2] -= 0.5f;
+            SetPositionVectorLTM(spotLight->ltm, pointpos);
+            DumpVector(pointpos);
         }
 
         if (new_pad & PAD_L2)
         {
-            localLowAngle+=5.5f;
+            localLowAngle += 5.5f;
             SetLightRadius(spotLight, localLowAngle);
-             INFOLOG("low %f",localLowAngle);
+            INFOLOG("low %f", localLowAngle);
         }
 
         if (new_pad & PAD_R2)
         {
-               localLowAngle-=5.5f;
+            localLowAngle -= 5.5f;
             SetLightRadius(spotLight, localLowAngle);
-             INFOLOG("low %f",localLowAngle);
+            INFOLOG("low %f", localLowAngle);
         }
         if (new_pad & PAD_DOWN)
         {
-            //SetActivePipelineByName(sphere, "WIREFRAME_PIPELINE");
-           // sphere->renderState.state.render_state.LIGHTING_ENABLE = 0;
-           // INFOLOG("here wire?");
-           AddObjectToRenderWorld(world, sphere);
+            // SetActivePipelineByName(sphere, "WIREFRAME_PIPELINE");
+            // sphere->renderState.state.render_state.LIGHTING_ENABLE = 0;
+            // INFOLOG("here wire?");
+            AddObjectToRenderWorld(world, sphere);
         }
         if (new_pad & PAD_UP)
         {
-           // SetActivePipelineByName(sphere, "LIGHTS_PIPELINE");
-           // sphere->renderState.state.render_state.LIGHTING_ENABLE = 1;
+            // SetActivePipelineByName(sphere, "LIGHTS_PIPELINE");
+            // sphere->renderState.state.render_state.LIGHTING_ENABLE = 1;
             // INFOLOG("here gneeric?");
             RemoveObjectFromRenderWorld(world, sphere);
         }
         if (new_pad & PAD_LEFT)
         {
-           //world = RemoveObjectFromRenderWorld(world, sphere);
-           alpha++;
+            // world = RemoveObjectFromRenderWorld(world, sphere);
+            alpha++;
             INFOLOG("%d", alpha);
         }
         if (new_pad & PAD_RIGHT)
         {
-            //AddObjectToRenderWorld(world, sphere);
+            // AddObjectToRenderWorld(world, sphere);
             alpha--;
             INFOLOG("%d", alpha);
         }
 
-       
-
         if (new_pad & PAD_R1)
         {
-            
         }
     }
 }

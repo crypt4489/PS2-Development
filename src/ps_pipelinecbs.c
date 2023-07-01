@@ -52,7 +52,6 @@ void SetupAlphaMapPass2(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *
 {
   qword_t *q = pipeline_loc;
   q = SetupRGBAQGS(q, obj->renderState.color);
-  q = SetFrameBufferMask(q, g_Manager.targetBack->render, 0x00ffffff, g_Manager.gs_context);
   q = SetZBufferMask(q, g_Manager.targetBack->z, 0, g_Manager.gs_context);
   q = SetupZTestGS(q, 2, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 }

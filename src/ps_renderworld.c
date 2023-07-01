@@ -156,7 +156,6 @@ void DrawWorld(RenderWorld *world)
     }
 
     g_DrawWorld = NULL;
-
 }
 
 RenderWorld *AddWorldCallback(RenderWorld *world)

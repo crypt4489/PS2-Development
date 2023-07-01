@@ -1,10 +1,11 @@
 #include "ps_shadowprojection.h"
+
 #include "ps_vif.h"
 #include "ps_vumanager.h"
 #include "ps_manager.h"
 #include "ps_misc.h"
-
 #include "ps_gameobject.h"
+
 extern blend_t blender;
 
 extern VECTOR lightPos;
@@ -101,7 +102,7 @@ int plane_collide_with_light_vector(VECTOR pointOnPoly, VECTOR lightPos, VECTOR 
         return 1;
     }
 
-   
+
 
     return 0;
 }
@@ -141,7 +142,7 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
             VECTOR t;
             MatrixVectorMultiply(t, checkWorld, currObj->vertexBuffer.vertices[i]);
            res = plane_collide_with_light_vector(t, lightPos, plane_n);
-          
+
 
            if (res == 1)
            {
@@ -160,7 +161,7 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
                indexCount ++;
            }
     }
-    
+
     return -1;
 
 }

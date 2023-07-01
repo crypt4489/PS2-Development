@@ -23,7 +23,7 @@ static void fillBuffer();
 static int readBoolean();
 static unsigned char readChar();
 static HuffmanNode *readDecoder();
-//static void Print(HuffmanNode *node, int arr[], int top);
+// static void Print(HuffmanNode *node, int arr[], int top);
 static unsigned int readInt();
 static int isLeaf(HuffmanNode *node);
 static void cleanupTree(HuffmanNode *root);
@@ -189,7 +189,7 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 		ERRORLOG("Cannot allocate buffer for decompressed file");
 	}
 
-	//INFOLOG("decompressed length %d", length);
+	// INFOLOG("decompressed length %d", length);
 
 	int index = 0;
 

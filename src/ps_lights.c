@@ -3,11 +3,9 @@
 #include "ps_fast_maths.h"
 #include <stdlib.h>
 
-
-
 LightStruct *CreateLightStruct(u32 type)
 {
-    LightStruct *light = (LightStruct*)malloc(sizeof(LightStruct));
+    LightStruct *light = (LightStruct *)malloc(sizeof(LightStruct));
     light->theta = 0.0f;
     light->radius = 0.0f;
     light->type = type;
@@ -26,7 +24,7 @@ void SetLightTheta(LightStruct *light, float ang)
 
 qword_t *PackLightIntoQWord(qword_t *q, LightStruct *light)
 {
-    qword_t *b =q;
+    qword_t *b = q;
     VECTOR adjust;
     b = SetLightTypeVU1(b, light->type);
     if (light->type == PS_AMBIENT_LIGHT)

@@ -9,7 +9,6 @@ VECTOR forward = {0.0f, 0.0f, 1.0f, 1.0f};
 VECTOR up = {0.0f, 1.0f, 0.0f, 1.0f};
 VECTOR right = {1.0f, 0.0f, 0.0f, 1.0f};
 
-
 void VectorSubtractXYZ(VECTOR in, VECTOR in2, VECTOR out)
 {
     VECTOR work;
@@ -72,12 +71,14 @@ void dump_packet(qword_t *q, int max, int usefloat)
     {
         if (usefloat)
         {
-            float f =  ((float*)iter->sw)[3];
-            float f1 = ((float*)iter->sw)[0];
-            float f2 = ((float*)iter->sw)[1];
-            float f3 = ((float*)iter->sw)[2];
+            float f = ((float *)iter->sw)[3];
+            float f1 = ((float *)iter->sw)[0];
+            float f2 = ((float *)iter->sw)[1];
+            float f3 = ((float *)iter->sw)[2];
             DEBUGLOG("%d %f %f %f %f", i, f1, f2, f3, f);
-        } else {
+        }
+        else
+        {
             DEBUGLOG("%d %x %x %x %x", i, iter->sw[0], iter->sw[1], iter->sw[2], iter->sw[3]);
         }
         iter++;
@@ -117,23 +118,23 @@ void normalize(VECTOR in, VECTOR out)
 
 void NormalizePlane(VECTOR in, VECTOR out)
 {
-   // float w = in[3];
-  /*  asm __volatile__(
-        "lqc2 $vf1, 0x00(%1)\n"
-        "vsuba.xyzw $ACC, $vf0, $vf0\n"
-        "vmul.xyz $vf2, $vf1, $vf1\n"
-        "vmaddax.w $ACC, $vf0, $vf2\n"
-        "vmadday.w $ACC, $vf0, $vf2\n"
-        "vmaddz.w $vf2, $vf0, $vf2\n"
-        "vrsqrt $Q, $vf0w, $vf2w\n"
-        "vsub.w $vf0, $vf0, $vf0\n"
-        "vwaitq \n"
-        "vmulq.xyzw $vf1, $vf1, $Q \n"
-        "sqc2 $vf1, 0x00(%0) \n"
-        :
-        : "r"(out), "r"(in)
-        : "memory"); */
-    //out[3] = w;
+    // float w = in[3];
+    /*  asm __volatile__(
+          "lqc2 $vf1, 0x00(%1)\n"
+          "vsuba.xyzw $ACC, $vf0, $vf0\n"
+          "vmul.xyz $vf2, $vf1, $vf1\n"
+          "vmaddax.w $ACC, $vf0, $vf2\n"
+          "vmadday.w $ACC, $vf0, $vf2\n"
+          "vmaddz.w $vf2, $vf0, $vf2\n"
+          "vrsqrt $Q, $vf0w, $vf2w\n"
+          "vsub.w $vf0, $vf0, $vf0\n"
+          "vwaitq \n"
+          "vmulq.xyzw $vf1, $vf1, $Q \n"
+          "sqc2 $vf1, 0x00(%0) \n"
+          :
+          : "r"(out), "r"(in)
+          : "memory"); */
+    // out[3] = w;
 
     DumpVector(in);
 
@@ -383,12 +384,10 @@ void CreateGridUVS(int N, int M, float depth, float width, MeshBuffers *buffer)
     free(uvs);
 }
 
-MeshBuffers* CreateGrid(int N, int M, float depth, float width, MeshBuffers *buffer)
+MeshBuffers *CreateGrid(int N, int M, float depth, float width, MeshBuffers *buffer)
 {
 
-
     int faceCount = 2 * (N - 1) * (M - 1);
-
 
     int index_count = faceCount * 3;
 
@@ -480,7 +479,6 @@ void CreateOrthoGraphicMatrix(float xLow, float xHigh, float yLow, float yHigh, 
     temp[11] = -(far + near) / (far - near);
     temp[5] = 2.0f / (xHigh - yLow);
     temp[10] = -2.0f / (far - near);
-
 
     matrix_copy(out, temp);
 }
@@ -605,7 +603,6 @@ void DumpVector(VECTOR elem)
     printf("%f %f %f %f\n", elem[0], elem[1], elem[2], elem[3]);
 }
 
-
 void DumpVectorInt(VectorInt elem)
 {
     printf("%d %d %d %d\n", elem[0], elem[1], elem[2], elem[3]);
@@ -658,23 +655,22 @@ void MatrixInverse(MATRIX src, MATRIX out)
 void MatrixTranspose(MATRIX src)
 {
     MATRIX out;
-   out[0] = src[0];
+    out[0] = src[0];
     out[1] = src[4];
     out[2] = src[8];
     out[3] = src[12];
 
-     out[4] = src[1];
+    out[4] = src[1];
     out[5] = src[5];
     out[6] = src[9];
     out[7] = src[13];
 
-
-     out[8] = src[2];
+    out[8] = src[2];
     out[9] = src[6];
     out[10] = src[10];
     out[11] = src[14];
 
-     out[12] = src[3];
+    out[12] = src[3];
     out[13] = src[7];
     out[14] = src[11];
     out[15] = src[15];
@@ -709,7 +705,6 @@ void SetupPlane(VECTOR planeNormal, VECTOR planePoint, Plane *plane)
     ComputePlane(planePoint, planeNormal, plane->planeEquation);
 }
 
-
 float DistanceFromPlane(VECTOR planeEquation, VECTOR point)
 {
     return DotProduct(planeEquation, point) + planeEquation[3];
@@ -742,14 +737,10 @@ void ComputeReflectionMatrix(VECTOR normal, MATRIX res)
 void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR right, VECTOR scales, MATRIX m)
 {
     MATRIX work;
-     matrix_unit(work);
+    matrix_unit(work);
     work[0] = right[0] * scales[0];
     work[1] = right[1] * scales[0];
     work[2] = right[2] * scales[0];
-
-
-
-
 
     work[4] = up[0] * scales[1];
     work[5] = up[1] * scales[1];
@@ -768,8 +759,8 @@ void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR 
 }
 MeshBuffers *InitMeshBuffersStruct(u32 count, MeshBuffers *buffer)
 {
-    buffer->vertices = (VECTOR*)malloc(sizeof(VECTOR)*count);
-    buffer->texCoords = (VECTOR*)malloc(sizeof(VECTOR)*count);
+    buffer->vertices = (VECTOR *)malloc(sizeof(VECTOR) * count);
+    buffer->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * count);
     return buffer;
 }
 
@@ -777,15 +768,14 @@ void Pathify(const char *name, char *file)
 {
     int len = strlen(name);
     file[0] = 92;
-    for (int i = 1; i<=len; i++)
+    for (int i = 1; i <= len; i++)
     {
-        file[i] = name[i-1];
+        file[i] = name[i - 1];
     }
-    file[len+1] = 59;
-    file[len+2] = 49;
-    file[len+3] = 0;
+    file[len + 1] = 59;
+    file[len + 2] = 49;
+    file[len + 3] = 0;
 }
-
 
 // append characters from input2 to input1 and store in output
 void AppendString(const char *input1, const char *input2, char *output, u32 max)
@@ -795,7 +785,7 @@ void AppendString(const char *input1, const char *input2, char *output, u32 max)
 
     u32 len = 0;
 
-    while(*iter != 0 && len < max)
+    while (*iter != 0 && len < max)
     {
         *outIter = *iter;
         outIter++;
@@ -805,7 +795,7 @@ void AppendString(const char *input1, const char *input2, char *output, u32 max)
 
     iter = input2;
 
-    while(*iter != 0 && len < max)
+    while (*iter != 0 && len < max)
     {
         *outIter = *iter;
         outIter++;
@@ -946,7 +936,7 @@ void GribbHartmann(MATRIX m)
 void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components)
 {
     float temp;
-    for (int i = 0; i<components; i++)
+    for (int i = 0; i < components; i++)
     {
         temp = in2[i] - in1[i];
         temp = temp * delta;
@@ -959,17 +949,17 @@ void Slerp(VECTOR q1, VECTOR q2, float delta, VECTOR out)
     float dot4 = dotProductFour(q1, q2);
     if (Abs(dot4) >= 1.0f)
     {
-      //  DEBUGLOG("QUICK COPY");
+        //  DEBUGLOG("QUICK COPY");
         vector_copy(out, q1);
         return;
     }
 
     float halfTheta = ACos(dot4);
-    float sinHalfTheta = Sqrt(1.0f - dot4*dot4);
+    float sinHalfTheta = Sqrt(1.0f - dot4 * dot4);
 
     if (Abs(sinHalfTheta) < 0.001)
     {
-       // DEBUGLOG("HERE");
+        // DEBUGLOG("HERE");
         out[0] = (q1[0] * 0.5f + q2[0] * 0.5);
         out[1] = (q1[1] * 0.5f + q2[1] * 0.5);
         out[2] = (q1[2] * 0.5f + q2[2] * 0.5);
@@ -979,7 +969,7 @@ void Slerp(VECTOR q1, VECTOR q2, float delta, VECTOR out)
 
     float ratioA = Sin((1.0f - delta) * halfTheta) / sinHalfTheta;
     float ratioB = Sin(delta * halfTheta) / sinHalfTheta;
-    //DEBUGLOG("FINAL COPY");
+    // DEBUGLOG("FINAL COPY");
     out[0] = (q1[0] * ratioA + q2[0] * ratioB);
     out[1] = (q1[1] * ratioA + q2[1] * ratioB);
     out[2] = (q1[2] * ratioA + q2[2] * ratioB);
@@ -1026,7 +1016,6 @@ void ExtractVectorFromMatrix(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
     mat[1] = m[1] / sx;
     mat[2] = m[2] / sx;
 
-
     mat[4] = m[4] / sy;
     mat[5] = m[5] / sy;
     mat[6] = m[6] / sy;
@@ -1035,12 +1024,11 @@ void ExtractVectorFromMatrix(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
     mat[9] = m[9] / sz;
     mat[10] = m[10] / sz;
 
-
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rot);
 
-  //  DumpVector(rot);
-   // DumpVector(trans);
-   // DumpVector(scale);
+    //  DumpVector(rot);
+    // DumpVector(trans);
+    // DumpVector(scale);
 }
 
 void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
@@ -1056,7 +1044,6 @@ void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale
     m[1] = m[1] * sx;
     m[2] = m[2] * sx;
 
-
     m[4] = m[4] * sy;
     m[5] = m[5] * sy;
     m[6] = m[6] * sy;
@@ -1069,21 +1056,21 @@ void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale
     m[13] = trans[1];
     m[14] = trans[2];
     m[15] = 1.0f;
-  //  DumpVector(rot);
-   // DumpVector(trans);
-   // DumpVector(scale);
+    //  DumpVector(rot);
+    // DumpVector(trans);
+    // DumpVector(scale);
 }
 
 void MatrixMultiply(MATRIX output, MATRIX input, MATRIX input1)
 {
-    for (int i = 0; i<4; i++)
+    for (int i = 0; i < 4; i++)
     {
-        for (int j = 0; j<4; i++)
+        for (int j = 0; j < 4; i++)
         {
-            output[i+j] = 0.0f;
-            for (int k = 0; k<4; k++)
+            output[i + j] = 0.0f;
+            for (int k = 0; k < 4; k++)
             {
-                output[i+j] += input[i+k] * input1[k+j];
+                output[i + j] += input[i + k] * input1[k + j];
             }
         }
     }

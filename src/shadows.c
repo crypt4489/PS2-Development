@@ -12,7 +12,6 @@
 #include "ps_vif.h"
 #include "ps_pipelinecbs.h"
 
-
 void DrawQuad(int height, int width, int xOffset, int yOffset, u8 blend, Texture *shadowTex)
 {
     UploadTextureViaManagerToVRAM(shadowTex);
@@ -24,7 +23,7 @@ void DrawQuad(int height, int width, int xOffset, int yOffset, u8 blend, Texture
     ret++;
 
     blend_t blender;
-    
+
     u8 red, green, blue, alpha;
 
     red = green = blue = 0xFF;
@@ -32,22 +31,24 @@ void DrawQuad(int height, int width, int xOffset, int yOffset, u8 blend, Texture
     alpha = 0x80;
 
     if (blend)
-    {   ret = CreateDMATag(ret, DMA_CNT, 4, 0, 0, 0);
+    {
+        ret = CreateDMATag(ret, DMA_CNT, 4, 0, 0, 0);
 
         ret = CreateDirectTag(ret, 3, 0);
 
         ret = CreateGSSetTag(ret, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
         CREATE_ALPHA_REGS(blender, BLEND_COLOR_DEST, BLEND_COLOR_ZERO, BLEND_COLOR_ZERO, BLEND_ALPHA_DEST, 0xFF);
-        
+
         ret = SetupAlphaGS(ret, &blender, g_Manager.gs_context);
-    } else {
-         ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+    }
+    else
+    {
+        ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
 
         ret = CreateDirectTag(ret, 2, 0);
 
         ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
     }
-
 
     ret = SetupZTestGS(ret, 1, 1, 0x80, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
@@ -104,8 +105,6 @@ void DrawQuad(int height, int width, int xOffset, int yOffset, u8 blend, Texture
     SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
-
-
 void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 {
     u32 sizeOfPipeline;
@@ -126,7 +125,7 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     q = InitDoubleBufferingQWord(q, 16, 496);
 
-     qword_t *per_obj_tag = q;
+    qword_t *per_obj_tag = q;
 
     q = CreateDMATag(per_obj_tag, DMA_CNT, 4, 0, 0, 0);
 
@@ -138,8 +137,7 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawShadowRegisters, q, NULL);
 
-       dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags, q);
-
+    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags, q);
 
     q += 2; //(obj-> tex == NULL ? 4 : 14);
 
@@ -147,7 +145,6 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL);
 
-        
     dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupMVPHeader, dcode_callback_tags, q);
 
     PipelineCallback *setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawShadowVU1Header, q, NULL);
@@ -156,12 +153,12 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     q += 16;
 
-     qword_t vu1_addr;
-  vu1_addr.sw[0] = vu1_addr.sw[1] = vu1_addr.sw[2] = 0;
+    qword_t vu1_addr;
+    vu1_addr.sw[0] = vu1_addr.sw[1] = vu1_addr.sw[2] = 0;
 
-  vu1_addr.sw[3] = GetProgramAddressVU1Manager(g_Manager.vu1Manager, programNumber);
+    vu1_addr.sw[3] = GetProgramAddressVU1Manager(g_Manager.vu1Manager, programNumber);
 
-    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount-1, 81,  DRAW_VERTICES, &vu1_addr);
+    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount - 1, 81, DRAW_VERTICES, &vu1_addr);
 
     sizeOfPipeline = q - dcode_tag_vif1 - 1;
 
@@ -173,7 +170,6 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
     // AddPipelineCallbackNode(pipeline, setupGSRegs);
     // AddPipelineCallbackNode(pipeline, setupVU1Header);
 
- 
     AddVU1Pipeline(obj, pipeline);
     // SetActivePipeline(obj, pipeline);
 }
@@ -186,8 +182,8 @@ void SetupPerObjDrawShadowRegisters(VU1Pipeline *pipe, GameObject *obj, void *ar
     black.b = 0;
     black.a = 255;
     black.q = 1.0f;
-    //q = vif_set_z_test(q, obj->renderState.state.render_state.Z_TYPE, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context); // 4
-    //q = vif_setup_rgbaq(q, black);
+    // q = vif_set_z_test(q, obj->renderState.state.render_state.Z_TYPE, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context); // 4
+    // q = vif_setup_rgbaq(q, black);
 
     q = SetupZTestGS(q, obj->renderState.state.render_state.Z_TYPE, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
     q = SetupRGBAQGS(q, black);

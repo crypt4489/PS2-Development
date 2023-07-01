@@ -27,7 +27,6 @@ qword_t *CreateDMATag(qword_t *q, u32 code, u32 size, u32 w2, u32 w3, u32 spr, .
         addr = va_arg(tag_args, u32);
     }
 
-
     q->dw[0] = DMATAG(size, 0, code, 0, addr, 0);
     q->sw[2] = w2;
     q->sw[3] = w3;

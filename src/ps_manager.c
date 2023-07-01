@@ -45,22 +45,19 @@ void CreateManagerRenderTargets()
         ERRORLOG("failed to allocate the rendertargets manager");
     }
 
-
     InitGS(&g_Manager, g_Manager.targetBack->render, g_Manager.targetBack->z, 0);
 
     InitFramebuffer(g_Manager.targetDisplay->render, g_Manager.targetBack->render->width, g_Manager.targetBack->render->height, g_Manager.targetBack->render->psm);
 
-    g_Manager.targetDisplay->z =  g_Manager.targetBack->z;
+    g_Manager.targetDisplay->z = g_Manager.targetBack->z;
 
     SetupRenderTarget(g_Manager.targetDisplay, 1, 0);
 
     SetupRenderTarget(g_Manager.targetBack, 0, 0);
 }
 
-
 void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize)
 {
-
 
     g_Manager.ScreenHeight = height;
     g_Manager.ScreenWidth = width;
@@ -112,9 +109,9 @@ void SetupManagerTexture()
     CreateClutBuf(&g_Manager.textureInVram->clut, 16, GS_PSM_32);
 
     g_Manager.textureInVram->clut.start = 0;
-	g_Manager.textureInVram->clut.load_method = CLUT_LOAD;
-	g_Manager.textureInVram->clut.psm = GS_PSM_32;
-	g_Manager.textureInVram->clut.storage_mode = CLUT_STORAGE_MODE1;
+    g_Manager.textureInVram->clut.load_method = CLUT_LOAD;
+    g_Manager.textureInVram->clut.psm = GS_PSM_32;
+    g_Manager.textureInVram->clut.storage_mode = CLUT_STORAGE_MODE1;
     g_Manager.textureInVram->clut.address = g_Manager.textureInVram->texbuf.address + graph_vram_size(256, 256, GS_PSM_8, GRAPH_ALIGN_PAGE);
 }
 
@@ -134,14 +131,15 @@ void EndFrame()
     {
         g_Manager.currentTime = getTicks(g_Manager.timer);
 
-        if (g_Manager.currentTime > ( g_Manager.lastTime + 1000.0f ))
+        if (g_Manager.currentTime > (g_Manager.lastTime + 1000.0f))
         {
             g_Manager.FPS = frameCounter;
-            //DEBUGLOG("frames per second %d", g_Manager.FPS);
+            // DEBUGLOG("frames per second %d", g_Manager.FPS);
             g_Manager.lastTime = g_Manager.currentTime;
             frameCounter = 0;
         }
-    } else
+    }
+    else
     {
         g_Manager.lastTime = getTicks(g_Manager.timer);
         init = 1;
@@ -149,15 +147,13 @@ void EndFrame()
     frameCounter++;
 }
 
-
-
 Texture *GetTexByName(TexManager *manager, const char *name)
 {
     LinkedList *iter = manager->list;
     int strLength = strlen(name);
     while (iter != NULL)
     {
-        Texture *comp = (Texture*)iter->data;
+        Texture *comp = (Texture *)iter->data;
         if (strncmp(comp->name, name, strLength) == 0)
         {
             return comp;
@@ -177,10 +173,9 @@ int PollVU1DoneProcessing(GameManager *manager)
     return 0;
 }
 
-
 void AddToManagerTexList(GameManager *manager, Texture *tex)
 {
-    tex->clut.address =  manager->textureInVram->clut.address;
+    tex->clut.address = manager->textureInVram->clut.address;
     tex->texbuf.address = manager->textureInVram->texbuf.address;
     manager->texManager->count++;
     manager->texManager->globalIndex++;
@@ -197,10 +192,10 @@ void ClearManagerTexList(GameManager *manager)
     {
         LinkedList *cleanLL = iter;
         iter = iter->next;
-        CleanTextureStruct((Texture*)cleanLL->data);
+        CleanTextureStruct((Texture *)cleanLL->data);
         CleanLinkedListNode(cleanLL);
     }
-    CleanTextureStruct((Texture*)iter->data);
+    CleanTextureStruct((Texture *)iter->data);
     CleanLinkedListNode(iter);
     manager->texManager->list = NULL;
     manager->texManager->count = 0;
@@ -209,15 +204,21 @@ void ClearManagerTexList(GameManager *manager)
 
 void ClearManagerStruct(GameManager *manager)
 {
-    if (manager->texManager) free(manager->texManager);
-    if (manager->textureInVram) free(manager->textureInVram);
-    if (manager->dmabuffers->dma_chains[0]) packet_free(manager->dmabuffers->dma_chains[0]);
-    if (manager->dmabuffers->dma_chains[1]) packet_free(manager->dmabuffers->dma_chains[1]);
-    if (manager->dmabuffers) free(manager->dmabuffers);
-    if (manager->timer) TimerZeroDisable(g_Manager.timer);
+    if (manager->texManager)
+        free(manager->texManager);
+    if (manager->textureInVram)
+        free(manager->textureInVram);
+    if (manager->dmabuffers->dma_chains[0])
+        packet_free(manager->dmabuffers->dma_chains[0]);
+    if (manager->dmabuffers->dma_chains[1])
+        packet_free(manager->dmabuffers->dma_chains[1]);
+    if (manager->dmabuffers)
+        free(manager->dmabuffers);
+    if (manager->timer)
+        TimerZeroDisable(g_Manager.timer);
 }
 
-Texture* GetTexObjFromTexList(GameManager *manager, int index)
+Texture *GetTexObjFromTexList(GameManager *manager, int index)
 {
     LinkedList *iter = manager->texManager->list;
     int curr = index;
@@ -228,12 +229,12 @@ Texture* GetTexObjFromTexList(GameManager *manager, int index)
         curr--;
     }
 
-    return (Texture*)iter->data;
+    return (Texture *)iter->data;
 }
 
-LinkedList* CreateLinkedListItem(void *data)
+LinkedList *CreateLinkedListItem(void *data)
 {
-    LinkedList *node = (LinkedList*)malloc(sizeof(LinkedList));
+    LinkedList *node = (LinkedList *)malloc(sizeof(LinkedList));
     node->next = NULL;
     node->data = data;
     return node;
@@ -248,7 +249,7 @@ LinkedList *AddToLinkedList(LinkedList *head, LinkedList *node)
     }
 
     LinkedList *iter = head;
-    while(iter->next != NULL)
+    while (iter->next != NULL)
     {
         iter = iter->next;
     }
@@ -258,12 +259,12 @@ LinkedList *AddToLinkedList(LinkedList *head, LinkedList *node)
     return head;
 }
 
-LinkedList* RemoveNodeFromList(LinkedList *head, LinkedList *node)
+LinkedList *RemoveNodeFromList(LinkedList *head, LinkedList *node)
 {
     LinkedList *iter = head;
     LinkedList *prev = head;
 
-    while(iter != node)
+    while (iter != node)
     {
         prev = iter;
         iter = iter->next;
@@ -282,7 +283,7 @@ LinkedList* RemoveNodeFromList(LinkedList *head, LinkedList *node)
     return head;
 }
 
-LinkedList* CleanLinkedListNode(LinkedList *node)
+LinkedList *CleanLinkedListNode(LinkedList *node)
 {
     LinkedList *ret = NULL;
     if (node)
@@ -290,7 +291,9 @@ LinkedList* CleanLinkedListNode(LinkedList *node)
         ret = node->next;
         node->data = NULL;
         free(node);
-    } else {
+    }
+    else
+    {
         ERRORLOG("Cannot remove NULL pointer from LinkedList");
     }
 

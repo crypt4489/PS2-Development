@@ -1,7 +1,6 @@
 #include "ps_morphtarget.h"
-#include "ps_log.h"
-#include <stdlib.h>
 
+#include <stdlib.h>
 
 #include "ps_gameobject.h"
 #include "ps_misc.h"
@@ -11,9 +10,7 @@
 #include "ps_gs.h"
 #include "ps_dma.h"
 #include "ps_vu1pipeline.h"
-
-
-
+#include "ps_log.h"
 
 void CreateMorphTargetBuffersFromFile(const char *targetFile, MeshBuffers *buffer)
 {
@@ -197,7 +194,6 @@ u32 GenericUpdateInterpolatorNode(Interpolator *node)
         // node->position = 1.0f;
     }
 
-    
     return 0;
 }
 
@@ -209,6 +205,3 @@ void GenericUpdateMorphBuffer(MorphTargetBuffer *buffer)
     newIndex = (currIndex + 1) % numInterps;
     SetInterpolatorNode(buffer, newIndex);
 }
-
-
-

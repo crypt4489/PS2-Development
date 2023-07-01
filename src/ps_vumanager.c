@@ -1,13 +1,11 @@
 #include "ps_vumanager.h"
 
-
 #include <kernel.h>
 #include <ee_regs.h>
 #include <stdlib.h>
 
 #include "ps_vif.h"
 #include "ps_log.h"
-
 
 volatile u32 *vu1_data_address = (volatile u32 *)0x1100c000;
 
@@ -36,8 +34,6 @@ void SetupVU1INTEHandler()
     }
     EnableIntc(5);
 }
-
-
 
 u32 SizeOfProgramInstructions(u32 *codeStart, u32 *codeEnd)
 {
@@ -86,7 +82,7 @@ void ReadFromVU1(u32 *start, int printOutSize, u32 usefloatornot)
 
 /* VU1Manager Functions */
 
-VU1Manager* CreateVU1Manager(u32 size)
+VU1Manager *CreateVU1Manager(u32 size)
 {
     VU1Manager *manager = (VU1Manager *)malloc(sizeof(VU1Manager));
 
@@ -143,7 +139,7 @@ void AddProgramToManager(VU1Manager *manager, VU1Program *program)
     if (manager->programsInVU1 > manager->numPrograms)
     {
         u32 size = manager->numPrograms + PROGRAM_STEP;
-        manager->programs = realloc(manager->programs, sizeof(VU1Program*) * size);
+        manager->programs = realloc(manager->programs, sizeof(VU1Program *) * size);
         if (manager->programs == NULL)
         {
             ERRORLOG("VU1Manager programs array failed to reallocate when adding!");
@@ -168,7 +164,6 @@ void AddProgramToManager(VU1Manager *manager, VU1Program *program)
     INFOLOG("%d %d %d %d", manager->basePointer, packetSize, program->size, manager->programIdentifier);
 
     manager->programsInVU1++;
-
 }
 
 u32 GetProgramAddressVU1Manager(VU1Manager *manager, u32 index)
@@ -186,7 +181,7 @@ u32 GetProgramAddressVU1Manager(VU1Manager *manager, u32 index)
 
 VU1Program *CreateVU1Program(u32 *codeStart, u32 *codeEnd, u32 stage)
 {
-    VU1Program *prog = (VU1Program*)malloc(sizeof(VU1Program));
+    VU1Program *prog = (VU1Program *)malloc(sizeof(VU1Program));
     prog->address = 0;
     prog->programId = 0;
     prog->stage = stage;

@@ -6,8 +6,7 @@
 #include "ps_gs.h"
 #include "ps_dma.h"
 
-
-qword_t* InitDoubleBufferingQWord(qword_t *q, u16 base, u16 offset)
+qword_t *InitDoubleBufferingQWord(qword_t *q, u16 base, u16 offset)
 {
     qword_t *b = q;
     DMATAG_CNT(b, 0, 0, VIF_CODE(base, 0, VIF_CMD_BASE, 0), VIF_CODE(offset, 0, VIF_CMD_OFFSET, 0));
@@ -42,7 +41,7 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
         dest += currCount;
     }
 
-    //DMATAG_END(q, (q - pack->data), 0, 0, 0);
+    // DMATAG_END(q, (q - pack->data), 0, 0, 0);
     FlushCache(0);
     dma_channel_wait(DMA_CHANNEL_VIF1, -1);
     dma_channel_send_chain(DMA_CHANNEL_VIF1, pack->data, 0, DMA_FLAG_TRANSFERTAG, 0);
@@ -79,7 +78,6 @@ qword_t *read_unpack_data(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, 
     return q;
 }
 
-
 qword_t *add_start_program_vu1(qword_t *q, u32 address)
 {
     DMATAG_CNT(q, 0, 0, 0, 0);
@@ -101,9 +99,6 @@ qword_t *VIFSetupScaleVector(qword_t *b)
     q++;
     return q;
 }
-
-
-
 
 qword_t *set_tex_address_mode(qword_t *q, u32 mode, u32 context)
 {
@@ -412,7 +407,7 @@ qword_t *load_texture_vif(qword_t *q, Texture *tex, void *pixels, unsigned char 
     return q;
 }
 
-qword_t* vif_setup_rgbaq(qword_t *b, color_t color)
+qword_t *vif_setup_rgbaq(qword_t *b, color_t color)
 {
     qword_t *q = b;
     DMATAG_CNT(q, 3, 0, 0, 0);
