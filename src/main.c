@@ -105,7 +105,7 @@ const char *worldName = "WORLD.PNG";
 const char *wallName = "WALL.PNG";
 const char *alphaMap = "ALPHA_MAP.PNG";
 
-GameObject *box = NULL;
+GameObject *grid = NULL;
 GameObject *body = NULL;
 GameObject *sphere = NULL;
 GameObject *room = NULL;
@@ -181,6 +181,9 @@ static void doTheThing()
         reflect[2] = outNormal[2] * incidentNormal[2];
 
         float dot = reflect[0] + reflect[1] + reflect[2];
+
+        if (dot < 0.1f)
+            dot =  0.0f;
 
         VECTOR output;
         ScaleVectorXYZ(output, outNormal, dot * 2.0f);
@@ -367,15 +370,15 @@ static void UpdateLight()
     // DumpMatrix(secondLight->ltm);
 }
 
-static void SetupCube()
+static void SetupGrid()
 {
     color_t color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
-    box = InitializeGameObject();
-    // ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
+    grid = InitializeGameObject();
+    // ReadModelFile("MODELS\\BOX.BIN", &grid->vertexBuffer);
+    SetupGameObjectPrimRegs(grid, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 
     int w, l;
     float dw, dh;
@@ -383,27 +386,29 @@ static void SetupCube()
     l = 25;
     dw = 100;
     dh = 100;
-    CreateGrid(w, l, dw, dh, &box->vertexBuffer);
+    CreateGrid(w, l, dw, dh, &grid->vertexBuffer);
     u32 id = GetTextureIDByName(NewYorkName, g_Manager.texManager);
 
-    CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.vertexCount - 1, id);
+    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.vertexCount - 1, id);
 
     VECTOR pos = {0.0f, 0.0f, 0.0f, 1.0f};
 
     VECTOR scales = {.5f, .5f, .5f, 1.0f};
 
-    SetupLTM(pos, forward, right, up,
+    SetupLTM(pos, up, right, forward,
              scales,
-             1.0f, box->ltm);
-    box->update_object = NULL;
+             1.0f, grid->ltm);
 
-    InitOBB(box, BBO_FIXED);
+    PitchLTM(grid->ltm, -45.0f);
+    grid->update_object = NULL;
 
-    CreateGraphicsPipeline(box, "Clipper");
+    InitOBB(grid, BBO_FIXED);
+
+    CreateGraphicsPipeline(grid, "Clipper");
 
     //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
 
-    AddObjectToRenderWorld(world, box);
+    AddObjectToRenderWorld(world, grid);
 }
 
 static void SetupBody()
@@ -418,11 +423,11 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.CBIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0));
+    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
-    VECTOR scales = {.1f, .1f, .1f, 1.0f};
+    VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
-    SetupLTM(object_position, up, right, forward,
+    SetupLTM(object_position, forward, right, up,
              scales,
              1.0f, body->ltm);
 
@@ -430,7 +435,7 @@ static void SetupBody()
 
     body->update_object = NULL;
 
-    InitOBB(body, BBO_FIT);
+    InitOBB(body, BBO_FIXED);
 
     // CreateSphereTarget();
 
@@ -453,7 +458,7 @@ static void SetupMultiSphere()
 
     multiSphere = InitializeGameObject();
     ReadModelFile("MODELS\\SPHERE.BIN", &multiSphere->vertexBuffer);
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1));
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
@@ -462,19 +467,20 @@ static void SetupMultiSphere()
 
     multiSphere->update_object = NULL;
 
+    PitchLTM(multiSphere->ltm, -90.0f);
     // multiSphere->vertexBuffer.vertexCount -= 240;
 
-    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
+    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(glossName, g_Manager.texManager));
 
-    InitOBB(multiSphere, BBO_FIT);
+    InitOBB(multiSphere, BBO_FIXED);
 
     matrix_unit(lightTransform);
 
     // CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, alphaMap), lightTransform);
 
-    // CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
+     CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
 
-    CreateAlphaMapPipeline(multiSphere, "ALPHAMAP", GetTexByName(g_Manager.texManager, alphaMap));
+    //CreateAlphaMapPipeline(multiSphere, "ALPHAMAP", GetTexByName(g_Manager.texManager, alphaMap));
 
     AddObjectToRenderWorld(world, multiSphere);
 }
@@ -485,7 +491,7 @@ static void SetupRoom()
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
-    VECTOR object_position = {+0.0f, +0.0f, 0.0f, 0.0f};
+    VECTOR object_position = {+0.0f, +0.0f, 50.0f, 0.0f};
 
     room = InitializeGameObject();
     ReadModelFile("MODELS\\ROOM.BIN", &room->vertexBuffer);
@@ -673,12 +679,12 @@ static void SetupTessObject()
 static void SetupGameObjects()
 {
 
-    InitSkybox();
+    //InitSkybox();
 
-    SetupCube();
-    SetupBody();
+    SetupGrid();
+   // SetupBody();
 
-    SetupMultiSphere();
+    //SetupMultiSphere();
     // SetupShadowViewer();
 
     // SetupRoom();
@@ -730,7 +736,7 @@ static void RenderShadowScene()
 
     ClearScreen(shadowTarget, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, alpha);
 
-    GameObject *obj = box;
+    GameObject *obj = grid;
 
     VU1Pipeline *pipe = GetPipelineByName("GENERIC_SHADOW_MAP", obj);
 
@@ -793,6 +799,8 @@ int Render()
             UpdateAnimator(body->objAnimator, delta);
 
         UpdateGlossTransform();
+
+        //doTheThing();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x00);
 
@@ -906,7 +914,7 @@ static void LoadInTextures()
 
     AppendString(_folder, glossName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_WRAP);
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 

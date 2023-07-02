@@ -1,13 +1,15 @@
 #include "ps_obb.h"
 
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "ps_vumanager.h"
 #include "ps_vif.h"
 #include "ps_manager.h"
 #include "ps_misc.h"
 #include "ps_fast_maths.h"
-#include <stdlib.h>
+#include "ps_log.h"
+
 extern volatile u32 *vu1_data_address;
 
 void DestroyOBB(ObjectBounds *bound)
@@ -49,7 +51,7 @@ void InitOBB(GameObject *obj, int type)
 
     if (type == BBO_FIT)
     {
-        MatrixVectorTransform(v, world, v);
+        MatrixVectorMultiply(v, world, v);
     }
 
     xMin = xMax = v[0];
@@ -64,7 +66,7 @@ void InitOBB(GameObject *obj, int type)
 
         if (type == BBO_FIT)
         {
-            MatrixVectorTransform(v, world, v);
+            MatrixVectorMultiply(v, world, v);
         }
 
         xMin = Min(xMin, v[0]);
@@ -99,6 +101,15 @@ void InitOBB(GameObject *obj, int type)
     else if (type == BBO_SPHERE)
     {
         BoundingSphere *sphere = (BoundingSphere *)obj->obb->obb;
+        VECTOR add;
+        VectorSubtractXYZ(top, bot, add);
+        ScaleVectorXYZ(sphere->center, add, 0.5f);
+        float mag = (top[0] - sphere->center[0]) * (top[0] - sphere->center[0]);
+        mag +=  (top[1] - sphere->center[1]) * (top[1] - sphere->center[1]);
+        mag +=  (top[2] - sphere->center[2]) * (top[2] - sphere->center[2]);
+        sphere->radius = Sqrt(mag);
+        DEBUGLOG("SPHERE RADIUS AND CENTER %f", sphere->radius);
+        DumpVector(sphere->center);
     }
 }
 

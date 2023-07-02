@@ -167,7 +167,7 @@ void CreateCameraFrustum(Camera *cam)
 {
     Frustum *frus = (Frustum *)malloc(sizeof(Frustum));
 
-    float angle = DegToRad(cam->angle) * 0.5;
+    float angle = DegToRad(cam->angle) * .5f;
     float tanAngle = Sin(angle) / Cos(angle);
 
     float nh;
@@ -311,124 +311,89 @@ void FindPosAndNegVertexOBB(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal
     vector_copy(nVertex, topExtent);
     vector_copy(pVertex, bottomExtent);
 
-    if (normal[0] > 0.0f)
+    if (normal[0] > 0.001f)
     {
         pVertex[0] = topExtent[0];
         nVertex[0] = bottomExtent[0];
     }
 
-    if (normal[1] > 0.0f)
+    if (normal[1] > 0.001f)
     {
 
         pVertex[1] = topExtent[1];
         nVertex[1] = bottomExtent[1];
     }
 
-    if (normal[2] > 0.0f)
+    if (normal[2] > 0.001f)
     {
         pVertex[2] = topExtent[2];
         nVertex[2] = bottomExtent[2];
     }
+
 }
 
 int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 {
     MATRIX camMatrix, worldMatrix;
-    VECTOR maxExtent, minExtent, topExtWorld, botExtWorld;
-    int ret = 1;
 
-    CreateCameraWorldMatrix(cam, camMatrix);
+    int ret = 1;
 
     CreateWorldMatrixLTM(obj->ltm, worldMatrix);
 
-    BoundingBox *box = (BoundingBox *)obj->obb->obb;
-
-    if (obj->obb->type == BBO_FIXED)
+    if (obj->obb->type == BBO_FIXED || obj->obb->type == BBO_FIT)
     {
-        MatrixVectorMultiply(topExtWorld, worldMatrix, box->top);
-        MatrixVectorMultiply(botExtWorld, worldMatrix, box->bottom);
+        BoundingBox *box = (BoundingBox *)obj->obb->obb;
 
-        CreateVector(Min(topExtWorld[0], botExtWorld[0]), Min(topExtWorld[1], botExtWorld[1]), Min(topExtWorld[2], botExtWorld[2]), 0.0f, minExtent);
-        CreateVector(Max(topExtWorld[0], botExtWorld[0]), Max(topExtWorld[1], botExtWorld[1]), Max(topExtWorld[2], botExtWorld[2]), 0.0f, maxExtent);
-    }
-    else if (obj->obb->type == BBO_FIT)
-    {
+        VECTOR maxExtent, minExtent, topExtWorld, botExtWorld;
 
-        CreateVector(Min(box->top[0], box->bottom[0]), Min(box->top[1], box->bottom[1]), Min(box->top[2], box->bottom[2]), 0.0f, minExtent);
-        CreateVector(Max(box->top[0], box->bottom[0]), Max(box->top[1], box->bottom[1]), Max(box->top[2], box->bottom[2]), 0.0f, maxExtent);
-    }
-
-    VECTOR *objUp = GetUpVectorLTM(obj->ltm);
-    VECTOR *objForward = GetForwardVectorLTM(obj->ltm);
-    VECTOR *objRight = GetRightVectorLTM(obj->ltm);
-    // DumpCameraFrustum(cam);
-    for (int i = 0; i < 6; i++)
-    {
-        VECTOR pVert, nVert, tempPlane, tempNormal, tempPoint;
-
-        Matrix3VectorMultiply(tempNormal, camMatrix, cam->frus->sides[i].planeEquation);
-        MatrixVectorMultiply(tempPoint, camMatrix, cam->frus->sides[i].pointInPlane);
-        /*  if (i == 4 || i == 5)
-          {
-
-
-              DumpVector(tempPoint);
-              DumpVector(tempNormal);
-              DumpVector(cam->pos);
-              DumpVector(cam->frus->sides[i].pointInPlane);
-              DumpVector(cam->frus->sides[i].planeEquation);
-             // DEBUGLOG("%d ==================== %d\n", i, i);
-
-          } */
-
-        //  DumpVector(cam->frus->sides[i].pointInPlane);
-        //     DumpVector(cam->frus->sides[i].planeEquation);
-        //   DEBUGLOG("%d ==================== %d\n", i, i);
-
-        normalize(tempNormal, tempNormal);
-
-        ComputePlane(tempPoint, tempNormal, tempPlane);
-
-        // DumpVector(tempPlane);
-
-        VECTOR normalProjection;
-
-        CreateVector(DotProduct(*objRight, tempNormal), DotProduct(*objUp, tempNormal), DotProduct(*objForward, tempNormal), 0.0f, normalProjection);
-
-        FindPosAndNegVertexOBB(maxExtent, minExtent, normalProjection, pVert, nVert);
-
-        if (DistanceFromPlane(tempPlane, pVert) < 0.0f)
+        if (obj->obb->type == BBO_FIXED)
         {
-            // DumpVector(pVert);
-            //  DumpVector(tempPoint);
-            // DumpVector(tempNormal);
-            //  DumpVector(*GetPositionVectorLTM(cam->ltm));
-            // DumpVector(*GetForwardVectorLTM(cam->ltm));
-            //   DumpVector(cam->frus->sides[i].pointInPlane);
-            //  DumpVector(cam->frus->sides[i].planeEquation);
-            //  DEBUGLOG("%d ==================== %d\n", i, i);
-            return 0;
+            MatrixVectorMultiply(topExtWorld, worldMatrix, box->top);
+            MatrixVectorMultiply(botExtWorld, worldMatrix, box->bottom);
+
+            CreateVector(Min(topExtWorld[0], botExtWorld[0]), Min(topExtWorld[1], botExtWorld[1]), Min(topExtWorld[2], botExtWorld[2]), 0.0f, minExtent);
+            CreateVector(Max(topExtWorld[0], botExtWorld[0]), Max(topExtWorld[1], botExtWorld[1]), Max(topExtWorld[2], botExtWorld[2]), 0.0f, maxExtent);
+        }
+        else if (obj->obb->type == BBO_FIT)
+        {
+
+            CreateVector(Min(box->top[0], box->bottom[0]), Min(box->top[1], box->bottom[1]), Min(box->top[2], box->bottom[2]), 0.0f, minExtent);
+            CreateVector(Max(box->top[0], box->bottom[0]), Max(box->top[1], box->bottom[1]), Max(box->top[2], box->bottom[2]), 0.0f, maxExtent);
         }
 
-        if (DistanceFromPlane(tempPlane, nVert) < 0.0f)
-        {
-            ret = 2;
 
-            // DumpVector(pVert);
-            //  DumpVector(tempPoint);
-            //  DumpVector(tempNormal);
-            // DumpVector(*GetPositionVectorLTM(cam->ltm));
-            // DumpVector(*GetForwardVectorLTM(cam->ltm));
-            //  DumpVector(cam->frus->sides[i].pointInPlane);
-            // DumpVector(cam->frus->sides[i].planeEquation);
-            // DEBUGLOG("%d =======NEG============= %d\n", i, i);
-            if (i == 0)
+        CreateCameraWorldMatrix(cam, camMatrix);
+        // DumpCameraFrustum(cam);
+        for (int i = 0; i < 6; i++)
+        {
+            VECTOR pVert, nVert, tempPlane, tempNormal, tempPoint;
+
+            Matrix3VectorMultiply(tempNormal, camMatrix, cam->frus->sides[i].planeEquation);
+            MatrixVectorMultiply(tempPoint, camMatrix, cam->frus->sides[i].pointInPlane);
+
+            normalize(tempNormal, tempNormal);
+
+            ComputePlane(tempPoint, tempNormal, tempPlane);
+
+            // DumpVector(tempPlane);
+            FindPosAndNegVertexOBB(maxExtent, minExtent, tempNormal, pVert, nVert);
+
+            if (DistanceFromPlane(tempPlane, pVert) < 0)
             {
+                //DEBUGLOG("%d", i);
                 return 0;
+            }
+
+            if (DistanceFromPlane(tempPlane, nVert) < 0)
+            {
+                ret = 2;
             }
         }
     }
-    // DEBUGLOG("finished\n");
+    else if (obj->obb->type == BBO_SPHERE)
+    {
+
+    }
     return ret;
 }
 

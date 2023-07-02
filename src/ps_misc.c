@@ -680,11 +680,11 @@ void MatrixTranspose(MATRIX src)
 void ComputePlane(VECTOR vec, VECTOR normal, VECTOR plane)
 {
     float x0, y0, z0, d;
-    x0 = -vec[0] * normal[0];
-    y0 = -vec[1] * normal[1];
-    z0 = -vec[2] * normal[2];
+    x0 = vec[0] * normal[0];
+    y0 = vec[1] * normal[1];
+    z0 = vec[2] * normal[2];
     d = x0 + y0 + z0;
-
+    d *= -1.0f;
     CreateVector(normal[0], normal[1], normal[2], d, plane);
 }
 
