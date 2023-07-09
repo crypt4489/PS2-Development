@@ -13,11 +13,11 @@ static int n = 0;
 typedef struct huffman_node_t
 {
 	unsigned char c;
-	int freq;
-	struct huffman_node_t *left, *right;
+	struct huffman_node_t *left, *right, *parent;
 } HuffmanNode;
 
-static HuffmanNode *CreateHuffmanNode();
+static HuffmanNode* CreateHuffmanNode(HuffmanNode *left, HuffmanNode *right,
+								HuffmanNode *parent, unsigned char c);
 static int isLeaf(HuffmanNode *node);
 static void fillBuffer();
 static int readBoolean();
@@ -28,15 +28,21 @@ static unsigned int readInt();
 static int isLeaf(HuffmanNode *node);
 static void cleanupTree(HuffmanNode *root);
 
-static HuffmanNode *CreateHuffmanNode()
+static HuffmanNode* CreateHuffmanNode(HuffmanNode *left, HuffmanNode *right,
+								HuffmanNode *parent, unsigned char c)
 {
-	HuffmanNode *node = (HuffmanNode *)malloc(sizeof(HuffmanNode));
-
+	HuffmanNode* node = (HuffmanNode*)malloc(sizeof(HuffmanNode));
+	
 	if (node == NULL)
 	{
 		printf("Cannot create huffman node\n");
 		return NULL;
 	}
+
+	node->parent = parent;
+	node->left = left;
+	node->right = right;
+	node->c = c;
 
 	return node;
 }
@@ -82,25 +88,36 @@ static unsigned char readChar()
 
 static HuffmanNode *readDecoder()
 {
-	int bit = readBoolean();
-	// printf("%d\n", bit);
-	if (bit)
+	HuffmanNode *current = NULL;
+	HuffmanNode *root = CreateHuffmanNode(NULL, NULL, NULL, '\0');
+	current = root;
+	readBoolean();
+	while(1)
 	{
-		HuffmanNode *node = CreateHuffmanNode();
-		node->c = readChar();
-		node->freq = -1;
-		node->left = node->right = NULL;
-		return node;
+		if (current->right != NULL && current->left != NULL)
+		{
+			current = current->parent;
+		}
+		else
+		{
+			HuffmanNode* node = CreateHuffmanNode(NULL, NULL, current, '\0');
+			
+			if (current->left == NULL)
+				current->left = node;
+			else if (current->right == NULL)
+				current->right = node;
+			
+			if (readBoolean())
+				node->c = readChar();
+			else
+				current = node;
+		}
+		
+		if (current == root && current->right != NULL)
+			break;
 	}
-	else
-	{
-		HuffmanNode *node = CreateHuffmanNode();
-		node->c = '-';
-		node->freq = -1;
-		node->left = readDecoder();
-		node->right = readDecoder();
-		return node;
-	}
+
+	return root;
 }
 
 #if 0
@@ -187,6 +204,8 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 	if (bufferFile == NULL)
 	{
 		ERRORLOG("Cannot allocate buffer for decompressed file");
+		cleanupTree(root);
+		return;
 	}
 
 	// INFOLOG("decompressed length %d", length);
