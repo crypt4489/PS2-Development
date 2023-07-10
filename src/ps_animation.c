@@ -10,20 +10,31 @@
 
 static MATRIX final, nodeTrans;
 static MATRIX boneMatricesStack[256];
-
-AnimationData *GetAnimationByIndex(LinkedList *animations, u32 index)
+typedef struct anim_stack_node_t
 {
-    u32 indexZero = index - 1;
+    AnimationNode *data;
+    struct anim_stack_node_t *next;
+    u32 parentMatIndex;
+} AnimStackNode;
 
-    LinkedList *ret = animations;
 
-    while (indexZero > 0)
-    {
-        ret = ret->next;
-        indexZero--;
-    }
 
-    return (AnimationData *)ret->data;
+static qword_t *LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
+{
+    VECTOR rotVec, scaleVec, trans;
+
+    ExtractVectorFromMatrix(trans, rotVec, scaleVec, final);
+
+    u32 offset = 3 * index;
+    qword_t *write = q + offset;
+
+    memcpy(write, trans, sizeof(float) * 4);
+    write++;
+    memcpy(write, rotVec, sizeof(float) * 4);
+    write++;
+    memcpy(write, scaleVec, sizeof(float) * 4);
+
+    return q;
 }
 
 static s32 GetKeyIndex(AnimationKey **keys, u32 numKeys, float animationTime)
@@ -110,21 +121,109 @@ static void InterpolateScalings(float animationTime, AnimationKeyHolder *keyHold
     vector_copy(output, scales);
 }
 
+static void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float animationTime)
+{
+    VECTOR scale, rot, trans;
+    AnimationKeyHolder *holder = data->keyPositions[index];
+    InterpolatePosition(animationTime, holder, holder->count, trans);
+
+    holder = data->keyRotations[index];
+    InterpolateRotation(animationTime, holder, holder->count, rot);
+
+    holder = data->keyScalings[index];
+    InterpolateScalings(animationTime, holder, holder->count, scale);
+
+    CreateWorldMatrixFromQuatScalesTrans(trans, rot, scale, transform);
+}
+
+static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
+                                               AnimationNode *node, Joint **joints, u32 numJoints,
+                                               float animationTime)
+{
+
+    AnimStackNode *current = (AnimStackNode *)malloc(sizeof(AnimStackNode));
+    current->data = node;
+    current->next = NULL;
+    current->parentMatIndex = 0;
+    u32 currentBoneStack = 1;
+    AnimStackNode *parent = current;
+    AnimStackNode *clear;
+    while (current != NULL)
+    {
+
+        MATRIX globalTrans;
+
+        Joint *joint = FindJointByName(joints, numJoints, current->data->name);
+
+        matrix_unit(globalTrans);
+
+        if (joint != NULL)
+        {
+            UpdateJoint(data, joint->id, nodeTrans, animationTime);
+
+            matrix_multiply(globalTrans, nodeTrans, boneMatricesStack[current->parentMatIndex]);
+
+            matrix_multiply(final, joint->offset, globalTrans);
+
+            q = LoadQWordForVU1Bones(q, joint->id, final);
+        }
+        else
+        {
+            matrix_multiply(globalTrans, current->data->transformation, boneMatricesStack[current->parentMatIndex]);
+        }
+
+        matrix_copy(boneMatricesStack[currentBoneStack], globalTrans);
+
+        for (u32 i = 0; i < current->data->childrenCount; i++)
+        {
+
+            AnimStackNode *child = (AnimStackNode *)malloc(sizeof(AnimStackNode));
+            child->data = current->data->children[i];
+            child->parentMatIndex = currentBoneStack;
+            child->next = NULL;
+            parent->next = child;
+            parent = child;
+        }
+
+        clear = current;
+        current = current->next;
+        free(clear);
+        currentBoneStack++;
+    }
+}
+
+AnimationData *GetAnimationByIndex(LinkedList *animations, u32 index)
+{
+    u32 indexZero = index - 1;
+
+    LinkedList *ret = animations;
+
+    while (indexZero > 0)
+    {
+        ret = ret->next;
+        indexZero--;
+    }
+
+    return (AnimationData *)ret->data;
+}
+
+
+
 Joint *FindJointByName(Joint **joints, u32 total, const char *name)
 {
     u32 strLength = strlen(name);
-    
+
     for (u32 i = 0; i < total; i++)
     {
         Joint *ret = joints[i];
-        
+
         u32 jointNameLen = strlen(ret->name);
 
         if (jointNameLen > strLength)
         {
             continue;
         }
-        
+
         if (strncmp(ret->name, name, strLength) == 0)
         {
             return ret;
@@ -146,129 +245,10 @@ void UpdateAnimator(Animator *animator, float animationTime)
 void UpdateVU1BoneMatrices(qword_t *q, Animator *animator, Joint **joints, u32 numJoints)
 {
     // DEBUGLOG("Calculating Bones!");
-    MATRIX parent;
-    matrix_unit(parent);
+    matrix_unit(boneMatricesStack[0]);
 
     CalculateBoneTransformVU1(q, animator->animation, animator->animation->root, joints, numJoints,
-                              parent, animator->currentTime);
-    //  DEBUGLOG("Printing Bones!");
-}
-
-static void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float animationTime)
-{
-    VECTOR scale, rot, trans;
-    AnimationKeyHolder *holder = data->keyPositions[index];
-    InterpolatePosition(animationTime, holder, holder->count, trans);
-
-    holder = data->keyRotations[index];
-    InterpolateRotation(animationTime, holder, holder->count, rot);
-
-    holder = data->keyScalings[index];
-    InterpolateScalings(animationTime, holder, holder->count, scale);
-
-    CreateWorldMatrixFromQuatScalesTrans(trans, rot, scale, transform);
-}
-
-static qword_t *LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
-{
-    VECTOR rotVec, scaleVec;
-
-    float sx = dist(&final[0]);
-    float sy = dist(&final[4]);
-    float sz = dist(&final[8]);
-
-    scaleVec[0] = sx;
-    scaleVec[1] = sy;
-    scaleVec[2] = sz;
-
-    MATRIX mat;
-
-    mat[0] = final[0] / sx;
-    mat[1] = final[1] / sx;
-    mat[2] = final[2] / sx;
-
-    mat[4] = final[4] / sy;
-    mat[5] = final[5] / sy;
-    mat[6] = final[6] / sy;
-
-    mat[8] = final[8] / sz;
-    mat[9] = final[9] / sz;
-    mat[10] = final[10] / sz;
-
-    CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rotVec);
-
-    u32 offset = 3 * index;
-    qword_t *write = q + offset;
-
-    memcpy(write, &final[12], sizeof(float) * 4);
-    write++;
-    memcpy(write, rotVec, sizeof(float) * 4);
-    write++;
-    memcpy(write, scaleVec, sizeof(float) * 4);
-
-    return q;
-}
-
-static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
-                               AnimationNode *node, Joint **joints, u32 numJoints,
-                               MATRIX transform, float animationTime)
-{
-    MATRIX globalTrans;
-
-    Joint *joint = FindJointByName(joints, numJoints, node->name);
-
-    matrix_unit(globalTrans);
-
-    if (joint != NULL)
-    {
-        UpdateJoint(data, joint->id, nodeTrans, animationTime);
-
-        matrix_multiply(globalTrans, nodeTrans, transform);
-
-        matrix_multiply(final, joint->offset, globalTrans);
-
-        q = LoadQWordForVU1Bones(q, joint->id, final);
-    }
-    else
-    {
-        matrix_multiply(globalTrans, node->transformation, transform);
-    }
-
-    for (int i = 0; i < node->childrenCount; i++)
-        CalculateBoneTransformVU1(q, data, node->children[i], joints, numJoints, globalTrans, animationTime);
-}
-
-static void CalculateBoneTransformVU1NoRecurse(qword_t *q, AnimationData *data,
-                               AnimationNode *node, Joint **joints, u32 numJoints,
-                               MATRIX transform, float animationTime)
-{
-    AnimationData *current = node;
-    for (u32 i = 0; i<numJoints; i++)
-    {    
-        MATRIX globalTrans;
-
-        Joint *joint = FindJointByName(joints, numJoints, node->name);
-
-        matrix_unit(globalTrans);
-
-        if (joint != NULL)
-        {
-            UpdateJoint(data, joint->id, nodeTrans, animationTime);
-
-            matrix_multiply(globalTrans, nodeTrans, transform);
-
-            matrix_multiply(final, joint->offset, globalTrans);
-
-            q = LoadQWordForVU1Bones(q, joint->id, final);
-        }
-        else
-        {
-            matrix_multiply(globalTrans, node->transformation, transform);
-        }
-
-        for (int i = 0; i < node->childrenCount; i++)
-            CalculateBoneTransformVU1(q, data, node->children[i], joints, numJoints, globalTrans, animationTime);
-    }
+                               animator->currentTime);
 }
 
 Animator *CreateAnimator(AnimationData *data)
