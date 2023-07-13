@@ -60,6 +60,7 @@ EE_C_COMPILE = $(EE_CC) $(EE_CFLAGS) $(EE_INCS)
 EE_CXX_COMPILE = $(EE_CXX) $(EE_CXXFLAGS) $(EE_INCS)
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.cc
@@ -74,7 +75,7 @@ $(OBJS_DIR)/%.o: $(SRC_DIR)/%.S
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.s
 	$(EE_AS) $(EE_ASFLAGS) $< -o $@
 
-$(OBJS_DIR)/%.o: $(VSM_DIR)/%.vsm
+$(VSM_OBJ_DIR)/%.o: $(VSM_DIR)/%.vsm
 	$(EE_DVP) $< -o $@
 
 $(TARGET_DIR)/$(EE_BIN): $(EE_OBJS)

@@ -1,13 +1,15 @@
 #include "pad.h"
-#include "ps_camera.h"
-#include "ps_pad.h"
-#include "ps_manager.h"
+
+#include "camera/ps_camera.h"
+#include "pad/ps_pad.h"
+#include "gamemanager/ps_manager.h"
 #include "body.h"
-#include "ps_vu1pipeline.h"
-#include "ps_renderworld.h"
-#include "ps_lights.h"
-#include "ps_misc.h"
-#include "ps_log.h"
+#include "pipelines/ps_vu1pipeline.h"
+#include "world/ps_renderworld.h"
+#include "world/ps_lights.h"
+#include "math/ps_misc.h"
+#include "log/ps_log.h"
+
 char padBuf[256] __attribute__((aligned(64)));
 static u32 old_pad = 0;
 static u32 new_pad;

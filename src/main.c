@@ -1,34 +1,34 @@
 #include "ps_global.h"
-#include "ps_gs.h"
-#include "ps_vif.h"
-#include "ps_misc.h"
-#include "ps_timer.h"
-#include "ps_texture.h"
-#include "ps_pad.h"
-#include "ps_texture_io.h"
-#include "ps_vumanager.h"
-#include "ps_font.h"
-#include "ps_manager.h"
-#include "ps_camera.h"
-#include "ps_file_io.h"
-#include "ps_gameobject.h"
-#include "ps_obb.h"
-#include "ps_movement.h"
-#include "ps_lights.h"
-#include "ps_renderworld.h"
-#include "ps_vu1pipeline.h"
-#include "ps_quat.h"
+#include "gs/ps_gs.h"
+#include "system/ps_vif.h"
+#include "math/ps_misc.h"
+#include "system/ps_timer.h"
+#include "textures/ps_texture.h"
+#include "pad/ps_pad.h"
+#include "IO/ps_texture_io.h"
+#include "system/ps_vumanager.h"
+#include "textures/ps_font.h"
+#include "gamemanager/ps_manager.h"
+#include "camera/ps_camera.h"
+#include "IO/ps_file_io.h"
+#include "gameobject/ps_gameobject.h"
+#include "physics/ps_obb.h"
+#include "physics/ps_movement.h"
+#include "world/ps_lights.h"
+#include "world/ps_renderworld.h"
+#include "pipelines/ps_vu1pipeline.h"
+#include "math/ps_quat.h"
 #include "body.h"
 #include "pad.h"
 #include "skybox.h"
-#include "shadows.h"
-#include "ps_dma.h"
-#include "ps_morphtarget.h"
-#include "ps_pipelines.h"
-#include "ps_fast_maths.h"
-#include "ps_log.h"
-#include "ps_animation.h"
-#include "ps_sound.h"
+#include "graphics/shadows.h"
+#include "dma/ps_dma.h"
+#include "animation/ps_morphtarget.h"
+#include "pipelines/ps_pipelines.h"
+#include "math/ps_fast_maths.h"
+#include "log/ps_log.h"
+#include "animation/ps_animation.h"
+#include "audio/ps_sound.h"
 #include <math.h>
 #include <stdio.h>
 #include <malloc.h>
@@ -73,7 +73,7 @@ extern u32 VU1_SphereMappingStage2_CodeEnd __attribute__((section(".vudata")));
 
 TimerStruct *ts;
 
-char print_out[20] = "DREW FLETCHER";
+char print_out[35] = "DERRICK REGINALD";
 
 MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
 
@@ -183,7 +183,7 @@ static void doTheThing()
         float dot = reflect[0] + reflect[1] + reflect[2];
 
         if (dot < 0.1f)
-            dot =  0.0f;
+            dot = 0.0f;
 
         VECTOR output;
         ScaleVectorXYZ(output, outNormal, dot * 2.0f);
@@ -423,11 +423,11 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.CBIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0));
 
-    VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
+    VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
-    SetupLTM(object_position, forward, right, up,
+    SetupLTM(object_position, up, right, forward,
              scales,
              1.0f, body->ltm);
 
@@ -443,7 +443,7 @@ static void SetupBody()
 
     body->objAnimator = CreateAnimator(data);
 
-    CreateGraphicsPipeline(body, "DOES THIS WORK?");
+    CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
 
     AddObjectToRenderWorld(world, body);
 }
@@ -478,9 +478,9 @@ static void SetupMultiSphere()
 
     // CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, alphaMap), lightTransform);
 
-     CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
+    CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
 
-    //CreateAlphaMapPipeline(multiSphere, "ALPHAMAP", GetTexByName(g_Manager.texManager, alphaMap));
+    // CreateAlphaMapPipeline(multiSphere, "ALPHAMAP", GetTexByName(g_Manager.texManager, alphaMap));
 
     AddObjectToRenderWorld(world, multiSphere);
 }
@@ -679,12 +679,12 @@ static void SetupTessObject()
 static void SetupGameObjects()
 {
 
-    //InitSkybox();
+    InitSkybox();
 
     SetupGrid();
-   // SetupBody();
+    SetupBody();
 
-    //SetupMultiSphere();
+    SetupMultiSphere();
     // SetupShadowViewer();
 
     // SetupRoom();
@@ -800,7 +800,7 @@ int Render()
 
         UpdateGlossTransform();
 
-        //doTheThing();
+        // doTheThing();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x00);
 
@@ -824,7 +824,7 @@ int Render()
 
         UpdateLight();
 
-        snprintf(print_out, 20, "DREW FLETCHER %d", FrameCounter);
+        snprintf(print_out, 20, "DERRICK REGINALD %d", FrameCounter);
 
         FrameCounter++;
     }
