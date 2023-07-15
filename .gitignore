@@ -5,8 +5,6 @@ SYSTEM.CNF
 archive/
 assets/
 vcl/Archive/
-vcl/Makefile
-vcl/Processed/
 vcl/my_vcl.inc
 vcl/vcl_sml.i
 vcl/vclpp

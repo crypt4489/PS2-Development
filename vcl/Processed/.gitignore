@@ -1,0 +1,4 @@
+# Ignore
+*.vcl
+# Except this file
+!.gitignore
