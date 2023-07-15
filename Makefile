@@ -3,9 +3,10 @@ ASSETS_DIR := ./assets
 OBJS_DIR := ./objs
 VCL_DIR := ./vcl
 VSM_DIR := ./vcl/vsm
+VSM_OBJ_DIR := ./vcl/vsm/objs
 SRC_DIR := ./src
 TARGET_DIR := ./bin
-INC_DIR := ./inc
+INC_DIR := ./inc/
 WIN_DIR := /mnt/c/Users/dflet/Desktop/
 
 OBJEXT    := o
@@ -16,9 +17,9 @@ EE_BIN = test.elf
 IOP_MOD = sio2man.irx padman.irx sound.irx libsd.irx audsrv.irx
 
 EE_SRC_VSM := $(shell find $(VSM_DIR) -maxdepth 1 -type f -name *.$(VSMEXT))
-EE_OBJS :=  $(patsubst $(VSM_DIR)/%, $(OBJS_DIR)/%, $(EE_SRC_VSM:.$(VSMEXT)=.$(OBJEXT)))
+EE_OBJS :=  $(patsubst $(VSM_DIR)/%, $(VSM_OBJ_DIR)/%, $(EE_SRC_VSM:.$(VSMEXT)=.$(OBJEXT)))
 
-EE_SRC_C += $(shell find $(SRC_DIR) -maxdepth 1 -type f -name *.$(CEXT))
+EE_SRC_C += $(shell find $(SRC_DIR) -type f -name *.$(CEXT))
 EE_OBJS += $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(EE_SRC_C:.$(CEXT)=.$(OBJEXT)))
 
 EE_DVP = dvp-as

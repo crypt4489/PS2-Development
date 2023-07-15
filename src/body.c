@@ -1,8 +1,10 @@
 #include "body.h"
-#include "ps_movement.h"
-#include "ps_manager.h"
-#include "ps_obb.h"
-#include "ps_misc.h"
+
+#include "physics/ps_movement.h"
+#include "gamemanager/ps_manager.h"
+#include "physics/ps_obb.h"
+#include "math/ps_misc.h"
+
 int HandleBodyMovement(GameObject *obj, u32 type)
 {
     VECTOR newPos, tempDir;

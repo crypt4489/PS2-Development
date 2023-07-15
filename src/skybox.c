@@ -1,16 +1,16 @@
 #include "skybox.h"
 
-#include "ps_pipelines.h"
-#include "ps_vif.h"
-#include "ps_vumanager.h"
-#include "ps_manager.h"
-#include "ps_movement.h"
-#include "ps_gameobject.h"
-#include "ps_vu1pipeline.h"
-#include "ps_renderworld.h"
-#include "ps_misc.h"
-#include "ps_file_io.h"
-#include "ps_texture.h"
+#include "pipelines/ps_pipelines.h"
+#include "system/ps_vif.h"
+#include "system/ps_vumanager.h"
+#include "gamemanager/ps_manager.h"
+#include "physics/ps_movement.h"
+#include "gameobject/ps_gameobject.h"
+#include "pipelines/ps_vu1pipeline.h"
+#include "world/ps_renderworld.h"
+#include "math/ps_misc.h"
+#include "IO/ps_file_io.h"
+#include "textures/ps_texture.h"
 
 extern const char *face1Name; // = "FACE1";
 extern const char *face2Name; // = "FACE2";
