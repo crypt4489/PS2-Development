@@ -7,7 +7,7 @@
 
 #include "gamemanager/ps_manager.h"
 #include "gs/ps_gs.h"
-#include "IO/ps_texture_io.h"
+#include "io/ps_texture_io.h"
 #include "math/ps_fast_maths.h"
 #include "dma/ps_dma.h"
 #include "math/ps_misc.h"

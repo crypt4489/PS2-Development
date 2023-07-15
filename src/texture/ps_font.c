@@ -7,7 +7,7 @@
 #include "gs/ps_gs.h"
 #include "textures/ps_texture.h"
 #include "math/ps_misc.h"
-#include "IO/ps_file_io.h"
+#include "io/ps_file_io.h"
 #include "dma/ps_dma.h"
 void PrintText(Font *fontStruct, const char *text, int x, int y)
 {

@@ -5,7 +5,7 @@
 #include "gameobject/ps_gameobject.h"
 #include "math/ps_misc.h"
 #include "system/ps_vumanager.h"
-#include "IO/ps_file_io.h"
+#include "io/ps_file_io.h"
 #include "world/ps_lights.h"
 #include "gs/ps_gs.h"
 #include "dma/ps_dma.h"

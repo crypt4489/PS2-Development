@@ -1,4 +1,4 @@
-#include "IO/ps_file_io.h"
+#include "io/ps_file_io.h"
 
 #include <stdlib.h>
 #include <string.h>

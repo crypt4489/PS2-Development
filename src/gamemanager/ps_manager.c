@@ -11,7 +11,7 @@
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"
 #include "pad/ps_pad.h"
-#include "IO/ps_file_io.h"
+#include "io/ps_file_io.h"
 #include "log/ps_log.h"
 #include "system/ps_timer.h"
 

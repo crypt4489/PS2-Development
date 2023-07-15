@@ -9,7 +9,7 @@
 #include "pipelines/ps_vu1pipeline.h"
 #include "world/ps_renderworld.h"
 #include "math/ps_misc.h"
-#include "IO/ps_file_io.h"
+#include "io/ps_file_io.h"
 #include "textures/ps_texture.h"
 
 extern const char *face1Name; // = "FACE1";

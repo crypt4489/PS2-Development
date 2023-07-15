@@ -1,4 +1,4 @@
-#include "IO/ps_texture_io.h"
+#include "io/ps_texture_io.h"
 
 #include <png.h>
 
@@ -6,7 +6,7 @@
 #include <malloc.h>
 #include <stdlib.h>
 
-#include "IO/ps_file_io.h"
+#include "io/ps_file_io.h"
 #include "textures/ps_texture.h"
 #include "log/ps_log.h"
 #include "gs/ps_gs.h"

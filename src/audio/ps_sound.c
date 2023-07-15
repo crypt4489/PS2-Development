@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 #include "log/ps_log.h"
-#include "IO/ps_file_io.h"
+#include "io/ps_file_io.h"
 #include "math/ps_misc.h"
 
 extern void *_gp;
