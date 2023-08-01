@@ -571,17 +571,17 @@ void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale
     float sy = scale[1];
     float sz = scale[2];
 
-    m[0] = m[0] * sx;
-    m[1] = m[1] * sx;
-    m[2] = m[2] * sx;
+    m[0] *= sx;
+    m[1] *= sx;
+    m[2] *= sx;
 
-    m[4] = m[4] * sy;
-    m[5] = m[5] * sy;
-    m[6] = m[6] * sy;
+    m[4] *= sy;
+    m[5] *= sy;
+    m[6] *= sy;
 
-    m[8] = m[8] * sz;
-    m[9] = m[9] * sz;
-    m[10] = m[10] * sz;
+    m[8] *= sz;
+    m[9] *= sz;
+    m[10] *= sz;
 
     m[12] = trans[0];
     m[13] = trans[1];

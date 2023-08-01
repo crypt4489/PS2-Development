@@ -49,7 +49,6 @@ int HandleBodyMovement(GameObject *obj, u32 type)
             if (!(collision_check))
             {
                 StrafeLTM(obj->ltm, +1.0f);
-                ;
                 ret |= 1;
             }
         }

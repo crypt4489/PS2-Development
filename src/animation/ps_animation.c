@@ -149,7 +149,8 @@ static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
     u32 currentBoneStack = 1;
     AnimStackNode *parent = current;
     AnimStackNode *clear;
-    while (current != NULL)
+    u32 count = 0;
+    while (current != NULL && count < 256)
     {
 
         MATRIX globalTrans;
@@ -190,6 +191,7 @@ static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
         current = current->next;
         free(clear);
         currentBoneStack++;
+        count++;
     }
 }
 

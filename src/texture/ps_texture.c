@@ -59,17 +59,7 @@ Texture *GetTextureByID(u32 id, TexManager *texManager)
     return tex;
 }
 
-u32 compareTextureNames(Texture *tex1, Texture *tex2)
-{
-    u32 ret = 0;
-    if (strcmp(tex1->name, tex2->name) == 0)
-    {
-        ret = 1;
-    }
-    return ret;
-}
-
-void addStringNameToTexture(Texture *tex, const char *buffer)
+void AddStringNameToTexture(Texture *tex, const char *buffer)
 {
     memcpy(tex->name, buffer, strnlen(buffer, MAX_CHAR_TEXTURE_NAME));
 }

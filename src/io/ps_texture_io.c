@@ -23,7 +23,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     if (bmfh.bfType != BITMAP_ID)
     {
         ERRORLOG("not a valid bitmap file");
-        goto end;
+        return;
     }
 
     iter += sizeof(BitmapFileHeader);
@@ -52,7 +52,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     else
     {
         ERRORLOG("unsupported bit depth %d", image_depth);
-        goto end;
+        return;
     }
 
     unsigned char temp = 0;
@@ -140,8 +140,6 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
             tex->pixels[j + 2] = temp;
         }
     }
-
-end:
 }
 
 void LoadPng(u8 *data, Texture *tex, u32 size)
@@ -185,7 +183,7 @@ Texture *ReadTexFile(const char *fileName, const char *nameOfTex, u32 readType, 
 
     Texture *tex = (Texture *)malloc(sizeof(Texture));
 
-    addStringNameToTexture(tex, nameOfTex);
+    AddStringNameToTexture(tex, nameOfTex);
 
     u32 size;
 
