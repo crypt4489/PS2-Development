@@ -85,14 +85,15 @@ static unsigned char readChar()
 
 	return (x & 0xff);
 }
-
+#define MAX_ITERS 500000
 static HuffmanNode *readDecoder()
 {
 	HuffmanNode *current = NULL;
 	HuffmanNode *root = CreateHuffmanNode(NULL, NULL, NULL, '\0');
 	current = root;
 	readBoolean();
-	while(1)
+	int count = 0;
+	while(1 && count < MAX_ITERS)
 	{
 		if (current->right != NULL && current->left != NULL)
 		{
@@ -115,7 +116,11 @@ static HuffmanNode *readDecoder()
 
 		if (current == root && current->right != NULL)
 			break;
+
+		count++;
 	}
+
+	//DEBUGLOG("ITERS IN HUFFMAN %d", count);
 
 	return root;
 }
