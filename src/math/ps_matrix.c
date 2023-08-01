@@ -556,10 +556,6 @@ void ExtractVectorFromMatrix(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
     mat[10] = m[10] / sz;
 
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rot);
-
-    //  DumpVector(rot);
-    // DumpVector(trans);
-    // DumpVector(scale);
 }
 
 void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
@@ -587,24 +583,4 @@ void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale
     m[13] = trans[1];
     m[14] = trans[2];
     m[15] = 1.0f;
-    //  DumpVector(rot);
-    // DumpVector(trans);
-    // DumpVector(scale);
 }
-
-/*
-void MatrixMultiply(MATRIX output, MATRIX input, MATRIX input1)
-{
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; i++)
-        {
-            output[i + j] = 0.0f;
-            for (int k = 0; k < 4; k++)
-            {
-                output[i + j] += input[i + k] * input1[k + j];
-            }
-        }
-    }
-}
-*/
