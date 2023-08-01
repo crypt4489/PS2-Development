@@ -6,9 +6,10 @@
 #include "system/ps_vumanager.h"
 #include "system/ps_vif.h"
 #include "gamemanager/ps_manager.h"
-#include "math/ps_misc.h"
 #include "math/ps_fast_maths.h"
 #include "log/ps_log.h"
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 extern volatile u32 *vu1_data_address;
 
@@ -47,7 +48,7 @@ void InitOBB(GameObject *obj, int type)
 
     VECTOR *ptr = obj->vertexBuffer.vertices;
 
-    vector_copy(v, *ptr);
+    VectorCopy(v, *ptr);
 
     if (type == BBO_FIT)
     {
@@ -62,7 +63,7 @@ void InitOBB(GameObject *obj, int type)
     for (int i = 1; i < vertCount; i++)
     {
 
-        vector_copy(v, *ptr);
+        VectorCopy(v, *ptr);
 
         if (type == BBO_FIT)
         {
@@ -95,8 +96,8 @@ void InitOBB(GameObject *obj, int type)
     {
         BoundingBox *box = (BoundingBox *)obj->obb->obb;
 
-        vector_copy(box->top, top);
-        vector_copy(box->bottom, bot);
+        VectorCopy(box->top, top);
+        VectorCopy(box->bottom, bot);
     }
     else if (type == BBO_SPHERE)
     {
@@ -163,7 +164,7 @@ void FindCenterOfOBB(void *collisionData, int type, VECTOR center)
     else if (type == BBO_SPHERE)
     {
         BoundingSphere *sphere = (BoundingSphere *)collisionData;
-        vector_copy(center, sphere->center);
+        VectorCopy(center, sphere->center);
     }
 }
 
@@ -179,7 +180,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         BoundingBox *box1 = (BoundingBox *)obb1->obb;
         BoundingBox *box2 = (BoundingBox *)obb2->obb;
         VECTOR top1, bottom1, move;
-        vector_copy(move, va_arg(vectorArgs, float *));
+        VectorCopy(move, va_arg(vectorArgs, float *));
         ScaleVectorXYZ(move, move, 0.25f);
         VectorAddXYZ(box1->top, move, top1);
         VectorAddXYZ(box1->bottom, move, bottom1);
@@ -194,10 +195,10 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
 
         GetScaleVectorLTM(obj1->ltm, obj1Scales);
 
-        vector_copy(pos, va_arg(vectorArgs, float *));
-        vector_copy(newAxisX, va_arg(vectorArgs, float *));
-        vector_copy(newAxisY, va_arg(vectorArgs, float *));
-        vector_copy(newAxisZ, va_arg(vectorArgs, float *));
+        VectorCopy(pos, va_arg(vectorArgs, float *));
+        VectorCopy(newAxisX, va_arg(vectorArgs, float *));
+        VectorCopy(newAxisY, va_arg(vectorArgs, float *));
+        VectorCopy(newAxisZ, va_arg(vectorArgs, float *));
 
         FindCenterAndHalfOBB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
         FindCenterAndHalfAABB(box2, outCenter2, outHalf2);
@@ -219,10 +220,10 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         GetScaleVectorLTM(obj1->ltm, obj1Scales);
         GetScaleVectorLTM(obj2->ltm, obj2Scales);
 
-        vector_copy(pos, va_arg(vectorArgs, float *));
-        vector_copy(newAxisX, va_arg(vectorArgs, float *));
-        vector_copy(newAxisY, va_arg(vectorArgs, float *));
-        vector_copy(newAxisZ, va_arg(vectorArgs, float *));
+        VectorCopy(pos, va_arg(vectorArgs, float *));
+        VectorCopy(newAxisX, va_arg(vectorArgs, float *));
+        VectorCopy(newAxisY, va_arg(vectorArgs, float *));
+        VectorCopy(newAxisZ, va_arg(vectorArgs, float *));
 
         FindCenterAndHalfOBB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
         FindCenterAndHalfOBB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
@@ -243,7 +244,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         obj2Up = GetUpVectorLTM(obj2->ltm);
         GetScaleVectorLTM(obj2->ltm, obj2Scales);
 
-        vector_copy(move, va_arg(vectorArgs, float *));
+        VectorCopy(move, va_arg(vectorArgs, float *));
         ScaleVectorXYZ(move, move, 1.5f);
         VectorAddXYZ(box1->top, move, top1);
         VectorAddXYZ(box1->bottom, move, bottom1);
@@ -304,13 +305,13 @@ int CheckSeparatingPlane(VECTOR pos, VECTOR plane, VECTOR half1, VECTOR half2, V
     int ret = 0;
     VECTOR xProj1, yProj1, zProj1;
     VECTOR xProj2, yProj2, zProj2;
-    vector_copy(xProj1, xAxis1);
-    vector_copy(yProj1, yAxis1);
-    vector_copy(zProj1, zAxis1);
+    VectorCopy(xProj1, xAxis1);
+    VectorCopy(yProj1, yAxis1);
+    VectorCopy(zProj1, zAxis1);
 
-    vector_copy(xProj2, xAxis2);
-    vector_copy(yProj2, yAxis2);
-    vector_copy(zProj2, zAxis2);
+    VectorCopy(xProj2, xAxis2);
+    VectorCopy(yProj2, yAxis2);
+    VectorCopy(zProj2, zAxis2);
 
     ScaleVectorXYZ(xProj1, xProj1, half1[0]);
     ScaleVectorXYZ(yProj1, yProj1, half1[1]);
@@ -341,9 +342,9 @@ void FindCenterAndHalfOBB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAx
     VECTOR center, worldTop, worldBottom;
     MATRIX world;
     // MATRIX rot, trans, tempGlobal;
-    /* matrix_unit(rot);
-     matrix_unit(tempGlobal);
-     matrix_unit(trans);
+    /* MatrixIdentity(rot);
+     MatrixIdentity(tempGlobal);
+     MatrixIdentity(trans);
      CreateRotationAndCopyMatFromObjAxes(rot, yAxis, zAxis, xAxis);
      CreateTranslationMatrix(pos, trans);
      CreateWorldMatrix(tempGlobal, scale, rot, trans); */
@@ -358,7 +359,7 @@ void FindCenterAndHalfOBB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAx
     outHalf[0] = Abs(worldTop[0] - center[0]);
     outHalf[1] = Abs(worldTop[1] - center[1]);
     outHalf[2] = Abs(worldTop[2] - center[2]);
-    vector_copy(outCenter, center);
+    VectorCopy(outCenter, center);
 }
 
 void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
@@ -370,5 +371,5 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
     outHalf[0] = Abs(box->top[0] - center[0]);
     outHalf[1] = Abs(box->top[1] - center[1]);
     outHalf[2] = Abs(box->top[2] - center[2]);
-    vector_copy(outCenter, center);
+    VectorCopy(outCenter, center);
 }

@@ -7,7 +7,7 @@
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"
 #include "gamemanager/ps_manager.h"
-#include "math/ps_misc.h"
+
 #include "physics/ps_obb.h"
 #include "gs/ps_gs.h"
 #include "system/ps_vif.h"

@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "math/ps_misc.h"
+#include "math/ps_vector.h"
 #include "math/ps_fast_maths.h"
 #include "log/ps_log.h"
 
@@ -84,4 +84,57 @@ void CreateRotationMatFromQuat(const VECTOR quat, MATRIX m)
   m[10] = 2 * (q0q0 + q3 * q3) - 1;
 
   m[15] = 1.0f;
+}
+
+void Slerp(VECTOR q1, VECTOR q2, float delta, VECTOR out)
+{
+    float dot4 = DotProductFour(q1, q2);
+    if (Abs(dot4) >= 1.0f)
+    {
+        //  DEBUGLOG("QUICK COPY");
+        VectorCopy(out, q1);
+        return;
+    }
+
+    float halfTheta = ACos(dot4);
+    float sinHalfTheta = Sqrt(1.0f - dot4 * dot4);
+
+    if (Abs(sinHalfTheta) < 0.001)
+    {
+        // DEBUGLOG("HERE");
+        out[0] = (q1[0] * 0.5f + q2[0] * 0.5);
+        out[1] = (q1[1] * 0.5f + q2[1] * 0.5);
+        out[2] = (q1[2] * 0.5f + q2[2] * 0.5);
+        out[3] = (q1[3] * 0.5f + q2[3] * 0.5);
+        return;
+    }
+
+    float ratioA = Sin((1.0f - delta) * halfTheta) / sinHalfTheta;
+    float ratioB = Sin(delta * halfTheta) / sinHalfTheta;
+    // DEBUGLOG("FINAL COPY");
+    out[0] = (q1[0] * ratioA + q2[0] * ratioB);
+    out[1] = (q1[1] * ratioA + q2[1] * ratioB);
+    out[2] = (q1[2] * ratioA + q2[2] * ratioB);
+    out[3] = (q1[3] * ratioA + q2[3] * ratioB);
+
+    return;
+}
+
+void QuaternionNormalize(VECTOR in, VECTOR out)
+{
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%1)\n"
+        "vsuba.xyzw $ACC, $vf0, $vf0\n"
+        "vmul.xyzw $vf2, $vf1, $vf1\n"
+        "vmaddax.w $ACC, $vf0, $vf2\n"
+        "vmadday.w $ACC, $vf0, $vf2\n"
+        "vmaddaz.w $ACC, $vf0, $vf2\n"
+        "vmaddw.w $vf2, $vf0, $vf2\n"
+        "vrsqrt $Q, $vf0w, $vf2w\n"
+        "vwaitq \n"
+        "vmulq.xyzw $vf1, $vf1, $Q \n"
+        "sqc2 $vf1, 0x00(%0) \n"
+        :
+        : "r"(out), "r"(in)
+        : "memory");
 }

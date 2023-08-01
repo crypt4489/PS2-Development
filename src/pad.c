@@ -7,8 +7,9 @@
 #include "pipelines/ps_vu1pipeline.h"
 #include "world/ps_renderworld.h"
 #include "world/ps_lights.h"
-#include "math/ps_misc.h"
 #include "log/ps_log.h"
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 char padBuf[256] __attribute__((aligned(64)));
 static u32 old_pad = 0;

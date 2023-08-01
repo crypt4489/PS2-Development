@@ -3,7 +3,8 @@
 #include "physics/ps_movement.h"
 #include "gamemanager/ps_manager.h"
 #include "physics/ps_obb.h"
-#include "math/ps_misc.h"
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 int HandleBodyMovement(GameObject *obj, u32 type)
 {

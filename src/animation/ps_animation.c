@@ -1,12 +1,13 @@
 #include "animation/ps_animation.h"
 
-#include "math/ps_misc.h"
+#include <string.h>
+#include <stdlib.h>
+
 #include "math/ps_quat.h"
 #include "log/ps_log.h"
 #include "math/ps_fast_maths.h"
-
-#include <string.h>
-#include <stdlib.h>
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 static MATRIX final, nodeTrans;
 static MATRIX boneMatricesStack[256];
@@ -68,7 +69,7 @@ static void InterpolatePosition(float animationTime, AnimationKeyHolder *keyHold
     if (numPositions == 1)
     {
         // CreateTranslationMatrix(keyHolder->keys[0]->key, output);
-        vector_copy(output, keyHolder->keys[0]->key);
+        VectorCopy(output, keyHolder->keys[0]->key);
         return;
     }
 
@@ -80,7 +81,7 @@ static void InterpolatePosition(float animationTime, AnimationKeyHolder *keyHold
                                        animationTime);
     VECTOR pos;
     LerpNum(keyHolder->keys[p0Index]->key, keyHolder->keys[p1Index]->key, pos, scaleFactor, 3);
-    vector_copy(output, pos);
+    VectorCopy(output, pos);
 }
 
 static void InterpolateRotation(float animationTime, AnimationKeyHolder *keyHolder, u32 numRotations, VECTOR output)
@@ -88,7 +89,7 @@ static void InterpolateRotation(float animationTime, AnimationKeyHolder *keyHold
     VECTOR quat;
     if (numRotations == 1)
     {
-        vector_copy(output, keyHolder->keys[0]->key);
+        VectorCopy(output, keyHolder->keys[0]->key);
         return;
     }
 
@@ -99,14 +100,14 @@ static void InterpolateRotation(float animationTime, AnimationKeyHolder *keyHold
                                        keyHolder->keys[p1Index]->timeStamp,
                                        animationTime);
     Slerp(keyHolder->keys[p0Index]->key, keyHolder->keys[p1Index]->key, scaleFactor, quat);
-    vector_copy(output, quat);
+    VectorCopy(output, quat);
 }
 
 static void InterpolateScalings(float animationTime, AnimationKeyHolder *keyHolder, u32 numScalings, VECTOR output)
 {
     if (numScalings == 1)
     {
-        vector_copy(output, keyHolder->keys[0]->key);
+        VectorCopy(output, keyHolder->keys[0]->key);
         return;
     }
 
@@ -118,7 +119,7 @@ static void InterpolateScalings(float animationTime, AnimationKeyHolder *keyHold
                                        animationTime);
     VECTOR scales;
     LerpNum(keyHolder->keys[p0Index]->key, keyHolder->keys[p1Index]->key, scales, scaleFactor, 3);
-    vector_copy(output, scales);
+    VectorCopy(output, scales);
 }
 
 static void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float animationTime)
@@ -155,24 +156,24 @@ static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
 
         Joint *joint = FindJointByName(joints, numJoints, current->data->name);
 
-        matrix_unit(globalTrans);
+        MatrixIdentity(globalTrans);
 
         if (joint != NULL)
         {
             UpdateJoint(data, joint->id, nodeTrans, animationTime);
 
-            matrix_multiply(globalTrans, nodeTrans, boneMatricesStack[current->parentMatIndex]);
+            MatrixMultiply(globalTrans, nodeTrans, boneMatricesStack[current->parentMatIndex]);
 
-            matrix_multiply(final, joint->offset, globalTrans);
+            MatrixMultiply(final, joint->offset, globalTrans);
 
             q = LoadQWordForVU1Bones(q, joint->id, final);
         }
         else
         {
-            matrix_multiply(globalTrans, current->data->transformation, boneMatricesStack[current->parentMatIndex]);
+            MatrixMultiply(globalTrans, current->data->transformation, boneMatricesStack[current->parentMatIndex]);
         }
 
-        matrix_copy(boneMatricesStack[currentBoneStack], globalTrans);
+        MatrixCopy(boneMatricesStack[currentBoneStack], globalTrans);
 
         for (u32 i = 0; i < current->data->childrenCount; i++)
         {
@@ -245,7 +246,7 @@ void UpdateAnimator(Animator *animator, float animationTime)
 void UpdateVU1BoneMatrices(qword_t *q, Animator *animator, Joint **joints, u32 numJoints)
 {
     // DEBUGLOG("Calculating Bones!");
-    matrix_unit(boneMatricesStack[0]);
+    MatrixIdentity(boneMatricesStack[0]);
 
     CalculateBoneTransformVU1(q, animator->animation, animator->animation->root, joints, numJoints,
                                animator->currentTime);

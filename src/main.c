@@ -1,4 +1,8 @@
 #include "ps_global.h"
+
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
+#include "math/ps_plane.h"
 #include "gs/ps_gs.h"
 #include "system/ps_vif.h"
 #include "math/ps_misc.h"
@@ -148,12 +152,12 @@ static void doTheThing()
 {
     MATRIX screen, m, camMatrix;
     CreateWorldMatrixLTM(multiSphere->ltm, m);
-    matrix_unit(screen);
+    MatrixIdentity(screen);
 
-    matrix_multiply(screen, screen, m);
-    matrix_multiply(screen, screen, cam->view);
+    MatrixMultiply(screen, screen, m);
+    MatrixMultiply(screen, screen, cam->view);
 
-    matrix_copy(m, screen);
+    MatrixCopy(m, screen);
 
     MatrixInverse(screen, m);
 
@@ -169,11 +173,11 @@ static void doTheThing()
     {
         VECTOR incident, incidentNormal;
         MatrixVectorMultiply(incident, screen, multiSphere->vertexBuffer.vertices[i]);
-        normalize(incident, incidentNormal);
+        Normalize(incident, incidentNormal);
         // DumpVector(incidentNormal);
         VECTOR outNormal, reflect;
         Matrix3VectorMultiply(outNormal, m, multiSphere->vertexBuffer.normals[i]);
-        normalize(outNormal, outNormal);
+        Normalize(outNormal, outNormal);
         // DumpVector(outNormal);
 
         reflect[0] = outNormal[0] * incidentNormal[0];
@@ -474,7 +478,7 @@ static void SetupMultiSphere()
 
     InitOBB(multiSphere, BBO_FIXED);
 
-    matrix_unit(lightTransform);
+    MatrixIdentity(lightTransform);
 
     // CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, alphaMap), lightTransform);
 

@@ -3,8 +3,11 @@
 #include "system/ps_vif.h"
 #include "system/ps_vumanager.h"
 #include "gamemanager/ps_manager.h"
-#include "math/ps_misc.h"
+
 #include "gameobject/ps_gameobject.h"
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
+#include "math/ps_plane.h"
 
 extern blend_t blender;
 
@@ -40,8 +43,8 @@ void find_bottom_top_planes(VECTOR top, VECTOR bottom)
         tempBot[2] = top[2];
     }
 
-    vector_copy(bottom, tempBot);
-    vector_copy(top, tempTop);
+    VectorCopy(bottom, tempBot);
+    VectorCopy(top, tempTop);
 }
 
 
@@ -52,11 +55,11 @@ void createShadowMatrix(VECTOR plane, VECTOR light_pos, MATRIX out)
 {
 
     MATRIX matrix;
-    float dot = dotProductFour(plane, light_pos);
+    float dot = DotProductFour(plane, light_pos);
 
     //INFOOG("float val of dot : %f", dot);
 
-    matrix_unit(matrix);
+    MatrixIdentity(matrix);
 
     matrix[0] = dot - light_pos[0] * plane[0];
     matrix[4] = -light_pos[0] * plane[1];
@@ -78,7 +81,7 @@ void createShadowMatrix(VECTOR plane, VECTOR light_pos, MATRIX out)
     matrix[11] = -light_pos[3] * plane[2];
     matrix[15] = dot - light_pos[3] * plane[3];
 
-    matrix_copy(out, matrix);
+    MatrixCopy(out, matrix);
 }
 
 
@@ -118,15 +121,15 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
     {
         int polyCollideIndyCount = currCollidePoly->vertexBuffer.vertexCount;
         VECTOR x1, y1, z1, plane_n, plane, tempBottom, tempTop;
-        vector_copy(x1, currCollidePoly->vertexBuffer.vertices[0]);
-        vector_copy(y1, currCollidePoly->vertexBuffer.vertices[1]);
-        vector_copy(z1, currCollidePoly->vertexBuffer.vertices[2]);
+        VectorCopy(x1, currCollidePoly->vertexBuffer.vertices[0]);
+        VectorCopy(y1, currCollidePoly->vertexBuffer.vertices[1]);
+        VectorCopy(z1, currCollidePoly->vertexBuffer.vertices[2]);
 
         MatrixVectorMultiply(x1, collideWorld, x1);
         MatrixVectorMultiply(y1, collideWorld, y1);
         MatrixVectorMultiply(z1, collideWorld, z1);
 
-        computeNormal(x1, y1, z1, plane_n);
+        ComputeNormal(x1, y1, z1, plane_n);
 
         ComputePlane(x1, plane_n, plane);
 
@@ -141,11 +144,11 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
 
            if (res == 1)
            {
-              vector_copy(outPlane, plane);
+              VectorCopy(outPlane, plane);
               MatrixVectorMultiply(tempTop, collideWorld, currCollidePoly->vertexBuffer.vertices[0]);
-              vector_copy(top, tempTop);
+              VectorCopy(top, tempTop);
                MatrixVectorMultiply(tempBottom, collideWorld, currCollidePoly->vertexBuffer.vertices[polyCollideIndyCount-1]);
-              vector_copy(bottom, tempBottom);
+              VectorCopy(bottom, tempBottom);
               return indexCount;
            }
         }

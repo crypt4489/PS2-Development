@@ -1,7 +1,8 @@
 #include "physics/ps_movement.h"
 
-#include "math/ps_misc.h"
 #include "math/ps_fast_maths.h"
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 void StrafeLTMMove(MATRIX ltm, float d, VECTOR newPos)
 {
@@ -18,7 +19,7 @@ void StrafeLTMMove(MATRIX ltm, float d, VECTOR newPos)
     tempOut[2] = d * (*right)[2] + (*pos)[2];
     tempOut[3] = 1.0f;
 
-    vector_copy(newPos, tempOut);
+    VectorCopy(newPos, tempOut);
 }
 
 void WalkLTMMove(MATRIX ltm, float d, VECTOR newPos)
@@ -35,7 +36,7 @@ void WalkLTMMove(MATRIX ltm, float d, VECTOR newPos)
     tempOut[2] = d * (*forward)[2] + (*pos)[2];
     tempOut[3] = 1.0f;
 
-    vector_copy(newPos, tempOut);
+    VectorCopy(newPos, tempOut);
 }
 
 void StrafeLTM(MATRIX ltm, float d)
@@ -83,7 +84,7 @@ void RotateYLTM(MATRIX ltm, float angle)
 
     VECTOR upY = {0.0f, 1.0f, 0.0f, 0.0f};
 
-    matrix_unit(rotation);
+    MatrixIdentity(rotation);
 
     CreateRotationMatrix(upY, DegToRad(angle), rotation);
 
@@ -93,7 +94,7 @@ void RotateYLTM(MATRIX ltm, float angle)
 
     Matrix3VectorMultiply(*right, rotation, *right);
 
-    normalize(*forward, *forward);
+    Normalize(*forward, *forward);
 }
 
 void PitchLTM(MATRIX ltm, float angle)
@@ -106,7 +107,7 @@ void PitchLTM(MATRIX ltm, float angle)
 
     MATRIX rotation;
 
-    matrix_unit(rotation);
+    MatrixIdentity(rotation);
 
     CreateRotationMatrix(*right, DegToRad(angle), rotation);
 
@@ -114,5 +115,5 @@ void PitchLTM(MATRIX ltm, float angle)
 
     Matrix3VectorMultiply(*up, rotation, *up);
 
-    normalize(*forward, *forward);
+    Normalize(*forward, *forward);
 }

@@ -8,9 +8,9 @@
 #include "gameobject/ps_gameobject.h"
 #include "pipelines/ps_vu1pipeline.h"
 #include "world/ps_renderworld.h"
-#include "math/ps_misc.h"
 #include "io/ps_file_io.h"
 #include "textures/ps_texture.h"
+#include "math/ps_matrix.h"
 
 extern const char *face1Name; // = "FACE1";
 extern const char *face2Name; // = "FACE2";

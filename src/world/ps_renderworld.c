@@ -9,8 +9,9 @@
 #include "camera/ps_camera.h"
 #include "gameobject/ps_gameobject.h"
 #include "animation/ps_morphtarget.h"
-#include "math/ps_misc.h"
+
 #include "log/ps_log.h"
+#include "math/ps_matrix.h"
 
 
 RenderWorld *g_DrawWorld = NULL;

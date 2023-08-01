@@ -2,7 +2,6 @@
 #define PS_LTM_H
 
 #include "ps_global.h"
-#include <math3d.h>
 
 inline void GetPositionVectorCopyLTM(MATRIX ltm, VECTOR out)
 {

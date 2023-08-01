@@ -6,7 +6,6 @@
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"
 #include "gamemanager/ps_manager.h"
-#include "math/ps_misc.h"
 #include "pipelines/ps_vu1pipeline.h"
 #include "world/ps_lights.h"
 #include "physics/ps_obb.h"
@@ -19,6 +18,8 @@
 #include "camera/ps_camera.h"
 #include "log/ps_log.h"
 #include "animation/ps_animation.h"
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 typedef struct interpolator_callback_data_t
 {
@@ -84,7 +85,7 @@ void SetupStage2SphereMapVU1(VU1Pipeline *pipe, GameObject *obj, void *mat, qwor
 
   MATRIX screen, m;
   CreateWorldMatrixLTM(obj->ltm, m);
-  matrix_unit(screen);
+  MatrixIdentity(screen);
   Camera *cam = NULL;
   if (g_DrawWorld != NULL)
   {
@@ -100,8 +101,8 @@ void SetupStage2SphereMapVU1(VU1Pipeline *pipe, GameObject *obj, void *mat, qwor
     ERRORLOG("something went wrong with camera");
   }
 
-  matrix_multiply(screen, screen, m);
-  matrix_multiply(screen, screen, cam->view);
+  MatrixMultiply(screen, screen, m);
+  MatrixMultiply(screen, screen, cam->view);
   memcpy(q, screen, 4 * sizeof(VECTOR));
 }
 
@@ -233,7 +234,7 @@ void SetupPerObjDrawTessVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg,
   firstSet[0] = stepVertX;
   firstSet[1] = stepVertY;
 
-  pipeline_temp = vector_to_qword(pipeline_temp, firstSet);
+  pipeline_temp = VectorToQWord(pipeline_temp, firstSet);
 
   // pack dim
 
@@ -244,10 +245,10 @@ void SetupPerObjDrawTessVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg,
   pipeline_temp++;
 
   VECTOR extent;
-  vector_copy(extent, grid->extent.top);
+  VectorCopy(extent, grid->extent.top);
   extent[3] = 0.0f;
 
-  pipeline_temp = vector_to_qword(pipeline_temp, extent);
+  pipeline_temp = VectorToQWord(pipeline_temp, extent);
 
   //  printf("here in tess grid callback");
 }
@@ -324,8 +325,8 @@ void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t
   MATRIX screen, m;
   CreateWorldMatrixLTM(obj->ltm, m);
 
-  matrix_unit(screen);
-  matrix_multiply(screen, screen, m);
+  MatrixIdentity(screen);
+  MatrixMultiply(screen, screen, m);
 
   VECTOR camProps;
 
@@ -348,8 +349,8 @@ void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t
 
   memcpy(pipeline_temp + 4, m, 4 * sizeof(qword_t));
 
-  matrix_multiply(screen, screen, cam->view);
-  matrix_multiply(screen, screen, cam->proj);
+  MatrixMultiply(screen, screen, cam->view);
+  MatrixMultiply(screen, screen, cam->proj);
   memcpy(pipeline_temp, screen, 4 * sizeof(qword_t));
 
   camProps[0] = cam->near;

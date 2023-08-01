@@ -1,12 +1,17 @@
 #include "camera/ps_camera.h"
-#include "math/ps_misc.h"
+
+#include <malloc.h>
+#include <stdlib.h>
+
+#include "math/ps_vector.h"
 #include "physics/ps_movement.h"
 #include "math/ps_fast_maths.h"
 #include "gameobject/ps_gameobject.h"
 #include "math/ps_quat.h"
 #include "log/ps_log.h"
-#include <malloc.h>
-#include <stdlib.h>
+#include "math/ps_matrix.h"
+#include "math/ps_plane.h"
+
 
 Camera *g_DrawCamera = NULL;
 
@@ -41,8 +46,8 @@ void InitCameraObb(Camera *cam, float x, float y, float z, u32 type)
     if (type == BBO_FIT || type == BBO_FIXED)
     {
         BoundingBox *box = (BoundingBox *)malloc(sizeof(BoundingBox));
-        vector_copy(box->top, top);
-        vector_copy(box->bottom, bot);
+        VectorCopy(box->top, top);
+        VectorCopy(box->bottom, bot);
         cam->obb->obb = (void *)box;
     }
     else if (type == BBO_SPHERE)
@@ -59,11 +64,11 @@ void CameraLookAt(Camera *cam, VECTOR pos, VECTOR target, VECTOR up)
     camLook[2] = -target[2] + pos[2];
     camLook[3] = -target[3] + pos[3];
 
-    normalize(camLook, camLook);
+    Normalize(camLook, camLook);
 
     CrossProduct(up, camLook, camRight);
 
-    normalize(camRight, camRight);
+    Normalize(camRight, camRight);
 
     CrossProduct(camLook, camRight, camUp);
 
@@ -93,10 +98,10 @@ void UpdateCameraMatrix(Camera *cam)
 {
     VECTOR R, U, L, P;
 
-    vector_copy(P, *GetPositionVectorLTM(cam->ltm));
-    vector_copy(U, *GetUpVectorLTM(cam->ltm));
-    vector_copy(L, *GetForwardVectorLTM(cam->ltm));
-    vector_copy(R, *GetRightVectorLTM(cam->ltm));
+    VectorCopy(P, *GetPositionVectorLTM(cam->ltm));
+    VectorCopy(U, *GetUpVectorLTM(cam->ltm));
+    VectorCopy(L, *GetForwardVectorLTM(cam->ltm));
+    VectorCopy(R, *GetRightVectorLTM(cam->ltm));
 
     float x = -DotProduct(R, P);
     float y = -DotProduct(U, P);
@@ -160,7 +165,7 @@ void CreateCameraWorldMatrix(Camera *cam, MATRIX output)
     temp_out[14] = cam->ltm[14];
     temp_out[15] = 1.0f;
 
-    matrix_copy(output, temp_out);
+    MatrixCopy(output, temp_out);
 }
 
 void CreateCameraFrustum(Camera *cam)
@@ -204,7 +209,7 @@ void CreateCameraFrustum(Camera *cam)
 
     VectorCopyXYZ(tempOut, tempNormal);
 
-    normalize(tempNormal, tempNormal);
+    Normalize(tempNormal, tempNormal);
 
     CrossProduct(tempNormal, right, tempNormal);
 
@@ -218,7 +223,7 @@ void CreateCameraFrustum(Camera *cam)
 
     VectorCopyXYZ(tempOut, tempNormal);
 
-    normalize(tempNormal, tempNormal);
+    Normalize(tempNormal, tempNormal);
 
     CrossProduct(right, tempNormal, tempNormal);
 
@@ -231,7 +236,7 @@ void CreateCameraFrustum(Camera *cam)
     //  VectorSubtractXYZ(tempOut, cam->pos, tempNormal);
 
     VectorCopyXYZ(tempOut, tempNormal);
-    normalize(tempNormal, tempNormal);
+    Normalize(tempNormal, tempNormal);
 
     CrossProduct(tempNormal, up, tempNormal);
 
@@ -245,7 +250,7 @@ void CreateCameraFrustum(Camera *cam)
 
     VectorCopyXYZ(tempOut, tempNormal);
 
-    normalize(tempNormal, tempNormal);
+    Normalize(tempNormal, tempNormal);
 
     CrossProduct(up, tempNormal, tempNormal);
 
@@ -308,8 +313,8 @@ Camera *InitCamera(int width, int height, float near, float far, float aspect, f
 
 void FindPosAndNegVertexOBB(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal, VECTOR pVertex, VECTOR nVertex)
 {
-    vector_copy(nVertex, topExtent);
-    vector_copy(pVertex, bottomExtent);
+    VectorCopy(nVertex, topExtent);
+    VectorCopy(pVertex, bottomExtent);
 
     if (normal[0] > 0.001f)
     {
@@ -371,7 +376,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
             Matrix3VectorMultiply(tempNormal, camMatrix, cam->frus->sides[i].planeEquation);
             MatrixVectorMultiply(tempPoint, camMatrix, cam->frus->sides[i].pointInPlane);
 
-            normalize(tempNormal, tempNormal);
+            Normalize(tempNormal, tempNormal);
 
             ComputePlane(tempPoint, tempNormal, tempPlane);
 

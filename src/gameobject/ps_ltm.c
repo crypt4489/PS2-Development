@@ -1,5 +1,6 @@
 #include "gameobject/ps_ltm.h"
 
+#include "math/ps_matrix.h"
 void SetLastAndDirtyLTM(MATRIX m, float w)
 {
     SetDirtyLTM(m);
@@ -9,7 +10,7 @@ void SetLastAndDirtyLTM(MATRIX m, float w)
 void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m)
 {
     MATRIX work;
-    matrix_unit(work);
+    MatrixIdentity(work);
     work[0] = ltm[0] * ltm[3];
     work[5] = ltm[5] * ltm[7];
     work[10] = ltm[10] * ltm[11];
@@ -28,7 +29,7 @@ void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m)
     work[14] = ltm[14];
     work[15] = GetLastLTM(ltm);
 
-    matrix_copy(m, work);
+    MatrixCopy(m, work);
 }
 
 void SetupLTM(VECTOR pos, VECTOR up, VECTOR right,

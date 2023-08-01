@@ -2,8 +2,9 @@
 
 #include <stdlib.h>
 
-#include "math/ps_misc.h"
 #include "math/ps_fast_maths.h"
+#include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 LightStruct *CreateLightStruct(u32 type)
 {
@@ -11,12 +12,12 @@ LightStruct *CreateLightStruct(u32 type)
     light->theta = 0.0f;
     light->radius = 0.0f;
     light->type = type;
-    matrix_unit(light->ltm);
+    MatrixIdentity(light->ltm);
     return light;
 }
 void SetLightColor(LightStruct *light, VECTOR color)
 {
-    vector_copy(light->color, color);
+    VectorCopy(light->color, color);
 }
 
 void SetLightTheta(LightStruct *light, float ang)
@@ -36,7 +37,7 @@ qword_t *PackLightIntoQWord(qword_t *q, LightStruct *light)
     }
     else if (light->type == PS_DIRECTIONAL_LIGHT)
     {
-        normalize(*GetForwardVectorLTM(light->ltm), adjust);
+        Normalize(*GetForwardVectorLTM(light->ltm), adjust);
         b = CreateLightTranslateRotationVectorVU1(b, adjust);
         b = CreateLightColorVectorVU1(b, light->color);
     }
@@ -52,7 +53,7 @@ qword_t *PackLightIntoQWord(qword_t *q, LightStruct *light)
         b = QWordLightAddFloat(b, light->radius);
         b = CreateLightColorVectorVU1(b, light->color);
         b = QWordLightAddFloat(b, light->theta);
-        normalize(*GetForwardVectorLTM(light->ltm), adjust);
+        Normalize(*GetForwardVectorLTM(light->ltm), adjust);
         b = CreateLightTranslateRotationVectorVU1(b, adjust);
     }
 

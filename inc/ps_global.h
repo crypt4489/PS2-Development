@@ -3,6 +3,7 @@
 
 #include <draw.h>
 #include <packet.h>
+#include <math3d.h>
 
 #define TWOPI 6.283185307179586476925286766559f
 #define PI 3.1415926535897932384626433832795f
@@ -16,6 +17,10 @@
 #define MAX_FILE_NAME 35
 #define MAX_ANIMATION_NAME 50
 #define MAX_JOINT_NAME 50
+
+typedef float VECTOR[4] __attribute__((__aligned__(16)));
+
+typedef float MATRIX[16] __attribute__((__aligned__(16)));
 
 typedef s32 VectorInt[4] __attribute__((__aligned__(16)));
 typedef struct vu1_program_t
