@@ -222,9 +222,13 @@ void CreateRotationMatrix(VECTOR axis, float angle, MATRIX output)
     float s = Sin(angle);
     float c = Cos(angle);
 
-    float x = axis[0];
-    float y = axis[1];
-    float z = axis[2];
+    VECTOR axisNormalized;
+
+    Normalize(axis, axisNormalized);
+
+    float x = axisNormalized[0];
+    float y = axisNormalized[1];
+    float z = axisNormalized[2];
 
     MatrixIdentity(work);
 
