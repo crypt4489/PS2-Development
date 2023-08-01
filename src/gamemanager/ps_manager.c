@@ -97,7 +97,7 @@ void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, 
 
 void UpdateCurrentTexNameInGS(GameManager *manager, const char *name)
 {
-    memcpy(manager->textureInVram->name, name, strlen(name));
+    memcpy(manager->textureInVram->name, name, strnlen(name, MAX_CHAR_TEXTURE_NAME));
 }
 
 void SetupManagerTexture()
@@ -150,7 +150,7 @@ void EndFrame()
 Texture *GetTexByName(TexManager *manager, const char *name)
 {
     LinkedList *iter = manager->list;
-    int strLength = strlen(name);
+    int strLength = strnlen(name, MAX_CHAR_TEXTURE_NAME);
     while (iter != NULL)
     {
         Texture *comp = (Texture *)iter->data;

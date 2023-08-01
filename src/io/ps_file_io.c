@@ -17,7 +17,7 @@ sceCdRMode sStreamMode;
 
 static int IsFileCompressed(const char *filename)
 {
-    int len = strlen(filename);
+    int len = strnlen(filename, MAX_FILE_NAME);
     //  DEBUGLOG("Print isCompressed %c %c %c %c", filename[len-6], filename[len-5], filename[len-4], filename[len-3]);
     if (filename[len - 6] == 0x43 && filename[len - 5] == 0x42 && filename[len - 4] == 0x49 && filename[len - 3] == 0x4E)
     {

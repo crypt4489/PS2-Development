@@ -9,6 +9,9 @@
 #include "math/ps_misc.h"
 #include "io/ps_file_io.h"
 #include "dma/ps_dma.h"
+
+#define MAX_DISPLAY_TEXT 100
+
 void PrintText(Font *fontStruct, const char *text, int x, int y)
 {
 
@@ -194,7 +197,7 @@ void CreateFontWidths(Font *font_struct, const char *filePath)
 
 int WidthOfString(Font *font_struct, const char *text)
 {
-    size_t textlen = strlen(text);
+    size_t textlen = strnlen(text, MAX_DISPLAY_TEXT);
     int size = 0;
 
     for (u32 letter = 0; letter < textlen; letter++)
@@ -230,7 +233,7 @@ unsigned char *RewriteAlphaClutBuffer(unsigned char *buffer)
 
 qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, int context)
 {
-    size_t textlen = strlen(text);
+    size_t textlen = strnlen(text, MAX_DISPLAY_TEXT);
 
     if (textlen == 0)
         return q;

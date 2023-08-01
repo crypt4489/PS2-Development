@@ -71,7 +71,7 @@ u32 compareTextureNames(Texture *tex1, Texture *tex2)
 
 void addStringNameToTexture(Texture *tex, const char *buffer)
 {
-    memcpy(tex->name, buffer, strlen(buffer));
+    memcpy(tex->name, buffer, strnlen(buffer, MAX_CHAR_TEXTURE_NAME));
 }
 
 void CleanTextureStruct(Texture *tex)

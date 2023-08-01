@@ -212,13 +212,13 @@ AnimationData *GetAnimationByIndex(LinkedList *animations, u32 index)
 
 Joint *FindJointByName(Joint **joints, u32 total, const char *name)
 {
-    u32 strLength = strlen(name);
+    u32 strLength = strnlen(name, MAX_JOINT_NAME);
 
     for (u32 i = 0; i < total; i++)
     {
         Joint *ret = joints[i];
 
-        u32 jointNameLen = strlen(ret->name);
+        u32 jointNameLen = strnlen(ret->name, MAX_JOINT_NAME);
 
         if (jointNameLen > strLength)
         {

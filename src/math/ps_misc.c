@@ -158,7 +158,7 @@ void CreateGridIndices(int N, int M, float depth, float width, MeshBuffers *buff
 
 void Pathify(const char *name, char *file)
 {
-    int len = strlen(name);
+    int len = strnlen(name, MAX_FILE_NAME);
     file[0] = 92;
     for (int i = 1; i <= len; i++)
     {
