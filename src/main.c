@@ -72,8 +72,8 @@ extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
 
-extern u32 VU1_SphereMappingStage2_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_SphereMappingStage2_CodeEnd __attribute__((section(".vudata")));
+extern u32 VU1_SphereMapStage2_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_SphereMapStage2_CodeEnd __attribute__((section(".vudata")));
 
 TimerStruct *ts;
 
@@ -104,7 +104,7 @@ const char *face3Name = "FACE3.PNG";
 const char *face4Name = "FACE4.PNG";
 const char *face5Name = "FACE5.PNG";
 const char *face6Name = "FACE6.PNG";
-const char *glossName = "SPHERE.PNG";
+const char *glossName = "GLOSS.PNG";
 const char *worldName = "WORLD.PNG";
 const char *wallName = "WALL.PNG";
 const char *alphaMap = "ALPHA_MAP.PNG";
@@ -162,10 +162,10 @@ static void SphereMappingCPU()
     MatrixInverse(screen, m);
 
     // DumpMatrix(m);
-   //   CreateNormalizedTextureCoordinateMatrix(m);
-   // m[8] *= -1.0f;
-   // m[9] *= -1.0f;
-   // m[10] *= -1.0f;
+    //   CreateNormalizedTextureCoordinateMatrix(m);
+    // m[8] *= -1.0f;
+    // m[9] *= -1.0f;
+    // m[10] *= -1.0f;
     // m[3] = m[7] = m[11] = 0.0f;
     // DumpMatrix(m);
     MatrixTranspose(m);
@@ -174,11 +174,11 @@ static void SphereMappingCPU()
     {
         VECTOR incident, incidentNormal;
         MatrixVectorMultiply(incident, screen, multiSphere->vertexBuffer.vertices[i]);
-        Normalize(incident, incidentNormal); //u
+        Normalize(incident, incidentNormal); // u
         // DumpVector(incidentNormal);
         VECTOR outNormal, reflect;
         Matrix3VectorMultiply(outNormal, m, multiSphere->vertexBuffer.normals[i]);
-        Normalize(outNormal, outNormal); //n
+        Normalize(outNormal, outNormal); // n
         // DumpVector(outNormal);
 
         reflect[0] = outNormal[0] * incidentNormal[0];
@@ -187,13 +187,9 @@ static void SphereMappingCPU()
 
         float dot = reflect[0] + reflect[1] + reflect[2];
 
-        //if (dot < 0.1f)
-         //   dot = 1.0f;
-
         VECTOR output;
         ScaleVectorXYZ(output, outNormal, dot * 2.0f);
         VectorSubtractXYZ(incidentNormal, output, reflect);
-
 
         reflect[2] = reflect[2] + 1.0f;
 
@@ -213,33 +209,34 @@ static void SphereMappingCPU()
 
         sqr *= 2.0f;
 
-         multiSphere->vertexBuffer.texCoords[i][0] = (outNormal[0] / 2.0f) + 0.5;
-         multiSphere->vertexBuffer.texCoords[i][1] = (outNormal[1] / 2.0f) + 0.5;
+        // multiSphere->vertexBuffer.texCoords[i][0] = (outNormal[0] / 2.0f) + 0.5;
+        //  multiSphere->vertexBuffer.texCoords[i][1] = (outNormal[1] / 2.0f) + 0.5;
 
-       // multiSphere->vertexBuffer.texCoords[i][0] = (reflect[0] / sqr) + 0.5;
-       // multiSphere->vertexBuffer.texCoords[i][1] = (reflect[1] / sqr) + 0.5;
+        multiSphere->vertexBuffer.texCoords[i][0] = (reflect[0] / sqr) + 0.5;
+        multiSphere->vertexBuffer.texCoords[i][1] = (reflect[1] / sqr) + 0.5;
 
         if (i >= 0)
         {
             // DEBUGLOG("%f", sqr);
             //
-        //    DumpVector(multiSphere->vertexBuffer.texCoords[i]);
+            //    DumpVector(multiSphere->vertexBuffer.texCoords[i]);
             count++;
             if (count == 3)
             {
                 count = 0;
-      //          DEBUGLOG("-----------");
+                //          DEBUGLOG("-----------");
             }
-
         }
     }
 
-    //while(1);
+    // while(1);
 }
 
 static void UpdateGlossTransform()
 {
     CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(direct->ltm), *GetForwardVectorLTM(direct->ltm), *GetRightVectorLTM(direct->ltm));
+
+    MatrixInverse(lightTransform, lightTransform);
 
     MatrixTranspose(lightTransform);
 
@@ -334,7 +331,7 @@ static void CreateLights()
     SetLightColor(secondLight, secDirLightColor);
     PitchLTM(secondLight->ltm, -30.0f);
     RotateYLTM(secondLight->ltm, -25.0f);
-   // AddLightToRenderWorld(world, secondLight);
+    // AddLightToRenderWorld(world, secondLight);
 
     ambient = CreateLightStruct(PS_AMBIENT_LIGHT);
     SetLightColor(ambient, ambientColor);
@@ -469,8 +466,8 @@ static void SetupMultiSphere()
     VECTOR object_position = {+50.0f, 0.0f, +100.0f, 0.0f};
 
     multiSphere = InitializeGameObject();
-    ReadModelFile("MODELS\\SPHERE.BIN", &multiSphere->vertexBuffer);
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    ReadModelFile("MODELS\\TORUS.BIN", &multiSphere->vertexBuffer);
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
@@ -482,15 +479,15 @@ static void SetupMultiSphere()
     PitchLTM(multiSphere->ltm, -90.0f);
     // multiSphere->vertexBuffer.vertexCount -= 240;
 
-    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(glossName, g_Manager.texManager));
+    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
 
     InitOBB(multiSphere, BBO_FIXED);
 
     MatrixIdentity(lightTransform);
 
-    //CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, alphaMap), lightTransform);
+     CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, glossName), lightTransform);
 
-    CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
+    //CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
 
     // CreateAlphaMapPipeline(multiSphere, "ALPHAMAP", GetTexByName(g_Manager.texManager, alphaMap));
 
@@ -812,9 +809,9 @@ int Render()
 
         UpdateGlossTransform();
 
-        SphereMappingCPU();
+        // SphereMappingCPU();
 
-        ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x00);
+        ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
         DrawWorld(world);
 
@@ -881,7 +878,7 @@ static void SetupVU1Programs()
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 
-    prog = CreateVU1Program(&VU1_SphereMappingStage2_CodeStart, &VU1_SphereMappingStage2_CodeEnd, 0); // 8
+    prog = CreateVU1Program(&VU1_SphereMapStage2_CodeStart, &VU1_SphereMapStage2_CodeEnd, 0); // 8
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 }
