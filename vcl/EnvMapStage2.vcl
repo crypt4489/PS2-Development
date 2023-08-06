@@ -33,29 +33,6 @@ begin:
         add.xyz stq2, vf00, vf00
         add.xyz stq3, vf00, vf00
 
-        lq vertex1, 0(vertexData)
-        lq vertex2, 1(vertexData)
-        lq vertex3, 2(vertexData)
-
-        MatrixMultiplyVertex{ vertex1, globalMatrix, vertex1 }
-        MatrixMultiplyVertex{ vertex2, globalMatrix, vertex2 }
-        MatrixMultiplyVertex{ vertex3, globalMatrix, vertex3 }
-
-        sub.xyz        tw_vert12, vertex2, vertex1
-        sub.xyz        tw_vert13, vertex3, vertex1
-        opmula.xyz     ACC,       tw_vert12, tw_vert13
-        opmsub.xyz     tw_normal, tw_vert13, tw_vert12
-
-        add.x            forward,  vf00,   EnvMapMatrix[0][z]
-        add.y            forward,  vf00,   EnvMapMatrix[1][z]
-        add.z            forward,  vf00,   EnvMapMatrix[2][z]
-
-        VectorDotProduct{ dot, tw_normal, forward }
-
-        fsand res, 0x02
-
-        ibeq res, vi00, store_stq
-
         lq normal, 0(normData)
 
         add.xy          acc, EnvMapMatrix[3], vf00

@@ -81,7 +81,7 @@ void CleanTextureStruct(Texture *tex)
 
 Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode)
 {
-    Texture *alphaMap = AddAndCreateTexture(filePath, readType, 0, 0, mode);
+    Texture *alphaMap = AddAndCreateTexture(filePath, readType, 0, 0, mode, 0);
 
     u32 size = 0;
     u8 *pixels = NULL;
@@ -119,7 +119,7 @@ Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode)
     return alphaMap;
 }
 
-Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode)
+Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode, u8 texFiltering)
 {
     char _file[MAX_FILE_NAME];
     char texName[MAX_CHAR_TEXTURE_NAME];
@@ -141,7 +141,7 @@ Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgramme
             CreateClutStructs(tex, 16, GS_PSM_32);
         }
 
-        CreateTexStructs(tex, tex->width, tex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 1);
+        CreateTexStructs(tex, tex->width, tex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 0);
 
         tex->upload_dma = (qword_t *)malloc(sizeof(qword_t) * 50);
         qword_t *q = tex->upload_dma;

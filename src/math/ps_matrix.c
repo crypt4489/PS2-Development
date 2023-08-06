@@ -182,17 +182,17 @@ void CreateProjectionMatrix(MATRIX output, float width, float height, float aspe
 
 void CreateNormalizedTextureCoordinateMatrix(MATRIX src)
 {
-    src[0] = 0.5 * src[0];
-    src[1] = 0.5 * src[1];
-    src[2] = 0.5 * src[2];
+    src[0] *= 0.5;
+    src[1] *= 0.5;
+    src[2] *= 0.5;
 
-    src[4] = 0.5 * src[4];
-    src[5] = 0.5 * src[5];
-    src[6] = 0.5 * src[6];
+    src[4] *= 0.5;
+    src[5] *= 0.5;
+    src[6] *= 0.5;
 
-    src[8] = 0.5 * src[8];
-    src[9] = 0.5 * src[9];
-    src[10] = 0.5 * src[10];
+    src[8] *= 0.5;
+    src[9] *= 0.5;
+    src[10] *= 0.5;
 
     src[12] = 0.5f;
     src[13] = 0.5f;

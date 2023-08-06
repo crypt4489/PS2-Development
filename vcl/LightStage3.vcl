@@ -14,14 +14,8 @@
 #vuprog VU1_LightStage3
 
 START:
- ;//////////// --- Load data 1 --- /////////////
-    ; Updated once per mesh
-
+    ; do normal calculations in world space
     MatrixLoad{ globalMatrix, 4, vi00 }
-
-    MatrixInverse{ temp, globalMatrix }
-
-    MatrixTranspose{ normalMatrix, temp }
 
     ilw.x lightCount,       20(vi00)
     iaddiu lightPointer, vi00, 21
@@ -30,18 +24,18 @@ START:
 begin:
     xtop    iBase
 
-    iaddiu  vertexData,     iBase,      1          ; pointer to vertex data
+    iaddiu  vertexData,     iBase,      1
     ilw.w   vertCount,      0(iBase)
 
 
-    iadd    normData,       vertexData, vertCount   ; pointer to stq
-    iadd    normData,       normData, vertCount   ; pointer to stq
+    iadd    normData,       vertexData, vertCount
+    iadd    normData,       normData, vertCount
 
 
 
 
 
-    iadd vertexCounter, iBase, vertCount ; loop vertCount times
+    iadd vertexCounter, iBase, vertCount
 
     ibeq    vertexCounter,      iBase,       end
 
@@ -54,7 +48,7 @@ begin:
 
     vertexLoop:
 
-        ;////////// --- Load loop data --- //////////
+
         lq vertex, 0(vertexData)
 
 
@@ -62,7 +56,7 @@ begin:
 
         add.xyz outColor, vf00, vf00
 
-        Matrix3MultiplyVertex3{ normal, normalMatrix, normal }
+        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
 
         Normalize{ normal, normal, temp }
 
@@ -241,8 +235,8 @@ write_color:
         iadd            lightLoop,      lightCount,     vi00
         iaddiu          lightPointer,   vi00,           21
 
-        iaddi   vertexCounter,  vertexCounter,  -1	; decrement the loop counter
-        ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
+        iaddi   vertexCounter,  vertexCounter,  -1
+        ibne    vertexCounter,  iBase,   vertexLoop
 
 end:
         .vsm

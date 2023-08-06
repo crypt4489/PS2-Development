@@ -10,7 +10,7 @@
 
 void CleanTextureStruct(Texture *tex);
 void AddStringNameToTexture(Texture *tex, const char *buffer);
-Texture* AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode);
+Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode, u8 texFiltering);
 Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode);
 //u32 CompareTextureNames(Texture *tex1, Texture *tex2);
 qword_t* CreateTexChain(qword_t *input, Texture *tex);

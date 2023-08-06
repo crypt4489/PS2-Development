@@ -77,7 +77,7 @@ extern u32 VU1_SphereMappingStage2_CodeEnd __attribute__((section(".vudata")));
 
 TimerStruct *ts;
 
-char print_out[35] = "DERRICK REGINALD";
+char print_out[50] = "DERRICK REGINALD";
 
 MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
 
@@ -148,7 +148,7 @@ int FrameCounter = 0;
 
 MeshBuffers sphereTarget;
 
-static void doTheThing()
+static void SphereMappingCPU()
 {
     MATRIX screen, m, camMatrix;
     CreateWorldMatrixLTM(multiSphere->ltm, m);
@@ -162,22 +162,23 @@ static void doTheThing()
     MatrixInverse(screen, m);
 
     // DumpMatrix(m);
-    //  CreateNormalizedTextureCoordinateMatrix(m);
-    m[8] *= -1.0f;
-    m[9] *= -1.0f;
-    m[10] *= -1.0f;
+   //   CreateNormalizedTextureCoordinateMatrix(m);
+   // m[8] *= -1.0f;
+   // m[9] *= -1.0f;
+   // m[10] *= -1.0f;
     // m[3] = m[7] = m[11] = 0.0f;
     // DumpMatrix(m);
     MatrixTranspose(m);
+    int count = 0;
     for (int i = 0; i < multiSphere->vertexBuffer.vertexCount; i++)
     {
         VECTOR incident, incidentNormal;
         MatrixVectorMultiply(incident, screen, multiSphere->vertexBuffer.vertices[i]);
-        Normalize(incident, incidentNormal);
+        Normalize(incident, incidentNormal); //u
         // DumpVector(incidentNormal);
         VECTOR outNormal, reflect;
         Matrix3VectorMultiply(outNormal, m, multiSphere->vertexBuffer.normals[i]);
-        Normalize(outNormal, outNormal);
+        Normalize(outNormal, outNormal); //n
         // DumpVector(outNormal);
 
         reflect[0] = outNormal[0] * incidentNormal[0];
@@ -186,12 +187,13 @@ static void doTheThing()
 
         float dot = reflect[0] + reflect[1] + reflect[2];
 
-        if (dot < 0.1f)
-            dot = 0.0f;
+        //if (dot < 0.1f)
+         //   dot = 1.0f;
 
         VECTOR output;
         ScaleVectorXYZ(output, outNormal, dot * 2.0f);
         VectorSubtractXYZ(incidentNormal, output, reflect);
+
 
         reflect[2] = reflect[2] + 1.0f;
 
@@ -211,22 +213,28 @@ static void doTheThing()
 
         sqr *= 2.0f;
 
-        // multiSphere->vertexBuffer.texCoords[i][0] = (outNormal[0] / 2.0f) + 0.5;
-        // multiSphere->vertexBuffer.texCoords[i][1] = (outNormal[1] / 2.0f) + 0.5;
+         multiSphere->vertexBuffer.texCoords[i][0] = (outNormal[0] / 2.0f) + 0.5;
+         multiSphere->vertexBuffer.texCoords[i][1] = (outNormal[1] / 2.0f) + 0.5;
 
-        multiSphere->vertexBuffer.texCoords[i][0] = (reflect[0] / sqr) + 0.5;
-        multiSphere->vertexBuffer.texCoords[i][1] = (reflect[1] / sqr) + 0.5;
+       // multiSphere->vertexBuffer.texCoords[i][0] = (reflect[0] / sqr) + 0.5;
+       // multiSphere->vertexBuffer.texCoords[i][1] = (reflect[1] / sqr) + 0.5;
 
-        if (i > multiSphere->vertexBuffer.vertexCount - 30)
+        if (i >= 0)
         {
             // DEBUGLOG("%f", sqr);
             //
-            /*   DumpVector(multiSphere->vertexBuffer.texCoords[i]);
-                DumpVector(multiSphere->vertexBuffer.normals[i]);
-                DumpVector(outNormal);
-                DEBUGLOG(""); */
+        //    DumpVector(multiSphere->vertexBuffer.texCoords[i]);
+            count++;
+            if (count == 3)
+            {
+                count = 0;
+      //          DEBUGLOG("-----------");
+            }
+
         }
     }
+
+    //while(1);
 }
 
 static void UpdateGlossTransform()
@@ -326,7 +334,7 @@ static void CreateLights()
     SetLightColor(secondLight, secDirLightColor);
     PitchLTM(secondLight->ltm, -30.0f);
     RotateYLTM(secondLight->ltm, -25.0f);
-    AddLightToRenderWorld(world, secondLight);
+   // AddLightToRenderWorld(world, secondLight);
 
     ambient = CreateLightStruct(PS_AMBIENT_LIGHT);
     SetLightColor(ambient, ambientColor);
@@ -480,7 +488,7 @@ static void SetupMultiSphere()
 
     MatrixIdentity(lightTransform);
 
-    // CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, alphaMap), lightTransform);
+    //CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4 | VU1Stage3, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, alphaMap), lightTransform);
 
     CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
 
@@ -804,7 +812,7 @@ int Render()
 
         UpdateGlossTransform();
 
-        // doTheThing();
+        SphereMappingCPU();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x00);
 
@@ -828,7 +836,7 @@ int Render()
 
         UpdateLight();
 
-        snprintf(print_out, 20, "DERRICK REGINALD %d", FrameCounter);
+        snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
         FrameCounter++;
     }
@@ -886,47 +894,47 @@ static void LoadInTextures()
 
     AppendString(_folder, waterName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_BMP, 1, 0x80, TEX_ADDRESS_WRAP);
+    AddAndCreateTexture(_file, READ_BMP, 1, 0x80, TEX_ADDRESS_WRAP, 0);
 
     AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, face2Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, face3Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, face4Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, face5Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, face6Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, NewYorkName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, glossName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_WRAP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 1);
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, wallName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
 
     AppendString(_folder, alphaMap, _file, MAX_FILE_NAME);
 

@@ -5,7 +5,7 @@
 #include "gameobject/ps_ltm.h"
 
 void MatrixIdentity(MATRIX m);
-void MatrixCopy(MATRIX in, MATRIX dest);
+void MatrixCopy(MATRIX dest, MATRIX in);
 void MatrixMultiply(MATRIX in1, MATRIX in2, MATRIX out);
 
 void MatrixVectorMultiply(VECTOR out, MATRIX m, VECTOR in);
