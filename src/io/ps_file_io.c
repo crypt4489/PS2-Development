@@ -62,7 +62,6 @@ sceCdlFILE *FindFileByName(const char *filename)
         free(file_struct);
         return NULL;
     }
-    // free(file_struct);
 
     return file_struct;
 }
@@ -114,6 +113,8 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
     }
 
     *outSize = bufferSize;
+
+    free(loc_file_struct);
 
     return buffer;
 }

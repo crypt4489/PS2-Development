@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "log/ps_log.h"
 #include "gs/ps_gs.h"
 #include "textures/ps_texture.h"
 #include "math/ps_misc.h"
@@ -179,17 +180,17 @@ void CreateFontWidths(Font *font_struct, const char *filePath)
 
     buffer += 4;
 
-    font_struct->startingChar = *buffer;
+    u8 start = font_struct->startingChar = *buffer;
 
     buffer++;
 
     u32 charSize = (font_struct->picWidth / font_struct->cellWidth) * (font_struct->picHeight / font_struct->cellHeight);
 
-    // DEBUGLOG(" %d %d %d %d %d %d", charSize, font_struct->startingChar, font_struct->picHeight, font_struct->picWidth, font_struct->cellHeight, font_struct->cellWidth);
+   //  DEBUGLOG(" %d %d %d %d %d %d", charSize, font_struct->startingChar, font_struct->picHeight, font_struct->picWidth, font_struct->cellHeight, font_struct->cellWidth);
 
     char *fontWidths = (char *)malloc(charSize);
     // DEBUGLOG("size %d", size);
-    memcpy(fontWidths, buffer, charSize);
+    memcpy(fontWidths, buffer+start, charSize);
     font_struct->widthSize = charSize;
     font_struct->fontWidths = fontWidths;
     free(ptr);
@@ -301,7 +302,7 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
 
         int letterwidth = font_struct->fontWidths[cLetter];
 
-        // DEBUGLOG("%d %d %d %d", letterwidth, cLetter, text[letter], start);
+       // DEBUGLOG("%d %d %d %d", letterwidth, cLetter, text[letter], start);
 
         int tx = (cLetter % LETTERSPERROW);
         int ty = (cLetter / LETTERSPERROW);

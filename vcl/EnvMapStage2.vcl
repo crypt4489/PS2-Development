@@ -35,22 +35,32 @@ begin:
 
         lq normal, 0(normData)
 
+        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
+
+        Normalize{ normal, normal, temp }
+
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
         madd.xy         acc, EnvMapMatrix[1], normal[y]
         madd.xy         stq1, EnvMapMatrix[2], normal[z]
 
         lq normal, 1(normData)
+        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
 
+        Normalize{ normal, normal, temp }
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
         madd.xy         acc, EnvMapMatrix[1], normal[y]
         madd.xy         stq2, EnvMapMatrix[2], normal[z]
 
 
+
+
         lq normal, 2(normData)
 
+        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
 
+        Normalize{ normal, normal, temp }
         add.xy          acc, EnvMapMatrix[3], vf00
         madd.xy         acc, EnvMapMatrix[0], normal[x]
         madd.xy         acc, EnvMapMatrix[1], normal[y]

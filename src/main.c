@@ -72,12 +72,10 @@ extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
 
-extern u32 VU1_SphereMapStage2_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_SphereMapStage2_CodeEnd __attribute__((section(".vudata")));
 
 TimerStruct *ts;
 
-char print_out[50] = "DERRICK REGINALD";
+char print_out[50];
 
 MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
 
@@ -104,7 +102,7 @@ const char *face3Name = "FACE3.PNG";
 const char *face4Name = "FACE4.PNG";
 const char *face5Name = "FACE5.PNG";
 const char *face6Name = "FACE6.PNG";
-const char *glossName = "GLOSS.PNG";
+const char *glossName = "SPHERE.PNG";
 const char *worldName = "WORLD.PNG";
 const char *wallName = "WALL.PNG";
 const char *alphaMap = "ALPHA_MAP.PNG";
@@ -234,7 +232,14 @@ static void SphereMappingCPU()
 
 static void UpdateGlossTransform()
 {
-    CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(direct->ltm), *GetForwardVectorLTM(direct->ltm), *GetRightVectorLTM(direct->ltm));
+    CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(cam->ltm), *GetForwardVectorLTM(cam->ltm), *GetRightVectorLTM(cam->ltm));
+
+   // MATRIX screen, m, camMatrix;
+   // CreateWorldMatrixLTM(multiSphere->ltm, m);
+   // MatrixIdentity(screen);
+
+   // MatrixMultiply(screen, screen, m);
+    //MatrixMultiply(screen, screen, cam->view);
 
     MatrixInverse(lightTransform, lightTransform);
 
@@ -284,7 +289,7 @@ static void update_cube(GameObject *cube)
 
 static void SetupFont()
 {
-    myFont = CreateFontStruct("FONTS\\TIMES.BMP", "FONTS\\TIMESNR.DAT", READ_BMP);
+    myFont = CreateFontStruct("FONTS\\DEFAULTFONT.BMP", "FONTS\\DEFAULTFONTDATA.DAT", READ_BMP);
 }
 
 static void SetupWorldObjects()
@@ -457,6 +462,11 @@ static void SetupBody()
     AddObjectToRenderWorld(world, body);
 }
 
+static void RotateSphere()
+{
+    PitchLTM(multiSphere->ltm, 1.0f);
+}
+
 static void SetupMultiSphere()
 {
     color_t color;
@@ -482,6 +492,8 @@ static void SetupMultiSphere()
     CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
 
     InitOBB(multiSphere, BBO_FIXED);
+
+    multiSphere->update_object = RotateSphere;
 
     MatrixIdentity(lightTransform);
 
@@ -825,6 +837,8 @@ int Render()
 
         //  ReadFromVU1(vu1_data_address + (*vif1_tops * 0), 16 * 4, 0);
 
+        snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
+
         PrintText(myFont, print_out, -310, -220);
 
         EndRendering(cam);
@@ -833,7 +847,7 @@ int Render()
 
         UpdateLight();
 
-        snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
+
 
         FrameCounter++;
     }
@@ -878,9 +892,6 @@ static void SetupVU1Programs()
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 
-    prog = CreateVU1Program(&VU1_SphereMapStage2_CodeStart, &VU1_SphereMapStage2_CodeEnd, 0); // 8
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
 }
 
 static void LoadInTextures()
