@@ -1,6 +1,7 @@
 #include "gameobject/ps_ltm.h"
 
 #include "math/ps_matrix.h"
+
 void SetLastAndDirtyLTM(MATRIX m, float w)
 {
     SetDirtyLTM(m);

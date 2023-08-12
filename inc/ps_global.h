@@ -3,7 +3,6 @@
 
 #include <draw.h>
 #include <packet.h>
-#include <math3d.h>
 
 #define TWOPI 6.283185307179586476925286766559f
 #define PI 3.1415926535897932384626433832795f

@@ -162,19 +162,19 @@ qword_t *set_alpha_registers(qword_t *q, blend_t *blend, int context)
 
 #define step 128
 
-void download_framebuffer(framebuffer_t *frame, unsigned char *frame_buffer_local)
+void DownloadFrameBuffer(framebuffer_t *frame, unsigned char *frame_buffer_local)
 {
     int hei = frame->height;
     int offset = 0;
     int steps = hei / step;
     for (int i = 0; i < steps; i++)
     {
-        copy_vram_to_memory(frame->address, frame->width, step, 0, (i * step), GS_PSM_32, &((u32 *)frame_buffer_local)[offset]);
+        CopyVRAMToMemory(frame->address, frame->width, step, 0, (i * step), GS_PSM_32, &((u32 *)frame_buffer_local)[offset]);
         offset += (frame->width * step);
     }
 }
 
-void load_framebuffer_vif(unsigned char *pixels, framebuffer_t *frame, int width, int height, int psm)
+void LoadFrameBufferVIF(unsigned char *pixels, framebuffer_t *frame, int width, int height, int psm)
 {
 
     packet_t *packet = packet_init(200, PACKET_NORMAL);

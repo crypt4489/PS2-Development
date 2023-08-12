@@ -6,7 +6,6 @@
 #include "camera/ps_camera.h"
 #include "dma/ps_dma.h"
 #include "textures/ps_texture.h"
-
 #include "log/ps_log.h"
 
 u32 GetDoubleBufferOffset(u32 base)

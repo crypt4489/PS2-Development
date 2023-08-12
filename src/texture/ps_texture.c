@@ -1,8 +1,9 @@
 #include "textures/ps_texture.h"
 
-#include <string.h>
 #include <dma.h>
 #include <gs_gp.h>
+
+#include <string.h>
 #include <stdlib.h>
 
 #include "gamemanager/ps_manager.h"

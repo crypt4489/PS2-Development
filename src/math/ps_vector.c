@@ -3,7 +3,6 @@
 #include "math/ps_fast_maths.h"
 #include "math/ps_quat.h"
 #include "log/ps_log.h"
-#include <math3d.h>
 
 VECTOR forward = {0.0f, 0.0f, 1.0f, 1.0f};
 VECTOR up = {0.0f, 1.0f, 0.0f, 1.0f};

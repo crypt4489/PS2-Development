@@ -1,7 +1,8 @@
 #include "compression/ps_huffman.h"
-#include "log/ps_log.h"
 
 #include <stdlib.h>
+
+#include "log/ps_log.h"
 
 #define MAX_TREE 100
 
@@ -93,7 +94,7 @@ static HuffmanNode *readDecoder()
 	current = root;
 	readBoolean();
 	int count = 0;
-	while(1 && count < MAX_ITERS)
+	while(count < MAX_ITERS)
 	{
 		if (current->right != NULL && current->left != NULL)
 		{

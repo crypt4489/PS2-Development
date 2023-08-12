@@ -7,6 +7,7 @@
 #include <kernel.h>
 
 #include "log/ps_log.h"
+
 extern void *_gp;
 
 static struct t_SifRpcClientData cd0;

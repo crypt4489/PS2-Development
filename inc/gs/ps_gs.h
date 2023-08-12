@@ -12,30 +12,25 @@
 
 void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int context);
 void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm);
-void load_framebuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm);
+void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm);
 
 void CreateTexBuf(Texture *texture, int width, int psm);
-void load_texture(Texture *texture, unsigned char *pixels, int width, int height, int psm, u32 components);
-void load_texture_clut(Texture *texture, clutbuffer_t* clut, unsigned char *pixels, int width, int height, int psm, u32 components);
-void load_texture_32(Texture *texture, u32 *pixels);
-void init_tex_structs(Texture *texture, clutbuffer_t* clut, int width, int height, int psm, u32 components);
-qword_t* setup_texture(Texture *texture, qword_t *q);
+
 qword_t* CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr);
 qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context);
 qword_t *SetZBufferMask(qword_t *q, zbuffer_t *z, u32 mask, u32 context);
-void init_drawing_environment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish);
-void copy_vram_from_vram(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm);
-void copy_vram_to_memory(int address, int width, int height, int x, int y, int psm, u32* buffer);
+void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish);
+void CopyVRAMToVRAM(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm);
+void CopyVRAMToMemory(int address, int width, int height, int x, int y, int psm, u32* buffer);
 
 void CreateClutBuf(clutbuffer_t *clut, int width, int psm);
-void load_clut_buffer(clutbuffer_t *clut, unsigned char *pixels, int width, int height, int psm);
-void init_zbuffer(zbuffer_t *z, int width, int height, int zsm);
+void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method);
 void CreateClutStructs(Texture *tex, int width, int psm);
 void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter);
 void SetupRenderTarget(RenderTarget *target, int context, int wait);
-RenderTarget *CreateRenderTarget(int height, int width);
+RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, int psm);
 Texture *CreateTextureFromRenderTarget(RenderTarget *target, u32 filter, u32 function);
-RenderTarget *allocRenderTarget();
+RenderTarget *AllocRenderTarget();
 void DestroyRenderTarget(RenderTarget *target);
 
 

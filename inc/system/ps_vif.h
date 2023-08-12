@@ -12,7 +12,7 @@ qword_t* add_unpack_data(qword_t* q, u32 dest_address, void *data, u32 qwSize, u
 qword_t * read_unpack_data(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, u32 vif_pack);
 qword_t* add_start_program_vu1(qword_t *q, u32 address);
 qword_t* set_alpha_registers(qword_t *q, blend_t *blend, int context);
-void load_framebuffer_vif(unsigned char *pixels, framebuffer_t *frame, int width, int height, int psm);
+void LoadFrameBufferVIF(unsigned char *pixels, framebuffer_t *frame, int width, int height, int psm);
 qword_t* load_texture_vif(qword_t* q, Texture *tex, void *pixels, unsigned char *clut_buffer);
 qword_t* set_tex_address_mode(qword_t*q, u32 mode, u32 context);
 qword_t *VIFSetupScaleVector(qword_t*b);

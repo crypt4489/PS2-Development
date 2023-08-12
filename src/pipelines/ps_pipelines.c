@@ -9,7 +9,6 @@
 #include "pipelines/ps_vu1pipeline.h"
 #include "system/ps_vumanager.h"
 #include "gs/ps_gs.h"
-
 #include "pipelines/ps_pipelinecbs.h"
 #include "system/ps_vif.h"
 #include "log/ps_log.h"
