@@ -1,5 +1,17 @@
 #include "ps_global.h"
 
+#include <graph.h>
+#include <audsrv.h>
+#include <sifrpc.h>
+#include <loadfile.h>
+#include <iopheap.h>
+#include <kernel.h>
+
+#include <math.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <stdlib.h>
+
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
 #include "math/ps_plane.h"
@@ -33,16 +45,6 @@
 #include "log/ps_log.h"
 #include "animation/ps_animation.h"
 #include "audio/ps_sound.h"
-#include <math.h>
-#include <stdio.h>
-#include <malloc.h>
-#include <graph.h>
-#include <stdlib.h>
-#include <audsrv.h>
-#include <sifrpc.h>
-#include <loadfile.h>
-#include <iopheap.h>
-#include <kernel.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -727,12 +729,12 @@ static void SetupShadowRenderTarget()
 {
     u32 res = 1 << shadowRes;
 
-    shadowTarget = CreateRenderTarget(res, res);
+    shadowTarget = CreateRenderTarget(res, res, GS_PSMZ_24, ZTEST_METHOD_ALLPASS, GS_PSM_32);
     shadowTexture = CreateTextureFromRenderTarget(shadowTarget, 1, TEXTURE_FUNCTION_MODULATE);
 
     u32 small = res >> 1;
 
-    resampledTarget = CreateRenderTarget(small, small);
+    resampledTarget = CreateRenderTarget(small, small, GS_PSMZ_24, ZTEST_METHOD_ALLPASS, GS_PSM_32);
     resampledTexture = CreateTextureFromRenderTarget(resampledTarget, 0, TEXTURE_FUNCTION_DECAL);
 
     AddToManagerTexList(&g_Manager, resampledTexture);

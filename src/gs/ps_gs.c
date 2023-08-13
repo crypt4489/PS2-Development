@@ -57,16 +57,6 @@ void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm)
 	frame->address = graph_vram_allocate(frame->width, frame->height, frame->psm, GRAPH_ALIGN_PAGE);
 }
 
-void init_zbuffer(zbuffer_t *z, int width, int height, int zsm)
-{
-	// Enable the zbuffer.
-	z->enable = DRAW_ENABLE;
-	z->mask = 0;
-	z->method = ZTEST_METHOD_GREATER_EQUAL;
-	z->zsm = zsm;
-	z->address = graph_vram_allocate(width, height, z->zsm, GRAPH_ALIGN_PAGE);
-}
-
 void CreateTexBuf(Texture *texture, int width, int psm)
 {
 	// Allocate some vram for the texture buffer
@@ -84,117 +74,7 @@ void CreateClutBuf(clutbuffer_t *clut, int width, int psm)
 	clut->address = graph_vram_allocate(width, width, psm, GRAPH_ALIGN_BLOCK);
 }
 
-void load_clut_buffer(clutbuffer_t *clut, unsigned char *pixels, int width, int height, int psm)
-{
-
-	packet_t *packet = packet_init(50, PACKET_NORMAL);
-
-	qword_t *q = packet->data;
-
-	q = packet->data;
-
-	q = draw_texture_transfer(q, pixels, width, height, psm, clut->address, width);
-	q = draw_texture_flush(q);
-
-	dma_channel_send_chain(DMA_CHANNEL_GIF, packet->data, q - packet->data, 0, 0);
-	dma_channel_wait(DMA_CHANNEL_GIF, -1);
-
-	packet_free(packet);
-}
-
-void load_texture_clut(Texture *texture, clutbuffer_t *clut, unsigned char *pixels, int width, int height, int psm, u32 components)
-{
-	texture->lod.calculation = LOD_USE_K;
-	texture->lod.max_level = 0;
-	texture->lod.mag_filter = LOD_MAG_NEAREST;
-	texture->lod.min_filter = LOD_MIN_NEAREST;
-	texture->lod.l = 0;
-	texture->lod.k = 0;
-
-	texture->texbuf.info.width = draw_log2(width);
-	texture->texbuf.info.height = draw_log2(height);
-	texture->texbuf.info.components = components;
-	texture->texbuf.info.function = TEXTURE_FUNCTION_MODULATE;
-
-	texture->clut.storage_mode = clut->storage_mode;
-	texture->clut.start = clut->start;
-	texture->clut.psm = clut->psm;
-	texture->clut.load_method = clut->load_method;
-	texture->clut.address = clut->address;
-
-	packet_t *packet = packet_init(50, PACKET_NORMAL);
-
-	qword_t *q = packet->data;
-
-	q = packet->data;
-
-	q = draw_texture_transfer(q, pixels, width, height, psm, texture->texbuf.address, texture->texbuf.width);
-	q = draw_texture_flush(q);
-
-	dma_channel_send_chain(DMA_CHANNEL_GIF, packet->data, q - packet->data, 0, 0);
-	dma_channel_wait(DMA_CHANNEL_GIF, -1);
-
-	packet_free(packet);
-}
-
-void init_tex_structs(Texture *texture, clutbuffer_t *clut, int width, int height, int psm, u32 components)
-{
-
-	texture->lod.calculation = LOD_USE_K;
-	texture->lod.max_level = 0;
-	texture->lod.mag_filter = LOD_MAG_NEAREST;
-	texture->lod.min_filter = LOD_MIN_NEAREST;
-	texture->lod.l = 0;
-	texture->lod.k = 0;
-
-	texture->texbuf.info.width = draw_log2(width);
-	texture->texbuf.info.height = draw_log2(height);
-	texture->texbuf.info.components = components;
-	texture->texbuf.info.function = TEXTURE_FUNCTION_MODULATE;
-
-	texture->clut.storage_mode = clut->storage_mode;
-	texture->clut.start = clut->start;
-	texture->clut.psm = clut->psm;
-	texture->clut.load_method = clut->load_method;
-	texture->clut.address = clut->address;
-}
-
-void load_texture(Texture *texture, unsigned char *pixels, int width, int height, int psm, u32 components)
-{
-	texture->lod.calculation = LOD_USE_K;
-	texture->lod.max_level = 0;
-	texture->lod.mag_filter = LOD_MAG_NEAREST;
-	texture->lod.min_filter = LOD_MIN_NEAREST;
-	texture->lod.l = 0;
-	texture->lod.k = 0;
-
-	texture->texbuf.info.width = draw_log2(width);
-	texture->texbuf.info.height = draw_log2(height);
-	texture->texbuf.info.components = components;
-	texture->texbuf.info.function = TEXTURE_FUNCTION_MODULATE;
-
-	texture->clut.storage_mode = CLUT_STORAGE_MODE1;
-	texture->clut.start = 0;
-	texture->clut.psm = 0;
-	texture->clut.load_method = CLUT_NO_LOAD;
-	texture->clut.address = 0;
-
-	packet_t *packet = packet_init(50, PACKET_NORMAL);
-
-	qword_t *q = packet->data;
-
-	q = packet->data;
-
-	q = draw_texture_transfer(q, pixels, width, height, psm, texture->texbuf.address, texture->texbuf.width);
-	q = draw_texture_flush(q);
-
-	dma_channel_send_chain(DMA_CHANNEL_GIF, packet->data, q - packet->data, 0, 0);
-	dma_wait_fast();
-
-	packet_free(packet);
-}
-
-void load_framebuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm)
+void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm)
 {
 
 	packet_t *packet = packet_init(50, PACKET_NORMAL);
@@ -205,44 +85,6 @@ void load_framebuffer(framebuffer_t *frame, unsigned char *pixels, int width, in
 	q = draw_texture_flush(q);
 
 	dma_channel_send_chain(DMA_CHANNEL_GIF, packet->data, q - packet->data, 0, 0);
-
-	packet_free(packet);
-}
-
-void load_texture_32(Texture *texture, u32 *pixels)
-{
-
-	// Using a texture involves setting up a lot of information
-
-	texture->lod.calculation = LOD_USE_K;
-	texture->lod.max_level = 0;
-	texture->lod.mag_filter = LOD_MAG_NEAREST;
-	texture->lod.min_filter = LOD_MIN_NEAREST;
-	texture->lod.l = 0;
-	texture->lod.k = 0;
-
-	texture->texbuf.info.width = draw_log2(256);
-	texture->texbuf.info.height = draw_log2(256);
-	texture->texbuf.info.components = TEXTURE_COMPONENTS_RGB;
-	texture->texbuf.info.function = TEXTURE_FUNCTION_DECAL;
-
-	texture->clut.storage_mode = CLUT_STORAGE_MODE1;
-	texture->clut.start = 0;
-	texture->clut.psm = 0;
-	texture->clut.load_method = CLUT_NO_LOAD;
-	texture->clut.address = 0;
-
-	packet_t *packet = packet_init(50, PACKET_NORMAL);
-
-	qword_t *q = packet->data;
-
-	q = packet->data;
-
-	q = draw_texture_transfer(q, pixels, 256, 256, GS_PSM_24, texture->texbuf.address, texture->texbuf.width);
-	q = draw_texture_flush(q);
-
-	dma_channel_send_chain(DMA_CHANNEL_GIF, packet->data, q - packet->data, 0, 0);
-	dma_wait_fast();
 
 	packet_free(packet);
 }
@@ -261,13 +103,6 @@ qword_t *SetZBufferMask(qword_t *q, zbuffer_t *z, u32 mask, u32 context)
 	return q;
 }
 
-qword_t *setup_texture(Texture *texture, qword_t *q)
-{
-	q = draw_texture_sampling(q, 0, &texture->lod);
-	q = draw_texturebuffer(q, 0, &texture->texbuf, &texture->clut);
-	return q;
-}
-
 qword_t *CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr)
 {
 	PACK_GIFTAG(q, GIF_SET_TAG(count, eop, 0, 0, type, nreg), regaddr);
@@ -275,7 +110,7 @@ qword_t *CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 
 	return q;
 }
 
-void init_drawing_environment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish)
+void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish)
 {
 
 	qword_t *q = InitializeDMAObject();
@@ -304,7 +139,7 @@ void init_drawing_environment(framebuffer_t *frame, zbuffer_t *z, int hheight, i
 	SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
-void copy_vram_from_vram(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm)
+void CopyVRAMToVRAM(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm)
 {
 
 	packet_t *packet = packet_init(5000, PACKET_NORMAL);
@@ -339,7 +174,7 @@ void copy_vram_from_vram(int srcAd, int srcH, int srcW, int dstAd, int dstH, int
 	packet_free(packet);
 }
 
-void copy_vram_to_memory(int address, int width, int height, int x, int y, int psm, u32 *buffer)
+void CopyVRAMToMemory(int address, int width, int height, int x, int y, int psm, u32 *buffer)
 {
 	volatile u32 *vif1_stat = (volatile u32 *)0x10003c00;
 	packet_t *pack = packet_init(1, PACKET_NORMAL);
@@ -426,6 +261,7 @@ void CreateClutStructs(Texture *tex, int width, int psm)
 	tex->clut.psm = psm;
 	tex->clut.storage_mode = CLUT_STORAGE_MODE1;
 }
+
 void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter)
 {
 
@@ -469,10 +305,10 @@ void SetupRenderTarget(RenderTarget *target, int context, int wait)
 	{
 	}
 
-	init_drawing_environment(target->render, target->z, hHeight, hWidth, context, wait);
+	InitDrawingEnvironment(target->render, target->z, hHeight, hWidth, context, wait);
 }
 
-RenderTarget *allocRenderTarget()
+RenderTarget *AllocRenderTarget()
 {
 	RenderTarget *target = (RenderTarget *)malloc(sizeof(RenderTarget));
 	target->render = (framebuffer_t *)malloc(sizeof(framebuffer_t));
@@ -480,9 +316,18 @@ RenderTarget *allocRenderTarget()
 	return target;
 }
 
-RenderTarget *CreateRenderTarget(int height, int width)
+void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method)
 {
-	RenderTarget *target = allocRenderTarget();
+	z->enable = DRAW_ENABLE;
+	z->mask = 0;
+	z->method = method;
+	z->zsm = zsm;
+	z->address = graph_vram_allocate(width, height, z->zsm, GRAPH_ALIGN_PAGE);
+}
+
+RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, int psm)
+{
+	RenderTarget *target = AllocRenderTarget();
 	target->render->width = width;
 	target->render->height = height;
 
@@ -496,18 +341,18 @@ RenderTarget *CreateRenderTarget(int height, int width)
 		target->render->address = renderTargetVRAM;
 	}
 
-	target->render->psm = GS_PSM_32;
+	target->render->psm = psm;
 	target->render->mask = 0;
 
-	int zAddress = target->render->address + graph_vram_size(width, height, GS_PSM_32, GRAPH_ALIGN_PAGE);
+	int zAddress = target->render->address + graph_vram_size(width, height, psm, GRAPH_ALIGN_PAGE);
 
 	target->z->address = zAddress;
 	target->z->enable = DRAW_ENABLE;
-	target->z->method = ZTEST_METHOD_ALLPASS;
-	target->z->zsm = GS_PSMZ_24;
+	target->z->method = zmethod;
+	target->z->zsm = zsm;
 	target->z->mask = 0;
 
-	renderTargetVRAM = renderTargetVRAM + graph_vram_size(width, height, GS_PSM_32, GRAPH_ALIGN_PAGE) + graph_vram_size(width, height, GS_PSMZ_24, GRAPH_ALIGN_PAGE);
+	renderTargetVRAM = zAddress + graph_vram_size(width, height, zsm, GRAPH_ALIGN_PAGE);
 
 	return target;
 }

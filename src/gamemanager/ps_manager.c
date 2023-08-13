@@ -1,7 +1,8 @@
 #include "gamemanager/ps_manager.h"
 
-#include <string.h>
 #include <graph.h>
+
+#include <string.h>
 #include <stdlib.h>
 
 #include "gs/ps_gs.h"
@@ -37,8 +38,8 @@ void InitializeSystem()
 
 void CreateManagerRenderTargets()
 {
-    g_Manager.targetBack = allocRenderTarget();
-    g_Manager.targetDisplay = allocRenderTarget();
+    g_Manager.targetBack = AllocRenderTarget();
+    g_Manager.targetDisplay = AllocRenderTarget();
 
     if (g_Manager.targetBack == NULL || g_Manager.targetDisplay == NULL)
     {

@@ -2,6 +2,7 @@
 
 #include <kernel.h>
 #include <ee_regs.h>
+
 #include <stdlib.h>
 
 float getTicks(TimerStruct *ts)

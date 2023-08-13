@@ -1,7 +1,9 @@
 #include "gamemanager/ps_doublebuffer.h"
+
+#include <graph.h>
+
 #include "gamemanager/ps_manager.h"
 #include "gs/ps_gs.h"
-#include <graph.h>
 
 void SwapManagerDrawBuffers()
 {

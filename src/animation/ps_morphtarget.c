@@ -3,10 +3,8 @@
 #include <stdlib.h>
 
 #include "gameobject/ps_gameobject.h"
-
 #include "system/ps_vumanager.h"
 #include "io/ps_file_io.h"
-#include "world/ps_lights.h"
 #include "gs/ps_gs.h"
 #include "dma/ps_dma.h"
 #include "pipelines/ps_vu1pipeline.h"
