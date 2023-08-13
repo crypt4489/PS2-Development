@@ -24,16 +24,6 @@ static inline qword_t *CreateLightTranslateRotationVectorVU1(qword_t* q, VECTOR 
     return q;
 }
 
-static inline qword_t *InitVU1LightHeader(qword_t *q, u32 count)
-{
-    q->sw[0] = count;
-    q->sw[1] = count;
-    q->sw[2] = count;
-    q->sw[3] = count;
-    q++;
-    return q;
-}
-
 static inline qword_t* QWordLightAddFloat(qword_t *q, float val)
 {
     ((float *)q->sw)[3] = val;

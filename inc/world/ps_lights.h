@@ -13,4 +13,14 @@ inline void SetLightRadius(LightStruct *light, float rad)
     light->radius = rad;
 };
 
+inline qword_t *InitVU1LightHeader(qword_t *q, u32 count)
+{
+    q->sw[0] = count;
+    q->sw[1] = count;
+    q->sw[2] = count;
+    q->sw[3] = count;
+    q++;
+    return q;
+};
+
 #endif
