@@ -2,16 +2,6 @@
 
 #include "my_vcl.inc"
 
-.init_vf_all
-.init_vi_all
-.syntax new
-
-.vu
-
---enter
---endenter
-
-
 #vuprog VU1_GenericMorphTargetStage13D
 
 START:
@@ -28,7 +18,7 @@ START:
     iadd    morphSTQData,  morphVData, vertCount
     iadd    morphColorData, morphSTQData, vertCount
 
-    iadd vertexCounter, iBase, vertCount ; loop vertCount times
+    iadd vertexCounter, iBase, vertCount
     vertexLoop:
 
 
@@ -50,9 +40,9 @@ START:
 
 
         sq vertex, 0(vertexData)
-        sq stq,    0(stqData)     ; XYZ2
+        sq stq,    0(stqData)
         sq color, 0(colorData)
-        ;////////////////////////////////////////////
+
 
         iaddiu          vertexData,     vertexData,     1
         iaddiu          stqData,        stqData,        1
@@ -61,17 +51,13 @@ START:
         iaddiu          morphSTQData,   morphSTQData,   1
         iaddiu          morphColorData, morphColorData, 1
 
-        iaddi   vertexCounter,  vertexCounter,  -1	; decrement the loop counter
-        ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
+        iaddi   vertexCounter,  vertexCounter,  -1
+        ibne    vertexCounter,  iBase,   vertexLoop
 
         .vsm
            NOP             ilw.y   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
 
-
-
-    --exit
-    --endexit
 
 #endvuprog

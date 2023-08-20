@@ -1,16 +1,5 @@
 #include "my_vcl.inc"
 
-
-.init_vf_all
-.init_vi_all
-.syntax new
-
-.vu
-
---enter
---endenter
-
-
 #vuprog VU1_LightStage3
 
 START:
@@ -243,17 +232,6 @@ end:
            NOP             iadd   clipProg,     vi00, vi00
            NOP             NOP
         .endvsm
-    --barrier
 
-
-
-
-
-
-
-
-
-    --exit
-    --endexit
 
 #endvuprog

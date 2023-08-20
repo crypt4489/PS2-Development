@@ -1,15 +1,8 @@
 #include "my_vcl.inc"
 #vuprog VU1_EnvMapStage2
-.init_vf_all
-.init_vi_all
-.syntax new
-
-.vu
-
---enter
---endenter
 
 
+start:
     MatrixLoad{ globalMatrix, 4, vi00 }
     MatrixLoad{ EnvMapMatrix, 16, vi00 }
 
@@ -19,14 +12,14 @@
 begin:
     xtop    iBase
 
-    iaddiu  vertexData,     iBase,      1           ; pointer to vertex data
-    ilw.w   vertCount,      0(iBase)              ; load vert count from scale vector
+    iaddiu  vertexData,     iBase,      1
+    ilw.w   vertCount,      0(iBase)
     ibeq    vertCount,      vi00,       end
-    iadd    stqData,       vertexData, vertCount   ; pointer to stq
-    iadd    normData,    stqData,    vertCount   ; pointer for XGKICK
+    iadd    stqData,       vertexData, vertCount
+    iadd    normData,    stqData,    vertCount
 
 
-    iadd vertexCounter, iBase, vertCount ; loop vertCount times
+    iadd vertexCounter, iBase, vertCount
     vertexLoop:
 
         add.xyz stq1, vf00, vf00
@@ -86,9 +79,5 @@ end:
            NOP             ilw.z   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
-
-
-    --exit
-    --endexit
 
 #endvuprog

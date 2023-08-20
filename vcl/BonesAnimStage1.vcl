@@ -2,16 +2,6 @@
 
 #include "my_vcl.inc"
 
-.init_vf_all
-.init_vi_all
-.syntax new
-
-.vu
-
---enter
---endenter
-
-
 #vuprog VU1_GenericBonesAnimStage1
 
 START:
@@ -54,7 +44,6 @@ boneLoop:
         iadd            boneTransformLocation,  bonesVectorsPosition, boneID
         iadd            boneTransformLocation,  boneTransformLocation, boneID
         iadd            boneTransformLocation,  boneTransformLocation, boneID
-       ; iadd            boneTransformLocation,  boneTransformLocation, boneID
 
         lq              rot, 1(boneTransformLocation)
         lq.xyz          scale, 2(boneTransformLocation)
@@ -64,7 +53,7 @@ boneLoop:
         mulx.xyz    boneTransform[0], boneTransform[0], scale[x]
         muly.xyz    boneTransform[1], boneTransform[1], scale[y]
         mulz.xyz    boneTransform[2], boneTransform[2], scale[z]
-        lq          boneTransform[3], 0(boneTransformLocation)
+        lq.xyz          boneTransform[3], 0(boneTransformLocation)
 
         MatrixMultiplyVertex{ pos, boneTransform, vertex }
 
@@ -94,10 +83,5 @@ nextVertex:
            NOP             ilw.y   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
-
-
-
-    --exit
-    --endexit
 
 #endvuprog

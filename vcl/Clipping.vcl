@@ -3,17 +3,6 @@
 
 #include "my_vcl.inc"
 
-
-.init_vf_all
-.init_vi_all
-.syntax new
-
-.vu
-
---enter
---endenter
-
-
 #vuprog VU1_ClippingStage
 
 START:
@@ -57,8 +46,6 @@ finishSetup:
     sub.xyz  planeVec, vf00, nearP1
     VectorDotProduct{ dot, planeVec, plane }
     mr32.w plane, dot
-
-    sq  plane, 0(vi00)
 
     MatrixLoad{ globalMatrix, 4, vi00 }
 
@@ -802,8 +789,5 @@ end:
            NOP             ilw.x   jmpProg,       0(iBase)
            NOP             NOP ; jr jmpProg
         .endvsm
-
-    --exit
-    --endexit
 
 #endvuprog

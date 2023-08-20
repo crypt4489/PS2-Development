@@ -1,28 +1,12 @@
 #include "my_vcl.inc"
 
-
-.init_vf_all
-.init_vi_all
-.syntax new
-
-.vu
-
---enter
---endenter
-
-
 #vuprog VU1_SpecularLightStage3
 
 START:
- ;//////////// --- Load data 1 --- /////////////
-    ; Updated once per mesh
 
     MatrixLoad{ globalMatrix, 4, vi00 }
 
     lq.xyz   camPos, 15(vi00)
-
-    ;/////////////////////////////////////////////
-
 
     ilw.x lightCount,       20(vi00)
     iaddiu lightPointer, vi00, 21
@@ -31,24 +15,20 @@ START:
 begin:
     xtop    iBase
 
-    iaddiu  vertexData,     iBase,      1          ; pointer to vertex data
+    iaddiu  vertexData,     iBase,      1
     ilw.w   vertCount,      0(iBase)
     ibeq    vertCount,      vi00,       end
 
-    iadd    normData,       vertexData, vertCount   ; pointer to stq
-    iadd    normData,       normData, vertCount   ; pointer to stq
+    iadd    normData,       vertexData, vertCount
+    iadd    normData,       normData, vertCount
 
 
-
-
-
-    iadd vertexCounter, iBase, vertCount ; loop vertCount times
+    iadd vertexCounter, iBase, vertCount
 
     iadd lightLoop, lightCount, vi00
 
     vertexLoop:
 
-        ;////////// --- Load loop data --- //////////
         lq vertex, 0(vertexData)
 
         MatrixMultiplyVertex{ vertex, globalMatrix, vertex }
@@ -116,7 +96,6 @@ spotlight:
 
  point_light:
         iaddiu lightPointer, lightPointer, 2
-        b compare_light_loop
 
 compare_light_loop:
         ibne lightLoop, vi00, light_loop
@@ -138,26 +117,12 @@ write_color:
         iadd            lightLoop,      lightCount,     vi00
         iaddiu          lightPointer,   vi00,           21
 
-        iaddi   vertexCounter,  vertexCounter,  -1	; decrement the loop counter
-        ibne    vertexCounter,  iBase,   vertexLoop	; and repeat if needed
-
-    ;////////////////////////////////////////////
+        iaddi   vertexCounter,  vertexCounter,  -1
+        ibne    vertexCounter,  iBase,   vertexLoop
 end:
         .vsm
            NOP             iadd     clipProg,   vi00, vi00
            NOP             NOP
         .endvsm
-    --barrier
-
-
-
-
-
-
-
-
-
-    --exit
-    --endexit
 
 #endvuprog
