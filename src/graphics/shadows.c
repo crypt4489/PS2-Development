@@ -141,7 +141,7 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     q += 2; //(obj-> tex == NULL ? 4 : 14);
 
-    q = read_unpack_data(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
+    q = ReadUnpackData(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
 
     PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL);
 

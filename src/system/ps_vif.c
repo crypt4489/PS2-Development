@@ -64,7 +64,7 @@ qword_t *add_unpack_data(qword_t *q, u32 dest_address, void *data, u32 qwSize, u
     return q;
 }
 
-qword_t *read_unpack_data(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, u32 vif_pack)
+qword_t *ReadUnpackData(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, u32 vif_pack)
 {
     u32 pack_size = qwSize;
     if (qwSize >= 256)

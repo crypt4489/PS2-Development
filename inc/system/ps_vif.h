@@ -9,7 +9,7 @@
 
 void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 programSize);
 qword_t* add_unpack_data(qword_t* q, u32 dest_address, void *data, u32 qwSize, u8 use_top, u32 vif_pack);
-qword_t * read_unpack_data(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, u32 vif_pack);
+qword_t * ReadUnpackData(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, u32 vif_pack);
 qword_t* add_start_program_vu1(qword_t *q, u32 address);
 qword_t* set_alpha_registers(qword_t *q, blend_t *blend, int context);
 void LoadFrameBufferVIF(unsigned char *pixels, framebuffer_t *frame, int width, int height, int psm);

@@ -192,7 +192,7 @@ void create_pipeline_obj_wireframe_vu1pipeline(GameObject *obj, u32 programNumbe
 
     q += 2; //(obj-> tex == NULL ? 4 : 14);
 
-    q = read_unpack_data(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
+    q = ReadUnpackData(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
 
     qword_t *targ = q;
 
@@ -261,7 +261,7 @@ void create_pipeline_tess_grid_vu1pipeline(GameObject *obj, u32 programNumber, u
 
     q += 2; //(obj-> tex == NULL ? 4 : 14);
 
-    q = read_unpack_data(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
+    q = ReadUnpackData(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
 
     PipelineCallback *setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawVU1Header, q, NULL);
 

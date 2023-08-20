@@ -202,7 +202,7 @@ qword_t *CreateVU1TargetUpload(qword_t *q, GameObject *obj, u32 start, u32 end, 
       numOfVerts -= thisIndicesCount;
     }
 
-    q = read_unpack_data(q, top, 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = ReadUnpackData(q, top, 1, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     q->sw[2] = vu1_addrs->sw[2];
     q->sw[1] = vu1_addrs->sw[1];
@@ -261,7 +261,7 @@ qword_t *CreateVU1VertexUpload(qword_t *q, MeshBuffers *buffer, u32 start, u32 e
       numOfVerts -= thisIndicesCount;
     }
 
-    q = read_unpack_data(q, top, 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = ReadUnpackData(q, top, 1, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     q->sw[2] = vu1_addrs->sw[2];
     q->sw[1] = vu1_addrs->sw[1];
