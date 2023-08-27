@@ -61,8 +61,7 @@ enum VU1Programs
     VU1GenericAnimTex,
     VU1GenericSpecular,
     VU1GenericClipper,
-    VU1GenericSkinned,
-    VU1GenericSphere
+    VU1GenericSkinned
 };
 
 enum VU1PipelineLocations
@@ -227,6 +226,8 @@ struct animator_t;
 typedef struct animator_t Animator;
 struct pipelinecblist_t;
 typedef struct pipelinecblist_t PipelineCallback;
+struct vu_pipeline_renderpass_t;
+typedef struct vu_pipeline_renderpass_t VU1PipelineRenderPass;
 struct vu_pipeline_t;
 typedef struct vu_pipeline_t VU1Pipeline;
 struct gameobject_t;
@@ -362,6 +363,7 @@ typedef void (*pipeline_callback)(VU1Pipeline *, GameObject *, void *, qword_t *
 
 struct pipelinecblist_t
 {
+    u32 id;
     pipeline_callback callback;
     void *args;
     qword_t *q;
@@ -374,6 +376,12 @@ typedef struct plane_t
     VECTOR planeEquation; // normal and d
 } Plane;
 
+struct vu_pipeline_renderpass_t
+{
+    MeshBuffers *target;
+    qword_t programs;
+};
+
 struct vu_pipeline_t
 {
     char name[MAX_CHAR_PIPELINE_NAME];
@@ -382,9 +390,9 @@ struct vu_pipeline_t
     int numberCBS;
     PipelineCallback **cbs;
     qword_t *q;
-    qword_t **programs;
     u32 renderPasses;
     u32 currentRenderPass;
+    VU1PipelineRenderPass **passes;
 };
 
 typedef struct TessGridStruct
@@ -427,19 +435,18 @@ enum DrawTags
     DRAW_ANIM_TEX = 0x040,
     DRAW_ENVMAP = 0x080,
     DRAW_SPECULAR = 0x100,
-    DRAW_SPHERE = 0x200,
-    DRAW_ALPHAMAP = 0x400
+    DRAW_ALPHAMAP = 0x200
 };
 
 #define RENDER_STATE(draw, cull, alpha_enable, alpha_state,                                                                                        \
                      tex_map, color_enable, z_enable, z_type,                                                                                      \
                      light_enable, bface, clip, envmp,                                                                                             \
-                     spec, animtex, morph, bones, sphere, alphamap)                                                                                \
+                     spec, animtex, morph, bones, alphamap)                                                                                \
     (u32)((draw)&0x00000001) << 0 | (u32)((cull)&0x00000001) << 1 | (u32)((alpha_enable)&0x00000001) << 3 | (u32)((alpha_state)&0x00000003) << 4 | \
         (u32)((tex_map)&0x00000001) << 6 | (u32)((color_enable)&0x00000001) << 7 | (u32)((z_enable)&0x00000001) << 8 |                             \
         (u32)((z_type)&0x00000003) << 9 | (u32)((light_enable)&0x00000001) << 11 | (u32)((bface)&0x00000001) << 12 |                               \
         (u32)((clip)&0x00000001) << 13 | (u32)((envmp)&0x00000001) << 14 | (u32)((spec)&0x00000001) << 15 | (u32)((animtex)&0x00000001) << 16 |    \
-        (u32)((morph)&0x00000001) << 17 | (u32)((bones)&0x00000001) << 18 | (u32)((sphere)&0x00000001) << 19 | (u32)((alphamap)&0x00000001) << 20
+        (u32)((morph)&0x00000001) << 17 | (u32)((bones)&0x00000001) << 18 | (u32)((alphamap)&0x00000001) << 19
 
 typedef union obj_render_state
 {
@@ -462,9 +469,8 @@ typedef union obj_render_state
         unsigned int ANIMATION_TEXUTRE : 1;  // 17
         unsigned int MORPH_TARGET : 1;       // 18
         unsigned int SKELETAL_ANIMATION : 1; // 19
-        unsigned int SPHERE_MAPPING : 1;     // 20
-        unsigned int ALPHA_MAPPING : 1;      // 21
-        unsigned int pad : 11;               // 22-32
+        unsigned int ALPHA_MAPPING : 1;      // 20
+        unsigned int pad : 12;               // 21-32
     };
 
     unsigned int state;

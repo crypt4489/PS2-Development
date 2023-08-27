@@ -7,51 +7,51 @@
 VU1_GenericBonesAnimStage1_CodeStart:
 START:
 ; _LNOPT_w=[ normal2 ] 11 [11 0] 11   [START]
-         NOP                                                        ilw.w         VI03,12(VI00)                       
-         NOP                                                        xtop          VI04                                
-         NOP                                                        ilw.w         VI06,0(VI04)                        
-         NOP                                                        iaddiu        VI05,VI00,0x00000040                
-         NOP                                                        iaddiu        VI08,VI00,0x00000080                
-         NOP                                                        iand          VI07,VI03,VI05                      
-         NOP                                                        iaddiu        VI05,VI04,0x00000001                
-         NOP                                                        ilw.x         VI02,11(VI00)                       
-         NOP                                                        iand          VI03,VI03,VI08                      
-         NOP                                                        ibeq          VI07,VI00,colorData                 
-         NOP                                                        iadd          VI07,VI05,VI06                      
+         NOP                                                        ilw.w         VI02,12(VI00)                       
+         NOP                                                        xtop          VI03                                
+         NOP                                                        ilw.w         VI05,0(VI03)                        
+         NOP                                                        iaddiu        VI04,VI00,0x00000040                
+         NOP                                                        iaddiu        VI07,VI00,0x00000080                
+         NOP                                                        iand          VI06,VI02,VI04                      
+         NOP                                                        iaddiu        VI04,VI03,0x00000001                
+         NOP                                                        ilw.x         VI01,11(VI00)                       
+         NOP                                                        iand          VI02,VI02,VI07                      
+         NOP                                                        ibeq          VI06,VI00,colorData                 
+         NOP                                                        iadd          VI06,VI04,VI05                      
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_BonesAnimStage1_vcl_5]
-         NOP                                                        iadd          VI07,VI07,VI06                      
+         NOP                                                        iadd          VI06,VI06,VI05                      
 colorData:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [colorData]
-         NOP                                                        ibeq          VI03,VI00,continue                  
+         NOP                                                        ibeq          VI02,VI00,continue                  
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_BonesAnimStage1_vcl_7]
-         NOP                                                        iadd          VI07,VI07,VI06                      
+         NOP                                                        iadd          VI06,VI06,VI05                      
 continue:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [continue]
-         NOP                                                        iadd          VI03,VI07,VI06                      
-         NOP                                                        iadd          VI08,VI04,VI06                      
+         NOP                                                        iadd          VI02,VI06,VI05                      
+         NOP                                                        iadd          VI07,VI03,VI05                      
 vertexLoop:
 ; _LNOPT_w=[ normal2 ] 6 [6 0] 6   [vertexLoop]
-         NOP                                                        lq            VF02,0(VI05)                        
+         NOP                                                        lq            VF02,0(VI04)                        
          NOP                                                        mr32.w        VF01,VF00                           
-         NOP                                                        lq            VF03,0(VI07)                        
-         NOP                                                        lq            VF04,0(VI03)                        
-         NOP                                                        iaddiu        VI06,VI00,0x00000004                
-         max.xyz       VF01,VF00,VF00                               iaddiu        VI09,VI00,0                         
+         NOP                                                        lq            VF03,0(VI06)                        
+         NOP                                                        lq            VF04,0(VI02)                        
+         NOP                                                        iaddiu        VI05,VI00,0x00000004                
+         max.xyz       VF01,VF00,VF00                               iaddiu        VI08,VI00,0                         
 boneLoop:
 ; _LNOPT_w=[ normal2 ] 7 [4 0] 7   [boneLoop]
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
-         NOP                                                        mtir          VI10,VF03x                          
+         NOP                                                        mtir          VI09,VF03x                          
          NOP                                                        NOP                                               
-         NOP                                                        ibltz         VI10,nextBone                       
+         NOP                                                        ibltz         VI09,nextBone                       
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ another ] 39 [50 0] 52   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_BonesAnimStage1_vcl_11]
-         addw.xyz      VF06,VF00,VF00w                              iadd          VI09,VI02,VI10                      
-         NOP                                                        iadd          VI09,VI09,VI10                      
-         max           VF05,VF00,VF00                               iadd          VI10,VI09,VI10                      
-         NOP                                                        lq            VF08,1(VI10)                        
+         addw.xyz      VF06,VF00,VF00w                              iadd          VI08,VI01,VI09                      
+         NOP                                                        iadd          VI08,VI08,VI09                      
+         max           VF05,VF00,VF00                               iadd          VI09,VI08,VI09                      
+         NOP                                                        lq            VF08,1(VI09)                        
          mulz.w        VF07,VF00,VF05z                              mr32.w        VF06,VF05                                  ;	STALL_LATENCY ?2
          max.w         VF05,VF05,VF05                               mr32          VF10,VF08                           
          max.w         VF08,VF06,VF06                               loi           0x3fb504f3                                 ;	STALL_LATENCY ?2
@@ -73,7 +73,7 @@ boneLoop:
          addx.z        VF08,VF00,VF05x                              NOP                                               
          max.x         VF08,VF06,VF06                               mr32.x        VF06,VF09                           
          addy.z        VF06,VF00,VF07y                              mr32.y        VF07,VF10                           
-         addx.y        VF08,VF00,VF09x                              lq.xyz        VF05,2(VI10)                        
+         addx.y        VF08,VF00,VF09x                              lq.xyz        VF05,2(VI09)                        
          max.z         VF07,VF07,VF07                               mr32.y        VF09,VF09                           
          max.x         VF06,VF06,VF06                               NOP                                               
          max.y         VF07,VF07,VF07                               move.y        VF06,VF06                           
@@ -81,33 +81,33 @@ boneLoop:
          addy.x        VF07,VF00,VF09y                              NOP                                               
          muly.xyz      VF06,VF06,VF05y                              NOP                                                      ;	STALL_LATENCY ?1
          mulax         ACC,VF08,VF02x                               move.w        VF08,VF07                           
-         mulz.xyz      VF08,VF07,VF05z                              lq.xyz        VF05,0(VI10)                        
+         mulz.xyz      VF08,VF07,VF05z                              lq.xyz        VF05,0(VI09)                        
          madday        ACC,VF06,VF02y                               NOP                                                      ;	STALL_LATENCY ?1
          maddaz        ACC,VF08,VF02z                               NOP                                                      ;	STALL_LATENCY ?1
          maddw         VF05,VF05,VF02w                              NOP                                               
          mulx          VF05,VF05,VF04x                              NOP                                                      ;	STALL_LATENCY ?3
-         add           VF01,VF01,VF05                               iaddiu        VI09,VI00,0x00000001                       ;	STALL_LATENCY ?3
+         add           VF01,VF01,VF05                               iaddiu        VI08,VI00,0x00000001                       ;	STALL_LATENCY ?3
 nextBone:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [nextBone]
-         NOP                                                        isubiu        VI06,VI06,1                         
+         NOP                                                        isubiu        VI05,VI05,1                         
          NOP                                                        mr32          VF04,VF04                           
-         NOP                                                        ibne          VI06,VI00,boneLoop                  
+         NOP                                                        ibne          VI05,VI00,boneLoop                  
          NOP                                                        mr32          VF03,VF03                           
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_BonesAnimStage1_vcl_13]
-         NOP                                                        ibeq          VI09,VI00,nextVertex                
+         NOP                                                        ibeq          VI08,VI00,nextVertex                
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_BonesAnimStage1_vcl_14]
-         NOP                                                        sq            VF01,0(VI05)                        
+         NOP                                                        sq            VF01,0(VI04)                        
 nextVertex:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [nextVertex]
-         NOP                                                        isubiu        VI08,VI08,1                         
-         NOP                                                        iaddiu        VI05,VI05,0x00000001                
-         NOP                                                        iaddiu        VI07,VI07,0x00000001                
-         NOP                                                        ibne          VI08,VI04,vertexLoop                
-         NOP                                                        iaddiu        VI03,VI03,0x00000001                
+         NOP                                                        isubiu        VI07,VI07,1                         
+         NOP                                                        iaddiu        VI04,VI04,0x00000001                
+         NOP                                                        iaddiu        VI06,VI06,0x00000001                
+         NOP                                                        ibne          VI07,VI03,vertexLoop                
+         NOP                                                        iaddiu        VI02,VI02,0x00000001                
 ; _LNOPT_w=[ ] 2 [4 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_BonesAnimStage1_vcl_17]
-         NOP                                                        ilw.y         VI02,0(VI04)                        
-         NOP                                                        jr            VI02                
+         NOP                                                        ilw.y         VI01,0(VI03)                        
+         NOP                                                        jr            VI01                
 		.align 4
 VU1_GenericBonesAnimStage1_CodeEnd:
 ;	iCount=83

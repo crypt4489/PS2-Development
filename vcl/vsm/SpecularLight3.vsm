@@ -10,23 +10,23 @@ START:
          NOP                                                        lq.xyz        VF01,4(VI00)
          NOP                                                        lq.xyz        VF02,5(VI00)
          NOP                                                        lq.xyz        VF03,6(VI00)
-         NOP                                                        xtop          VI04
+         NOP                                                        xtop          VI03
          NOP                                                        lq.xyz        VF04,7(VI00)
-         NOP                                                        ilw.w         VI06,0(VI04)
+         NOP                                                        ilw.w         VI05,0(VI03)
          NOP                                                        lq.xyz        VF05,15(VI00)
-         NOP                                                        ilw.x         VI02,20(VI00)
-         NOP                                                        iaddiu        VI03,VI00,0x00000015
-         NOP                                                        ibeq          VI06,VI00,end
-         NOP                                                        iaddiu        VI05,VI04,0x00000001
+         NOP                                                        ilw.x         VI01,20(VI00)
+         NOP                                                        iaddiu        VI02,VI00,0x00000015
+         NOP                                                        ibeq          VI05,VI00,end
+         NOP                                                        iaddiu        VI04,VI03,0x00000001
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_5]
-         NOP                                                        iadd          VI07,VI05,VI06
-         NOP                                                        iadd          VI07,VI07,VI06
-         NOP                                                        iadd          VI08,VI04,VI06
-         NOP                                                        iaddiu        VI09,VI02,0
+         NOP                                                        iadd          VI06,VI04,VI05
+         NOP                                                        iadd          VI06,VI06,VI05
+         NOP                                                        iadd          VI07,VI03,VI05
+         NOP                                                        iaddiu        VI08,VI01,0
 vertexLoop:
 ; _LNOPT_w=[ vuta1 ] 12 [36 0] 36   [vertexLoop]
-         max.xyz       VF07,VF00,VF00                               lq.xyz        VF08,0(VI07)
-         mulax.xyz     ACC,VF01,VF08x                               lq            VF06,0(VI05)                               ;	STALL_LATENCY ?3
+         max.xyz       VF07,VF00,VF00                               lq.xyz        VF08,0(VI06)
+         mulax.xyz     ACC,VF01,VF08x                               lq            VF06,0(VI04)                               ;	STALL_LATENCY ?3
          madday.xyz    ACC,VF02,VF08y                               NOP
          maddz.xyz     VF08,VF03,VF08z                              NOP
          mulax.xyz     ACC,VF01,VF06x                               NOP                                                      ;	STALL_LATENCY ?1
@@ -35,28 +35,28 @@ vertexLoop:
          addy.x        VF09,VF09,VF09y                              NOP                                                      ;	STALL_LATENCY ?3
          addz.x        VF09,VF09,VF09z                              NOP                                                      ;	STALL_LATENCY ?3
          maddaz.xyz    ACC,VF03,VF06z                               rsqrt         Q,VF00w,VF09x                              ;	STALL_LATENCY ?3
-         maddw.xyz     VF06,VF04,VF06w                              ibeq          VI09,VI00,write_color
+         maddw.xyz     VF06,VF04,VF06w                              ibeq          VI08,VI00,write_color
          mulq.xyz      VF08,VF08,Q                                  waitq                                                    ;	STALL_LATENCY ?11
 light_loop:
 ; _LNOPT_w=[ normal2 ] 5 [8 0] 8   [light_loop]
-         NOP                                                        ilw.w         VI06,0(VI03)
-         NOP                                                        isubiu        VI10,VI06,1                                ;	STALL_LATENCY ?3
+         NOP                                                        ilw.w         VI05,0(VI02)
+         NOP                                                        isubiu        VI09,VI05,1                                ;	STALL_LATENCY ?3
          NOP                                                        NOP
-         NOP                                                        ibeq          VI10,VI00,directional_light
-         NOP                                                        isubiu        VI09,VI09,1
+         NOP                                                        ibeq          VI09,VI00,directional_light
+         NOP                                                        isubiu        VI08,VI08,1
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_9]
-         NOP                                                        isubiu        VI10,VI06,2
+         NOP                                                        isubiu        VI09,VI05,2
          NOP                                                        NOP
-         NOP                                                        ibeq          VI10,VI00,point_light
+         NOP                                                        ibeq          VI09,VI00,point_light
          NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_10]
-         NOP                                                        isubiu        VI06,VI06,3
+         NOP                                                        isubiu        VI05,VI05,3
          NOP                                                        NOP
-         NOP                                                        ibeq          VI06,VI00,spotlight
+         NOP                                                        ibeq          VI05,VI00,spotlight
          NOP                                                        NOP
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_SpecularLight3_vcl_11]
          NOP                                                        b             compare_light_loop
-         NOP                                                        iaddiu        VI03,VI03,0x00000001
+         NOP                                                        iaddiu        VI02,VI02,0x00000001
 directional_light:
 ; _LNOPT_w=[ normal2 ] 27 [111 0] 111   [directional_light]
          sub.xyz       VF09,VF05,VF06                               NOP
@@ -64,7 +64,7 @@ directional_light:
          addy.x        VF10,VF10,VF10y                              NOP                                                      ;	STALL_LATENCY ?3
          addz.x        VF10,VF10,VF10z                              NOP                                                      ;	STALL_LATENCY ?3
          NOP                                                        rsqrt         Q,VF00w,VF10x                              ;	STALL_LATENCY ?3
-         NOP                                                        lq.xyz        VF10,0(VI03)
+         NOP                                                        lq.xyz        VF10,0(VI02)
          sub.xyz       VF10,VF00,VF10                               NOP                                                      ;	STALL_LATENCY ?3
          mulq.xyz      VF09,VF09,Q                                  waitq                                                    ;	STALL_LATENCY ?7
          add.xyz       VF09,VF10,VF09                               NOP                                                      ;	STALL_LATENCY ?3
@@ -82,36 +82,36 @@ directional_light:
          mul.x         VF09,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
          mul.x         VF09,VF09,VF09                               NOP                                                      ;	STALL_LATENCY ?3
          miniw.x       VF09,VF09,VF00w                              NOP                                                      ;	STALL_LATENCY ?3
-         maxx.x        VF10,VF09,VF00x                              lq.xyz        VF09,1(VI03)                               ;	STALL_LATENCY ?3
+         maxx.x        VF10,VF09,VF00x                              lq.xyz        VF09,1(VI02)                               ;	STALL_LATENCY ?3
          mulx.xyz      VF09,VF09,VF10x                              NOP                                                      ;	STALL_LATENCY ?3
          NOP                                                        b             compare_light_loop
-         add.xyz       VF07,VF07,VF09                               iaddiu        VI03,VI03,0x00000002                       ;	STALL_LATENCY ?2
+         add.xyz       VF07,VF07,VF09                               iaddiu        VI02,VI02,0x00000002                       ;	STALL_LATENCY ?2
 spotlight:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [spotlight]
          NOP                                                        b             compare_light_loop
-         NOP                                                        iaddiu        VI03,VI03,0x00000003
+         NOP                                                        iaddiu        VI02,VI02,0x00000003
 point_light:
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [point_light]
-         NOP                                                        iaddiu        VI03,VI03,0x00000002
+         NOP                                                        iaddiu        VI02,VI02,0x00000002
 compare_light_loop:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [compare_light_loop]
-         NOP                                                        ibne          VI09,VI00,light_loop
+         NOP                                                        ibne          VI08,VI00,light_loop
          NOP                                                        NOP
 write_color:
 ; _LNOPT_w=[ vuta1 ] 9 [10 0] 10   [write_color]
          NOP                                                        loi           0x437f0000
          minii.xyz     VF07,VF07,I                                  loi           0x43000000
-         NOP                                                        isubiu        VI08,VI08,1
-         addi.w        VF07,VF00,I                                  iaddiu        VI09,VI02,0
-         maxx.xyz      VF07,VF07,VF00x                              iaddiu        VI07,VI07,0x00000001                       ;	STALL_LATENCY ?1
-         NOP                                                        iaddiu        VI05,VI05,0x00000001
-         NOP                                                        iaddiu        VI03,VI00,0x00000015
-         NOP                                                        ibne          VI08,VI04,vertexLoop
-         NOP                                                        sq            VF07,-1(VI07)
+         NOP                                                        isubiu        VI07,VI07,1
+         addi.w        VF07,VF00,I                                  iaddiu        VI08,VI01,0
+         maxx.xyz      VF07,VF07,VF00x                              iaddiu        VI06,VI06,0x00000001                       ;	STALL_LATENCY ?1
+         NOP                                                        iaddiu        VI04,VI04,0x00000001
+         NOP                                                        iaddiu        VI02,VI00,0x00000015
+         NOP                                                        ibne          VI07,VI03,vertexLoop
+         NOP                                                        sq            VF07,-1(VI06)
 end:
 ; _LNOPT_w=[ ] 2 [1 0] 2   [end]
-         NOP                                                     NOP
-         NOP                                                        jr  VI00
+         NOP                                                        NOP
+         NOP                                                        jr VI00
 		.align 4
 VU1_SpecularLightStage3_CodeEnd:
 ;	iCount=85

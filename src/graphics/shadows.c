@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 
+#include "pipelines/ps_pipelineinternal.h"
 #include "gameobject/ps_gameobject.h"
 #include "pipelines/ps_vu1pipeline.h"
 #include "dma/ps_dma.h"
@@ -135,7 +136,7 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
 
-    PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawShadowRegisters, q, NULL);
+    PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawShadowRegisters, q, NULL, 0x90);
 
     dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags, q);
 
@@ -143,11 +144,11 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     q = ReadUnpackData(q, 0, 16, 0, VIF_CMD_UNPACK(0, 3, 0));
 
-    PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL);
+    PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL, DEFAULT_OBJ_WVP_PCB);
 
     dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupMVPHeader, dcode_callback_tags, q);
 
-    PipelineCallback *setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawShadowVU1Header, q, NULL);
+    PipelineCallback *setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawShadowVU1Header, q, NULL, 0x91);
 
     dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupVU1Header, dcode_callback_tags, q);
 

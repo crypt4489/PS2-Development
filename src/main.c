@@ -394,7 +394,7 @@ static void SetupGrid()
 
     grid = InitializeGameObject();
     // ReadModelFile("MODELS\\BOX.BIN", &grid->vertexBuffer);
-    SetupGameObjectPrimRegs(grid, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(grid, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 
     int w, l;
     float dw, dh;
@@ -439,7 +439,7 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.CBIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0));
+    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0));
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -479,7 +479,11 @@ static void SetupMultiSphere()
 
     multiSphere = InitializeGameObject();
     ReadModelFile("MODELS\\TORUS.BIN", &multiSphere->vertexBuffer);
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+    //envmap
+    //SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
+
+    //alphamap
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 1));
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
@@ -489,7 +493,6 @@ static void SetupMultiSphere()
     multiSphere->update_object = NULL;
 
     PitchLTM(multiSphere->ltm, -90.0f);
-    // multiSphere->vertexBuffer.vertexCount -= 240;
 
     CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
 
@@ -499,11 +502,16 @@ static void SetupMultiSphere()
 
     MatrixIdentity(lightTransform);
 
-     CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE", VU1Stage4, DRAW_VERTICES | DRAW_TEXTURE | DRAW_NORMAL, GetTexByName(g_Manager.texManager, glossName), lightTransform);
+    //CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE");
 
-    //CreateGraphicsPipeline(multiSphere, GEN_PIPELINE_NAME);
+    //SetEnvMapMATRIX(multiSphere->activePipeline, lightTransform);
 
-    // CreateAlphaMapPipeline(multiSphere, "ALPHAMAP", GetTexByName(g_Manager.texManager, alphaMap));
+    //SetEnvMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, glossName));
+
+
+    CreateAlphaMapPipeline(multiSphere, "ALPHAMAP");
+
+    SetAlphaMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, alphaMap));
 
     AddObjectToRenderWorld(world, multiSphere);
 }
@@ -518,7 +526,7 @@ static void SetupRoom()
 
     room = InitializeGameObject();
     ReadModelFile("MODELS\\ROOM.BIN", &room->vertexBuffer);
-    SetupGameObjectPrimRegs(room, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(room, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0));
 
     VECTOR scales = {25.0f, 25.0f, 25.0f, 1.0f};
 
@@ -555,7 +563,7 @@ static void SetupShadowViewer()
     dh = 1;
     CreateGrid(w, l, dw, dh, &shadowTexView->vertexBuffer);
 
-    SetupGameObjectPrimRegs(shadowTexView, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(shadowTexView, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0));
 
     u32 id = 0;
 #ifdef RESAMPLED
@@ -653,7 +661,7 @@ static void SetupTessObject()
              scales,
              1.0f, lod_floor->ltm);
 
-    SetupGameObjectPrimRegs(lod_floor, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_floor, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid.extent.top);
 
@@ -681,7 +689,7 @@ static void SetupTessObject()
              1.0f, lod_wall->ltm);
     PitchLTM(lod_wall->ltm, -90.0f);
 
-    SetupGameObjectPrimRegs(lod_wall, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_wall, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid2.extent.top);
 

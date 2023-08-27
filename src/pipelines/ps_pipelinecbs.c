@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "pipelines/ps_pipelineinternal.h"
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"
 #include "gamemanager/ps_manager.h"
@@ -68,42 +69,19 @@ void SetupStage2MATVU1(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *p
   // printf("here!");
   qword_t *q = pipeline_loc + 16;
 
+  if (mat == NULL)
+  {
+    ERRORLOG("MATRIX for Stage 2 is NULL");
+    return;
+  }
+
   memcpy(q, mat, sizeof(MATRIX));
 }
 
-void SetupStage2SphereMapVU1(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *pipeline_loc)
+void SetupMapTexture(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
-  // printf("here!");
-
-  MATRIX world;
-
-  CreateWorldMatrixLTM(obj->ltm, world);
-  qword_t *q = pipeline_loc + 4;
-  memcpy(q, world, 4 * sizeof(VECTOR));
-
-  q = pipeline_loc + 16;
-
-  MATRIX screen, m;
-  CreateWorldMatrixLTM(obj->ltm, m);
-  MatrixIdentity(screen);
-  Camera *cam = NULL;
-  if (g_DrawWorld != NULL)
-  {
-    cam = g_DrawWorld->cam;
-  }
-  else
-  {
-    cam = g_DrawCamera;
-  }
-
-  if (cam == NULL)
-  {
-    ERRORLOG("something went wrong with camera");
-  }
-
-  MatrixMultiply(screen, screen, m);
-  MatrixMultiply(screen, screen, cam->view);
-  memcpy(q, screen, 4 * sizeof(VECTOR));
+  Texture *tex = (Texture*)arg;
+  CreateLoadByIdDCODETag(pipeline_loc, tex->id);
 }
 
 void SetupBlendingCXT(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
@@ -153,7 +131,7 @@ void UpdateInterpolatorDrawVU1(VU1Pipeline *pipe, GameObject *obj, void *arg, qw
   if (data->currIndex != obj->interpolator->currInterpNode)
   {
     // DEBUGLOG("Curr Index %d %d %d", pipe->currentRenderPass, data->matCount, count);
-    CreateMeshDMAUpload(pipeline_loc, obj, 27, DRAW_NORMAL | DRAW_TEXTURE | DRAW_MORPH | DRAW_VERTICES, data->matCount, pipe->programs[pipe->currentRenderPass]);
+    CreateMeshDMAUpload(pipeline_loc, obj, 27, DRAW_NORMAL | DRAW_TEXTURE | DRAW_MORPH | DRAW_VERTICES, data->matCount, &pipe->passes[pipe->currentRenderPass]->programs);
     data->currIndex = obj->interpolator->currInterpNode;
   }
 }
@@ -169,7 +147,7 @@ qword_t *CreateMorphInterpolatorDMAUpload(qword_t *tag, qword_t *q, VU1Pipeline 
   data->currIndex = _index;
   data->matCount = _matCount;
 
-  PipelineCallback *setupInterpolatorNode = CreatePipelineCBNode(UpdateInterpolatorDrawVU1, q, data);
+  PipelineCallback *setupInterpolatorNode = CreatePipelineCBNode(UpdateInterpolatorDrawVU1, q, data, MORPHTARGET_INTERPOLATOR_PCB);
 
   tag = AddPipelineCallbackNodeQword(pipeline, setupInterpolatorNode, tag, q);
 
@@ -178,7 +156,7 @@ qword_t *CreateMorphInterpolatorDMAUpload(qword_t *tag, qword_t *q, VU1Pipeline 
 
 qword_t *CreateMorphPipelineCallbacks(qword_t *tag, qword_t *q, VU1Pipeline *pipeline)
 {
-  PipelineCallback *setupVU1Morph = CreatePipelineCBNode(SetupPerMorphDrawVU1Header, q, NULL);
+  PipelineCallback *setupVU1Morph = CreatePipelineCBNode(SetupPerMorphDrawVU1Header, q, NULL, MORPHTARGET_VU1_HEADER_PCB);
 
   tag = AddPipelineCallbackNodeQword(pipeline, setupVU1Morph, tag, q);
 
@@ -191,7 +169,7 @@ qword_t *CreateSkinnedAnimationCallbacks(qword_t *tag, qword_t *q, VU1Pipeline *
 
   *val = headerLocation;
 
-  PipelineCallback *setupVU1Bones = CreatePipelineCBNode(SetupPerBoneAnimationVU1Header, q, val);
+  PipelineCallback *setupVU1Bones = CreatePipelineCBNode(SetupPerBoneAnimationVU1Header, q, val, SKINNED_VU1_HEADER_PCB);
 
   tag = AddPipelineCallbackNodeQword(pipeline, setupVU1Bones, tag, q);
 
@@ -207,7 +185,7 @@ void UpdateBoneVectorsDrawVU1(VU1Pipeline *pipe, GameObject *obj, void *arg, qwo
 
 qword_t *CreateBonesVectorsDMAUpload(qword_t *tag, qword_t *q, VU1Pipeline *pipeline)
 {
-  PipelineCallback *setupVU1BonesDMA = CreatePipelineCBNode(UpdateBoneVectorsDrawVU1, q, NULL);
+  PipelineCallback *setupVU1BonesDMA = CreatePipelineCBNode(UpdateBoneVectorsDrawVU1, q, NULL, SKINNED_DMA_UPLOAD_PCB);
 
   tag = AddPipelineCallbackNodeQword(pipeline, setupVU1BonesDMA, tag, q);
 

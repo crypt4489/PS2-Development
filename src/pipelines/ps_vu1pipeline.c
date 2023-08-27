@@ -14,23 +14,23 @@ u32 GetDoubleBufferOffset(u32 base)
     return half + base;
 }
 
-void CreatePipelineSizes(u32 code, u32 *numberOfCbs, u32 *vu1_header_size)
+void CreatePipelineSizes(u32 pCode, u32 *numberOfCbs, u32 *vu1_header_size)
 {
     u32 size = 3;
     u32 header = 16;
 
-    if ((code & VU1Stage1) != 0)
+    if ((pCode & VU1Stage1) != 0)
     {
         size += 1;
     }
 
-    if ((code & VU1Stage2) != 0)
+    if ((pCode & VU1Stage2) != 0)
     {
         header += 4;
         size++;
     }
 
-    if ((code & VU1Stage3) != 0)
+    if ((pCode & VU1Stage3) != 0)
     {
         header = 36;
         size++;
@@ -228,35 +228,41 @@ void AddVU1Pipeline(GameObject *obj, VU1Pipeline *pipeline)
     return;
 }
 
-PipelineCallback *CreatePipelineCBNode(pipeline_callback cb, qword_t *pipeline_loc, void *argument)
+PipelineCallback *CreatePipelineCBNode(pipeline_callback cb, qword_t *pipeline_loc, void *argument, u32 id)
 {
     PipelineCallback *node = (PipelineCallback *)malloc(sizeof(PipelineCallback));
     node->args = argument;
     node->q = pipeline_loc;
     node->callback = cb;
+    node->id = id;
     return node;
 }
 
 VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses)
 {
     VU1Pipeline *node = (VU1Pipeline *)malloc(sizeof(VU1Pipeline));
+
     node->cbs = malloc(sizeof(PipelineCallback *) * sizeOfCBS);
     for (int i = 0; i < sizeOfCBS; i++)
     {
         node->cbs[i] = NULL;
     }
-    node->programs = malloc(sizeof(qword_t *) * renderPasses);
+
+    node->passes = malloc(sizeof(VU1PipelineRenderPass *) * renderPasses);
     for (int i = 0; i < renderPasses; i++)
     {
-        node->programs[i] = (qword_t *)malloc(sizeof(qword_t));
+        node->passes[i] = (VU1PipelineRenderPass *)malloc(sizeof(VU1PipelineRenderPass));
     }
+
     node->next = NULL;
     node->q = NULL;
     node->numberCBS = 0;
     node->callBackSize = sizeOfCBS;
     node->currentRenderPass = 0;
     node->renderPasses = renderPasses;
+
     memcpy(node->name, name, strnlen(name, MAX_CHAR_PIPELINE_NAME));
+
     return node;
 }
 
@@ -265,27 +271,20 @@ qword_t *AddPipelineCallbackNodeQword(VU1Pipeline *pipeline, PipelineCallback *n
     int callNumber = 1;
     int size = pipeline->numberCBS;
 
-    if (size == 0)
+
+    for (int i = 0; i <= size; i++)
     {
-        pipeline->numberCBS++;
-        pipeline->cbs[0] = node;
-    }
-    else
-    {
-        for (int i = 0; i <= size; i++)
+        if (pipeline->cbs[i] == NULL)
         {
-            if (pipeline->cbs[i] == NULL)
-            {
-                pipeline->numberCBS++;
-                pipeline->cbs[i] = node;
-                break;
-            }
-            else if (pipeline->cbs[i]->callback == node->callback && pipeline->cbs[i]->q == targ)
-            {
-                break;
-            }
-            callNumber++;
+            pipeline->numberCBS++;
+            pipeline->cbs[i] = node;
+            break;
         }
+        else if (pipeline->cbs[i]->callback == node->callback && pipeline->cbs[i]->q == targ)
+        {
+            break;
+        }
+        callNumber++;
     }
 
     qword_t *b = q;

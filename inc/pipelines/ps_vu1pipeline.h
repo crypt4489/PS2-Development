@@ -9,7 +9,7 @@ u32 GetDoubleBufferOffset(u32 base);
 VU1Pipeline* GetPipelineByName(const char *name, GameObject *obj);
 
 
-PipelineCallback *CreatePipelineCBNode(pipeline_callback cb, qword_t *pipeline_loc, void *argument);
+PipelineCallback *CreatePipelineCBNode(pipeline_callback cb, qword_t *pipeline_loc, void *argument, u32 id);
 VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses);
 void AddPipelineCallbackNode(VU1Pipeline *pipeline, PipelineCallback *node);
 void AddVU1Pipeline(GameObject *obj, VU1Pipeline *pipeline);
