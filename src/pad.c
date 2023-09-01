@@ -37,6 +37,8 @@ float localLowAngle = 25.0f;
 VECTOR pointpos = {+0.0f, +0.0f, 0.0f, 0.0f};
 extern int alpha;
 
+extern float k;
+
 void UpdatePad()
 {
     s32 state = padGetState(port, 0);
@@ -192,6 +194,12 @@ void UpdatePad()
 
         if (new_pad & PAD_R1)
         {
+            k += 0.25f;
+        }
+
+         if (new_pad & PAD_L1)
+        {
+            k -= 0.25f;
         }
     }
 }

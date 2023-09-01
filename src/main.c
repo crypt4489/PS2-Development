@@ -74,7 +74,6 @@ extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
 
-
 TimerStruct *ts;
 
 char print_out[50];
@@ -96,7 +95,6 @@ VECTOR ambientColor = {0.25f, 0.25f, 0.30f, 1.0f};
 
 VECTOR roomAmbientColor = {0.10f, 0.10f, 0.10f, 1.0f};
 
-const char *waterName = "WATER.BMP";
 const char *NewYorkName = "NEWYORK.PNG";
 const char *face1Name = "FACE1.PNG";
 const char *face2Name = "FACE2.PNG";
@@ -108,6 +106,9 @@ const char *glossName = "SPHERE.PNG";
 const char *worldName = "WORLD.PNG";
 const char *wallName = "WALL.PNG";
 const char *alphaMap = "ALPHA_MAP.PNG";
+const char *digitZero = "DIGIT.PNG";
+const char *digitOne = "DIGITM1.PNG";
+const char *digitTwo = "DIGITM2.PNG";
 
 GameObject *grid = NULL;
 GameObject *body = NULL;
@@ -140,6 +141,8 @@ Camera shadowCam;
 GameObject *shadowTexView = NULL;
 Texture *targetTex = NULL;
 
+Texture *zero = NULL;
+
 int alpha = 0x80;
 
 // #define RESAMPLED
@@ -148,106 +151,32 @@ int FrameCounter = 0;
 
 MeshBuffers sphereTarget;
 
-static void SphereMappingCPU()
-{
-    MATRIX screen, m, camMatrix;
-    CreateWorldMatrixLTM(multiSphere->ltm, m);
-    MatrixIdentity(screen);
-
-    MatrixMultiply(screen, screen, m);
-    MatrixMultiply(screen, screen, cam->view);
-
-    MatrixCopy(m, screen);
-
-    MatrixInverse(screen, m);
-
-    // DumpMatrix(m);
-    //   CreateNormalizedTextureCoordinateMatrix(m);
-    // m[8] *= -1.0f;
-    // m[9] *= -1.0f;
-    // m[10] *= -1.0f;
-    // m[3] = m[7] = m[11] = 0.0f;
-    // DumpMatrix(m);
-    MatrixTranspose(m);
-    int count = 0;
-    for (int i = 0; i < multiSphere->vertexBuffer.vertexCount; i++)
-    {
-        VECTOR incident, incidentNormal;
-        MatrixVectorMultiply(incident, screen, multiSphere->vertexBuffer.vertices[i]);
-        Normalize(incident, incidentNormal); // u
-        // DumpVector(incidentNormal);
-        VECTOR outNormal, reflect;
-        Matrix3VectorMultiply(outNormal, m, multiSphere->vertexBuffer.normals[i]);
-        Normalize(outNormal, outNormal); // n
-        // DumpVector(outNormal);
-
-        reflect[0] = outNormal[0] * incidentNormal[0];
-        reflect[1] = outNormal[1] * incidentNormal[1];
-        reflect[2] = outNormal[2] * incidentNormal[2];
-
-        float dot = reflect[0] + reflect[1] + reflect[2];
-
-        VECTOR output;
-        ScaleVectorXYZ(output, outNormal, dot * 2.0f);
-        VectorSubtractXYZ(incidentNormal, output, reflect);
-
-        reflect[2] = reflect[2] + 1.0f;
-
-        float toSqr;
-
-        VECTOR temp;
-
-        temp[0] = reflect[0] * reflect[0];
-        temp[1] = reflect[1] * reflect[1];
-        temp[2] = reflect[2] * reflect[2];
-
-        toSqr = temp[0] + temp[1] + temp[2];
-
-        float sqr = Sqrt(toSqr);
-
-        float sqrB = sqr;
-
-        sqr *= 2.0f;
-
-        // multiSphere->vertexBuffer.texCoords[i][0] = (outNormal[0] / 2.0f) + 0.5;
-        //  multiSphere->vertexBuffer.texCoords[i][1] = (outNormal[1] / 2.0f) + 0.5;
-
-        multiSphere->vertexBuffer.texCoords[i][0] = (reflect[0] / sqr) + 0.5;
-        multiSphere->vertexBuffer.texCoords[i][1] = (reflect[1] / sqr) + 0.5;
-
-        if (i >= 0)
-        {
-            // DEBUGLOG("%f", sqr);
-            //
-            //    DumpVector(multiSphere->vertexBuffer.texCoords[i]);
-            count++;
-            if (count == 3)
-            {
-                count = 0;
-                //          DEBUGLOG("-----------");
-            }
-        }
-    }
-
-    // while(1);
-}
+float k = -1.0f;
 
 static void UpdateGlossTransform()
 {
     CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(cam->ltm), *GetForwardVectorLTM(cam->ltm), *GetRightVectorLTM(cam->ltm));
 
-   // MATRIX screen, m, camMatrix;
-   // CreateWorldMatrixLTM(multiSphere->ltm, m);
-   // MatrixIdentity(screen);
+    // MATRIX screen, m, camMatrix;
+    // CreateWorldMatrixLTM(multiSphere->ltm, m);
+    // MatrixIdentity(screen);
 
-   // MatrixMultiply(screen, screen, m);
-    //MatrixMultiply(screen, screen, cam->view);
+    // MatrixMultiply(screen, screen, m);
+    // MatrixMultiply(screen, screen, cam->view);
 
     MatrixInverse(lightTransform, lightTransform);
 
     MatrixTranspose(lightTransform);
 
     CreateNormalizedTextureCoordinateMatrix(lightTransform);
+}
+
+static void SetK()
+{
+
+    static int mag = LOD_MAG_LINEAR;
+
+    SetupTexLODStruct(zero, k, 0, 2, 5, mag);
 }
 
 static void CreateSphereTarget()
@@ -405,7 +334,7 @@ static void SetupGrid()
     CreateGrid(w, l, dw, dh, &grid->vertexBuffer);
     u32 id = GetTextureIDByName(NewYorkName, g_Manager.texManager);
 
-    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.vertexCount - 1, id);
+    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
 
     VECTOR pos = {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -433,7 +362,7 @@ static void SetupBody()
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
-    VECTOR object_position = {0.0f, 0.0f, 0.0f, 0.0f};
+    VECTOR object_position = {-50.0f, 0.0f, 0.0f, 0.0f};
 
     body = InitializeGameObject();
 
@@ -447,7 +376,7 @@ static void SetupBody()
              scales,
              1.0f, body->ltm);
 
-    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.vertexCount - 1, 10);
+    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
 
     body->update_object = NULL;
 
@@ -479,10 +408,10 @@ static void SetupMultiSphere()
 
     multiSphere = InitializeGameObject();
     ReadModelFile("MODELS\\TORUS.BIN", &multiSphere->vertexBuffer);
-    //envmap
-    //SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
+    // envmap
+    // SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
 
-    //alphamap
+    // alphamap
     SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 1));
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
@@ -502,12 +431,11 @@ static void SetupMultiSphere()
 
     MatrixIdentity(lightTransform);
 
-    //CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE");
+    // CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE");
 
-    //SetEnvMapMATRIX(multiSphere->activePipeline, lightTransform);
+    // SetEnvMapMATRIX(multiSphere->activePipeline, lightTransform);
 
-    //SetEnvMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, glossName));
-
+    // SetEnvMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, glossName));
 
     CreateAlphaMapPipeline(multiSphere, "ALPHAMAP");
 
@@ -825,13 +753,13 @@ int Render()
         float delta = (currentTime - lastTime) * 0.001f;
         lastTime = currentTime;
 
+        SetK();
+
         UpdatePad();
-        if (body)
-            UpdateAnimator(body->objAnimator, delta);
+        if (body != NULL)
+           UpdateAnimator(body->objAnimator, delta);
 
         UpdateGlossTransform();
-
-        // SphereMappingCPU();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
@@ -851,13 +779,15 @@ int Render()
 
         PrintText(myFont, print_out, -310, -220);
 
+        snprintf(print_out, 15, "K-VALUE %f", k);
+
+        PrintText(myFont, print_out, -310, -200);
+
         EndRendering(cam);
 
         EndFrame();
 
         UpdateLight();
-
-
 
         FrameCounter++;
     }
@@ -901,7 +831,6 @@ static void SetupVU1Programs()
     prog = CreateVU1Program(&VU1_GenericBonesAnimStage1_CodeStart, &VU1_GenericBonesAnimStage1_CodeEnd, 0); // 7
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
-
 }
 
 static void LoadInTextures()
@@ -909,10 +838,6 @@ static void LoadInTextures()
     char _file[MAX_FILE_NAME];
 
     char _folder[9] = "TEXTURES\\";
-
-    AppendString(_folder, waterName, _file, MAX_FILE_NAME);
-
-    AddAndCreateTexture(_file, READ_BMP, 1, 0x80, TEX_ADDRESS_WRAP, 0);
 
     AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
 
@@ -957,6 +882,22 @@ static void LoadInTextures()
     AppendString(_folder, alphaMap, _file, MAX_FILE_NAME);
 
     AddAndCreateAlphaMap(_file, READ_PNG, TEX_ADDRESS_CLAMP);
+
+    AppendString(_folder, digitTwo, _file, MAX_FILE_NAME);
+
+    Texture *two = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
+
+    AppendString(_folder, digitOne, _file, MAX_FILE_NAME);
+
+    Texture *one = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
+
+    AppendString(_folder, digitZero, _file, MAX_FILE_NAME);
+
+    zero = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
+
+    AddMipMapTexture(zero, one);
+
+    AddMipMapTexture(zero, two);
 }
 
 int main(int argc, char **argv)

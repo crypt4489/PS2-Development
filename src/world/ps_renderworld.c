@@ -34,7 +34,7 @@ LinkedList *CleanWorldLightsList(RenderWorld *world)
 {
     LinkedList *iter = world->lights;
 
-    while (iter->next != NULL)
+    while (iter != NULL)
     {
         LinkedList *clean = iter;
         iter = iter->next;
@@ -47,13 +47,6 @@ LinkedList *CleanWorldLightsList(RenderWorld *world)
         CleanLinkedListNode(clean);
     }
 
-    if (iter->data)
-    {
-        free(iter->data);
-    }
-
-    CleanLinkedListNode(iter);
-
     world->lights = NULL;
 
     return world->lights;
@@ -63,16 +56,13 @@ LinkedList *CleanWorldObjList(RenderWorld *world)
 {
     LinkedList *iter = world->objList;
 
-    while (iter->next != NULL)
+    while (iter != NULL)
     {
         LinkedList *clean = iter;
         iter = iter->next;
         CleanGameObject(clean->data);
         CleanLinkedListNode(clean);
     }
-
-    CleanGameObject(iter->data);
-    CleanLinkedListNode(iter);
 
     world->objList = NULL;
 

@@ -135,6 +135,11 @@ enum DMATAG_CODES
     DMA_REFE = 0
 };
 
+typedef struct linked_list_t
+{
+    struct linked_list_t *next;
+    void *data;
+} LinkedList;
 typedef union Bin2Float_t
 {
     u32 int_x;
@@ -153,7 +158,7 @@ enum TextureReadType
 #define PS_TEX_MEMORY 0
 #define PS_TEX_VRAM 1
 
-typedef struct Texture
+typedef struct
 {
     char name[MAX_CHAR_TEXTURE_NAME];
     texbuffer_t texbuf;
@@ -161,13 +166,15 @@ typedef struct Texture
     lod_t lod;
     unsigned char *pixels;
     unsigned char *clut_buffer;
-    qword_t *upload_dma;
+    qword_t *upload;
     u32 width;
     u32 height;
     u32 psm;
     u32 id;
     u16 mode;
     u16 type;
+    u16 mipLevels;
+    LinkedList *mipMaps;
 } Texture;
 
 enum ObjectBoundingTypes
@@ -177,29 +184,23 @@ enum ObjectBoundingTypes
     BBO_SPHERE = 2
 };
 
-typedef struct ObjectBounds
+typedef struct
 {
     u32 type;
     void *obb;
 } ObjectBounds;
 
-typedef struct BoundingBox
+typedef struct
 {
     VECTOR top;
     VECTOR bottom;
 } BoundingBox;
 
-typedef struct BoundingSphere
+typedef struct
 {
     VECTOR center;
     float radius;
 } BoundingSphere;
-
-typedef struct linked_list_t
-{
-    struct linked_list_t *next;
-    void *data;
-} LinkedList;
 
 struct morph_target_handle_t;
 typedef struct morph_target_handle_t MorphTargetBuffer;

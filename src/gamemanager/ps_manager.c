@@ -113,7 +113,7 @@ void SetupManagerTexture()
     g_Manager.textureInVram->clut.load_method = CLUT_LOAD;
     g_Manager.textureInVram->clut.psm = GS_PSM_32;
     g_Manager.textureInVram->clut.storage_mode = CLUT_STORAGE_MODE1;
-    g_Manager.textureInVram->clut.address = g_Manager.textureInVram->texbuf.address + graph_vram_size(256, 256, GS_PSM_8, GRAPH_ALIGN_PAGE);
+    g_Manager.textureInVram->clut.address = g_Manager.textureInVram->texbuf.address + graph_vram_size(256, 256, GS_PSM_8, GRAPH_ALIGN_BLOCK );
 }
 
 void EndFrame()
@@ -189,15 +189,14 @@ void ClearManagerTexList(GameManager *manager)
 {
     LinkedList *iter = manager->texManager->list;
 
-    while (iter->next != NULL)
+    while (iter != NULL)
     {
         LinkedList *cleanLL = iter;
         iter = iter->next;
         CleanTextureStruct((Texture *)cleanLL->data);
         CleanLinkedListNode(cleanLL);
     }
-    CleanTextureStruct((Texture *)iter->data);
-    CleanLinkedListNode(iter);
+
     manager->texManager->list = NULL;
     manager->texManager->count = 0;
     manager->texManager->globalIndex = 0;

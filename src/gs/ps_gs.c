@@ -260,6 +260,7 @@ void CreateClutStructs(Texture *tex, int width, int psm)
 	tex->clut.load_method = CLUT_LOAD;
 	tex->clut.psm = psm;
 	tex->clut.storage_mode = CLUT_STORAGE_MODE1;
+	tex->clut.address = g_Manager.textureInVram->clut.address;
 }
 
 void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter)
@@ -293,6 +294,8 @@ void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 func
 
 	tex->texbuf.width = width;
 	tex->texbuf.psm = psm;
+
+	tex->texbuf.address = g_Manager.textureInVram->texbuf.address;
 }
 
 void SetupRenderTarget(RenderTarget *target, int context, int wait)
@@ -472,7 +475,7 @@ qword_t *draw_enable_tests_alpha(qword_t *q, int context, int alpha, u32 method)
 
 qword_t *SetupZTestGS(qword_t *q, int z_test_method, int z_test_enable, char alphaValue, char alpha_test_method, char frameBufferTest, char alpha_test_enable, char alpha_test, int context)
 {
-	PACK_GIFTAG(q, GS_SET_TEST(DRAW_ENABLE, alpha_test_method, alphaValue, frameBufferTest, alpha_test_enable, alpha_test, z_test_enable, z_test_method), context == 0 ? GS_REG_TEST : GS_REG_TEST_2);
+	PACK_GIFTAG(q, GS_SET_TEST(DRAW_ENABLE, alpha_test_method, alphaValue, frameBufferTest, alpha_test_enable, alpha_test, z_test_enable, z_test_method),  GS_REG_TEST + context);
 	q++;
 	return q;
 }
@@ -484,7 +487,7 @@ qword_t *SetupRGBAQGS(qword_t *b, color_t color)
 }
 qword_t *SetupAlphaGS(qword_t *q, blend_t *blend, int context)
 {
-	PACK_GIFTAG(q, GS_SET_ALPHA(blend->color1, blend->color2, blend->alpha, blend->color3, blend->fixed_alpha), (context == 0) ? GS_REG_ALPHA : GS_REG_ALPHA_2);
+	PACK_GIFTAG(q, GS_SET_ALPHA(blend->color1, blend->color2, blend->alpha, blend->color3, blend->fixed_alpha), GS_REG_ALPHA + context);
 	q++;
 
 	/*  PACK_GIFTAG(q, GS_SET_PABE(DRAW_ENABLE), GS_REG_PABE);
