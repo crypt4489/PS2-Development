@@ -354,7 +354,7 @@ void SetupTexLODStruct(Texture *tex, float _k, char _l, int max, int filter_min,
     tex->lod.k = _k;
     tex->lod.calculation = LOD_USE_K;
     tex->lod.max_level = max;
-    tex->lod.mipmap_select = LOD_MIPMAP_CALCULATE;
+    tex->lod.mipmap_select = LOD_MIPMAP_REGISTER;
 }
 
 static void SetupTexRegistersGIF(Texture *tex)
@@ -372,6 +372,11 @@ static void SetupTexRegistersGIF(Texture *tex)
     SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
+#define GS_SET_MIPTBP(TBA1,TBW1,TBA2,TBW2,TBA3,TBW3) \
+	(u64)((TBA1) & 0x00003FFF) <<  0 | (u64)((TBW1) & 0x0000003F) << 14 | \
+	(u64)((TBA2) & 0x00003FFF) << 20 | (u64)((TBW2) & 0x0000003F) << 34 | \
+	(u64)((TBA3) & 0x00003FFF) << 40 | (u64)((TBW3) & 0x0000003F) << 54
+
 static void SetupMipMapRegistersGIF(u32 *tex_addresses, u32 *widths)
 {
 
@@ -380,11 +385,10 @@ static void SetupMipMapRegistersGIF(u32 *tex_addresses, u32 *widths)
     q++;
     PACK_GIFTAG(q, GIF_SET_TAG(2, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
     q++;
-    //DEBUGLOG("%d %d %d", tex_addresses[0], tex_addresses[1], widths[0]);
-    PACK_GIFTAG(q, GS_SET_MIPTBP1(tex_addresses[0] >> 6, widths[0] >> 6, tex_addresses[1] >> 6, widths[1] >> 6, tex_addresses[2] >> 6, widths[2] >> 6), GS_REG_MIPTBP1 + g_Manager.gs_context);
+    PACK_GIFTAG(q, GS_SET_MIPTBP(tex_addresses[0] >> 6, widths[0] >> 6, tex_addresses[1] >> 6, widths[1] >> 6, tex_addresses[2] >> 6, widths[2] >> 6), GS_REG_MIPTBP1 + g_Manager.gs_context);
     q++;
 
-    PACK_GIFTAG(q, GS_SET_MIPTBP2(tex_addresses[3] >> 6, widths[3] >> 6, tex_addresses[4] >> 6, widths[4] >> 6, tex_addresses[5] >> 6, widths[5] >> 6), GS_REG_MIPTBP2 + g_Manager.gs_context);
+    PACK_GIFTAG(q, GS_SET_MIPTBP(tex_addresses[3] >> 6, widths[3] >> 6, tex_addresses[4] >> 6, widths[4] >> 6, tex_addresses[5] >> 6, widths[5] >> 6), GS_REG_MIPTBP2 + g_Manager.gs_context);
     q++;
 
     SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
@@ -401,13 +405,13 @@ void UploadTextureViaManagerToVRAM(Texture *tex)
         ParseTextureUpload(tex->upload);
 
         texManager->currIndex = tex->id;
-        u32 addrs[6], widths[6];
+
         Texture *mipTex = tex;
         if (tex->mipLevels >= 1)
         {
             LinkedList *list = tex->mipMaps;
             u32 currMap = 1;
-
+            u32 addrs[6], widths[6];
             while (tex->mipLevels >= currMap)
             {
                 mipTex = (Texture *)list->data;
@@ -424,6 +428,7 @@ void UploadTextureViaManagerToVRAM(Texture *tex)
             SetupMipMapRegistersGIF(addrs, widths);
         }
         SetupTexRegistersGIF(tex);
+
     }
     else
     {

@@ -142,9 +142,15 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     }
 }
 
+void LoadPngRedux(u8 *data, Texture *tex, u32 size)
+{
+    png_image image;
+    memset(&image, 0, sizeof(png_image));
+    image.version = PNG_IMAGE_VERSION;
+}
+
 void LoadPng(u8 *data, Texture *tex, u32 size)
 {
-
     png_image image;
     memset(&image, 0, sizeof(png_image));
     image.version = PNG_IMAGE_VERSION;
