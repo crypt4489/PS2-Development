@@ -30,10 +30,12 @@ typedef struct interpolator_callback_data_t
 
 void SetupAlphaMapPass1(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
+  //draw the object and only affect the alpha channel so it is all zero.
+  // don't affect zbuffer or framebuffer rgb
   qword_t *q = pipeline_loc;
   color_t color;
   CREATE_RGBAQ_STRUCT(color, 0, 0, 0, 0, 1.0f);
-  q = SetupZTestGS(q, obj->renderState.state.render_state.Z_TYPE, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+  q = SetupZTestGS(q, 1, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
   q = SetupRGBAQGS(q, color);
   q = SetFrameBufferMask(q, g_Manager.targetBack->render, 0x00ffffff, g_Manager.gs_context);
   q = SetZBufferMask(q, g_Manager.targetBack->z, 1, g_Manager.gs_context);
@@ -41,9 +43,11 @@ void SetupAlphaMapPass1(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *
 
 void SetupAlphaMapPass3(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *pipeline_loc)
 {
+  // draw object normally, not affecting alpha channel of framebuffer
   qword_t *q = pipeline_loc;
   q = SetupZTestGS(q, 2, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 1, DTEST_METHOD_PASS_ONE, g_Manager.gs_context);
   q = SetFrameBufferMask(q, g_Manager.targetBack->render, 0xff000000, g_Manager.gs_context);
+  q = SetZBufferMask(q, g_Manager.targetBack->z, 0, g_Manager.gs_context);
   q++;
 
   q->sw[3] = obj->renderState.state.render_state.state;
@@ -51,10 +55,11 @@ void SetupAlphaMapPass3(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *
 
 void SetupAlphaMapPass2(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *pipeline_loc)
 {
+  // draw object with normal rgbaq and update alpha to one
+  // where the texture alpha is one
   qword_t *q = pipeline_loc;
   q = SetupRGBAQGS(q, obj->renderState.color);
-  q = SetZBufferMask(q, g_Manager.targetBack->z, 0, g_Manager.gs_context);
-  q = SetupZTestGS(q, 2, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+  q = SetupZTestGS(q, 1, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 }
 
 void SetupAlphaMapFinish(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *pipeline_loc)

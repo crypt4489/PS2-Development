@@ -836,16 +836,16 @@ void CreateAlphaMapPipeline(GameObject *obj, const char *name)
 
     q++;
 
-    q = CreateDMATag(q, DMA_CNT, 4, 0, 0, 0);
+    q = CreateDMATag(q, DMA_CNT, 5, 0, 0, 0);
 
-    q = CreateDirectTag(q, 3, 0);
+    q = CreateDirectTag(q, 4, 0);
 
-    q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+    q = CreateGSSetTag(q, 3, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
 
     PipelineCallback *setupAlphaMapDraw = CreatePipelineCBNode(SetupAlphaMapPass3, q, NULL, ALPHAMAP_RENDERPASS_THREE_PCB);
     dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupAlphaMapDraw, dcode_callback_tags, q);
 
-    q += 2;
+    q += 3;
 
     q = CreateDMATag(q, DMA_END, 1, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE((12 | (1 << 14) | (0 << 15)), 1, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
 
@@ -858,7 +858,7 @@ void CreateAlphaMapPipeline(GameObject *obj, const char *name)
         q = CreateMorphInterpolatorDMAUpload(q, q + 1, pipeline, obj->interpolator->currInterpNode, 0);
     }
 
-    q = CreateMeshDMAUpload(q, obj, drawSize, drawCode, 1, &normal_vu1);
+    q = CreateMeshDMAUpload(q, obj, drawSize, drawCode, msize, &normal_vu1);
 
     q = CreateDCODEDmaTransferTag(q, DMA_CHANNEL_VIF1, 1, 1, 4);
 

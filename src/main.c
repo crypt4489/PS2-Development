@@ -395,7 +395,7 @@ static void SetupBody()
 
 static void RotateSphere()
 {
-    PitchLTM(multiSphere->ltm, 1.0f);
+    //PitchLTM(multiSphere->ltm, 1.0f);
 }
 
 static void SetupMultiSphere()
