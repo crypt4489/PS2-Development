@@ -22,6 +22,7 @@ typedef float VECTOR[4] __attribute__((__aligned__(16)));
 typedef float MATRIX[16] __attribute__((__aligned__(16)));
 
 typedef s32 VectorInt[4] __attribute__((__aligned__(16)));
+
 typedef struct vu1_program_t
 {
     union

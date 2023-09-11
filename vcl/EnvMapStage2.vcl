@@ -6,9 +6,6 @@ start:
     MatrixLoad{ globalMatrix, 4, vi00 }
     MatrixLoad{ EnvMapMatrix, 16, vi00 }
 
-
-
-
 begin:
     xtop    iBase
 
@@ -23,8 +20,6 @@ begin:
     vertexLoop:
 
         add.xyz stq1, vf00, vf00
-        add.xyz stq2, vf00, vf00
-        add.xyz stq3, vf00, vf00
 
         lq normal, 0(normData)
 
@@ -37,42 +32,16 @@ begin:
         madd.xy         acc, EnvMapMatrix[1], normal[y]
         madd.xy         stq1, EnvMapMatrix[2], normal[z]
 
-        lq normal, 1(normData)
-        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
-
-        Normalize{ normal, normal, temp }
-        add.xy          acc, EnvMapMatrix[3], vf00
-        madd.xy         acc, EnvMapMatrix[0], normal[x]
-        madd.xy         acc, EnvMapMatrix[1], normal[y]
-        madd.xy         stq2, EnvMapMatrix[2], normal[z]
-
-
-
-
-        lq normal, 2(normData)
-
-        Matrix3MultiplyVertex3{ normal, globalMatrix, normal }
-
-        Normalize{ normal, normal, temp }
-        add.xy          acc, EnvMapMatrix[3], vf00
-        madd.xy         acc, EnvMapMatrix[0], normal[x]
-        madd.xy         acc, EnvMapMatrix[1], normal[y]
-        madd.xy         stq3, EnvMapMatrix[2], normal[z]
-
-
-
 store_stq:
 
 
         sq.xy    stq1,         0(stqData)
-        sq.xy    stq2,         1(stqData)
-        sq.xy    stq3,         2(stqData)
 
-        iaddiu          stqData,        stqData,     3
-        iaddiu          normData,       normData,    3
-        iaddiu          vertexData,     vertexData,  3
+        iaddiu          stqData,        stqData,     1
+        iaddiu          normData,       normData,    1
+        iaddiu          vertexData,     vertexData,  1
 
-        iaddi   vertexCounter,  vertexCounter,  -3
+        iaddi   vertexCounter,  vertexCounter,  -1
         ibne    vertexCounter,  iBase,   vertexLoop
 end:
         .vsm
