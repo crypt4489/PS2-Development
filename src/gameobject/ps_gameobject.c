@@ -13,6 +13,7 @@
 #include "pipelines/ps_vu1pipeline.h"
 #include "animation/ps_morphtarget.h"
 #include "log/ps_log.h"
+#include "util/ps_linkedlist.h"
 
 void SetupGameObjectPrimRegs(GameObject *obj, color_t color, u32 renderState)
 {

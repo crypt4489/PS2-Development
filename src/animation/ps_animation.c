@@ -8,6 +8,7 @@
 #include "math/ps_fast_maths.h"
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
+#include "util/ps_linkedlist.h"
 
 static MATRIX final, nodeTrans;
 static MATRIX boneMatricesStack[256];

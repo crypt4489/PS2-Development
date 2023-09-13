@@ -14,6 +14,7 @@
 #include "dma/ps_dma.h"
 #include "math/ps_misc.h"
 #include "log/ps_log.h"
+#include "util/ps_linkedlist.h"
 
 static void StripFilePath(const char *filepath, char *texname)
 {

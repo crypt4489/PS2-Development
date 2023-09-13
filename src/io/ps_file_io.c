@@ -10,6 +10,7 @@
 #include "compression/ps_huffman.h"
 #include "animation/ps_animation.h"
 #include "gamemanager/ps_manager.h"
+#include "util/ps_linkedlist.h"
 
 sceCdRMode sStreamMode;
 

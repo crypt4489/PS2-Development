@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "util/ps_linkedlist.h"
 #include "pipelines/ps_pipelineinternal.h"
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"

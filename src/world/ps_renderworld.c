@@ -11,6 +11,7 @@
 #include "animation/ps_morphtarget.h"
 #include "log/ps_log.h"
 #include "math/ps_matrix.h"
+#include "util/ps_linkedlist.h"
 
 
 RenderWorld *g_DrawWorld = NULL;
