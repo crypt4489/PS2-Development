@@ -270,16 +270,18 @@ LinkedList *RemoveNodeFromList(LinkedList *head, LinkedList *node)
         iter = iter->next;
         if (iter == NULL)
         {
+            ERRORLOG("Cannot find node in list to remove");
             return head;
         }
     }
 
     if (iter == head)
     {
-        iter = CleanLinkedListNode(prev);
-        return iter;
+        return CleanLinkedListNode(iter);
     }
+
     prev->next = CleanLinkedListNode(iter);
+
     return head;
 }
 
@@ -298,6 +300,76 @@ LinkedList *CleanLinkedListNode(LinkedList *node)
     }
 
     return ret;
+}
+
+#define LINKEDLIST_END(head, ret) do {\
+    ret = head;\
+    head = head->next;\
+    if (head == NULL)\
+        break;\
+} while(1) 
+
+void* PeekQueue(Queue *queue)
+{
+    void *ret = NULL;
+
+    if (queue->type == FIFO)
+    {
+        LinkedList *head = queue->top;
+        ret = head->data;
+    } 
+    else if (queue->type == LIFO)
+    {
+        LinkedList *bottom;
+        LinkedList *head = queue->top;
+        LINKEDLIST_END(head, bottom);
+        ret = bottom->data;
+    }
+    else
+    {
+        ERRORLOG("invalid queue type");
+    }
+
+    return ret;
+}
+
+void* PopQueue(Queue *queue)
+{
+    void *ret = NULL;
+    if (queue->type == FIFO)
+    {
+        LinkedList *head = queue->top;
+        ret = head->data;
+        queue->top = RemoveNodeFromList(head);
+    } 
+    else if (queue->type == LIFO)
+    {
+        LinkedList *bottom;
+        LinkedList *head = queue->top;
+        LINKEDLIST_END(head, bottom);
+        ret = bottom->data;
+        queue->top = RemoveNodeFromList(queue->top, bottom);
+    }
+    else
+    {
+        ERRORLOG("invalid queue type");
+    }
+
+    return ret;
+}
+
+void AddQueueElement(Queue *queue, void* element)
+{
+    LinkedList *node = CreateLinkedListItem(element);
+    queue->top = AddToLinkedList(queue->top, node);
+}
+
+Queue* CreateQueue(u32 maxCount, u32 type)
+{
+    Queue *q = (Queue*)malloc(sizeof(Queue));
+    q->top = q->count = 0;
+    q->maxCount = maxCount;
+    q->type = type;
 }
 
 void SwapManagerDMABuffers()

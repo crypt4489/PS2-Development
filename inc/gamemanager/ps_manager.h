@@ -15,8 +15,12 @@ void ClearManagerStruct(GameManager *manager);
 LinkedList* CreateLinkedListItem(void *data);
 LinkedList* AddToLinkedList(LinkedList *head, LinkedList *node);
 LinkedList* RemoveNodeFromList(LinkedList *head, LinkedList *node);
+void* PeekQueue(Queue *queue);
+void* PopQueue(Queue *queue);
+void AddQueueElement(Queue *queue);
+Queue* CreateQueue(u32 maxCount, u32 type);
 void SwapManagerDMABuffers();
-LinkedList* CleanLinkedListNode(LinkedList *node);;
+LinkedList* CleanLinkedListNode(LinkedList *node);
 void UpdateCurrentTexNameInGS(GameManager *manager, const char *name);
 void EndFrame();
 

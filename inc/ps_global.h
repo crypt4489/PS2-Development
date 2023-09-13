@@ -141,6 +141,21 @@ typedef struct linked_list_t
     struct linked_list_t *next;
     void *data;
 } LinkedList;
+
+enum QueueType
+{
+    FIFO = 1,
+    LIFO = 2;
+};
+
+typedef struct queue_t
+{
+    u32 count;
+    u32 maxCount;
+    u32 type;
+    LinkedList *top;
+} Queue;
+
 typedef union Bin2Float_t
 {
     u32 int_x;
