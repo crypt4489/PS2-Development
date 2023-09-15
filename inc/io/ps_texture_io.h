@@ -42,8 +42,8 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
 
 void LoadPng(u8 *data, Texture *tex, u32 size);
 
-Texture* CreateTextureFromFile(u8 *buffer, const char *name, u32 readType, u8 alpha, u8 useAlpha);
+void CreateTextureFromFile(void* object, void* arg, u8 *buffer);
 
-Texture *ReadTexFile(const char *fileName, const char *name, u32 readType, u8 alpha, u8 useAlpha);
+Texture *ReadTexFile(const char *fileName, char *name, u32 readType, u8 alpha, u8 useAlpha);
 
 #endif

@@ -145,7 +145,7 @@ typedef struct linked_list_t
 enum QueueType
 {
     FIFO = 1,
-    LIFO = 2;
+    LIFO = 2,
 };
 
 typedef struct queue_t

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "util/ps_linkedlist.h"
+#include "log/ps_log.h"
 
 void* PeekQueue(Queue *queue)
 {
@@ -12,7 +13,7 @@ void* PeekQueue(Queue *queue)
     {
         LinkedList *head = queue->top;
         ret = head->data;
-    } 
+    }
     else if (queue->type == LIFO)
     {
         LinkedList *bottom;
@@ -35,8 +36,8 @@ void* PopQueue(Queue *queue)
     {
         LinkedList *head = queue->top;
         ret = head->data;
-        queue->top = RemoveNodeFromList(head);
-    } 
+        queue->top = RemoveNodeFromList(queue->top, head);
+    }
     else if (queue->type == LIFO)
     {
         LinkedList *bottom;
@@ -62,7 +63,9 @@ void AddQueueElement(Queue *queue, void* element)
 Queue* CreateQueue(u32 maxCount, u32 type)
 {
     Queue *q = (Queue*)malloc(sizeof(Queue));
-    q->top = q->count = 0;
+    q->top = NULL;
+    q->count = 0;
     q->maxCount = maxCount;
     q->type = type;
+    return q;
 }

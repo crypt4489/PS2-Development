@@ -779,7 +779,7 @@ int Render()
 
         PrintText(myFont, print_out, -310, -220);
 
-        snprintf(print_out, 15, "K-VALUE %f", k);
+        snprintf(print_out, 20, "K-VALUE %f", k);
 
         PrintText(myFont, print_out, -310, -200);
 

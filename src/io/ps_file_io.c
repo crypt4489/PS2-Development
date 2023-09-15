@@ -57,7 +57,7 @@ u8 *ReadSector(u32 sector, u32 numOfSecs, u8 *buffer)
 sceCdlFILE *FindFileByName(const char *filename)
 {
     sceCdlFILE *file_struct = (sceCdlFILE *)malloc(sizeof(sceCdlFILE)); //(sceCdlFILE *)malloc(sizeof(sceCdlFILE));
-    
+
     if (!(sceCdSearchFile(file_struct, filename)))
     {
         ERRORLOG("FINDFILEBYNAME: Not found %s", filename);
@@ -68,40 +68,43 @@ sceCdlFILE *FindFileByName(const char *filename)
     return file_struct;
 }
 
-void *ReadFileBytes(sceCdlFILE *loc_file_struct, 
-                    u32 *outBuffer, 
+void ReadFileBytes(sceCdlFILE *loc_file_struct,
+                    u8 *outBuffer,
                     u32 offset, u32 readSize)
 {
     u32 starting_sec = loc_file_struct->lsn;
 
     u32 sectorOffset = offset / SECTOR_SIZE;
 
-    u32 remaining = loc_file_struct->size % SECTOR_SIZE;
-
-    if (remaining)
-    {
-        sectorOffset++;
-    }
-
     starting_sec += sectorOffset;
 
     u32 i = 0;
 
-    u8 readBuffer[SECTOR_SIZE];
-    
+    u32 sectors = readSize / SECTOR_SIZE;
+
+    u32 remaining = readSize % SECTOR_SIZE;
+
+    if (remaining)
+    {
+        sectors++;
+    }
+
     u32 bytesLeft = readSize;
 
     u8* head_of_copy = outBuffer;
 
     while (i < sectors)
     {
-        ReadSector(starting_sec + i, 1, readBuffer);
         u32 bytesRead = SECTOR_SIZE;
         if (SECTOR_SIZE > bytesLeft)
         {
+            u8 readBuffer[SECTOR_SIZE];
             bytesRead = bytesLeft;
+            ReadSector(starting_sec + i, 1, readBuffer);
+            memcpy(head_of_copy, readBuffer, bytesRead);
+        } else {
+            ReadSector(starting_sec + i, 1, head_of_copy);
         }
-        memcpy(head_of_copy, readBuffer, bytesRead);
         i++;
         head_of_copy += SECTOR_SIZE;
         bytesLeft -= bytesRead;
@@ -134,28 +137,40 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
         sectors++;
     }
 
-    u8 bytesLeft = bufferSize;
+    u32 bytesLeft = bufferSize;
 
     u8 *buffer = (u8 *)malloc(bufferSize);
 
     u8 *head_of_copy = buffer;
 
-    u32 i = 0;
+    memset(head_of_copy, 0, bufferSize);
 
-    u8 readBuffer[SECTOR_SIZE];
+    u32 i = 0;
 
     while (i < sectors)
     {
-        ReadSector(starting_sec + i, 1, readBuffer);
+
         u32 bytesRead = SECTOR_SIZE;
         if (SECTOR_SIZE > bytesLeft)
         {
+            u8 readBuffer[SECTOR_SIZE];
             bytesRead = bytesLeft;
+            ReadSector(starting_sec + i, 1, readBuffer);
+            memcpy(head_of_copy, readBuffer, bytesRead);
+        } else {
+            ReadSector(starting_sec + i, 1, head_of_copy);
         }
-        memcpy(head_of_copy, readBuffer, bytesRead);
+
         i++;
-        head_of_copy += SECTOR_SIZE;
+        head_of_copy += bytesRead;
         bytesLeft -= bytesRead;
+    }
+
+     if (compressed)
+    {
+        u8 *old = buffer;
+        buffer = decompress(buffer, bufferSize, &bufferSize);
+        free(old);
     }
 
     *outSize = bufferSize;

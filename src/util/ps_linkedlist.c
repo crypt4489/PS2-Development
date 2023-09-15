@@ -1,6 +1,7 @@
 #include "util/ps_linkedlist.h"
 
 #include <stdlib.h>
+#include "log/ps_log.h"
 
 LinkedList *CreateLinkedListItem(void *data)
 {

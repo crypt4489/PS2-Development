@@ -200,11 +200,9 @@ void CreateTextureFromFile(void* object, void* arg, u8 *buffer)
     {
         LoadPng(buffer, tex, params->size);
     }
-
-    return tex;
 }
 
-Texture* ReadTexFile(const char *fileName, const char *nameOfTex, u32 readType, u8 alpha, u8 useAlpha)
+Texture* ReadTexFile(const char *fileName, char *nameOfTex, u32 readType, u8 alpha, u8 useAlpha)
 {
     u32 size;
 
@@ -226,7 +224,7 @@ Texture* ReadTexFile(const char *fileName, const char *nameOfTex, u32 readType, 
     params.useAlpha = useAlpha;
     params.size = size;
 
-    CreateTextureFromFile(tex, &params, buffer);   
+    CreateTextureFromFile(tex, &params, buffer);
 
     free(buffer);
 

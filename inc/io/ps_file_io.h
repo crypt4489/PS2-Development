@@ -7,8 +7,8 @@
 
 sceCdlFILE *FindFileByName(const char *filename);
 
-void *ReadFileBytes(sceCdlFILE *loc_file_struct, 
-                    u32 *outBuffer, 
+void ReadFileBytes(sceCdlFILE *loc_file_struct,
+                    u8 *outBuffer,
                     u32 offset, u32 readSize);
 
 u8 *ReadFileInFull(const char *filename, u32 *outSize);

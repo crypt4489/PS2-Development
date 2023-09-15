@@ -3,13 +3,15 @@
 #include "ps_global.h"
 #include "io/ps_file_io.h"
 
-typedef void (*finish_async_callback)(void*); 
+typedef void (*finish_async_callback)(void*);
 typedef void (*handle_file_loaded)(void *, void*, u8*);
 
-void LoadASync(const char *name, 
-                void* object, 
-                void *params, 
-                handle_file_loaded* loaderCB,
-                finish_async_callback* finish);
+void LoadASync(const char *name,
+                void* object,
+                void *params,
+                handle_file_loaded loaderCB,
+                finish_async_callback finish);
+
+void InitASyncIO();
 
 #endif
