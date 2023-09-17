@@ -12,11 +12,7 @@ Texture* GetTexObjFromTexList(GameManager *manager, int index);
 int PollVU1DoneProcessing(GameManager *manager);
 Texture *GetTexByName(TexManager *manager, const char *name);
 void ClearManagerStruct(GameManager *manager);
-LinkedList* CreateLinkedListItem(void *data);
-LinkedList* AddToLinkedList(LinkedList *head, LinkedList *node);
-LinkedList* RemoveNodeFromList(LinkedList *head, LinkedList *node);
 void SwapManagerDMABuffers();
-LinkedList* CleanLinkedListNode(LinkedList *node);;
 void UpdateCurrentTexNameInGS(GameManager *manager, const char *name);
 void EndFrame();
 

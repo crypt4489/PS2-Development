@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "util/ps_linkedlist.h"
 #include "pipelines/ps_pipelineinternal.h"
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"
@@ -30,7 +31,7 @@ typedef struct interpolator_callback_data_t
 
 void SetupAlphaMapPass1(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
-  //draw the object and only affect the alpha channel so it is all zero.
+  // draw the object and only affect the alpha channel so it is all zero.
   // don't affect zbuffer or framebuffer rgb
   qword_t *q = pipeline_loc;
   color_t color;

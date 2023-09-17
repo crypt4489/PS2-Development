@@ -15,6 +15,7 @@
 #include "io/ps_file_io.h"
 #include "log/ps_log.h"
 #include "system/ps_timer.h"
+#include "util/ps_linkedlist.h"
 
 GameManager g_Manager;
 
@@ -135,7 +136,7 @@ void EndFrame()
         if (g_Manager.currentTime > (g_Manager.lastTime + 1000.0f))
         {
             g_Manager.FPS = frameCounter;
-            // DEBUGLOG("frames per second %d", g_Manager.FPS);
+            DEBUGLOG("frames per second %d", g_Manager.FPS);
             g_Manager.lastTime = g_Manager.currentTime;
             frameCounter = 0;
         }
@@ -204,17 +205,17 @@ void ClearManagerTexList(GameManager *manager)
 
 void ClearManagerStruct(GameManager *manager)
 {
-    if (manager->texManager)
+    if (manager->texManager != NULL)
         free(manager->texManager);
-    if (manager->textureInVram)
+    if (manager->textureInVram != NULL)
         free(manager->textureInVram);
-    if (manager->dmabuffers->dma_chains[0])
+    if (manager->dmabuffers->dma_chains[0] != NULL)
         packet_free(manager->dmabuffers->dma_chains[0]);
-    if (manager->dmabuffers->dma_chains[1])
+    if (manager->dmabuffers->dma_chains[1] != NULL)
         packet_free(manager->dmabuffers->dma_chains[1]);
-    if (manager->dmabuffers)
+    if (manager->dmabuffers != NULL)
         free(manager->dmabuffers);
-    if (manager->timer)
+    if (manager->timer != NULL)
         TimerZeroDisable(g_Manager.timer);
 }
 
@@ -230,74 +231,6 @@ Texture *GetTexObjFromTexList(GameManager *manager, int index)
     }
 
     return (Texture *)iter->data;
-}
-
-LinkedList *CreateLinkedListItem(void *data)
-{
-    LinkedList *node = (LinkedList *)malloc(sizeof(LinkedList));
-    node->next = NULL;
-    node->data = data;
-    return node;
-}
-
-LinkedList *AddToLinkedList(LinkedList *head, LinkedList *node)
-{
-    if (head == NULL)
-    {
-        head = node;
-        return head;
-    }
-
-    LinkedList *iter = head;
-    while (iter->next != NULL)
-    {
-        iter = iter->next;
-    }
-
-    iter->next = node;
-
-    return head;
-}
-
-LinkedList *RemoveNodeFromList(LinkedList *head, LinkedList *node)
-{
-    LinkedList *iter = head;
-    LinkedList *prev = head;
-
-    while (iter != node)
-    {
-        prev = iter;
-        iter = iter->next;
-        if (iter == NULL)
-        {
-            return head;
-        }
-    }
-
-    if (iter == head)
-    {
-        iter = CleanLinkedListNode(prev);
-        return iter;
-    }
-    prev->next = CleanLinkedListNode(iter);
-    return head;
-}
-
-LinkedList *CleanLinkedListNode(LinkedList *node)
-{
-    LinkedList *ret = NULL;
-    if (node)
-    {
-        ret = node->next;
-        node->data = NULL;
-        free(node);
-    }
-    else
-    {
-        ERRORLOG("Cannot remove NULL pointer from LinkedList");
-    }
-
-    return ret;
 }
 
 void SwapManagerDMABuffers()

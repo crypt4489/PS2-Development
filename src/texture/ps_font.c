@@ -112,7 +112,7 @@ Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type
     font->fontTex = myFontTex;
     font->fontWidths = NULL;
 
-    CreateFontWidths(font, fontData);
+    LoadFontWidths(font, fontData);
 
     CreateTexStructs(myFontTex, myFontTex->width, myFontTex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 1);
 
@@ -142,17 +142,10 @@ void CleanFontStruct(Font *font)
     }
 }
 
-void CreateFontWidths(Font *font_struct, const char *filePath)
+void CreateFontWidthsFromFile(void* object, void*, u8 *buffer, u32 bufferLen)
 {
-    u32 size;
-    char _file[MAX_FILE_NAME];
-    Pathify(filePath, _file);
-    u8 *buffer = ReadFileInFull(_file, &size);
 
-    if (buffer == NULL)
-    {
-        return;
-    }
+    Font *font_struct = (Font*)object;
 
     u8 *ptr = buffer;
 
@@ -193,7 +186,24 @@ void CreateFontWidths(Font *font_struct, const char *filePath)
     memcpy(fontWidths, buffer+start, charSize);
     font_struct->widthSize = charSize;
     font_struct->fontWidths = fontWidths;
-    free(ptr);
+}
+
+void LoadFontWidths(Font *font_struct, const char *filePath)
+{
+    u32 size;
+    char _file[MAX_FILE_NAME];
+    Pathify(filePath, _file);
+    u8 *buffer = ReadFileInFull(_file, &size);
+
+    if (buffer == NULL)
+    {
+        ERRORLOG("Cannot open font widths file %s", filePath);
+        return;
+    }
+
+    CreateFontWidthsFromFile(font_struct, NULL, buffer, size);
+
+    free(buffer);
 }
 
 int WidthOfString(Font *font_struct, const char *text)

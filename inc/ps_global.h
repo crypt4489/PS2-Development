@@ -22,6 +22,7 @@ typedef float VECTOR[4] __attribute__((__aligned__(16)));
 typedef float MATRIX[16] __attribute__((__aligned__(16)));
 
 typedef s32 VectorInt[4] __attribute__((__aligned__(16)));
+
 typedef struct vu1_program_t
 {
     union
@@ -140,6 +141,21 @@ typedef struct linked_list_t
     struct linked_list_t *next;
     void *data;
 } LinkedList;
+
+enum QueueType
+{
+    FIFO = 1,
+    LIFO = 2,
+};
+
+typedef struct queue_t
+{
+    u32 count;
+    u32 maxCount;
+    u32 type;
+    LinkedList *top;
+} Queue;
+
 typedef union Bin2Float_t
 {
     u32 int_x;

@@ -13,6 +13,7 @@
 #include "pipelines/ps_pipelinecbs.h"
 #include "system/ps_vif.h"
 #include "log/ps_log.h"
+#include "util/ps_linkedlist.h"
 
 static inline u32 UploadSize(u32 loop, u32 count)
 {

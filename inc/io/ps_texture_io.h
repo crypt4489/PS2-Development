@@ -5,8 +5,6 @@
 
 #define BITMAP_ID      0x4D42
 
-
-
 typedef struct __attribute__((packed)) BitmapFileHeader
 {
 	u16  bfType;
@@ -31,14 +29,20 @@ typedef struct __attribute__((packed)) BitmapInfoHeader
 	u32	biClrImportant;
 } BitmapInfoHeader;
 
-
-
+typedef struct create_tex_params_t
+{
+	char* name;
+	u32 readType;
+	u32 alpha;
+	u32 useAlpha;
+} CreateTextureParams;
 
 void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char alpha);
 
 void LoadPng(u8 *data, Texture *tex, u32 size);
 
+void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen);
 
-Texture *ReadTexFile(const char *fileName, const char *name, u32 readType, u8 alpha, u8 useAlpha);
+Texture *ReadTexFile(const char *fileName, char *name, u32 readType, u8 alpha, u8 useAlpha);
 
 #endif

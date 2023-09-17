@@ -184,26 +184,50 @@ void LoadPng(u8 *data, Texture *tex, u32 size)
     return;
 }
 
-Texture *ReadTexFile(const char *fileName, const char *nameOfTex, u32 readType, u8 alpha, u8 useAlpha)
+void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen)
 {
+    Texture *tex = (Texture*)object;
 
-    Texture *tex = (Texture *)malloc(sizeof(Texture));
+    CreateTextureParams *params = (CreateTextureParams*)arg;
 
-    AddStringNameToTexture(tex, nameOfTex);
+    AddStringNameToTexture(tex, params->name);
+    tex->clut_buffer = NULL;
+    tex->pixels = NULL;
 
+    if (params->readType == READ_BMP)
+    {
+        LoadBitmap(buffer, tex, params->useAlpha, params->alpha);
+    }
+    else if (params->readType == READ_PNG)
+    {
+        LoadPng(buffer, tex, bufferLen);
+    }
+}
+
+Texture* ReadTexFile(const char *fileName, char *nameOfTex, u32 readType, u8 alpha, u8 useAlpha)
+{
     u32 size;
 
     u8 *buffer = ReadFileInFull(fileName, &size);
 
-    if (readType == READ_BMP)
+    if (buffer == NULL)
     {
-        LoadBitmap(buffer, tex, useAlpha, alpha);
-    }
-    else if (readType == READ_PNG)
-    {
-        LoadPng(buffer, tex, size);
+        ERRORLOG("Texture file returned empty %s", fileName);
+        return NULL;
     }
 
+    Texture *tex = (Texture*)malloc(sizeof(Texture));
+
+    CreateTextureParams params;
+
+    params.name = nameOfTex;
+    params.readType = readType;
+    params.alpha = alpha;
+    params.useAlpha = useAlpha;
+
+    CreateTextureFromFile(tex, &params, buffer, size);
+
     free(buffer);
+
     return tex;
 }
