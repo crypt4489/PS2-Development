@@ -769,7 +769,7 @@ static void LoadCube()
 
     VECTOR pos = {0.0f, 50.0f, 5.0f, 1.0f};
 
-    VECTOR scales = {.5f, .5f, .5f, 1.0f};
+    VECTOR scales = {1.5f, 1.5f, 1.5f, 1.0f};
 
     SetupLTM(pos, up, right, forward,
              scales,
@@ -780,7 +780,7 @@ static void LoadCube()
 
 
 
-    LoadASync("MODELS\\BOX.BIN", &box->vertexBuffer, NULL, CreateMeshBuffersFromFile, FinishCube);
+    LoadASync("MODELS\\ROOM.BIN", &box->vertexBuffer, NULL, CreateMeshBuffersFromFile, FinishCube);
 
     //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
 

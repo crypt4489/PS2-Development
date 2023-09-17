@@ -51,9 +51,9 @@ static void IOThreadFunction(void *arg)
             u32 totalToRead = item->info->totalSize;
             u8 *bufferLocation = item->buffer + totalRead;
             u32 bytesToRead = SECTOR_SIZE;
-            while ((time2 - time1) < 25.0f && totalRead < totalToRead)
+            while ((time2 - time1) < 20.0f && totalRead < totalToRead)
             {
-                 u32 diff;
+                u32 diff;
                 if ((diff = (totalToRead - totalRead)) < SECTOR_SIZE)
                 {
                     bytesToRead = diff;

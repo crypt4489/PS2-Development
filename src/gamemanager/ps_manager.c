@@ -136,7 +136,7 @@ void EndFrame()
         if (g_Manager.currentTime > (g_Manager.lastTime + 1000.0f))
         {
             g_Manager.FPS = frameCounter;
-            // DEBUGLOG("frames per second %d", g_Manager.FPS);
+            DEBUGLOG("frames per second %d", g_Manager.FPS);
             g_Manager.lastTime = g_Manager.currentTime;
             frameCounter = 0;
         }
