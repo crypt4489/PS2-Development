@@ -142,7 +142,7 @@ void CleanFontStruct(Font *font)
     }
 }
 
-void CreateFontWidthsFromFile(void* object, void*, u8 *buffer)
+void CreateFontWidthsFromFile(void* object, void*, u8 *buffer, u32 bufferLen)
 {
 
     Font *font_struct = (Font*)object;
@@ -185,7 +185,7 @@ void CreateFontWidthsFromFile(void* object, void*, u8 *buffer)
     // DEBUGLOG("size %d", size);
     memcpy(fontWidths, buffer+start, charSize);
     font_struct->widthSize = charSize;
-    font_struct->fontWidths = fontWidths; 
+    font_struct->fontWidths = fontWidths;
 }
 
 void LoadFontWidths(Font *font_struct, const char *filePath)
@@ -201,7 +201,7 @@ void LoadFontWidths(Font *font_struct, const char *filePath)
         return;
     }
 
-    CreateFontWidthsFromFile(font_struct, NULL, buffer);
+    CreateFontWidthsFromFile(font_struct, NULL, buffer, size);
 
     free(buffer);
 }

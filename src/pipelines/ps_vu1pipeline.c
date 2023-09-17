@@ -46,6 +46,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
     DMA_DCODE_STRUCT decode;
     int loop = 1;
     int channel, qwc, tte, type;
+   // DEBUGLOG("Here!");
     while (loop)
     {
         decode.code = q->sw[0];
@@ -90,8 +91,9 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
 
         else if (decode.code == DMA_DCODE_CALLBACK_FUNC)
         {
-            // printf("here!");
+             //printf("here!");
             int index = ((int)q->sw[1]) - 1;
+            //ERRORLOG("%d", index);
             pipe->cbs[index]->callback(pipe, obj, pipe->cbs[index]->args, pipe->cbs[index]->q);
             q++;
         }
@@ -104,6 +106,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             type = temp.type;
             qwc = temp.qwc;
             q++;
+           // DEBUGLOG("Here!!");
             SubmitToDMAController(q, channel, type, qwc, tte);
             q += qwc;
             pipe->currentRenderPass += 1;

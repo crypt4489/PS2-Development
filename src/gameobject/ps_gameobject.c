@@ -73,7 +73,7 @@ void CleanGameObject(GameObject *obj)
   // free(obj->pipeline_dma);
   VU1Pipeline *pipes = obj->pipelines;
   VU1Pipeline *freepipe;
-  if (obj)
+  if (obj != NULL)
   {
 
     while (pipes != NULL)
@@ -83,19 +83,45 @@ void CleanGameObject(GameObject *obj)
       DeletePipeline(freepipe);
     }
 
-    if (obj->obb)
+    if (obj->obb != NULL)
     {
       DestroyOBB(obj->obb);
     }
 
-    if (obj->vertexBuffer.vertices)
-      free(obj->vertexBuffer.vertices);
-    if (obj->vertexBuffer.texCoords)
-      free(obj->vertexBuffer.texCoords);
-    if (obj->vertexBuffer.normals)
-      free(obj->vertexBuffer.normals);
-    if (obj->vertexBuffer.indices)
+    if (obj->vertexBuffer.indices != NULL)
+    {
       free(obj->vertexBuffer.indices);
+    }
+
+    if (obj->vertexBuffer.vertices != NULL)
+    {
+      free(obj->vertexBuffer.vertices);
+    }
+
+    if (obj->vertexBuffer.normals != NULL)
+    {
+      free(obj->vertexBuffer.normals);
+    }
+
+    if (obj->vertexBuffer.texCoords != NULL)
+    {
+      free(obj->vertexBuffer.texCoords);
+    }
+
+    if (obj->vertexBuffer.bones != NULL)
+    {
+      free(obj->vertexBuffer.bones);
+    }
+
+    if (obj->vertexBuffer.weights != NULL)
+    {
+      free(obj->vertexBuffer.weights);
+    }
+
+    if (obj->vertexBuffer.colors != NULL)
+    {
+      free(obj->vertexBuffer.colors);
+    }
 
     free(obj);
   }
@@ -108,9 +134,20 @@ GameObject *InitializeGameObject()
   go->pipelines = NULL;
   go->objData = NULL;
   go->update_object = NULL;
+  go->vertexBuffer.vertexCount = 0;
+  go->vertexBuffer.indices = NULL;
+  go->vertexBuffer.vertices = NULL;
+  go->vertexBuffer.normals = NULL;
+  go->vertexBuffer.texCoords = NULL;
+  go->vertexBuffer.bones = NULL;
+  go->vertexBuffer.weights = NULL;
+  go->vertexBuffer.colors = NULL;
   go->vertexBuffer.matCount = 0;
   go->vertexBuffer.materials = NULL;
+  go->vertexBuffer.meshAnimationData = NULL;
+  go->obb = NULL;
   go->interpolator = NULL;
+  go->objAnimator = NULL;
   return go;
 }
 

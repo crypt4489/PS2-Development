@@ -45,6 +45,7 @@
 #include "log/ps_log.h"
 #include "animation/ps_animation.h"
 #include "audio/ps_sound.h"
+#include "io/ps_async.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -115,6 +116,7 @@ GameObject *body = NULL;
 GameObject *sphere = NULL;
 GameObject *room = NULL;
 GameObject *multiSphere = NULL;
+GameObject *box = NULL;
 
 static float lodGrid[4] = {150.0f, 125.0f, 75.0f, 50.0f};
 
@@ -641,7 +643,7 @@ static void SetupGameObjects()
     InitSkybox();
 
     SetupGrid();
-    SetupBody();
+   SetupBody();
 
     SetupMultiSphere();
     // SetupShadowViewer();
@@ -742,6 +744,67 @@ static void RenderShadowScene()
 
     RenderPipeline(shadowTexView, shadowTexView->activePipeline);
 }
+static void FinishCube(void *object)
+{
+    GameObject *temp = box;
+    InitOBB(temp, BBO_FIT);
+
+    u32 id = GetTextureIDByName("WATER", g_Manager.texManager);
+
+    CreateMaterial(&temp->vertexBuffer, 0, temp->vertexBuffer.vertexCount - 1, id);
+
+    CreateGraphicsPipeline(temp, GEN_PIPELINE_NAME);
+
+    AddObjectToRenderWorld(world, temp);
+}
+static void LoadCube()
+{
+    color_t color;
+
+    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
+
+    box = InitializeGameObject();
+
+    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+
+    VECTOR pos = {0.0f, 50.0f, 5.0f, 1.0f};
+
+    VECTOR scales = {.5f, .5f, .5f, 1.0f};
+
+    SetupLTM(pos, up, right, forward,
+             scales,
+             1.0f, box->ltm);
+
+    PitchLTM(box->ltm, -45.0f);
+    box->update_object = NULL;
+
+
+
+    LoadASync("MODELS\\BOX.BIN", &box->vertexBuffer, NULL, CreateMeshBuffersFromFile, FinishCube);
+
+    //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
+
+}
+
+static void FinishWater(void *object)
+{
+    //Material *mat = (Material*)grid->vertexBuffer.materials->data;
+    Texture *tex = (Texture*)object;
+    InitTextureResources(tex, TEX_ADDRESS_CLAMP);
+    AddToManagerTexList(&g_Manager, tex);
+   // mat->materialId = tex->id;
+}
+
+static void LoadWater()
+{
+    CreateTextureParams *params = (CreateTextureParams*)malloc(sizeof(CreateTextureParams));
+    params->name = "WATER";
+    params->readType = READ_BMP;
+    params->useAlpha = 1;
+    params->alpha = 0x80;
+    Texture *tex = (Texture*)malloc(sizeof(Texture));
+    LoadASync("TEXTURES\\WATER.BMP", tex, params, CreateTextureFromFile, FinishWater);
+}
 
 int Render()
 {
@@ -760,6 +823,12 @@ int Render()
            UpdateAnimator(body->objAnimator, delta);
 
         UpdateGlossTransform();
+
+        if (FrameCounter == 250)
+        {
+            LoadWater();
+            LoadCube();
+        }
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
@@ -786,6 +855,10 @@ int Render()
         EndRendering(cam);
 
         EndFrame();
+
+        HandleASyncIO();
+
+        WakeupIOThread();
 
         UpdateLight();
 
@@ -903,6 +976,8 @@ static void LoadInTextures()
 int main(int argc, char **argv)
 {
     InitializeSystem();
+
+    InitASyncIO(25);
 
     SetupWorldObjects();
 

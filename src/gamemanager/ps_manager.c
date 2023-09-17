@@ -205,17 +205,17 @@ void ClearManagerTexList(GameManager *manager)
 
 void ClearManagerStruct(GameManager *manager)
 {
-    if (manager->texManager)
+    if (manager->texManager != NULL)
         free(manager->texManager);
-    if (manager->textureInVram)
+    if (manager->textureInVram != NULL)
         free(manager->textureInVram);
-    if (manager->dmabuffers->dma_chains[0])
+    if (manager->dmabuffers->dma_chains[0] != NULL)
         packet_free(manager->dmabuffers->dma_chains[0]);
-    if (manager->dmabuffers->dma_chains[1])
+    if (manager->dmabuffers->dma_chains[1] != NULL)
         packet_free(manager->dmabuffers->dma_chains[1]);
-    if (manager->dmabuffers)
+    if (manager->dmabuffers != NULL)
         free(manager->dmabuffers);
-    if (manager->timer)
+    if (manager->timer != NULL)
         TimerZeroDisable(g_Manager.timer);
 }
 

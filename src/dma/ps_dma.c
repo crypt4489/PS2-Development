@@ -133,7 +133,7 @@ void DestroyDMABuffers(DMABuffers *buff)
 
 void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, int tte)
 {
-    while (PollVU1DoneProcessing(&g_Manager) < 0)
+    while (PollVU1DoneProcessing(&g_Manager) < 0);
         ;
     if (channel == DMA_CHANNEL_GIF)
     {

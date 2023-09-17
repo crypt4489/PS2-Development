@@ -14,7 +14,7 @@
 
 sceCdRMode sStreamMode;
 
-#define SECTOR_SIZE 2048
+
 
 int IsFileCompressed(const char *filename)
 {
@@ -68,19 +68,21 @@ sceCdlFILE *FindFileByName(const char *filename)
     return file_struct;
 }
 
-void ReadFileBytes(sceCdlFILE *loc_file_struct,
+u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
                     u8 *outBuffer,
                     u32 offset, u32 readSize)
 {
     u32 starting_sec = loc_file_struct->lsn;
 
-    u32 sectorOffset = offset / SECTOR_SIZE;
+    float divisor = 1.f / SECTOR_SIZE;
+
+    u32 sectorOffset = offset * divisor;
 
     starting_sec += sectorOffset;
 
     u32 i = 0;
 
-    u32 sectors = readSize / SECTOR_SIZE;
+    u32 sectors = readSize * divisor;
 
     u32 remaining = readSize % SECTOR_SIZE;
 
@@ -92,7 +94,7 @@ void ReadFileBytes(sceCdlFILE *loc_file_struct,
     u32 bytesLeft = readSize;
 
     u8* head_of_copy = outBuffer;
-
+    u32 totalBytesRead = 0;
     while (i < sectors)
     {
         u32 bytesRead = SECTOR_SIZE;
@@ -102,13 +104,17 @@ void ReadFileBytes(sceCdlFILE *loc_file_struct,
             bytesRead = bytesLeft;
             ReadSector(starting_sec + i, 1, readBuffer);
             memcpy(head_of_copy, readBuffer, bytesRead);
+
         } else {
             ReadSector(starting_sec + i, 1, head_of_copy);
         }
-        i++;
-        head_of_copy += SECTOR_SIZE;
+        i+=1;
+        head_of_copy += bytesRead;
         bytesLeft -= bytesRead;
+        totalBytesRead += bytesRead;
     }
+
+    return totalBytesRead;
 }
 
 u8 *ReadFileInFull(const char *filename, u32 *outSize)
@@ -133,7 +139,6 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
     if (remaining)
     {
-        bufferSize += (SECTOR_SIZE - remaining); // will have a dead bytes, but it allows for the copy to go through
         sectors++;
     }
 
@@ -857,9 +862,8 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 static LoadFunc_Array loadFuncArray[11] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
                                            LoadNormals, LoadBones, LoadWeights, LoadMaterial, LoadJoints, LoadAnimationData, LoadAnimationSRTs};
 
-void CreateMeshBuffersFromFile(void *object, void *, u8 *buffer)
+void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 bufferLen)
 {
-
     MeshBuffers *buffers = (MeshBuffers*)object;
 
     u8 *iter = buffer;
@@ -923,7 +927,7 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
         ERRORLOG("File Buffer for mesh %s was empty", filename);
         return;
     }
-    CreateMeshBuffersFromFile(buffers, NULL, buffer);
+    CreateMeshBuffersFromFile(buffers, NULL, buffer, fSize);
     free(buffer);
     // free(copy);
 }

@@ -5,6 +5,7 @@
 
 #include "gs/ps_gs.h"
 #include "dma/ps_dma.h"
+#include "log/ps_log.h"
 
 qword_t *InitDoubleBufferingQWord(qword_t *q, u16 base, u16 offset)
 {
@@ -16,7 +17,9 @@ qword_t *InitDoubleBufferingQWord(qword_t *q, u16 base, u16 offset)
 
 void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 programSize)
 {
-    packet_t *pack = packet_init(packetSize, PACKET_NORMAL);
+    //packet_t *pack = packet_init(packetSize+1, PACKET_NORMAL);
+    //qword_t pack[packetSize];
+    qword_t *start = InitializeDMAObject();
     qword_t *q;
     u32 count = (cEnd - cStart) / 2;
     if (count & 1)
@@ -27,26 +30,22 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
     dma_channel_wait(DMA_CHANNEL_VIF1, -1);
 
     u32 *l_start = cStart;
-    q = pack->data;
+    q = start;
 
+    q+=1;
     while (count > 0)
     {
         u16 currCount = count > 256 ? 256 : count;
         int currhalf = currCount / 2;
-        DMATAG_REF(q, currhalf, (u32)l_start, 0, VIF_CODE(0, 0, VIF_CMD_NOP, 0), VIF_CODE(dest, currCount & 0xFF, VIF_CMD_MPG, 0));
+        DMATAG_REF(q, currhalf, (u32)l_start, 0, VIF_CODE(0, 0, VIF_CMD_NOP, 0), VIF_CODE(dest, currCount & 0xFF, VIF_CMD_MPG, 1));
         q++;
-
+        //DEBUGLOG("%d", count);
         l_start += currCount * 2;
         count -= currCount;
         dest += currCount;
     }
-
-    // DMATAG_END(q, (q - pack->data), 0, 0, 0);
-    FlushCache(0);
-    dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-    dma_channel_send_chain(DMA_CHANNEL_VIF1, pack->data, 0, DMA_FLAG_TRANSFERTAG, 0);
-    dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-    packet_free(pack);
+    CreateDMATag(start, DMA_CNT, 0, 0, 0, 0);
+    SubmitDMABuffersToController(q, DMA_CHANNEL_VIF1, 1, 1);
 }
 
 qword_t *add_unpack_data(qword_t *q, u32 dest_address, void *data, u32 qwSize, u8 use_top, u32 vif_pack)

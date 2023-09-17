@@ -20,5 +20,5 @@ Font *CreateFontStruct(const char* fontName, const char *fontData, int read_type
 
 void CleanFontStruct(Font *font);
 
-void CreateFontWidthsFromFile(void* object, void*, u8 *buffer);
+void CreateFontWidthsFromFile(void* object, void*, u8 *buffer, u32 bufferLen);
 #endif

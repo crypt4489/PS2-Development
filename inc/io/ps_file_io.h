@@ -3,11 +3,11 @@
 #include <libcdvd.h>
 #include "ps_global.h"
 
-
+#define SECTOR_SIZE 2048
 
 sceCdlFILE *FindFileByName(const char *filename);
 
-void ReadFileBytes(sceCdlFILE *loc_file_struct,
+u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
                     u8 *outBuffer,
                     u32 offset, u32 readSize);
 
@@ -21,6 +21,6 @@ u8* ReadSector(u32 sector, u32 numOfSecs, u8* buffer);
 
 void ReadModelFile(const char *filename, MeshBuffers *buffers);
 
-void CreateMeshBuffersFromFile(void *object, void *, u8 *buffer);
+void CreateMeshBuffersFromFile(void *object, void *, u8 *buffer, u32 bufferLen);
 
 #endif

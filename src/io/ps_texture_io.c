@@ -184,13 +184,15 @@ void LoadPng(u8 *data, Texture *tex, u32 size)
     return;
 }
 
-void CreateTextureFromFile(void* object, void* arg, u8 *buffer)
+void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen)
 {
     Texture *tex = (Texture*)object;
 
     CreateTextureParams *params = (CreateTextureParams*)arg;
 
     AddStringNameToTexture(tex, params->name);
+    tex->clut_buffer = NULL;
+    tex->pixels = NULL;
 
     if (params->readType == READ_BMP)
     {
@@ -198,7 +200,7 @@ void CreateTextureFromFile(void* object, void* arg, u8 *buffer)
     }
     else if (params->readType == READ_PNG)
     {
-        LoadPng(buffer, tex, params->size);
+        LoadPng(buffer, tex, bufferLen);
     }
 }
 
@@ -222,9 +224,8 @@ Texture* ReadTexFile(const char *fileName, char *nameOfTex, u32 readType, u8 alp
     params.readType = readType;
     params.alpha = alpha;
     params.useAlpha = useAlpha;
-    params.size = size;
 
-    CreateTextureFromFile(tex, &params, buffer);
+    CreateTextureFromFile(tex, &params, buffer, size);
 
     free(buffer);
 

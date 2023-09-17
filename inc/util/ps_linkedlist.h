@@ -7,7 +7,7 @@
     head = head->next;\
     if (head == NULL)\
         break;\
-} while(1) 
+} while(1)
 
 LinkedList* CreateLinkedListItem(void *data);
 LinkedList* AddToLinkedList(LinkedList *head, LinkedList *node);

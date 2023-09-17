@@ -56,10 +56,10 @@ Texture *GetTextureByID(u32 id, TexManager *texManager)
     {
         tex = (Texture *)node->data;
         if (tex->id == id)
-            break;
+            return tex;
         node = node->next;
     }
-    return tex;
+    return NULL;
 }
 
 void AddStringNameToTexture(Texture *tex, const char *buffer)
@@ -69,12 +69,12 @@ void AddStringNameToTexture(Texture *tex, const char *buffer)
 
 void CleanTextureStruct(Texture *tex)
 {
-    if (tex->clut_buffer)
+    if (tex->clut_buffer != NULL)
     {
         free(tex->clut_buffer);
     }
 
-    if (tex->pixels)
+    if (tex->pixels != NULL)
     {
         free(tex->pixels);
     }
@@ -165,14 +165,8 @@ Texture *RemoveMipLevelFromTexture(Texture *tex, Texture *toRemove)
     return tex;
 }
 
-Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode, u8 texFiltering)
+void InitTextureResources(Texture *tex, u32 mode)
 {
-    char _file[MAX_FILE_NAME];
-    char texName[MAX_CHAR_TEXTURE_NAME];
-    Pathify(filePath, _file);
-    StripFilePath(filePath, texName);
-    Texture *tex = ReadTexFile(_file, texName, readType, alphaVal, useProgrammedAlpha);
-
     if (tex)
     {
         tex->mipLevels = 0;
@@ -183,8 +177,6 @@ Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgramme
 
         tex->type = PS_TEX_MEMORY;
 
-        AddToManagerTexList(&g_Manager, tex);
-
         if (tex->psm == GS_PSM_8)
         {
             CreateClutStructs(tex, 16, GS_PSM_32);
@@ -194,6 +186,20 @@ Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgramme
 
         tex->upload = (qword_t *)malloc(sizeof(qword_t) * 50);
     }
+}
+
+Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode, u8 texFiltering)
+{
+    char _file[MAX_FILE_NAME];
+    char texName[MAX_CHAR_TEXTURE_NAME];
+    Pathify(filePath, _file);
+    StripFilePath(filePath, texName);
+
+    Texture *tex = ReadTexFile(_file, texName, readType, alphaVal, useProgrammedAlpha);
+
+    InitTextureResources(tex, mode);
+
+    AddToManagerTexList(&g_Manager, tex);
 
     return tex;
 }

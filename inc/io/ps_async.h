@@ -4,7 +4,7 @@
 #include "io/ps_file_io.h"
 
 typedef void (*finish_async_callback)(void*);
-typedef void (*handle_file_loaded)(void *, void*, u8*);
+typedef void (*handle_file_loaded)(void *, void*, u8*, u32);
 
 void LoadASync(const char *name,
                 void* object,
@@ -12,6 +12,10 @@ void LoadASync(const char *name,
                 handle_file_loaded loaderCB,
                 finish_async_callback finish);
 
-void InitASyncIO();
-
+void InitASyncIO(int queueCount);
+void SuspendIOThread();
+void WakeupIOThread();
+void DeinitASyncIO();
+void HandleASyncIO();
+void DebugPrintIO();
 #endif
