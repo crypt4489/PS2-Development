@@ -1176,9 +1176,7 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     buffers->meshAnimationData->animationsCount++;
 
-    u32 ret_val = input_int - begin;
-
-    return ret_val * 4;
+    return (input_int - begin) * 4;
 }
 
 static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
