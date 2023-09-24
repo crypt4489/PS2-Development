@@ -905,12 +905,12 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     for (int i = _start; i < _end; i++)
     {
-  
-        VectorVoidCopy(buffers->meshData[MESHINDICES]->vertices[i], input_int);
+
+        memcpy(buffers->meshData[MESHINDICES]->vertices[i], input_int, 12);
 
         buffers->meshData[MESHINDICES]->vertices[i][3] = 1.0f;
-
         input_int+=3;
+
     }
 
     return 4 + (12 * size);
@@ -929,8 +929,8 @@ static u32 LoadTexCoords(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     for (int i = _start; i < _end; i++)
     {
-        VectorVoidCopy(buffers->meshData[MESHINDICES]->texCoords[i], input_int);
-        
+         memcpy(buffers->meshData[MESHINDICES]->texCoords[i], input_int, 8);
+
         buffers->meshData[MESHINDICES]->texCoords[i][2] = 1.0f;
 
         buffers->meshData[MESHINDICES]->texCoords[i][3] = 0.0f;
@@ -955,7 +955,7 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     for (int i = _start; i < _end; i++)
     {
 
-        VectorVoidCopy(buffers->meshData[MESHINDICES]->normals[i], input_int);
+        memcpy(buffers->meshData[MESHINDICES]->normals[i], input_int, 12);
 
         buffers->meshData[MESHINDICES]->normals[i][3] = 0.0f;
 
@@ -997,8 +997,8 @@ static u32 LoadWeights(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     for (int i = _start; i < _end; i++)
     {
-        VectorVoidCopy(buffers->meshData[MESHINDICES]->weights[i], input_int);
-        
+        memcpy(buffers->meshData[MESHINDICES]->weights[i], input_int, 16);
+
         input_int+=4;
     }
 
@@ -1009,7 +1009,7 @@ static u32 LoadBones(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
     u32 *input_int = ptr;
 
-    u32 size = *input_ints;
+    u32 size = *input_int;
 
     input_int += 1;
 
@@ -1047,7 +1047,7 @@ static u32 LoadBones(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
 static u32 *LoadMatrix(MATRIX m, u32 *input)
 {
-   /* Bin2Float copy;
+    Bin2Float copy;
 
     for (int i = 0; i < 16; i++)
     {
@@ -1055,10 +1055,6 @@ static u32 *LoadMatrix(MATRIX m, u32 *input)
 
         m[i] = copy.float_x;
     }
-    */
-    MatrixVoidCopy(m, input);
-    
-    input+=16;
 
     return input;
 }
@@ -1242,10 +1238,10 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
         for (int j = 0; j < size; j++)
         {
             AnimationKey *key = (AnimationKey *)malloc(sizeof(AnimationKey));
-            
+
             copy.int_x = *input++;
             key->timeStamp = copy.float_x;
-            
+
             copy.int_x = *input++;
             key->key[1] = copy.float_x;
 
@@ -1267,7 +1263,7 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     data->numScalingKeys = scalSize;
     data->keyScalings = malloc(sizeof(AnimationKeyHolder *) * scalSize);
-    
+
     for (int i = 0; i < rotSize; i++)
     {
         AnimationKeyHolder *keyH = (AnimationKeyHolder *)malloc(sizeof(AnimationKeyHolder));
@@ -1310,7 +1306,7 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 size)
 {
     float divisor = 1.f / 8.f;
     u32 sizeOfBuffer = size * divisor;
-    if (size % 8 != 0)
+    if ((size & 0x7) != 0)
     {
         sizeOfBuffer++;
     }
@@ -1332,7 +1328,7 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 size)
 
         u32 indexInBuffer = index * divisor;
 
-        u8 mask = 0x01 << index % 8;
+        u8 mask = 0x01 << index & 0x7;
 
         u8 present = (binaryBuffer[indexInBuffer] & mask);
 
@@ -1412,17 +1408,17 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
 
         u16 meshCode = (u16)(0xFF00 & (((u16)iter[0]) << 8)) | (0x00FF & (u16)iter[1]);
 
-        //   DEBUGLOG("what's going on? %x", code);
+       //DEBUGLOG("what's going on? %x", meshCode);
 
         iter += 2;
         // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
         input_int = (u32 *)iter;
-        u32 indicesSize = SWAP_ENDIAN(*input_int);
+        u32 indicesSize = *input_int;
         iter += 4;
         // DEBUGLOG("%d", indicesSize);
         // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
         input_int = (u32 *)iter;
-        u32 verticesSize = SWAP_ENDIAN(*input_int);
+        u32 verticesSize =*input_int;
         iter += 4;
         // DEBUGLOG("%d", verticesSize);
 

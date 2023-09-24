@@ -409,9 +409,9 @@ static void SetupMultiSphere()
     VECTOR object_position = {+50.0f, 0.0f, +100.0f, 0.0f};
 
     multiSphere = InitializeGameObject();
-
-    ReadModelFile("MODELS\\TORUS.BIN", &multiSphere->vertexBuffer);
-
+    float time1 = getTicks(g_Manager.timer);
+    ReadModelFile("MODELS\\TORUS1.BIN", &multiSphere->vertexBuffer);
+    DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
     // envmap
     SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
 
@@ -428,9 +428,9 @@ static void SetupMultiSphere()
     PitchLTM(multiSphere->ltm, -90.0f);
 
     CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
-    float time1 = getTicks(g_Manager.timer);
+    //float time1 = getTicks(g_Manager.timer);
     InitOBB(multiSphere, BBO_FIT);
-    DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
+    //DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
     multiSphere->update_object = RotateSphere;
 
     MatrixIdentity(lightTransform);
@@ -642,10 +642,10 @@ static void SetupTessObject()
 static void SetupGameObjects()
 {
 
-    InitSkybox();
+   // InitSkybox();
 
-    SetupGrid();
-    SetupBody();
+   // SetupGrid();
+   // SetupBody();
 
     SetupMultiSphere();
     // SetupShadowViewer();
