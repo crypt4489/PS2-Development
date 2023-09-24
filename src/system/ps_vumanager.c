@@ -10,11 +10,14 @@
 
 volatile u32 *vu1_data_address = (volatile u32 *)0x1100c000;
 
+volatile u32 *vu0_data_address = (volatile u32 *)0x11004000;
+
 volatile u32 *vif1_top = (volatile u32 *)0x10003ce0;
 
 volatile u32 *vif1_tops = (volatile u32 *)0x10003cc0;
 
-#define vu1_data_size (1 << 14) - 16
+#define VU1DATASIZE (1 << 14)
+#define VU0DATASIZE (1 << 12)
 
 int VU1CompleteHandler(s32 cause, void *arg, void *addr)
 {
@@ -50,13 +53,13 @@ u32 SizeOfProgramPacket(u32 *codeStart, u32 *codeEnd)
     return (count / 128) + 1;
 }
 
-void ReadFromVU1(u32 *start, int printOutSize, u32 usefloatornot)
+void ReadFromVU(volatile u32 *start, int printOutSize, u32 usefloatornot)
 {
     int qWordCount = 0;
     volatile u32 *ptr = start;
     Bin2Float bf_val;
     printf("%d : ", qWordCount);
-    for (int i = 1; i < printOutSize; i++)
+    for (int i = 1; i <= printOutSize; i++)
     {
         bf_val.int_x = *ptr;
 
@@ -71,7 +74,7 @@ void ReadFromVU1(u32 *start, int printOutSize, u32 usefloatornot)
 
         ptr++;
 
-        if ((i % 4) == 0)
+        if ((i % 4) == 0 && i != printOutSize)
         {
             qWordCount++;
             printf("\n");

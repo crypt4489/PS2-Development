@@ -159,7 +159,7 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     vu1_addr.sw[3] = GetProgramAddressVU1Manager(g_Manager.vu1Manager, programNumber);
 
-    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount - 1, 81, DRAW_VERTICES, &vu1_addr);
+    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, 81, DRAW_VERTICES, &vu1_addr);
 
     sizeOfPipeline = q - dcode_tag_vif1 - 1;
 

@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "system/ps_vumanager.h"
 #include "system/ps_vif.h"
@@ -10,6 +11,8 @@
 #include "log/ps_log.h"
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
+#include "dma/ps_dma.h"
+#include "system/ps_timer.h"
 
 extern volatile u32 *vu1_data_address;
 
@@ -44,9 +47,9 @@ void InitOBB(GameObject *obj, int type)
 
     CreateWorldMatrixLTM(obj->ltm, world);
 
-    int vertCount = obj->vertexBuffer.vertexCount;
+    int vertCount = obj->vertexBuffer.meshData[MESHVERTICES]->vertexCount;
 
-    VECTOR *ptr = obj->vertexBuffer.vertices;
+    VECTOR *ptr = obj->vertexBuffer.meshData[MESHVERTICES]->vertices;
 
     VectorCopy(v, *ptr);
 
@@ -106,8 +109,8 @@ void InitOBB(GameObject *obj, int type)
         VectorSubtractXYZ(top, bot, add);
         ScaleVectorXYZ(sphere->center, add, 0.5f);
         float mag = (top[0] - sphere->center[0]) * (top[0] - sphere->center[0]);
-        mag +=  (top[1] - sphere->center[1]) * (top[1] - sphere->center[1]);
-        mag +=  (top[2] - sphere->center[2]) * (top[2] - sphere->center[2]);
+        mag += (top[1] - sphere->center[1]) * (top[1] - sphere->center[1]);
+        mag += (top[2] - sphere->center[2]) * (top[2] - sphere->center[2]);
         sphere->radius = Sqrt(mag);
         DEBUGLOG("SPHERE RADIUS AND CENTER %f", sphere->radius);
         DumpVector(sphere->center);
@@ -372,4 +375,54 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
     outHalf[1] = Abs(box->top[1] - center[1]);
     outHalf[2] = Abs(box->top[2] - center[2]);
     VectorCopy(outCenter, center);
+}
+
+void FindOBBMaxAndMinVerticesVU0(GameObject *obj)
+{
+    if (obj->obb->type != BBO_FIT)
+    {
+        ERRORLOG("Use Max and Min update for non-OBB bounding box");
+        return;
+    }
+    VECTOR *verts = obj->vertexBuffer.meshData[MESHVERTICES]->vertices;
+    u32 vertexCount = obj->vertexBuffer.meshData[MESHVERTICES]->vertexCount;
+    MATRIX world;
+
+    CreateWorldMatrixLTM(obj->ltm, world);
+    BoundingBox *bounds = (BoundingBox *)obj->obb->obb;
+
+    u32 offset = 0;
+
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "lqc2 $vf4, 0x00(%2)\n"
+        "lqc2 $vf5, 0x10(%2)\n"
+        "lqc2 $vf6, 0x20(%2)\n"
+        "lqc2 $vf7, 0x30(%2)\n"
+        :
+        : "r"(bounds->top), "r"(bounds->bottom), "r"(world)
+        : "memory");
+
+    while (vertexCount > 0)
+    {
+        asm __volatile__(
+            "lqc2 $vf3, 0x00(%0)\n"
+            "vmulax.xyzw $ACC, $vf4, $vf3\n"
+            "vmadday.xyzw $ACC, $vf5, $vf3\n"
+            "vmaddaz.xyzw $ACC, $vf6, $vf3\n"
+            "vmaddw.xyzw $vf3, $vf7, $vf3\n"
+            "vmax.xyz $vf1, $vf1, $vf3\n"
+            "vmini.xyz $vf2, $vf2, $vf3\n"
+            :
+            : "r"(verts[offset++])
+            : "memory");
+        vertexCount--;
+    }
+    asm __volatile__(
+        "sqc2 $vf1, 0x00(%0) \n"
+        "sqc2 $vf2, 0x00(%1) \n"
+        :
+        : "r"(bounds->top), "r"(bounds->bottom)
+        : "memory");
 }

@@ -12,7 +12,7 @@ void LoadASync(const char *name,
                 handle_file_loaded loaderCB,
                 finish_async_callback finish);
 
-void InitASyncIO(int queueCount);
+void InitASyncIO(int queueCount, float time);
 void SuspendIOThread();
 void WakeupIOThread();
 void DeinitASyncIO();

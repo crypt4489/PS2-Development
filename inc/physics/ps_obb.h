@@ -27,6 +27,6 @@ int CheckSeparatingPlane(VECTOR pos, VECTOR plane, VECTOR half1, VECTOR half2, V
 
 int PerformSAT(VECTOR pos, VECTOR half1, VECTOR half2, VECTOR xAxis1, VECTOR yAxis1, VECTOR zAxis1, VECTOR xAxis2, VECTOR yAxis2, VECTOR zAxis2);
 
-
+void FindOBBMaxAndMinVerticesVU0(GameObject *obj);
 
 #endif

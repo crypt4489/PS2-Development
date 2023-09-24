@@ -72,10 +72,10 @@ void CreateGridVectors(int N, int M, float depth, float width, MeshBuffers *buff
 
     // go->vertices = (VECTOR*)malloc(sizeof(VECTOR) * index_count);
 
-    for (int i = 0; i < buffer->vertexCount; i++)
+    for (int i = 0; i < buffer->meshData[MESHINDICES]->vertexCount; i++)
     {
         int index = buffer->indices[i];
-        VectorCopy(buffer->vertices[i], vertices[index]);
+        VectorCopy(buffer->meshData[MESHINDICES]->vertices[i], vertices[index]);
         //  VectorCopy(go->texCoords[i], uvs[index]);
         // DEBUGLOG("here %d\n", index);
     }
@@ -107,10 +107,10 @@ void CreateGridUVS(int N, int M, float depth, float width, MeshBuffers *buffer)
         }
     }
 
-    for (int i = 0; i < buffer->vertexCount; i++)
+    for (int i = 0; i < buffer->meshData[MESHINDICES]->vertexCount; i++)
     {
         int index = buffer->indices[i];
-        VectorCopy(buffer->texCoords[i], uvs[index]);
+        VectorCopy(buffer->meshData[MESHINDICES]->texCoords[i], uvs[index]);
     }
 
     free(uvs);
@@ -123,13 +123,13 @@ MeshBuffers *CreateGrid(int N, int M, float depth, float width, MeshBuffers *buf
 
     int index_count = faceCount * 3;
 
-    buffer->vertexCount = index_count;
+    buffer->meshData[MESHINDICES]->vertexCount = index_count;
 
-    DEBUGLOG("Grid indices count %d", buffer->vertexCount);
+    DEBUGLOG("Grid indices count %d", buffer->meshData[MESHINDICES]->vertexCount);
 
     buffer->indices = (u32 *)malloc(sizeof(int) * index_count);
-    buffer->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
-    buffer->vertices = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
+    buffer->meshData[MESHINDICES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
+    buffer->meshData[MESHINDICES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
     CreateGridIndices(N, M, width, depth, buffer);
     CreateGridVectors(N, M, width, depth, buffer);
     CreateGridUVS(N, M, width, depth, buffer);

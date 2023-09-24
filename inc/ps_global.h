@@ -312,16 +312,26 @@ struct animator_t
     float deltaTime;
 };
 
-struct mesh_buffers_t
+enum MeshBuffersType
+{
+    MESHVERTICES = 0,
+    MESHINDICES = 1
+};
+typedef struct mesh_vectors
 {
     u32 vertexCount;
-    u32 *indices;
     VECTOR *vertices __attribute__((aligned(128)));
     VECTOR *normals __attribute__((aligned(128)));
     VECTOR *texCoords __attribute__((aligned(128)));
     VectorInt *bones __attribute__((aligned(128)));
     VECTOR *weights __attribute__((aligned(128)));
     VECTOR *colors __attribute__((aligned(128)));
+} MeshVectors;
+
+struct mesh_buffers_t
+{
+    u32 *indices;
+    MeshVectors *meshData[2];
     u32 matCount;
     LinkedList *materials;
     AnimationMesh *meshAnimationData;
@@ -639,6 +649,8 @@ extern VECTOR right;
 
 // vu1 data address VU1Manager.c
 extern volatile u32 *vu1_data_address;
+
+extern volatile u32 *vu0_data_address;
 
 extern volatile u32 *vif1_top;
 

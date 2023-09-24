@@ -157,7 +157,7 @@ float k = -1.0f;
 
 static void UpdateGlossTransform()
 {
-    CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(cam->ltm), *GetForwardVectorLTM(cam->ltm), *GetRightVectorLTM(cam->ltm));
+    CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(direct->ltm), *GetForwardVectorLTM(direct->ltm), *GetRightVectorLTM(direct->ltm));
 
     // MATRIX screen, m, camMatrix;
     // CreateWorldMatrixLTM(multiSphere->ltm, m);
@@ -166,7 +166,7 @@ static void UpdateGlossTransform()
     // MatrixMultiply(screen, screen, m);
     // MatrixMultiply(screen, screen, cam->view);
 
-    MatrixInverse(lightTransform, lightTransform);
+    // MatrixInverse(lightTransform, lightTransform);
 
     MatrixTranspose(lightTransform);
 
@@ -325,7 +325,7 @@ static void SetupGrid()
 
     grid = InitializeGameObject();
     // ReadModelFile("MODELS\\BOX.BIN", &grid->vertexBuffer);
-    SetupGameObjectPrimRegs(grid, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(grid, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 
     int w, l;
     float dw, dh;
@@ -336,7 +336,7 @@ static void SetupGrid()
     CreateGrid(w, l, dw, dh, &grid->vertexBuffer);
     u32 id = GetTextureIDByName(NewYorkName, g_Manager.texManager);
 
-    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
+    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
 
     VECTOR pos = {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -349,7 +349,7 @@ static void SetupGrid()
     PitchLTM(grid->ltm, -45.0f);
     grid->update_object = NULL;
 
-    InitOBB(grid, BBO_FIXED);
+    //InitOBB(grid, BBO_FIXED);
 
     CreateGraphicsPipeline(grid, "Clipper");
 
@@ -378,7 +378,7 @@ static void SetupBody()
              scales,
              1.0f, body->ltm);
 
-    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
+    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
 
     body->update_object = NULL;
 
@@ -397,7 +397,7 @@ static void SetupBody()
 
 static void RotateSphere()
 {
-    //PitchLTM(multiSphere->ltm, 1.0f);
+    PitchLTM(multiSphere->ltm, 1.0f);
 }
 
 static void SetupMultiSphere()
@@ -409,12 +409,14 @@ static void SetupMultiSphere()
     VECTOR object_position = {+50.0f, 0.0f, +100.0f, 0.0f};
 
     multiSphere = InitializeGameObject();
+
     ReadModelFile("MODELS\\TORUS.BIN", &multiSphere->vertexBuffer);
+
     // envmap
-    // SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
 
     // alphamap
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 1));
+    // SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 1));
     VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
 
     SetupLTM(object_position, up, right, forward,
@@ -425,23 +427,23 @@ static void SetupMultiSphere()
 
     PitchLTM(multiSphere->ltm, -90.0f);
 
-    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
-
-    InitOBB(multiSphere, BBO_FIXED);
-
+    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
+    float time1 = getTicks(g_Manager.timer);
+    InitOBB(multiSphere, BBO_FIT);
+    DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
     multiSphere->update_object = RotateSphere;
 
     MatrixIdentity(lightTransform);
 
-    // CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE");
+    CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE");
 
-    // SetEnvMapMATRIX(multiSphere->activePipeline, lightTransform);
+    SetEnvMapMATRIX(multiSphere->activePipeline, lightTransform);
 
-    // SetEnvMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, glossName));
+    SetEnvMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, glossName));
 
-    CreateAlphaMapPipeline(multiSphere, "ALPHAMAP");
+    // CreateAlphaMapPipeline(multiSphere, "ALPHAMAP");
 
-    SetAlphaMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, alphaMap));
+    // SetAlphaMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, alphaMap));
 
     AddObjectToRenderWorld(world, multiSphere);
 }
@@ -502,7 +504,7 @@ static void SetupShadowViewer()
     id = shadowTexture->id;
 #endif
 
-    CreateMaterial(&shadowTexView->vertexBuffer, 0, shadowTexView->vertexBuffer.vertexCount - 1, id);
+    CreateMaterial(&shadowTexView->vertexBuffer, 0, shadowTexView->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, id);
 
     VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -643,7 +645,7 @@ static void SetupGameObjects()
     InitSkybox();
 
     SetupGrid();
-   SetupBody();
+    SetupBody();
 
     SetupMultiSphere();
     // SetupShadowViewer();
@@ -751,7 +753,9 @@ static void FinishCube(void *object)
 
     u32 id = GetTextureIDByName("WATER", g_Manager.texManager);
 
-    CreateMaterial(&temp->vertexBuffer, 0, temp->vertexBuffer.vertexCount - 1, id);
+    CreateMaterial(&temp->vertexBuffer, 0, temp->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, id);
+
+    DEBUGLOG("COUNT %d", temp->vertexBuffer.meshData[MESHINDICES]->vertexCount);
 
     CreateGraphicsPipeline(temp, GEN_PIPELINE_NAME);
 
@@ -778,32 +782,27 @@ static void LoadCube()
     PitchLTM(box->ltm, -45.0f);
     box->update_object = NULL;
 
-
-
     LoadASync("MODELS\\ROOM.BIN", &box->vertexBuffer, NULL, CreateMeshBuffersFromFile, FinishCube);
-
-    //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
-
 }
 
 static void FinishWater(void *object)
 {
-    //Material *mat = (Material*)grid->vertexBuffer.materials->data;
-    Texture *tex = (Texture*)object;
+    // Material *mat = (Material*)grid->vertexBuffer.materials->data;
+    Texture *tex = (Texture *)object;
     InitTextureResources(tex, TEX_ADDRESS_CLAMP);
     AddToManagerTexList(&g_Manager, tex);
-   // mat->materialId = tex->id;
+    // mat->materialId = tex->id;
 }
 
 static void LoadWater()
 {
-    CreateTextureParams *params = (CreateTextureParams*)malloc(sizeof(CreateTextureParams));
+    CreateTextureParams *params = (CreateTextureParams *)malloc(sizeof(CreateTextureParams));
     params->name = "WATER";
-    params->readType = READ_BMP;
+    params->readType = READ_PNG;
     params->useAlpha = 1;
     params->alpha = 0x80;
-    Texture *tex = (Texture*)malloc(sizeof(Texture));
-    LoadASync("TEXTURES\\WATER.BMP", tex, params, CreateTextureFromFile, FinishWater);
+    Texture *tex = (Texture *)malloc(sizeof(Texture));
+    LoadASync("TEXTURES\\MONET.PNG", tex, params, CreateTextureFromFile, FinishWater);
 }
 
 int Render()
@@ -820,7 +819,7 @@ int Render()
 
         UpdatePad();
         if (body != NULL)
-           UpdateAnimator(body->objAnimator, delta);
+            UpdateAnimator(body->objAnimator, delta);
 
         UpdateGlossTransform();
 
@@ -838,11 +837,8 @@ int Render()
 
         // RenderShadowScene();
 
-        // while(PollVU1DoneProcessing(&g_Manager) < 0);
 
-        // DumpCameraFrustum(cam);
-
-        //  ReadFromVU1(vu1_data_address + (*vif1_tops * 0), 16 * 4, 0);
+        FindOBBMaxAndMinVerticesVU0(multiSphere);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
@@ -977,7 +973,7 @@ int main(int argc, char **argv)
 {
     InitializeSystem();
 
-    InitASyncIO(25);
+    InitASyncIO(25, 5.0f);
 
     SetupWorldObjects();
 

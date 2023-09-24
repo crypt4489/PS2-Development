@@ -13,8 +13,10 @@ void InitializeDMAChannels()
 {
     dma_channel_initialize(DMA_CHANNEL_GIF, NULL, 0);
     dma_channel_initialize(DMA_CHANNEL_VIF1, NULL, 0);
+    dma_channel_initialize(DMA_CHANNEL_VIF0, NULL, 0);
     dma_channel_fast_waits(DMA_CHANNEL_GIF);
     dma_channel_fast_waits(DMA_CHANNEL_VIF1);
+    dma_channel_fast_waits(DMA_CHANNEL_VIF0);
 }
 
 qword_t *CreateDMATag(qword_t *q, u32 code, u32 size, u32 w2, u32 w3, u32 spr, ...)
@@ -144,6 +146,10 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, int tte)
         g_Manager.vu1DoneProcessing = 0;
         dma_channel_wait(DMA_CHANNEL_VIF1, -1);
         FlushCache(0);
+    }
+    else if (channel == DMA_CHANNEL_VIF0)
+    {
+
     }
     else
     {

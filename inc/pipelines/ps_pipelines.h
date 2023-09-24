@@ -10,6 +10,7 @@ void create_pipeline_tess_grid_vu1pipeline(GameObject *obj, u32 programNumber, u
 void CreateEnvMapPipeline(GameObject *obj, const char *name);
 void CreateSpecularPipeline(GameObject *obj, const char *name);
 void CreateAlphaMapPipeline(GameObject *obj, const char *name);
+void CreateBumpMapPipeline(GameObject *obj, const char *name);
 
 void SetupStage2MATRIX(VU1Pipeline *pipeline, MATRIX m);
 void SetupTextureCB(VU1Pipeline *pipeline, Texture *tex);

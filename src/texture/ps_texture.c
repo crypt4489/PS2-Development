@@ -69,17 +69,20 @@ void AddStringNameToTexture(Texture *tex, const char *buffer)
 
 void CleanTextureStruct(Texture *tex)
 {
-    if (tex->clut_buffer != NULL)
+    if (tex != NULL)
     {
-        free(tex->clut_buffer);
-    }
+        if (tex->clut_buffer != NULL)
+        {
+            free(tex->clut_buffer);
+        }
 
-    if (tex->pixels != NULL)
-    {
-        free(tex->pixels);
-    }
+        if (tex->pixels != NULL)
+        {
+            free(tex->pixels);
+        }
 
-    free(tex);
+        free(tex);
+    }
 }
 
 Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode)
@@ -440,16 +443,15 @@ void UploadTextureViaManagerToVRAM(Texture *tex)
             u32 lowestAddress = prev->texbuf.address;
             while (tex->mipLevels >= currMap)
             {
-
-                if (GRAPH_VRAM_MAX_WORDS < (lowestAddress + graph_vram_size(prev->width,
-                                             prev->height, prev->psm, GRAPH_ALIGN_BLOCK)))
+                u32 newAddress;
+                if ((GRAPH_VRAM_MAX_WORDS < (newAddress = lowestAddress + graph_vram_size(prev->width,
+                                             prev->height, prev->psm, GRAPH_ALIGN_BLOCK)) || list == NULL))
                 {
                     ERRORLOG("Too many mipmaps added to memory");
                     break;
                 }
 
-                addrs[currMap - 1] = lowestAddress + graph_vram_size(prev->width,
-                                             prev->height, prev->psm, GRAPH_ALIGN_BLOCK);
+                addrs[currMap - 1] = newAddress;
                 mipTex = (Texture *)list->data;
                 qword_t *mipQ = mipTex->upload;
                 widths[currMap - 1] = mipTex->texbuf.width;

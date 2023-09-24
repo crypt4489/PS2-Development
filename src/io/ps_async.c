@@ -31,6 +31,7 @@ static unsigned char asyncStack[0x18000] __attribute__((aligned(16))); // stack 
 
 static int asyncThreadID = 0;
 static u32 count = 0;
+static float timeToLoad = 15.0f;
 
 static Queue *asyncQueueWaiting = NULL;
 static Queue *asyncQueueDone = NULL;
@@ -51,7 +52,7 @@ static void IOThreadFunction(void *arg)
             u32 totalToRead = item->info->totalSize;
             u8 *bufferLocation = item->buffer + totalRead;
             u32 bytesToRead = SECTOR_SIZE;
-            while ((time2 - time1) < 20.0f && totalRead < totalToRead)
+            while ((time2 - time1) < timeToLoad && totalRead < totalToRead)
             {
                 u32 diff;
                 if ((diff = (totalToRead - totalRead)) < SECTOR_SIZE)
@@ -207,8 +208,11 @@ void DebugPrintIO()
     DEBUGLOG("%d", count);
 }
 
-void InitASyncIO(int queueCount)
+void InitASyncIO(int queueCount, float time)
 {
+
+    timeToLoad = time;
+
     ee_thread_t IOThread;
 
     asyncQueueWaiting = CreateQueue(queueCount, FIFO);

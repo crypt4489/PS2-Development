@@ -11,10 +11,12 @@
 #include "animation/ps_animation.h"
 #include "gamemanager/ps_manager.h"
 #include "util/ps_linkedlist.h"
+#include "system/ps_timer.h"
+#include "math/ps_vector.h"
 
 sceCdRMode sStreamMode;
 
-
+extern GameManager g_Manager;
 
 int IsFileCompressed(const char *filename)
 {
@@ -69,8 +71,8 @@ sceCdlFILE *FindFileByName(const char *filename)
 }
 
 u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
-                    u8 *outBuffer,
-                    u32 offset, u32 readSize)
+                  u8 *outBuffer,
+                  u32 offset, u32 readSize)
 {
     u32 starting_sec = loc_file_struct->lsn;
 
@@ -93,7 +95,7 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
 
     u32 bytesLeft = readSize;
 
-    u8* head_of_copy = outBuffer;
+    u8 *head_of_copy = outBuffer;
     u32 totalBytesRead = 0;
     while (i < sectors)
     {
@@ -104,11 +106,12 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
             bytesRead = bytesLeft;
             ReadSector(starting_sec + i, 1, readBuffer);
             memcpy(head_of_copy, readBuffer, bytesRead);
-
-        } else {
+        }
+        else
+        {
             ReadSector(starting_sec + i, 1, head_of_copy);
         }
-        i+=1;
+        i += 1;
         head_of_copy += bytesRead;
         bytesLeft -= bytesRead;
         totalBytesRead += bytesRead;
@@ -162,7 +165,9 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
             bytesRead = bytesLeft;
             ReadSector(starting_sec + i, 1, readBuffer);
             memcpy(head_of_copy, readBuffer, bytesRead);
-        } else {
+        }
+        else
+        {
             ReadSector(starting_sec + i, 1, head_of_copy);
         }
 
@@ -171,10 +176,13 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
         bytesLeft -= bytesRead;
     }
 
-     if (compressed)
+    if (compressed)
     {
         u8 *old = buffer;
+        float time1 = getTicks(g_Manager.timer);
         buffer = decompress(buffer, bufferSize, &bufferSize);
+        float time2 = getTicks(g_Manager.timer);
+        DEBUGLOG("DECOMPRESSION TIME %f", time2 - time1);
         free(old);
     }
 
@@ -187,21 +195,21 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
 MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 size)
 {
-    buffers->vertexCount = size;
+    buffers->meshData[MESHINDICES]->vertexCount = size;
     buffers->meshAnimationData = NULL;
     if ((code & 0x01) != 0)
     {
-        buffers->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHINDICES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
     if ((code & 0x04) != 0)
     {
-        buffers->normals = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHINDICES]->normals = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
     if ((code & 0x02) != 0)
     {
-        buffers->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHINDICES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
     if ((code & 0x08) != 0)
@@ -209,16 +217,10 @@ MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 siz
         buffers->indices = (u32 *)malloc(sizeof(u32) * size);
     }
 
-    if ((code & 0x10) != 0)
-    {
-        // buffers->indices = (u32 *)malloc(sizeof(u32) * size);
-    }
-
     if ((code & 0x20) != 0)
     {
-        // DEBUGLOG("AM I HERE WITH CREATING WEIGHTS and BONES");
-        buffers->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);
-        buffers->bones = (VectorInt *)malloc(sizeof(VectorInt) * size);
+        buffers->meshData[MESHINDICES]->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHINDICES]->bones = (VectorInt *)malloc(sizeof(VectorInt) * size);
         buffers->meshAnimationData = (AnimationMesh *)malloc(sizeof(AnimationMesh));
         buffers->meshAnimationData->animationsCount = buffers->meshAnimationData->jointsCount = 0;
         buffers->meshAnimationData->animations = NULL;
@@ -288,7 +290,7 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         x = copy.float_x;
 
-        buffers->vertices[i][0] = x;
+        buffers->meshData[MESHINDICES]->vertices[i][0] = x;
 
         input_int++;
 
@@ -296,7 +298,7 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         y = copy.float_x;
 
-        buffers->vertices[i][1] = y;
+        buffers->meshData[MESHINDICES]->vertices[i][1] = y;
 
         input_int++;
 
@@ -304,14 +306,14 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         z = copy.float_x;
 
-        buffers->vertices[i][2] = z;
+        buffers->meshData[MESHINDICES]->vertices[i][2] = z;
 
         input_int++;
         // copy.int_x = SWAP_ENDIAN(*input_int);
 
         // w = copy.float_x;
 
-        buffers->vertices[i][3] = 1.0f;
+        buffers->meshData[MESHINDICES]->vertices[i][3] = 1.0f;
 
         // input_int++;
 
@@ -350,7 +352,7 @@ static u32 LoadTexCoords(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         x = copy.float_x;
 
-        buffers->texCoords[i][0] = x;
+        buffers->meshData[MESHINDICES]->texCoords[i][0] = x;
 
         input_int++;
 
@@ -358,13 +360,13 @@ static u32 LoadTexCoords(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         y = copy.float_x;
 
-        buffers->texCoords[i][1] = y;
+        buffers->meshData[MESHINDICES]->texCoords[i][1] = y;
 
         input_int++;
 
-        buffers->texCoords[i][2] = 1.0f;
+        buffers->meshData[MESHINDICES]->texCoords[i][2] = 1.0f;
 
-        buffers->texCoords[i][3] = 0.0f;
+        buffers->meshData[MESHINDICES]->texCoords[i][3] = 0.0f;
     }
 
     return 4 + (8 * size);
@@ -397,7 +399,7 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         x = copy.float_x;
 
-        buffers->normals[i][0] = x;
+        buffers->meshData[MESHINDICES]->normals[i][0] = x;
 
         input_int++;
 
@@ -405,7 +407,7 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         y = copy.float_x;
 
-        buffers->normals[i][1] = y;
+        buffers->meshData[MESHINDICES]->normals[i][1] = y;
 
         input_int++;
 
@@ -413,12 +415,12 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         z = copy.float_x;
 
-        buffers->normals[i][2] = z;
+        buffers->meshData[MESHINDICES]->normals[i][2] = z;
 
         input_int++;
         // copy.int_x = SWAP_ENDIAN(*input_int);
 
-        buffers->normals[i][3] = 0.0f;
+        buffers->meshData[MESHINDICES]->normals[i][3] = 0.0f;
 
         // input_int++;
     }
@@ -428,7 +430,7 @@ static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
 static u32 LoadIndices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
-
+    DEBUGLOG("Here in indices");
     u32 *input_int = ptr;
 
     u32 size = SWAP_ENDIAN(*input_int);
@@ -476,7 +478,7 @@ static u32 LoadWeights(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         x = copy.float_x;
 
-        buffers->weights[i][0] = x;
+        buffers->meshData[MESHINDICES]->weights[i][0] = x;
 
         input_int++;
 
@@ -484,7 +486,7 @@ static u32 LoadWeights(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         y = copy.float_x;
 
-        buffers->weights[i][1] = y;
+        buffers->meshData[MESHINDICES]->weights[i][1] = y;
 
         input_int++;
 
@@ -492,14 +494,14 @@ static u32 LoadWeights(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
         z = copy.float_x;
 
-        buffers->weights[i][2] = z;
+        buffers->meshData[MESHINDICES]->weights[i][2] = z;
 
         input_int++;
         copy.int_x = SWAP_ENDIAN(*input_int);
 
         w = copy.float_x;
 
-        buffers->weights[i][3] = w;
+        buffers->meshData[MESHINDICES]->weights[i][3] = w;
 
         input_int++;
 
@@ -530,22 +532,22 @@ static u32 LoadBones(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
         s32 innerx = (*input_int & 0x000000ff);
         if (innerx == 255)
             innerx = -1;
-        buffers->bones[i][0] = innerx;
+        buffers->meshData[MESHINDICES]->bones[i][0] = innerx;
 
         s32 innery = ((*input_int >> 8) & 0x000000ff);
         if (innery == 255)
             innery = -1;
-        buffers->bones[i][1] = innery;
+        buffers->meshData[MESHINDICES]->bones[i][1] = innery;
 
         s32 innerz = ((*input_int >> 16) & 0x000000ff);
         if (innerz == 255)
             innerz = -1;
-        buffers->bones[i][2] = innerz;
+        buffers->meshData[MESHINDICES]->bones[i][2] = innerz;
 
         s32 innerw = ((*input_int >> 24) & 0x000000ff);
         if (innerw == 255)
             innerw = -1;
-        buffers->bones[i][3] = innerw;
+        buffers->meshData[MESHINDICES]->bones[i][3] = innerw;
 
         input_int++;
         // DumpVectorInt(buffers->bones[i]);
@@ -862,33 +864,129 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 static LoadFunc_Array loadFuncArray[11] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
                                            LoadNormals, LoadBones, LoadWeights, LoadMaterial, LoadJoints, LoadAnimationData, LoadAnimationSRTs};
 
+static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 size)
+{
+    float divisor = 1.f / 8.f;
+    u32 sizeOfBuffer = size * divisor;
+    if (size % 8 != 0)
+    {
+        sizeOfBuffer++;
+    }
+
+    u8 *binaryBuffer = (u8 *)malloc(sizeOfBuffer);
+    if (binaryBuffer == NULL)
+    {
+        ERRORLOG("ERROR creating binaryBuffer");
+        return;
+    }
+
+    memset(binaryBuffer, 0, sizeOfBuffer);
+
+    u32 *indices = buffers->indices;
+
+    for (int i = 0; i < size; i++)
+    {
+        u32 index = indices[i];
+
+        u32 indexInBuffer = index * divisor;
+
+        u8 mask = 0x01 << index % 8;
+
+        u8 present = (binaryBuffer[indexInBuffer] & mask);
+
+        if (present)
+        {
+            continue;
+        }
+        else
+        {
+            binaryBuffer[indexInBuffer] |= mask;
+        }
+
+        if ((code & 0x01) != 0)
+        {
+            VectorCopy(buffers->meshData[MESHVERTICES]->vertices[index], buffers->meshData[MESHINDICES]->vertices[i]);
+        }
+
+        if ((code & 0x04) != 0)
+        {
+            VectorCopy(buffers->meshData[MESHVERTICES]->normals[index], buffers->meshData[MESHINDICES]->normals[i]);
+        }
+
+        if ((code & 0x02) != 0)
+        {
+            VectorCopy(buffers->meshData[MESHVERTICES]->texCoords[index], buffers->meshData[MESHINDICES]->texCoords[i]);
+        }
+
+        if ((code & 0x20) != 0)
+        {
+            VectorCopy(buffers->meshData[MESHVERTICES]->weights[index], buffers->meshData[MESHINDICES]->weights[i]);
+            VectorIntCopy(buffers->meshData[MESHVERTICES]->bones[index], buffers->meshData[MESHINDICES]->bones[i]);
+        }
+    }
+
+    free(binaryBuffer);
+}
+
+static void AllocateVerticesBufferFromCode(MeshBuffers *buffers, u16 code, u32 size)
+{
+    buffers->meshData[MESHVERTICES]->vertexCount = size;
+    if ((code & 0x01) != 0)
+    {
+        buffers->meshData[MESHVERTICES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
+    }
+
+    if ((code & 0x04) != 0)
+    {
+        buffers->meshData[MESHVERTICES]->normals = (VECTOR *)malloc(sizeof(VECTOR) * size);
+    }
+
+    if ((code & 0x02) != 0)
+    {
+        buffers->meshData[MESHVERTICES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * size);
+    }
+
+    if ((code & 0x20) != 0)
+    {
+
+        buffers->meshData[MESHVERTICES]->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHVERTICES]->bones = (VectorInt *)malloc(sizeof(VectorInt) * size);
+    }
+}
+
 void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 bufferLen)
 {
-    MeshBuffers *buffers = (MeshBuffers*)object;
+    MeshBuffers *buffers = (MeshBuffers *)object;
 
     u8 *iter = buffer;
 
     u32 *input_int; //= (u32*)malloc(4);
 
+    // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
+
     if (iter[0] == 0xDF && iter[1] == 0x01)
     {
         iter += 2;
 
-        u16 code = (u16)(0xFF00 & (((u16)iter[0]) << 8)) | (0x00FF & (u16)iter[1]);
+        u16 meshCode = (u16)(0xFF00 & (((u16)iter[0]) << 8)) | (0x00FF & (u16)iter[1]);
 
-        //  DEBUGLOG("what's going on? %x", code);
+        //   DEBUGLOG("what's going on? %x", code);
 
         iter += 2;
-
+        // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
         input_int = (u32 *)iter;
-        u32 vertSize = SWAP_ENDIAN(*input_int);
+        u32 indicesSize = SWAP_ENDIAN(*input_int);
         iter += 4;
+        // DEBUGLOG("%d", indicesSize);
+        // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
+        input_int = (u32 *)iter;
+        u32 verticesSize = SWAP_ENDIAN(*input_int);
+        iter += 4;
+        // DEBUGLOG("%d", verticesSize);
 
-        //  DEBUGLOG("%x", code);
-
-        buffers = AllocateMeshBuffersFromCode(buffers, code, vertSize);
+        buffers = AllocateMeshBuffersFromCode(buffers, meshCode, indicesSize);
         u32 index = 0;
-        u32 end = vertSize;
+        u32 end = indicesSize;
 
         while (iter[0] != 0xFF && iter[1] != 0xFF && iter[2] != 0x41 && iter[3] != 0x14)
         {
@@ -899,6 +997,7 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
                 // while(1);
                 iter += 4;
                 u8 code = iter[0];
+                //  DEBUGLOG("%x", code);
                 iter += 1;
                 input_int = (u32 *)iter;
 
@@ -909,10 +1008,14 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
                 }
                 else
                 {
-                    ERRORLOG("Unsupported load mesh code");
+                    ERRORLOG("Unsupported load mesh code %x", code);
                 }
             }
+            // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
+            // break;
         }
+        AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
+        CreateVerticesBuffer(buffers, meshCode, indicesSize);
     }
 }
 
@@ -927,7 +1030,13 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
         ERRORLOG("File Buffer for mesh %s was empty", filename);
         return;
     }
+    //  float time1  = getTicks(g_Manager.timer);
+
     CreateMeshBuffersFromFile(buffers, NULL, buffer, fSize);
+
+    // float time2 = getTicks(g_Manager.timer);
+
+    // DEBUGLOG("Time for Create : %f", time2-time1);
     free(buffer);
     // free(copy);
 }

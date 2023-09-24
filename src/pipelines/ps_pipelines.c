@@ -237,7 +237,7 @@ void create_pipeline_obj_wireframe_vu1pipeline(GameObject *obj, u32 programNumbe
     qword_t vu1_addr;
     vu1_addr.sw[0] = vu1_addr.sw[1] = vu1_addr.sw[2] = 0;
 
-    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount - 1, 54, DRAW_VERTICES, &vu1_addr);
+    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, 54, DRAW_VERTICES, &vu1_addr);
 
     sizeOfPipeline = q - dcode_tag_vif1 - 1;
 
@@ -589,7 +589,7 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name)
 
     sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + headerSize + 8 + RenderPassesForAnim(renderPasses, pipeCode);
 
-    uploadLoop = ((obj->vertexBuffer.vertexCount) / drawSize) + 1;
+    uploadLoop = ((obj->vertexBuffer.meshData[MESHINDICES]->vertexCount) / drawSize) + 1;
 
     sizeOfPipeline = sizeOfPipeline + UploadSize(uploadLoop, upload) + 1 + 3 + 10;
 
@@ -742,7 +742,7 @@ void CreateAlphaMapPipeline(GameObject *obj, const char *name)
 
     sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + totalHeader + 8 + RenderPassesForAnim(renderPasses, pipeCode);
 
-    uploadLoop = ((obj->vertexBuffer.vertexCount) / drawSize) + 1;
+    uploadLoop = ((obj->vertexBuffer.meshData[MESHINDICES]->vertexCount) / drawSize) + 1;
 
     sizeOfPipeline = sizeOfPipeline + ((UploadSize(uploadLoop, upload) + 1 + 3 + 10) * 2);
 
@@ -1025,6 +1025,153 @@ void CreateSpecularPipeline(GameObject *obj, const char *name)
     pipeline->q = pipeline_dma;
 
     // dump_packet(pipeline->q);
+
+    AddVU1Pipeline(obj, pipeline);
+    SetActivePipeline(obj, pipeline);
+}
+
+void CreateBumpMapPipeline(GameObject *obj, const char *name)
+{
+    u32 sizeOfDCode, headerSize, cbsNums, sizeOfPipeline, drawSize, pipeCode = VU1Stage4;
+    u16 drawCode = DRAW_VERTICES;
+    sizeOfDCode = headerSize = cbsNums = sizeOfPipeline = drawSize = 0;
+
+    u32 msize = obj->vertexBuffer.matCount;
+
+    u32 renderPasses;
+
+    if (msize == 0)
+    {
+        ERRORLOG("no materials. must be at least 1");
+        return;
+    }
+
+    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+
+    CreatePipelineSizes(pipeCode | VU1Stage2, &cbsNums, &headerSize); //
+
+    cbsNums+=2;
+
+    u32 upload = CreateDrawSizeandUploadCount(drawCode, pipeCode, &drawSize);
+
+    //  DEBUGLOG("cbs and vu1headers %d %d ", cbsNums, headerSize);
+
+    // DEBUGLOG("uppie and drawie %d %d ", upload, drawSize);
+
+    u32 uploadLoop = CreateUpload(obj->vertexBuffer.materials, drawSize, msize);
+
+    sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + headerSize + 8 + RenderPassesForAnim(renderPasses, pipeCode);
+
+    uploadLoop = ((obj->vertexBuffer.meshData[MESHINDICES]->vertexCount) / drawSize) + 1;
+
+    sizeOfPipeline = sizeOfPipeline + UploadSize(uploadLoop, upload) + 1 + 3 + 10;
+
+    // DEBUGLOG("size of pipe : %d", sizeOfPipeline);
+
+    qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * sizeOfPipeline);
+
+    VU1Pipeline *pipeline = CreateVU1Pipeline(name, cbsNums, renderPasses);
+
+    qword_t *vu1_addr = &pipeline->passes[0]->programs;
+    vu1_addr->sw[0] = vu1_addr->sw[1] = vu1_addr->sw[2] = vu1_addr->sw[3] = MAX_VU1_CODE_ADDRESS;
+
+    qword_t *q = pipeline_dma;
+
+    qword_t *dcode_callback_tags = q;
+
+    q += (cbsNums);
+
+    qword_t *dcode_tag_vif1 = q;
+
+    q += 1;
+
+    q = InitDoubleBufferingQWord(q, headerSize, GetDoubleBufferOffset(headerSize)); // 2
+
+    qword_t *per_obj_tag = q;
+
+    q = CreateDMATag(per_obj_tag, DMA_CNT, 4, 0, 0, 0);
+
+    qword_t *direct_tag = q;
+
+    q = CreateDirectTag(direct_tag, 3, 0);
+
+    q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawRegisters, q, NULL, DEFAULT_GS_REG_PCB);
+
+    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags, q);
+
+    q += 2; //(obj-> tex == NULL ? 4 : 14); //7
+
+    q = CreateDMATag(q, DMA_END, headerSize, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, headerSize, VIF_CMD_UNPACK(0, 3, 0), 1), 0); // 8
+
+    dcode_callback_tags = CreateVU1Callbacks(dcode_callback_tags, q, pipeline, headerSize, pipeCode | VU1Stage2, drawCode);
+
+    q += headerSize;
+
+    sizeOfDCode = q - dcode_tag_vif1 - 1;
+    // DEBUGLOG("%d", sizeOfDCode);
+
+    // dcode_tag_vif1->sw[0] = dcode_tag_vif1->sw[1] = dcode_tag_vif1->sw[2] = dcode_tag_vif1->sw[3] = 0;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfDCode);
+
+    CreateVU1ProgramsList(vu1_addr, pipeCode, drawCode);
+
+    // vu1upload =  headerSize + 8
+
+    // matQword = matCount * 3 + (((vertexCount / drawSize) + 1) * (uploadCount + 2)
+
+    // total qwords cbsNums + vu1upload + matQword
+    if ((pipeCode & VU1Stage1) != 0)
+    {
+        if ((drawCode & DRAW_MORPH) != 0)
+            q = CreateMorphInterpolatorDMAUpload(q, q + 1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+    }
+
+    q = CreateMeshDMAUpload(q, obj, drawSize, drawCode, obj->vertexBuffer.matCount, vu1_addr);
+
+    PipelineCallback *setupTexture = CreatePipelineCBNode(SetupMapTexture, q, NULL, SETUP_MAP_TEXTURE_PCB);
+    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupTexture, dcode_callback_tags, q);
+
+    q++;
+
+    qword_t env_vu1;
+
+    CreateVU1ProgramsList(&env_vu1, pipeCode | VU1Stage2, drawCode);
+
+    qword_t *envmap_upload = q;
+
+    q++;
+
+    q = CreateDMATag(q, DMA_CNT, 4, 0, 0, 0);
+
+    q = CreateDirectTag(q, 3, 0);
+
+    q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    PipelineCallback *setupEnvMapReg = CreatePipelineCBNode(SetupBlendingCXT, q, NULL, SETUP_BLENDING_PCB);
+    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupEnvMapReg, dcode_callback_tags, q);
+
+    q += 2;
+
+    q = CreateDMATag(q, DMA_END, 1, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE((10 | (1 << 14) | (0 << 15)), 1, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+
+    q++; // set prim tag
+
+    CreateDCODEDmaTransferTag(envmap_upload, DMA_CHANNEL_VIF1, 1, 1, q - envmap_upload - 1);
+
+    if ((pipeCode & VU1Stage1) != 0)
+    {
+        if ((drawCode & DRAW_MORPH) != 0)
+            q = CreateMorphInterpolatorDMAUpload(q, q + 1, pipeline, obj->interpolator->currInterpNode, 0);
+    }
+
+    q = CreateMeshDMAUpload(q, obj, drawSize, DRAW_NORMAL | DRAW_VERTICES | DRAW_TEXTURE, 0, &env_vu1);
+
+    CreateDCODETag(q, DMA_DCODE_END);
+
+    pipeline->q = pipeline_dma;
 
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);

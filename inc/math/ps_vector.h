@@ -2,6 +2,7 @@
 #define PS_VECTOR_H
 #include "ps_global.h"
 void VectorCopy(VECTOR out, VECTOR in);
+void VectorIntCopy(VectorInt out, VectorInt in);
 float DotProduct(VECTOR in1, VECTOR in2);
 void RandomVectorsInit(VECTOR in);
 void GetRandomVectors(VECTOR in);

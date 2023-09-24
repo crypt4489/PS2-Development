@@ -48,31 +48,51 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
     SubmitDMABuffersToController(q, DMA_CHANNEL_VIF1, 1, 1);
 }
 
+qword_t *UploadVectorsVU0(qword_t *q, void *vectors, u32 offset, u32 *dest, u32 size)
+{
+    q = add_unpack_data(q, 4, &(((qword_t*)vectors)[offset]), size, 0, VIF_CMD_UNPACK(0, 3, 0));
+
+    *dest += size;
+
+    return q;
+}
+
+u32 UploadStartProgram(u32 startCode, u32 startAddress, u32 inte)
+{
+    return VIF_CODE(startAddress, 0, startCode, inte);
+}
+
+u32 UploadFlushTag(u32 inte)
+{
+    return VIF_CODE(0, 0, VIF_CMD_FLUSH, inte);
+}
+
 qword_t *add_unpack_data(qword_t *q, u32 dest_address, void *data, u32 qwSize, u8 use_top, u32 vif_pack)
 {
-    u32 pack_size = qwSize;
-    if (qwSize >= 256)
+    if (qwSize > 256)
     {
-        pack_size = 0;
+        qwSize = 256;
+        ERRORLOG("Passed too many QWords in AddUnPack");
     }
-
-    DMATAG_REF(q, pack_size, (u32)data, 0, 0, 0);
+    DMATAG_REF(q, qwSize, (u32)data, 0, 0, 0);
     q->sw[2] = VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0);
-    q->sw[3] = VIF_CODE((dest_address | (1 << 14) | ((u32)use_top << 15)), pack_size, vif_pack, 0);
+    q->sw[3] = VIF_CODE((dest_address | (0 << 14) | ((u32)use_top << 15)), qwSize, vif_pack, 0);
     q++;
     return q;
 }
 
+
 qword_t *ReadUnpackData(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, u32 vif_pack)
 {
     u32 pack_size = qwSize;
-    if (qwSize >= 256)
+    if (qwSize > 256)
     {
-        pack_size = 0;
+        ERRORLOG("Passed too many QWords in ReadUnPack");
+        pack_size = 256;
     }
     DMATAG_CNT(q, pack_size, 0, 0, 0);
     q->sw[2] = VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0);
-    q->sw[3] = VIF_CODE((dest_address | (1 << 14) | ((u32)use_top << 15)), pack_size, vif_pack, 0);
+    q->sw[3] = VIF_CODE((dest_address | (0 << 14) | ((u32)use_top << 15)), pack_size, vif_pack, 0);
     q++;
     return q;
 }

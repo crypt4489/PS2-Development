@@ -92,35 +92,41 @@ void CleanGameObject(GameObject *obj)
     {
       free(obj->vertexBuffer.indices);
     }
-
-    if (obj->vertexBuffer.vertices != NULL)
+    for (int i = 0; i < 2; i++)
     {
-      free(obj->vertexBuffer.vertices);
-    }
+      if  (obj->vertexBuffer.meshData[i] != NULL)
+      {
+        continue;
+      }
+      if (obj->vertexBuffer.meshData[i]->vertices != NULL)
+      {
+        free(obj->vertexBuffer.meshData[i]->vertices);
+      }
 
-    if (obj->vertexBuffer.normals != NULL)
-    {
-      free(obj->vertexBuffer.normals);
-    }
+      if (obj->vertexBuffer.meshData[i]->normals != NULL)
+      {
+        free(obj->vertexBuffer.meshData[i]->normals);
+      }
 
-    if (obj->vertexBuffer.texCoords != NULL)
-    {
-      free(obj->vertexBuffer.texCoords);
-    }
+      if (obj->vertexBuffer.meshData[i]->texCoords != NULL)
+      {
+        free(obj->vertexBuffer.meshData[i]->texCoords);
+      }
 
-    if (obj->vertexBuffer.bones != NULL)
-    {
-      free(obj->vertexBuffer.bones);
-    }
+      if (obj->vertexBuffer.meshData[i]->bones != NULL)
+      {
+        free(obj->vertexBuffer.meshData[i]->bones);
+      }
 
-    if (obj->vertexBuffer.weights != NULL)
-    {
-      free(obj->vertexBuffer.weights);
-    }
+      if (obj->vertexBuffer.meshData[i]->weights != NULL)
+      {
+        free(obj->vertexBuffer.meshData[i]->weights);
+      }
 
-    if (obj->vertexBuffer.colors != NULL)
-    {
-      free(obj->vertexBuffer.colors);
+      if (obj->vertexBuffer.meshData[i]->colors != NULL)
+      {
+        free(obj->vertexBuffer.meshData[i]->colors);
+      }
     }
 
     free(obj);
@@ -134,14 +140,20 @@ GameObject *InitializeGameObject()
   go->pipelines = NULL;
   go->objData = NULL;
   go->update_object = NULL;
-  go->vertexBuffer.vertexCount = 0;
   go->vertexBuffer.indices = NULL;
-  go->vertexBuffer.vertices = NULL;
-  go->vertexBuffer.normals = NULL;
-  go->vertexBuffer.texCoords = NULL;
-  go->vertexBuffer.bones = NULL;
-  go->vertexBuffer.weights = NULL;
-  go->vertexBuffer.colors = NULL;
+  go->vertexBuffer.meshData[0] = (MeshVectors*)malloc(sizeof(MeshVectors));
+  go->vertexBuffer.meshData[MESHINDICES] = (MeshVectors*)malloc(sizeof(MeshVectors));
+  for (int i = 0; i < 2; i++)
+  {
+    go->vertexBuffer.meshData[i]->vertexCount = 0;
+
+    go->vertexBuffer.meshData[i]->vertices = NULL;
+    go->vertexBuffer.meshData[i]->normals = NULL;
+    go->vertexBuffer.meshData[i]->texCoords = NULL;
+    go->vertexBuffer.meshData[i]->bones = NULL;
+    go->vertexBuffer.meshData[i]->weights = NULL;
+    go->vertexBuffer.meshData[i]->colors = NULL;
+  }
   go->vertexBuffer.matCount = 0;
   go->vertexBuffer.materials = NULL;
   go->vertexBuffer.meshAnimationData = NULL;
@@ -163,11 +175,11 @@ qword_t *CreateMeshDMAUpload(qword_t *q, GameObject *obj, u32 drawSize, u16 draw
 
     if ((drawCode & DRAW_MORPH) != 0)
     {
-      q = CreateVU1TargetUpload(q, obj, 0, obj->vertexBuffer.vertexCount - 1, drawSize, drawCode, vu1_addr);
+      q = CreateVU1TargetUpload(q, obj, 0, obj->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, drawSize, drawCode, vu1_addr);
     }
     else
     {
-      q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.vertexCount - 1, drawSize, drawCode, vu1_addr);
+      q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, drawSize, drawCode, vu1_addr);
     }
 
     u32 meshPipe = q - dma_vif1 - 1;
@@ -329,13 +341,13 @@ qword_t *CreateVU1VertexUpload(qword_t *q, MeshBuffers *buffer, u32 start, u32 e
 
 qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u32 offset, u8 code)
 {
-  q = add_unpack_data(q, *top, &(buffer->vertices[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+  q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->vertices[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
   *top += count;
 
   if (code & DRAW_TEXTURE)
   {
-    q = add_unpack_data(q, *top, &(buffer->texCoords[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->texCoords[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }
@@ -343,19 +355,18 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
   if (code & DRAW_NORMAL)
   {
 
-    q = add_unpack_data(q, *top, &(buffer->normals[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->normals[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }
 
   if (code & DRAW_SKINNED)
   {
-    // DEBUGLOG("HERREREERERERER!!!");
-    q = add_unpack_data(q, *top, &(buffer->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
 
-    q = add_unpack_data(q, *top, &(buffer->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }

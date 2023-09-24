@@ -111,7 +111,7 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
     {
         return -1;
     }
-    int count = currCollidePoly->vertexBuffer.vertexCount;
+    int count = currCollidePoly->vertexBuffer.meshData[MESHINDICES]->vertexCount;
     int res = 0;
     int indexCount = index;
     MATRIX checkWorld, collideWorld;
@@ -119,11 +119,11 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
     CreateWorldMatrixLTM(currCollidePoly->ltm, collideWorld);
     while(currCollidePoly != NULL)
     {
-        int polyCollideIndyCount = currCollidePoly->vertexBuffer.vertexCount;
+        int polyCollideIndyCount = currCollidePoly->vertexBuffer.meshData[MESHINDICES]->vertexCount;
         VECTOR x1, y1, z1, plane_n, plane, tempBottom, tempTop;
-        VectorCopy(x1, currCollidePoly->vertexBuffer.vertices[0]);
-        VectorCopy(y1, currCollidePoly->vertexBuffer.vertices[1]);
-        VectorCopy(z1, currCollidePoly->vertexBuffer.vertices[2]);
+        VectorCopy(x1, currCollidePoly->vertexBuffer.meshData[MESHINDICES]->vertices[0]);
+        VectorCopy(y1, currCollidePoly->vertexBuffer.meshData[MESHINDICES]->vertices[1]);
+        VectorCopy(z1, currCollidePoly->vertexBuffer.meshData[MESHINDICES]->vertices[2]);
 
         MatrixVectorMultiply(x1, collideWorld, x1);
         MatrixVectorMultiply(y1, collideWorld, y1);
@@ -138,16 +138,16 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
         for (int i = 0; i<count; i++)
         {
             VECTOR t;
-            MatrixVectorMultiply(t, checkWorld, currObj->vertexBuffer.vertices[i]);
+            MatrixVectorMultiply(t, checkWorld, currObj->vertexBuffer.meshData[MESHINDICES]->vertices[i]);
            res = plane_collide_with_light_vector(t, lightPos, plane_n);
 
 
            if (res == 1)
            {
               VectorCopy(outPlane, plane);
-              MatrixVectorMultiply(tempTop, collideWorld, currCollidePoly->vertexBuffer.vertices[0]);
+              MatrixVectorMultiply(tempTop, collideWorld, currCollidePoly->vertexBuffer.meshData[MESHINDICES]->vertices[0]);
               VectorCopy(top, tempTop);
-               MatrixVectorMultiply(tempBottom, collideWorld, currCollidePoly->vertexBuffer.vertices[polyCollideIndyCount-1]);
+               MatrixVectorMultiply(tempBottom, collideWorld, currCollidePoly->vertexBuffer.meshData[MESHINDICES]->vertices[polyCollideIndyCount-1]);
               VectorCopy(bottom, tempBottom);
               return indexCount;
            }

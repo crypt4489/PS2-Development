@@ -19,5 +19,10 @@ qword_t *VIFSetupScaleVector(qword_t*b);
 qword_t* vif_setup_tex(qword_t *b, Texture *tex, u32 context);
 qword_t* vif_setup_rgbaq(qword_t *b, color_t color);
 qword_t* InitDoubleBufferingQWord(qword_t *q, u16 base, u16 offset);
+qword_t *UploadVectorsVU0(qword_t *q, void *vectors, u32 offset, u32 *dest, u32 size);
+qword_t *add_unpack_data2(qword_t *q, u32 dest_address, void *data, u32 qwSize, u8 use_top, u32 vif_pack);
+u32 UploadStartProgram(u32 startCode, u32 startAddress, u32 inte);
+
+u32 UploadFlushTag(u32 inte);
 
 #endif
