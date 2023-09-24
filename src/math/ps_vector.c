@@ -28,6 +28,16 @@ void VectorIntCopy(VectorInt out, VectorInt in)
         : "memory");
 }
 
+void VectorVoidCopy(void* out, void* in)
+{
+    asm __volatile__(
+        "lqc2		$vf1, 0x00(%1)	\n"
+        "sqc2		$vf1, 0x00(%0)	\n"
+        :
+        : "r"(out), "r"(in)
+        : "memory");
+}
+
 void RandomVectorsInit(VECTOR in)
 {
     asm __volatile__(

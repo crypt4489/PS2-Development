@@ -13,6 +13,7 @@
 #include "util/ps_linkedlist.h"
 #include "system/ps_timer.h"
 #include "math/ps_vector.h"
+#include "math/ps_matrix.h"
 
 sceCdRMode sStreamMode;
 
@@ -234,7 +235,7 @@ MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 siz
 }
 
 typedef u32 (*LoadFunc_Array)(u32 *, MeshBuffers *, u32 *, u32 *);
-
+#ifdef OLD_LOADER
 // bytes read returned
 static u32 LoadMaterial(u32 *ptr, MeshBuffers *buff, u32 *start, u32 *end)
 {
@@ -860,7 +861,450 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     return (input - ret) * 4;
 }
+#else
+static u32 LoadMaterial(u32 *ptr, MeshBuffers *buff, u32 *start, u32 *end)
+{
+    // DEBUGLOG("HERE!");
+    int _start, _end, _ret;
+    _start = *start = *ptr;
+    ptr++;
+    _end = *ptr;
+    *end = _end + 1;
+    ptr++;
+    // DEBUGLOG("%d %d", _start, _end);
+    char name[MAX_CHAR_TEXTURE_NAME];
+    char *bytePtr = (char *)ptr;
+    u8 sizeOfName = *bytePtr++;
 
+    for (u8 i = 0; i < sizeOfName; i++)
+    {
+        name[i] = *bytePtr++;
+    }
+
+    name[sizeOfName] = 0;
+
+    u32 id = GetTextureIDByName(name, g_Manager.texManager);
+
+    buff = CreateMaterial(buff, _start, _end, id);
+
+    _ret = 9 + sizeOfName;
+
+    return _ret;
+}
+
+static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 size = *input_int;
+
+    input_int += 1;
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+  
+        VectorVoidCopy(buffers->meshData[MESHINDICES]->vertices[i], input_int);
+
+        buffers->meshData[MESHINDICES]->vertices[i][3] = 1.0f;
+
+        input_int+=3;
+    }
+
+    return 4 + (12 * size);
+}
+
+static u32 LoadTexCoords(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 size = *input_int;
+
+    input_int += 1;
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+        VectorVoidCopy(buffers->meshData[MESHINDICES]->texCoords[i], input_int);
+        
+        buffers->meshData[MESHINDICES]->texCoords[i][2] = 1.0f;
+
+        buffers->meshData[MESHINDICES]->texCoords[i][3] = 0.0f;
+
+        input_int += 2;
+    }
+
+    return 4 + (8 * size);
+}
+
+static u32 LoadNormals(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 size = *input_int;
+
+    input_int += 1;
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+
+        VectorVoidCopy(buffers->meshData[MESHINDICES]->normals[i], input_int);
+
+        buffers->meshData[MESHINDICES]->normals[i][3] = 0.0f;
+
+        input_int+=3;
+    }
+
+    return 4 + (12 * size);
+}
+
+static u32 LoadIndices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 size = *input_int;
+
+    input_int += 1;
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+        buffers->indices[i] = *input_int++;
+    }
+
+    return ((size + 1) * 4);
+}
+
+static u32 LoadWeights(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 size = *input_int;
+
+    input_int += 1;
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+        VectorVoidCopy(buffers->meshData[MESHINDICES]->weights[i], input_int);
+        
+        input_int+=4;
+    }
+
+    return 4 + (16 * size);
+}
+
+static u32 LoadBones(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 size = *input_ints;
+
+    input_int += 1;
+
+    u32 _start = *start;
+    u32 _end = *end;
+
+    for (int i = _start; i < _end; i++)
+    {
+
+        s32 innerx = (*input_int & 0x000000ff);
+        if (innerx == 255)
+            innerx = -1;
+        buffers->meshData[MESHINDICES]->bones[i][0] = innerx;
+
+        s32 innery = ((*input_int >> 8) & 0x000000ff);
+        if (innery == 255)
+            innery = -1;
+        buffers->meshData[MESHINDICES]->bones[i][1] = innery;
+
+        s32 innerz = ((*input_int >> 16) & 0x000000ff);
+        if (innerz == 255)
+            innerz = -1;
+        buffers->meshData[MESHINDICES]->bones[i][2] = innerz;
+
+        s32 innerw = ((*input_int >> 24) & 0x000000ff);
+        if (innerw == 255)
+            innerw = -1;
+        buffers->meshData[MESHINDICES]->bones[i][3] = innerw;
+
+        input_int++;
+    }
+
+    return ((size + 1) * 4);
+}
+
+static u32 *LoadMatrix(MATRIX m, u32 *input)
+{
+   /* Bin2Float copy;
+
+    for (int i = 0; i < 16; i++)
+    {
+        copy.int_x = *input++;
+
+        m[i] = copy.float_x;
+    }
+    */
+    MatrixVoidCopy(m, input);
+    
+    input+=16;
+
+    return input;
+}
+
+static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 *begin = input_int;
+
+    u32 size = *input_int;
+
+    buffers->meshAnimationData->jointsCount = size;
+    buffers->meshAnimationData->joints = malloc(sizeof(Joint *) * size);
+
+    input_int++;
+
+    for (int i = 0; i < size; i++)
+    {
+        u8 *bytePtr = (u8 *)input_int;
+        Joint *joint = (Joint *)malloc(sizeof(Joint));
+        joint->id = (*bytePtr++ & 0xff);
+        // DEBUGLOG("%d %d", joint->id, size);
+        u32 nameSize = (*bytePtr++ & 0xff);
+        for (u8 iter = 0; iter < nameSize; iter++)
+        {
+            joint->name[iter] = *bytePtr++;
+        }
+
+        joint->name[nameSize] = 0;
+        // DEBUGLOG("%s", joint->name);
+        input_int = (u32 *)bytePtr;
+        input_int = LoadMatrix(joint->offset, input_int);
+        // DumpMatrix(joint->offset);
+        buffers->meshAnimationData->joints[i] = joint;
+    }
+
+    return (input_int - begin) * 4;
+}
+
+
+static AnimationNode *ReadAnimationNode(u32 **input_ptr)
+{
+    AnimationNode *node = (AnimationNode *)malloc(sizeof(AnimationNode));
+
+    u32 *input = *input_ptr;
+
+    int nodeNameLength = *input++;;
+
+    u8 *bytePtr = (u8 *)input;
+
+    for (u8 iter = 0; iter < nodeNameLength; iter++)
+    {
+        node->name[iter] = *bytePtr++;
+    }
+
+    node->name[nodeNameLength] = 0;
+
+    u32 count = node->childrenCount = *bytePtr++;
+
+    input = (u32 *)bytePtr;
+
+    input = LoadMatrix(node->transformation, input);
+
+    node->children = malloc(sizeof(AnimationNode *) * count);
+
+    for (int child = 0; child < count; child++)
+    {
+        node->children[child] = ReadAnimationNode(&input);
+    }
+
+    *input_ptr = input;
+    return node;
+}
+
+static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+
+    AnimationData *data = (AnimationData *)malloc(sizeof(AnimationData));
+
+    u32 *input_int = ptr;
+
+    u32 *begin = input_int;
+
+    u32 nameSize = *input_int++;
+
+    u8 *bytePtr = (u8 *)input_int;
+
+    for (u8 iter = 0; iter < nameSize; iter++)
+    {
+        data->name[iter] = *bytePtr++;
+    }
+
+    data->name[nameSize] = 0;
+
+    input_int = (u32 *)bytePtr;
+
+    Bin2Float copy;
+
+    copy.int_x = *input_int++;
+
+    data->duration = copy.float_x;
+
+    copy.int_x = *input_int++;
+
+    data->ticksPerSecond = copy.float_x;
+
+    data->root = NULL;
+
+    data->root = ReadAnimationNode(&input_int);
+
+    LinkedList *newAnim = CreateLinkedListItem(data);
+
+    buffers->meshAnimationData->animations = AddToLinkedList(buffers->meshAnimationData->animations, newAnim);
+
+    buffers->meshAnimationData->animationsCount++;
+
+    u32 ret_val = input_int - begin;
+
+    return ret_val * 4;
+}
+
+static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input = ptr;
+
+    u32 *ret = ptr;
+
+    u32 posSize = *input++;
+
+    AnimationData *data = GetAnimationByIndex(buffers->meshAnimationData->animations,
+                                              buffers->meshAnimationData->animationsCount);
+
+    data->numPositionKeys = posSize;
+    data->keyPositions = malloc(sizeof(AnimationKeyHolder *) * posSize);
+
+    Bin2Float copy;
+    for (int i = 0; i < posSize; i++)
+    {
+        AnimationKeyHolder *keyH = (AnimationKeyHolder *)malloc(sizeof(AnimationKeyHolder));
+        keyH->id = *input++;
+        u32 size = *input++;
+
+        keyH->count = size;
+        keyH->keys = malloc(sizeof(AnimationKey *) * size);
+        for (int j = 0; j < size; j++)
+        {
+            AnimationKey *key = (AnimationKey *)malloc(sizeof(AnimationKey));
+            copy.int_x = *input++;
+            key->timeStamp = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[0] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[1] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[2] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[3] = copy.float_x;
+
+            keyH->keys[j] = key;
+        }
+        data->keyPositions[i] = keyH;
+    }
+
+    u32 rotSize = *input++;
+
+    data->numRotationKeys = rotSize;
+    data->keyRotations = malloc(sizeof(AnimationKeyHolder *) * rotSize);
+
+    for (int i = 0; i < rotSize; i++)
+    {
+        AnimationKeyHolder *keyH = (AnimationKeyHolder *)malloc(sizeof(AnimationKeyHolder));
+        keyH->id = *input++;
+
+        u32 size = *input++;
+
+        keyH->count = size;
+        keyH->keys = malloc(sizeof(AnimationKey *) * size);
+        for (int j = 0; j < size; j++)
+        {
+            AnimationKey *key = (AnimationKey *)malloc(sizeof(AnimationKey));
+            
+            copy.int_x = *input++;
+            key->timeStamp = copy.float_x;
+            
+            copy.int_x = *input++;
+            key->key[1] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[2] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[3] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[0] = copy.float_x;
+
+            keyH->keys[j] = key;
+        }
+        data->keyRotations[i] = keyH;
+    }
+
+    u32 scalSize = *input++;
+
+    data->numScalingKeys = scalSize;
+    data->keyScalings = malloc(sizeof(AnimationKeyHolder *) * scalSize);
+    
+    for (int i = 0; i < rotSize; i++)
+    {
+        AnimationKeyHolder *keyH = (AnimationKeyHolder *)malloc(sizeof(AnimationKeyHolder));
+        keyH->id = *input++;
+
+        u32 size = *input++;
+
+        keyH->count = size;
+        keyH->keys = malloc(sizeof(AnimationKey *) * size);
+        for (int j = 0; j < size; j++)
+        {
+            AnimationKey *key = (AnimationKey *)malloc(sizeof(AnimationKey));
+            copy.int_x = *input++;
+            key->timeStamp = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[0] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[1] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[2] = copy.float_x;
+
+            copy.int_x = *input++;
+            key->key[3] = copy.float_x;
+
+            keyH->keys[j] = key;
+        }
+        data->keyScalings[i] = keyH;
+    }
+
+    return (input - ret) * 4;
+}
+#endif
 static LoadFunc_Array loadFuncArray[11] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
                                            LoadNormals, LoadBones, LoadWeights, LoadMaterial, LoadJoints, LoadAnimationData, LoadAnimationSRTs};
 
