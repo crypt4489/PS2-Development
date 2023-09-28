@@ -642,10 +642,10 @@ static void SetupTessObject()
 static void SetupGameObjects()
 {
 
-   // InitSkybox();
+    InitSkybox();
 
-   // SetupGrid();
-   // SetupBody();
+    SetupGrid();
+    SetupBody();
 
     SetupMultiSphere();
     // SetupShadowViewer();

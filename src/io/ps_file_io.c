@@ -1061,6 +1061,7 @@ static u32 *LoadMatrix(MATRIX m, u32 *input)
 
 static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
+
     u32 *input_int = ptr;
 
     u32 *begin = input_int;
@@ -1177,6 +1178,7 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
 static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
+
     u32 *input = ptr;
 
     u32 *ret = ptr;
@@ -1302,11 +1304,11 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 static LoadFunc_Array loadFuncArray[11] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
                                            LoadNormals, LoadBones, LoadWeights, LoadMaterial, LoadJoints, LoadAnimationData, LoadAnimationSRTs};
 
-static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 size)
+static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 vertSize, u32 indicesSize)
 {
     float divisor = 1.f / 8.f;
-    u32 sizeOfBuffer = size * divisor;
-    if ((size & 0x7) != 0)
+    u32 sizeOfBuffer = vertSize * divisor;
+    if ((vertSize & 0x7) != 0)
     {
         sizeOfBuffer++;
     }
@@ -1322,16 +1324,13 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 size)
 
     u32 *indices = buffers->indices;
 
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < indicesSize; i++)
     {
         u32 index = indices[i];
 
         u32 indexInBuffer = index * divisor;
-
-        u8 mask = 0x01 << index & 0x7;
-
+        u8 mask = index & 0x07;
         u8 present = (binaryBuffer[indexInBuffer] & mask);
-
         if (present)
         {
             continue;
@@ -1364,6 +1363,7 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 size)
     }
 
     free(binaryBuffer);
+
 }
 
 static void AllocateVerticesBufferFromCode(MeshBuffers *buffers, u16 code, u32 size)
@@ -1453,7 +1453,7 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
             // break;
         }
         AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
-        CreateVerticesBuffer(buffers, meshCode, indicesSize);
+        CreateVerticesBuffer(buffers, meshCode, verticesSize, indicesSize);
     }
 }
 
