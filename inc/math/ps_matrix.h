@@ -6,6 +6,7 @@
 
 void MatrixIdentity(MATRIX m);
 void MatrixCopy(MATRIX dest, MATRIX in);
+void MatrixVoidCopy(void *dest, void *in);
 void MatrixMultiply(MATRIX in1, MATRIX in2, MATRIX out);
 
 void MatrixVectorMultiply(VECTOR out, MATRIX m, VECTOR in);

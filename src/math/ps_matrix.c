@@ -37,6 +37,22 @@ void MatrixCopy(MATRIX dest, MATRIX in)
         : "memory");
 }
 
+void MatrixVoidCopy(void *dest, void *in)
+{
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%1)\n"
+        "lqc2 $vf2, 0x10(%1)\n"
+        "lqc2 $vf3, 0x20(%1)\n"
+        "lqc2 $vf4, 0x30(%1)\n"
+        "sqc2 $vf1, 0x00(%0)\n"
+        "sqc2 $vf2, 0x10(%0)\n"
+        "sqc2 $vf3, 0x20(%0)\n"
+        "sqc2 $vf4, 0x30(%0)\n"
+        :
+        : "r"(dest), "r"(in)
+        : "memory");
+}
+
 void MatrixMultiply(MATRIX out, MATRIX in1, MATRIX in2)
 {
     asm __volatile__(
