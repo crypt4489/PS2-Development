@@ -26,11 +26,11 @@ EE_DVP = dvp-as
 
 EE_LIBS=-ldma -lgraph -ldraw -lkernel -lpacket -lpad -lcdvd -lpng -lz -lunzip -laudsrv
 
-PS2SDK=/usr/local/ps2dev/ps2sdk
+PS2SDK=/Users/Fletcher_Drew/Documents/ps2build/ps2dev/ps2sdk
 
 LOG_LEVEL?=3
 
-EE_CFLAGS += -DPS_LOG_LVL=$(LOG_LEVEL) -Wall -Wno-strict-aliasing -Wno-char-subscripts --std=gnu99 -I$(INC_DIR)
+EE_CFLAGS += -DPS_LOG_LVL=$(LOG_LEVEL) -Wall -Wno-char-subscripts --std=gnu99 -I$(INC_DIR)
 EE_LDFLAGS = -L$(PSDSDK)/ee/common/lib -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib
 
 ISO_TGT=test.iso

@@ -11,6 +11,7 @@
 #include "io/ps_file_io.h"
 #include "textures/ps_texture.h"
 #include "math/ps_matrix.h"
+#include "math/ps_misc.h"
 
 extern const char *face1Name; // = "FACE1";
 extern const char *face2Name; // = "FACE2";
@@ -31,7 +32,7 @@ static void UpdateSkybox(GameObject *obj)
 
 void InitSkybox()
 {
-    color_t color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 

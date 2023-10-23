@@ -14,6 +14,9 @@
 
 
 Camera *g_DrawCamera = NULL;
+extern VECTOR forward;
+extern VECTOR up;
+extern VECTOR right;
 
 void CreateCameraQuat(Camera *cam, VECTOR quat)
 {

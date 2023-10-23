@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <draw2d.h>
+#include <draw3d.h>
 
 #include "pipelines/ps_pipelineinternal.h"
 #include "gameobject/ps_gameobject.h"

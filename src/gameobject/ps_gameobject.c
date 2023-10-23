@@ -3,6 +3,8 @@
 #include <string.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <draw2d.h>
+#include <draw3d.h>
 
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"
@@ -15,7 +17,7 @@
 #include "log/ps_log.h"
 #include "util/ps_linkedlist.h"
 
-void SetupGameObjectPrimRegs(GameObject *obj, color_t color, u32 renderState)
+void SetupGameObjectPrimRegs(GameObject *obj, Color color, u32 renderState)
 {
   OBJ_RENDER_STATE *render = &obj->renderState.state.render_state;
   obj->renderState.color = color;

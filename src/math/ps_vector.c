@@ -42,7 +42,7 @@ void RandomVectorsInit(VECTOR in)
 {
     asm __volatile__(
         "lqc2 $vf1, 0x00(%0)\n"
-        "vrinit $R, $vf1x\n"
+        "vrinit R, $vf1x\n"
         :
         : "r"(in)
         : "memory");
@@ -52,9 +52,9 @@ void GetRandomVectors(VECTOR in)
 {
     asm __volatile__(
         "lqc2 $vf1, 0x00(%0)\n"
-        "vrget.x $vf1x, $R\n"
-        "vrnext.y $vf1y, $R\n"
-        "vrnext.z $vf1z, $R\n"
+        "vrget.x $vf1x, R\n"
+        "vrnext.y $vf1y, R\n"
+        "vrnext.z $vf1z, R\n"
         "sqc2 $vf1, 0x00(%0)"
         :
         : "r"(in)
@@ -136,15 +136,15 @@ void Normalize(VECTOR in, VECTOR out)
     float w = in[3];
     asm __volatile__(
         "lqc2 $vf1, 0x00(%1)\n"
-        "vsuba.xyzw $ACC, $vf0, $vf0\n"
+        "vsuba.xyzw ACC, $vf0, $vf0\n"
         "vmul.xyz $vf2, $vf1, $vf1\n"
-        "vmaddax.w $ACC, $vf0, $vf2\n"
-        "vmadday.w $ACC, $vf0, $vf2\n"
+        "vmaddax.w ACC, $vf0, $vf2\n"
+        "vmadday.w ACC, $vf0, $vf2\n"
         "vmaddz.w $vf2, $vf0, $vf2\n"
-        "vrsqrt $Q, $vf0w, $vf2w\n"
+        "vrsqrt Q, $vf0w, $vf2w\n"
         "vsub.w $vf1, $vf0, $vf0\n"
         "vwaitq \n"
-        "vmulq.xyz $vf1, $vf1, $Q \n"
+        "vmulq.xyz $vf1, $vf1, Q \n"
         "sqc2 $vf1, 0x00(%0) \n"
         :
         : "r"(out), "r"(in)
@@ -185,14 +185,14 @@ float distCOP2(VECTOR in)
     float dist = 0.0f;
     asm __volatile__(
         "lqc2 $vf1, 0x00(%1)\n"
-        "vsuba.xyzw $ACC, $vf0, $vf0\n"
+        "vsuba.xyzw ACC, $vf0, $vf0\n"
         "vmul.xyz $vf2, $vf1, $vf1\n"
-        "vmaddax.w $ACC, $vf0, $vf2\n"
-        "vmadday.w $ACC, $vf0, $vf2\n"
+        "vmaddax.w ACC, $vf0, $vf2\n"
+        "vmadday.w ACC, $vf0, $vf2\n"
         "vmaddz.w $vf2, $vf0, $vf2\n"
-        "vsqrt $Q, $vf2w\n"
+        "vsqrt Q, $vf2w\n"
         "vwaitq \n"
-        "vaddq.x $vf1, $vf0, $Q \n"
+        "vaddq.x $vf1, $vf0, Q \n"
         "qmfc2 %0, $vf1"
         : "=r"(dist)
         : "r"(in)
@@ -205,11 +205,11 @@ void CrossProduct(VECTOR m, VECTOR n, VECTOR out)
     asm __volatile__(
         "lqc2 $vf1, 0x00(%0)\n"
         "lqc2 $vf2, 0x00(%1)\n"
-        "vopmula.xyz $ACC, $vf1, $vf2\n"
+        "vopmula.xyz ACC, $vf1, $vf2\n"
         "vopmsub.xyz $vf3, $vf2, $vf1\n"
         "vsub.w $vf3, $vf0, $vf0\n"
         "sqc2 $vf3, 0x00(%2)\n"
-        "vsuba.xyzw $ACC, $vf0, $vf0\n"
+        "vsuba.xyzw ACC, $vf0, $vf0\n"
         :
         : "r"(m), "r"(n), "r"(out)
         : "memory");

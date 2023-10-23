@@ -14,4 +14,8 @@ void AppendString(const char *input1, const char *input2, char *output, u32 max)
 
 void dump_packet(qword_t *q, int max, int usefloat);
 
+extern VECTOR forward;
+extern VECTOR up;
+extern VECTOR right;
+
 #endif

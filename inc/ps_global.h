@@ -1,13 +1,11 @@
 #ifndef PS_GLOBAL_H
 #define PS_GLOBAL_H
 
-#include <draw.h>
 #include <packet.h>
-
-#define TWOPI 6.283185307179586476925286766559f
-#define PI 3.1415926535897932384626433832795f
-#define PIHALF 1.5707963267948966192313216916398f
-#define PIDIV4 0.78539816339744830961566084581988f
+#include <draw_blending.h>
+#include <draw_buffers.h>
+#include <draw_primitives.h>
+#include <draw_sampling.h>
 
 #define DEFAULT_PIPELINE_SIZE 200
 
@@ -17,11 +15,25 @@
 #define MAX_ANIMATION_NAME 50
 #define MAX_JOINT_NAME 50
 
+#define DRAW_DISABLE 0
+#define DRAW_ENABLE 1
+
 typedef float VECTOR[4] __attribute__((__aligned__(16)));
 
 typedef float MATRIX[16] __attribute__((__aligned__(16)));
 
 typedef s32 VectorInt[4] __attribute__((__aligned__(16)));
+
+typedef union {
+	u64 rgbaq;
+	struct {
+		u8 r;
+		u8 g;
+		u8 b;
+		u8 a;
+		float q;
+	};
+} __attribute__((packed,aligned(8))) Color;
 
 typedef struct vu1_program_t
 {
@@ -514,7 +526,7 @@ struct gs_state_t
 typedef struct render_state_t
 {
     prim_t prim;
-    color_t color;
+    Color color;
     struct gs_state_t state;
 } ObjectRenderState;
 
@@ -605,7 +617,7 @@ typedef struct
     u32 vu1DoneProcessing;
     u16 gs_context;
     u16 enableDoubleBuffer;
-    color_t bgkc;
+    Color bgkc;
     u32 ScreenWidth, ScreenHeight;
     u32 ScreenWHalf, ScreenHHalf;
     float lastTime, currentTime;
@@ -626,7 +638,7 @@ typedef struct font_t
 {
     Texture *fontTex;
     char *fontWidths;
-    color_t color;
+    Color color;
     prim_t prim;
     u16 picHeight;
     u16 picWidth;
@@ -642,10 +654,6 @@ extern RenderWorld *g_DrawWorld; // active render world. PS_RenderWorld.c
 extern GameManager g_Manager;    // PS2 render manager PS_Manager.c
 extern Camera *g_DrawCamera;     // current drawing camra PS_Camera.c
 
-// component axes vector PS_MISC.c
-extern VECTOR forward;
-extern VECTOR up;
-extern VECTOR right;
 
 // vu1 data address VU1Manager.c
 extern volatile u32 *vu1_data_address;
