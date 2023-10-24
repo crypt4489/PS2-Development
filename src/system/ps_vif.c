@@ -2,6 +2,8 @@
 
 #include <gs_gp.h>
 #include <kernel.h>
+#include <draw2d.h>
+#include <draw3d.h>
 
 #include "gs/ps_gs.h"
 #include "dma/ps_dma.h"
@@ -426,7 +428,7 @@ qword_t *load_texture_vif(qword_t *q, Texture *tex, void *pixels, unsigned char 
     return q;
 }
 
-qword_t *vif_setup_rgbaq(qword_t *b, color_t color)
+qword_t *vif_setup_rgbaq(qword_t *b, Color color)
 {
     qword_t *q = b;
     DMATAG_CNT(q, 3, 0, 0, 0);

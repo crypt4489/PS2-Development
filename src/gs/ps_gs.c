@@ -1,6 +1,7 @@
 #include "gs/ps_gs.h"
 
 #include <graph.h>
+#include <draw.h>
 #include <kernel.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #include "gamemanager/ps_manager.h"
 #include "dma/ps_dma.h"
 #include "system/ps_vif.h"
+
 
 static int renderTargetVRAM = 0;
 
@@ -479,7 +481,7 @@ qword_t *SetupZTestGS(qword_t *q, int z_test_method, int z_test_enable, char alp
 	q++;
 	return q;
 }
-qword_t *SetupRGBAQGS(qword_t *b, color_t color)
+qword_t *SetupRGBAQGS(qword_t *b, Color color)
 {
 	PACK_GIFTAG(b, GIF_SET_RGBAQ(color.r, color.g, color.b, color.a, (int)color.q), GIF_REG_RGBAQ);
 	b++;

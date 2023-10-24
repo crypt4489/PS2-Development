@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <draw2d.h>
+#include <draw3d.h>
 
 #include "log/ps_log.h"
 #include "gs/ps_gs.h"
@@ -75,7 +77,7 @@ unsigned char *RewriteAlphaTexBuffer(unsigned char *buffer, int dimX, int dimY)
 Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type)
 {
     prim_t prim;
-    color_t color;
+    Color color;
 
     Texture *myFontTex = NULL;
     Font *font = (Font *)malloc(sizeof(Font));
@@ -142,7 +144,7 @@ void CleanFontStruct(Font *font)
     }
 }
 
-void CreateFontWidthsFromFile(void* object, void*, u8 *buffer, u32 bufferLen)
+void CreateFontWidthsFromFile(void* object, void* params, u8 *buffer, u32 bufferLen)
 {
 
     Font *font_struct = (Font*)object;

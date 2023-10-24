@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <draw2d.h>
+#include <draw3d.h>
+#include <draw_tests.h>
 
 #include "util/ps_linkedlist.h"
 #include "pipelines/ps_pipelineinternal.h"
@@ -34,7 +37,7 @@ void SetupAlphaMapPass1(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *
   // draw the object and only affect the alpha channel so it is all zero.
   // don't affect zbuffer or framebuffer rgb
   qword_t *q = pipeline_loc;
-  color_t color;
+  Color color;
   CREATE_RGBAQ_STRUCT(color, 0, 0, 0, 0, 1.0f);
   q = SetupZTestGS(q, 1, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
   q = SetupRGBAQGS(q, color);

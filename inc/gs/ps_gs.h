@@ -5,6 +5,7 @@
 #include <gs_psm.h>
 #include <gs_privileged.h>
 #include <gs_gp.h>
+#include <draw_tests.h>
 
 
 #define CreateGSScreenCoordinates(input, operand)   ((2048 operand input) << 4)
@@ -41,7 +42,7 @@ qword_t *draw_clear_alpha(qword_t *q, int context, float x, float y, float width
 qword_t *draw_enable_tests_alpha(qword_t *q, int context, int alpha, u32 method);
 qword_t *draw_disable_tests_alpha(qword_t *q, int context, int alpha);
 qword_t *SetupZTestGS(qword_t* q, int z_test_method, int z_test_enable, char alphaValue, char alpha_test_method, char frameBufferTest, char alpha_test_enable, char alpha_test, int context);
-qword_t* SetupRGBAQGS(qword_t *b, color_t color);
+qword_t* SetupRGBAQGS(qword_t *b, Color color);
 qword_t* SetupAlphaGS(qword_t *q, blend_t *blend, int context);
 #endif
 //

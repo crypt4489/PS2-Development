@@ -3,9 +3,13 @@
 #include <dma.h>
 #include <gs_gp.h>
 #include <graph.h>
+#include <draw2d.h>
+#include <draw3d.h>
+#include <draw.h>
 
 #include <string.h>
 #include <stdlib.h>
+
 
 #include "gamemanager/ps_manager.h"
 #include "gs/ps_gs.h"

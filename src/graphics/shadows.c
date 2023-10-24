@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 #include <malloc.h>
+#include <draw2d.h>
+#include <draw3d.h>
 
 #include "pipelines/ps_pipelineinternal.h"
 #include "gameobject/ps_gameobject.h"
@@ -177,7 +179,7 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 void SetupPerObjDrawShadowRegisters(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
 {
     qword_t *q = pipeline_loc;
-    color_t black;
+    Color black;
     black.r = 0;
     black.g = 0;
     black.b = 0;

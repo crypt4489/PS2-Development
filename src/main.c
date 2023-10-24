@@ -319,7 +319,7 @@ static void UpdateLight()
 
 static void SetupGrid()
 {
-    color_t color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
@@ -360,7 +360,7 @@ static void SetupGrid()
 
 static void SetupBody()
 {
-    color_t color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
@@ -402,7 +402,7 @@ static void RotateSphere()
 
 static void SetupMultiSphere()
 {
-    color_t color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
@@ -450,7 +450,7 @@ static void SetupMultiSphere()
 
 static void SetupRoom()
 {
-    color_t color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
@@ -479,7 +479,7 @@ static void SetupRoom()
 
 static void SetupShadowViewer()
 {
-    color_t color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
@@ -579,7 +579,7 @@ static void UpdateTessGrid(GameObject *obj)
 
 static void SetupTessObject()
 {
-    color_t color;
+    Color color;
     // CREATE_ALPHA_REGS(blender, BLEND_COLOR_DEST, BLEND_COLOR_SOURCE, BLEND_COLOR_SOURCE, BLEND_ALPHA_DEST, 0x80);
     CREATE_RGBAQ_STRUCT(color, 0xFF, 0xFF, 0xFF, 0x80, 1.0f);
 
@@ -763,7 +763,7 @@ static void FinishCube(void *object)
 }
 static void LoadCube()
 {
-    color_t color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 

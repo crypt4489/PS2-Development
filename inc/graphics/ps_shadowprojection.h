@@ -19,7 +19,7 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
 
 //int find_plane_to_cast_shadow_on(GameObject *currObj, int indexOfFloorPoly, VECTOR lightPos, VECTOR outPlane, VECTOR top, VECTOR bottom);
 
-qword_t* create_shadow_obj_headers(qword_t* q, GameObject *obj, color_t color);
+qword_t* create_shadow_obj_headers(qword_t* q, GameObject *obj, Color color);
 
 void shadow_proj_call_routine(GameObject *obj);
 

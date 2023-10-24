@@ -14,6 +14,10 @@ CEXT      := c
 VSMEXT    := vsm
 
 EE_BIN = test.elf
+EE_LIB = ps2lib.a
+
+BUILD_TOOL ?= EE-CC
+
 IOP_MOD = sio2man.irx padman.irx sound.irx libsd.irx audsrv.irx
 
 EE_SRC_VSM := $(shell find $(VSM_DIR) -maxdepth 1 -type f -name *.$(VSMEXT))
@@ -26,11 +30,11 @@ EE_DVP = dvp-as
 
 EE_LIBS=-ldma -lgraph -ldraw -lkernel -lpacket -lpad -lcdvd -lpng -lz -lunzip -laudsrv
 
-PS2SDK=/usr/local/ps2dev/ps2sdk
+PS2SDK=/Users/Fletcher_Drew/Documents/ps2build/ps2dev/ps2sdk
 
-LOG_LEVEL?=3
+LOG_LEVEL ?= 3
 
-EE_CFLAGS += -DPS_LOG_LVL=$(LOG_LEVEL) -Wall -Wno-strict-aliasing -Wno-char-subscripts --std=gnu99 -I$(INC_DIR)
+EE_CFLAGS += -DPS_LOG_LVL=$(LOG_LEVEL) -Wall -Wno-char-subscripts --std=gnu99 -I$(INC_DIR)
 EE_LDFLAGS = -L$(PSDSDK)/ee/common/lib -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib
 
 ISO_TGT=test.iso
@@ -38,9 +42,12 @@ ISO_TGT=test.iso
 include ./Makefile.eeglobal
 include $(PS2SDK)/samples/Makefile.pref
 
-.PHONY : all clean compile directories disc irx update_win
+.PHONY : all clean compile directories disc irx update_win archive
 
 all: compile disc update_win
+
+archive:  
+	make BUILD_TOOL=EE-AR
 
 compile:
 	make
