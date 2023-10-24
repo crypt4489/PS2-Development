@@ -78,12 +78,13 @@ $(OBJS_DIR)/%.o: $(SRC_DIR)/%.s
 $(VSM_OBJ_DIR)/%.o: $(VSM_DIR)/%.vsm
 	$(EE_DVP) $< -o $@
 
-$(TARGET_DIR)/$(EE_BIN): $(EE_OBJS)
+
+
+ifeq ($(BUILD_TOOL), EE-AR)
+  $(TARGET_DIR)/$(EE_LIB): $(EE_OBJS)
+	$(EE_AR) cru $(TARGET_DIR)/$(EE_LIB) $(EE_OBJS)
+else
+  $(TARGET_DIR)/$(EE_BIN): $(EE_OBJS)
 	$(EE_CC) -T$(EE_LINKFILE) $(EE_OPTFLAGS) -o $(TARGET_DIR)/$(EE_BIN) $(EE_OBJS) $(EE_LDFLAGS) $(EE_LIBS)
+endif
 
-$(EE_ERL): $(EE_OBJS)
-	$(EE_CC) -mno-crt0 $(EE_OPTFLAGS) -o $(EE_ERL) $(EE_OBJS) $(EE_LDFLAGS) -Wl,-r -Wl,-d
-	$(EE_STRIP) --strip-unneeded -R .mdebug.eabi64 -R .reginfo -R .comment $(EE_ERL)
-
-$(EE_LIB): $(EE_OBJS)
-	$(EE_AR) cru $(EE_LIB) $(EE_OBJS)
