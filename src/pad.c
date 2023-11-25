@@ -11,12 +11,13 @@
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
 
-char padBuf[256] __attribute__((aligned(64)));
+extern u32 port;
+extern u32 slot;
+extern char padBuf[256];
 static u32 old_pad = 0;
 static u32 new_pad;
 static u32 currData;
-u32 port = 0;
-u32 slot = 0;
+
 struct padButtonStatus buttons;
 extern char *print_out;
 

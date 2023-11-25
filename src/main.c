@@ -327,16 +327,16 @@ static void SetupGrid()
     // ReadModelFile("MODELS\\BOX.BIN", &grid->vertexBuffer);
     SetupGameObjectPrimRegs(grid, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 
-    int w, l;
-    float dw, dh;
-    w = 25;
-    l = 25;
-    dw = 100;
-    dh = 100;
-    CreateGrid(w, l, dw, dh, &grid->vertexBuffer);
-    u32 id = GetTextureIDByName(NewYorkName, g_Manager.texManager);
+    int dw, dl;
+    float w, h;
+    dw = 10;
+    dl = 10;
+    w = 100;
+    h = 100;
+    CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
+    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
-    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
+    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
     VECTOR pos = {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -368,7 +368,7 @@ static void SetupBody()
 
     body = InitializeGameObject();
 
-    ReadModelFile("MODELS\\BODY.CBIN", &body->vertexBuffer);
+    ReadModelFile("MODELS\\BODY.BIN", &body->vertexBuffer);
 
     SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0));
 
@@ -378,7 +378,7 @@ static void SetupBody()
              scales,
              1.0f, body->ltm);
 
-    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, GetTextureIDByName(digitZero, g_Manager.texManager));
+    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(worldName, g_Manager.texManager));
 
     body->update_object = NULL;
 
@@ -427,7 +427,7 @@ static void SetupMultiSphere()
 
     PitchLTM(multiSphere->ltm, -90.0f);
 
-    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
+    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
     //float time1 = getTicks(g_Manager.timer);
     InitOBB(multiSphere, BBO_FIT);
     //DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
@@ -504,7 +504,7 @@ static void SetupShadowViewer()
     id = shadowTexture->id;
 #endif
 
-    CreateMaterial(&shadowTexView->vertexBuffer, 0, shadowTexView->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, id);
+    CreateMaterial(&shadowTexView->vertexBuffer, 0, shadowTexView->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
     VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -642,12 +642,12 @@ static void SetupTessObject()
 static void SetupGameObjects()
 {
 
-    InitSkybox();
+    //InitSkybox();
 
     SetupGrid();
     SetupBody();
 
-    SetupMultiSphere();
+    //SetupMultiSphere();
     // SetupShadowViewer();
 
     // SetupRoom();
@@ -753,9 +753,9 @@ static void FinishCube(void *object)
 
     u32 id = GetTextureIDByName("WATER", g_Manager.texManager);
 
-    CreateMaterial(&temp->vertexBuffer, 0, temp->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, id);
+    CreateMaterial(&temp->vertexBuffer, 0, temp->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
-    DEBUGLOG("COUNT %d", temp->vertexBuffer.meshData[MESHINDICES]->vertexCount);
+    DEBUGLOG("COUNT %d", temp->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount);
 
     CreateGraphicsPipeline(temp, GEN_PIPELINE_NAME);
 
@@ -815,30 +815,30 @@ int Render()
         float delta = (currentTime - lastTime) * 0.001f;
         lastTime = currentTime;
 
-        SetK();
+      //  SetK();
 
         UpdatePad();
         if (body != NULL)
             UpdateAnimator(body->objAnimator, delta);
 
-        UpdateGlossTransform();
+        //UpdateGlossTransform();
 
         if (FrameCounter == 250)
         {
-            LoadWater();
-            LoadCube();
+          //  LoadWater();
+          //  LoadCube();
         }
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
         DrawWorld(world);
-
+        
         // DrawWorld(roomWorld);
 
         // RenderShadowScene();
 
 
-        FindOBBMaxAndMinVerticesVU0(multiSphere);
+        //FindOBBMaxAndMinVerticesVU0(multiSphere);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
@@ -846,7 +846,7 @@ int Render()
 
         snprintf(print_out, 20, "K-VALUE %f", k);
 
-        PrintText(myFont, print_out, -310, -200);
+       // PrintText(myFont, print_out, -310, -200);
 
         EndRendering(cam);
 
@@ -908,7 +908,7 @@ static void LoadInTextures()
 
     char _folder[9] = "TEXTURES\\";
 
-    AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
+  /*  AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
 
     AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
@@ -938,45 +938,34 @@ static void LoadInTextures()
 
     AppendString(_folder, glossName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 1);
+    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 1); */
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
     AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, wallName, _file, MAX_FILE_NAME);
-
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
-
-    AppendString(_folder, alphaMap, _file, MAX_FILE_NAME);
-
-    AddAndCreateAlphaMap(_file, READ_PNG, TEX_ADDRESS_CLAMP);
-
-    AppendString(_folder, digitTwo, _file, MAX_FILE_NAME);
-
-    Texture *two = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
-
-    AppendString(_folder, digitOne, _file, MAX_FILE_NAME);
-
-    Texture *one = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
-
-    AppendString(_folder, digitZero, _file, MAX_FILE_NAME);
-
-    zero = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
-
-    AddMipMapTexture(zero, one);
-
-    AddMipMapTexture(zero, two);
 }
 
 int main(int argc, char **argv)
 {
-    InitializeSystem();
+/*
+    float arr[8] = { 5.f, 6.f, 2.f, 4.f, 1.f, 10.f, 0.f, 3.f};
+
+    ZSortMergeSort(arr, NULL, 0, 7);
+
+    for (int i = 0; i<8; i++)
+    {
+        DEBUGLOG("%d %f", i+1, arr[i]);
+    }
+
+    while(1);
+*/
+    InitializeSystem(1, 640, 480, GS_PSM_32);
 
     InitASyncIO(25, 5.0f);
 
     SetupWorldObjects();
-
+    
     float totalTime;
 
     float startTime = totalTime = getTicks(g_Manager.timer);
@@ -1015,7 +1004,7 @@ int main(int argc, char **argv)
 
     audsrv_adpcm_t sample;
 
-    VagFile *vag = LoadVagFile("SOUNDS\\MUSIC.VAG");
+   // VagFile *vag = LoadVagFile("SOUNDS\\MUSIC.VAG");
 
     SifInitRpc(0);
     int ret;
@@ -1031,11 +1020,11 @@ int main(int argc, char **argv)
 
     audsrv_adpcm_init();
 
-    audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength);
-    DEBUGLOG("%d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size);
+   // audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength);
+   // DEBUGLOG("%d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size);
     // int channel = audsrv_ch_play_adpcm(-1, &sample);
     // audsrv_adpcm_set_volume(channel, MAX_VOLUME);
-
+    
     Render();
 
     CleanUpGame();

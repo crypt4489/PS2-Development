@@ -144,7 +144,7 @@ GameObject *InitializeGameObject()
   go->update_object = NULL;
   go->vertexBuffer.indices = NULL;
   go->vertexBuffer.meshData[0] = (MeshVectors*)malloc(sizeof(MeshVectors));
-  go->vertexBuffer.meshData[MESHINDICES] = (MeshVectors*)malloc(sizeof(MeshVectors));
+  go->vertexBuffer.meshData[MESHTRIANGLES] = (MeshVectors*)malloc(sizeof(MeshVectors));
   for (int i = 0; i < 2; i++)
   {
     go->vertexBuffer.meshData[i]->vertexCount = 0;
@@ -177,11 +177,11 @@ qword_t *CreateMeshDMAUpload(qword_t *q, GameObject *obj, u32 drawSize, u16 draw
 
     if ((drawCode & DRAW_MORPH) != 0)
     {
-      q = CreateVU1TargetUpload(q, obj, 0, obj->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, drawSize, drawCode, vu1_addr);
+      q = CreateVU1TargetUpload(q, obj, 0, obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, drawSize, drawCode, vu1_addr);
     }
     else
     {
-      q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, drawSize, drawCode, vu1_addr);
+      q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, drawSize, drawCode, vu1_addr);
     }
 
     u32 meshPipe = q - dma_vif1 - 1;
@@ -343,13 +343,13 @@ qword_t *CreateVU1VertexUpload(qword_t *q, MeshBuffers *buffer, u32 start, u32 e
 
 qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u32 offset, u8 code)
 {
-  q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->vertices[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+  q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->vertices[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
   *top += count;
 
   if (code & DRAW_TEXTURE)
   {
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->texCoords[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->texCoords[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }
@@ -357,18 +357,18 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
   if (code & DRAW_NORMAL)
   {
 
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->normals[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->normals[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }
 
   if (code & DRAW_SKINNED)
   {
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
 
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHINDICES]->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }

@@ -327,7 +327,7 @@ struct animator_t
 enum MeshBuffersType
 {
     MESHVERTICES = 0,
-    MESHINDICES = 1
+    MESHTRIANGLES = 1
 };
 typedef struct mesh_vectors
 {
@@ -601,7 +601,7 @@ typedef struct timer_struct_t TimerStruct;
 
 struct timer_struct_t
 {
-    u32 ctr;
+    u64 ctr;
     s32 id;
 };
 

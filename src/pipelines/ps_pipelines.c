@@ -239,7 +239,7 @@ void create_pipeline_obj_wireframe_vu1pipeline(GameObject *obj, u32 programNumbe
     qword_t vu1_addr;
     vu1_addr.sw[0] = vu1_addr.sw[1] = vu1_addr.sw[2] = 0;
 
-    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.meshData[MESHINDICES]->vertexCount - 1, 54, DRAW_VERTICES, &vu1_addr);
+    q = CreateVU1VertexUpload(q, &obj->vertexBuffer, 0, obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, 54, DRAW_VERTICES, &vu1_addr);
 
     sizeOfPipeline = q - dcode_tag_vif1 - 1;
 
@@ -591,7 +591,7 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name)
 
     sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + headerSize + 8 + RenderPassesForAnim(renderPasses, pipeCode);
 
-    uploadLoop = ((obj->vertexBuffer.meshData[MESHINDICES]->vertexCount) / drawSize) + 1;
+    uploadLoop = ((obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount) / drawSize) + 1;
 
     sizeOfPipeline = sizeOfPipeline + UploadSize(uploadLoop, upload) + 1 + 3 + 10;
 
@@ -744,7 +744,7 @@ void CreateAlphaMapPipeline(GameObject *obj, const char *name)
 
     sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + totalHeader + 8 + RenderPassesForAnim(renderPasses, pipeCode);
 
-    uploadLoop = ((obj->vertexBuffer.meshData[MESHINDICES]->vertexCount) / drawSize) + 1;
+    uploadLoop = ((obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount) / drawSize) + 1;
 
     sizeOfPipeline = sizeOfPipeline + ((UploadSize(uploadLoop, upload) + 1 + 3 + 10) * 2);
 
@@ -1064,7 +1064,7 @@ void CreateBumpMapPipeline(GameObject *obj, const char *name)
 
     sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + headerSize + 8 + RenderPassesForAnim(renderPasses, pipeCode);
 
-    uploadLoop = ((obj->vertexBuffer.meshData[MESHINDICES]->vertexCount) / drawSize) + 1;
+    uploadLoop = ((obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount) / drawSize) + 1;
 
     sizeOfPipeline = sizeOfPipeline + UploadSize(uploadLoop, upload) + 1 + 3 + 10;
 

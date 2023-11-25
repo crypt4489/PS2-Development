@@ -409,9 +409,9 @@ void FindOBBMaxAndMinVerticesVU0(GameObject *obj)
     {
         asm __volatile__(
             "lqc2 $vf3, 0x00(%0)\n"
-            "vmulax.xyzw ACC, $vf4, $vf3\n"
-            "vmadday.xyzw ACC, $vf5, $vf3\n"
-            "vmaddaz.xyzw ACC, $vf6, $vf3\n"
+            "vmulax.xyzw $ACC, $vf4, $vf3\n"
+            "vmadday.xyzw $ACC, $vf5, $vf3\n"
+            "vmaddaz.xyzw $ACC, $vf6, $vf3\n"
             "vmaddw.xyzw $vf3, $vf7, $vf3\n"
             "vmax.xyz $vf1, $vf1, $vf3\n"
             "vmini.xyz $vf2, $vf2, $vf3\n"

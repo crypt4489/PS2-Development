@@ -14,7 +14,7 @@ CEXT      := c
 VSMEXT    := vsm
 
 EE_BIN = test.elf
-EE_LIB = ps2lib.a
+EE_LIB = libps2.a
 
 BUILD_TOOL ?= EE-CC
 
@@ -26,16 +26,22 @@ EE_OBJS :=  $(patsubst $(VSM_DIR)/%, $(VSM_OBJ_DIR)/%, $(EE_SRC_VSM:.$(VSMEXT)=.
 EE_SRC_C += $(shell find $(SRC_DIR) -type f -name *.$(CEXT))
 EE_OBJS += $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(EE_SRC_C:.$(CEXT)=.$(OBJEXT)))
 
+ifeq ($(BUILD_TOOL), EE-AR)
+  FILTER := $(OBJS_DIR)/main.o $(OBJS_DIR)/skybox.o $(OBJS_DIR)/pad.o $(OBJS_DIR)/body.o
+  EE_OBJS := $(filter-out $(FILTER), $(EE_OBJS)) 
+endif
+
+
 EE_DVP = dvp-as
 
 EE_LIBS=-ldma -lgraph -ldraw -lkernel -lpacket -lpad -lcdvd -lpng -lz -lunzip -laudsrv
 
-PS2SDK=/Users/Fletcher_Drew/Documents/ps2build/ps2dev/ps2sdk
+PS2SDK=/usr/local/ps2dev/ps2sdk
 
 LOG_LEVEL ?= 3
 
 EE_CFLAGS += -DPS_LOG_LVL=$(LOG_LEVEL) -Wall -Wno-char-subscripts --std=gnu99 -I$(INC_DIR)
-EE_LDFLAGS = -L$(PSDSDK)/ee/common/lib -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib
+EE_LDFLAGS = -L$(PS2SDK)/ee/common/lib -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib
 
 ISO_TGT=test.iso
 

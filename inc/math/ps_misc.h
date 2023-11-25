@@ -6,8 +6,7 @@ MeshBuffers* CreateGrid(int N, int M, float depth, float width, MeshBuffers *buf
 void CreateGridVectors(int N, int M, float depth, float width, MeshBuffers *buffer);
 void CreateGridUVS(int N, int M, float depth, float width, MeshBuffers *buffer);
 void CreateGridIndices(int N, int M, float depth, float width, MeshBuffers *buffer);
-
-
+void ZSort(GameObject *obj, Camera *cam);
 
 void Pathify(const char *name, char *file);
 void AppendString(const char *input1, const char *input2, char *output, u32 max);

@@ -82,7 +82,7 @@ $(VSM_OBJ_DIR)/%.o: $(VSM_DIR)/%.vsm
 
 ifeq ($(BUILD_TOOL), EE-AR)
   $(TARGET_DIR)/$(EE_LIB): $(EE_OBJS)
-	$(EE_AR) cru $(TARGET_DIR)/$(EE_LIB) $(EE_OBJS)
+	$(EE_AR) rcs $(TARGET_DIR)/$(EE_LIB) $(EE_OBJS)
 else
   $(TARGET_DIR)/$(EE_BIN): $(EE_OBJS)
 	$(EE_CC) -T$(EE_LINKFILE) $(EE_OPTFLAGS) -o $(TARGET_DIR)/$(EE_BIN) $(EE_OBJS) $(EE_LDFLAGS) $(EE_LIBS)

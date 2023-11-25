@@ -23,4 +23,6 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers);
 
 void CreateMeshBuffersFromFile(void *object, void *, u8 *buffer, u32 bufferLen);
 
+int FileExist(const char *filename);
+
 #endif

@@ -5,9 +5,18 @@
 
 #include <stdlib.h>
 
+#include "log/ps_log.h"
+
+u64 getTimeMs(TimerStruct *ts)
+{
+    u64 time = (*R_EE_T0_COUNT + (ts->ctr << 16));
+    return ((u64)(time * .001736)) + 1;
+}
+
+
 float getTicks(TimerStruct *ts)
 {
-    float ticks = (*R_EE_T0_COUNT + (ts->ctr << 16)) * (1000.0f / (147456000.0f / 256.0f));
+    float ticks = (*R_EE_T0_COUNT + (ts->ctr << 16)) * .001736;
     return ticks;
 }
 
@@ -16,6 +25,7 @@ int TimerZeroInterrupt(s32 cause, void *arg, void *addr)
     TimerStruct *ts = (TimerStruct *)arg;
     ts->ctr++;
     *R_EE_T0_MODE |= 1 << 11;
+    *R_EE_T0_COUNT = 0;
     return -1;
 }
 

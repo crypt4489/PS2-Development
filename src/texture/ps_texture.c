@@ -10,7 +10,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 #include "gamemanager/ps_manager.h"
 #include "gs/ps_gs.h"
 #include "io/ps_texture_io.h"
@@ -172,7 +171,18 @@ void InitTextureResources(Texture *tex, u32 mode)
             CreateClutStructs(tex, 16, GS_PSM_32);
         }
 
-        CreateTexStructs(tex, tex->width, tex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 0);
+        u32 components;
+
+        if (tex->psm == GS_PSM_24)
+        {
+            components = TEXTURE_COMPONENTS_RGB;
+        } 
+        else 
+        {
+            components = TEXTURE_COMPONENTS_RGBA;
+        }
+
+        CreateTexStructs(tex, tex->width, tex->psm, components, TEXTURE_FUNCTION_MODULATE, 0);
 
         tex->upload = (qword_t *)malloc(sizeof(qword_t) * 50);
     }
@@ -425,11 +435,19 @@ static void SetupMipMapRegistersGIF(u32 *tex_addresses, u32 *widths)
     SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
+void UploadTextureToVRAM(Texture *tex)
+{
+    qword_t *q = tex->upload;
+    q = CreateTexChain(q, tex);
+    ParseTextureUpload(tex->upload);
+    SetupTexRegistersGIF(tex);
+}
+
 void UploadTextureViaManagerToVRAM(Texture *tex)
 {
     TexManager *texManager = g_Manager.texManager;
 
-    if (tex->id != texManager->currIndex && tex->type == PS_TEX_MEMORY)
+    if ((tex->id != texManager->currIndex && tex->type == PS_TEX_MEMORY))
     {
         qword_t *q = tex->upload;
         q = CreateTexChain(q, tex);
@@ -449,7 +467,8 @@ void UploadTextureViaManagerToVRAM(Texture *tex)
             {
                 u32 newAddress;
                 if ((GRAPH_VRAM_MAX_WORDS < (newAddress = lowestAddress + graph_vram_size(prev->width,
-                                             prev->height, prev->psm, GRAPH_ALIGN_BLOCK)) || list == NULL))
+                                                                                          prev->height, prev->psm, GRAPH_ALIGN_BLOCK)) ||
+                     list == NULL))
                 {
                     ERRORLOG("Too many mipmaps added to memory");
                     break;
@@ -459,10 +478,10 @@ void UploadTextureViaManagerToVRAM(Texture *tex)
                 mipTex = (Texture *)list->data;
                 qword_t *mipQ = mipTex->upload;
                 widths[currMap - 1] = mipTex->texbuf.width;
-                mipQ = CreateTexChainMipLevels(mipQ, mipTex, addrs[currMap-1], 0);
+                mipQ = CreateTexChainMipLevels(mipQ, mipTex, addrs[currMap - 1], 0);
                 ParseTextureUpload(mipTex->upload);
                 prev = mipTex;
-                lowestAddress = addrs[currMap-1];
+                lowestAddress = addrs[currMap - 1];
                 list = list->next;
                 currMap++;
             }

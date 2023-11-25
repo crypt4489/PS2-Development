@@ -17,6 +17,7 @@ void InitTextureResources(Texture *tex, u32 mode);
 qword_t* CreateTexChain(qword_t *input, Texture *tex);
 qword_t *CreateTexChainWOTAGS(qword_t *input, Texture *tex);
 void UploadTextureViaManagerToVRAM(Texture *tex);
+void UploadTextureToVRAM(Texture *tex);
 //void UploadTextureViaManagerToVRAM(Texture *tex);
 Texture *SetTextureFilter(Texture *tex, u8 filter);
 u32 GetTextureIDByName(const char *name, TexManager *TexManager);

@@ -124,15 +124,15 @@ void QuaternionNormalize(VECTOR in, VECTOR out)
 {
     asm __volatile__(
         "lqc2 $vf1, 0x00(%1)\n"
-        "vsuba.xyzw ACC, $vf0, $vf0\n"
+        "vsuba.xyzw $ACC, $vf0, $vf0\n"
         "vmul.xyzw $vf2, $vf1, $vf1\n"
-        "vmaddax.w ACC, $vf0, $vf2\n"
-        "vmadday.w ACC, $vf0, $vf2\n"
-        "vmaddaz.w ACC, $vf0, $vf2\n"
+        "vmaddax.w $ACC, $vf0, $vf2\n"
+        "vmadday.w $ACC, $vf0, $vf2\n"
+        "vmaddaz.w $ACC, $vf0, $vf2\n"
         "vmaddw.w $vf2, $vf0, $vf2\n"
-        "vrsqrt Q, $vf0w, $vf2w\n"
+        "vrsqrt $Q, $vf0w, $vf2w\n"
         "vwaitq \n"
-        "vmulq.xyzw $vf1, $vf1, Q \n"
+        "vmulq.xyzw $vf1, $vf1, $Q \n"
         "sqc2 $vf1, 0x00(%0) \n"
         :
         : "r"(out), "r"(in)

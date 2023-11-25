@@ -1,5 +1,8 @@
 #include "pipelines/ps_vu1pipeline.h"
 
+#include <draw.h>
+
+
 #include <string.h>
 #include <stdlib.h>
 

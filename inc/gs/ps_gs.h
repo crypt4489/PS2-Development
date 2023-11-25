@@ -11,10 +11,10 @@
 #define CreateGSScreenCoordinates(input, operand)   ((2048 operand input) << 4)
 
 
-void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int context);
+void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int context, u32 psm);
 void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm);
 void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm);
-
+void SetGraph(GameManager *manager, framebuffer_t *frame);
 void CreateTexBuf(Texture *texture, int width, int psm);
 
 qword_t* CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr);

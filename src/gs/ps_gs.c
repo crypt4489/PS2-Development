@@ -14,21 +14,26 @@
 
 static int renderTargetVRAM = 0;
 
-void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int context)
+void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int context, u32 psm)
 {
-	// Define a 32-bit 640x480 framebuffer.
 	frame->width = manager->ScreenWidth;
 	frame->height = manager->ScreenHeight;
 	frame->mask = 0;
-	frame->psm = GS_PSM_32;
+	frame->psm = psm;
 	frame->address = graph_vram_allocate(frame->width, frame->height, frame->psm, GRAPH_ALIGN_PAGE);
 
-	// Enable the zbuffer.
-	z->enable = DRAW_ENABLE;
-	z->mask = 0;
-	z->method = ZTEST_METHOD_GREATER_EQUAL;
-	z->zsm = GS_ZBUF_24;
-	z->address = graph_vram_allocate(frame->width, frame->height, z->zsm, GRAPH_ALIGN_PAGE);
+	if (z->enable == DRAW_ENABLE) {
+		// Enable the zbuffer.
+		z->mask = 0;
+		z->method = ZTEST_METHOD_GREATER_EQUAL;
+		z->zsm = GS_ZBUF_24;
+		z->address = graph_vram_allocate(frame->width, frame->height, z->zsm, GRAPH_ALIGN_PAGE);
+	} else {
+		z->mask = 0;
+		z->method = 0;
+		z->zsm = 0;
+		z->address = 0;
+	}
 
 	manager->bgkc.r = 0x80;
 	manager->bgkc.g = 0x70;
@@ -36,6 +41,11 @@ void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int contex
 	manager->bgkc.a = 0x00;
 	manager->bgkc.q = 0.0f;
 
+	SetGraph(manager, frame);
+}
+
+void SetGraph(GameManager *manager, framebuffer_t *frame)
+{
 	// Set a default interlaced video mode with flicker filter.
 	graph_set_mode(GRAPH_MODE_INTERLACED, graph_get_region(), GRAPH_MODE_FIELD, GRAPH_ENABLE);
 
@@ -313,11 +323,13 @@ void SetupRenderTarget(RenderTarget *target, int context, int wait)
 	InitDrawingEnvironment(target->render, target->z, hHeight, hWidth, context, wait);
 }
 
-RenderTarget *AllocRenderTarget()
+RenderTarget *AllocRenderTarget(u32 useZBuffer)
 {
 	RenderTarget *target = (RenderTarget *)malloc(sizeof(RenderTarget));
 	target->render = (framebuffer_t *)malloc(sizeof(framebuffer_t));
-	target->z = (zbuffer_t *)malloc(sizeof(zbuffer_t));
+	if (useZBuffer) {
+		target->z = (zbuffer_t *)malloc(sizeof(zbuffer_t));
+	}
 	return target;
 }
 
@@ -332,7 +344,7 @@ void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method)
 
 RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, int psm)
 {
-	RenderTarget *target = AllocRenderTarget();
+	RenderTarget *target = AllocRenderTarget(1);
 	target->render->width = width;
 	target->render->height = height;
 

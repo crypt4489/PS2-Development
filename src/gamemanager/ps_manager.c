@@ -20,11 +20,11 @@
 GameManager g_Manager;
 
 // pad;
-extern u32 port;
-extern u32 slot;
-extern char padBuf[256];
 
-void InitializeSystem()
+char padBuf[256] __attribute__((aligned(64)));
+u32 port = 0;
+u32 slot = 0;
+void InitializeSystem(u32 useZBuffer, u32 width, u32 height, u32 psm)
 {
     InitializeDMAChannels();
 
@@ -32,22 +32,24 @@ void InitializeSystem()
 
     InitPad(port, slot, padBuf);
 
-    InitializeManager(640, 480, 1, 1000, 10);
+    InitializeManager(width, height, 1, 1000, 10, useZBuffer, psm);
 
     SetupVU1INTEHandler();
 }
 
-void CreateManagerRenderTargets()
+void CreateManagerRenderTargets(u32 useZBuffer, u32 psm)
 {
-    g_Manager.targetBack = AllocRenderTarget();
-    g_Manager.targetDisplay = AllocRenderTarget();
+    g_Manager.targetBack = AllocRenderTarget(1);
+    g_Manager.targetDisplay = AllocRenderTarget(0);
 
     if (g_Manager.targetBack == NULL || g_Manager.targetDisplay == NULL)
     {
         ERRORLOG("failed to allocate the rendertargets manager");
     }
 
-    InitGS(&g_Manager, g_Manager.targetBack->render, g_Manager.targetBack->z, 0);
+    g_Manager.targetBack->z->enable = useZBuffer;
+
+    InitGS(&g_Manager, g_Manager.targetBack->render, g_Manager.targetBack->z, 0, psm);
 
     InitFramebuffer(g_Manager.targetDisplay->render, g_Manager.targetBack->render->width, g_Manager.targetBack->render->height, g_Manager.targetBack->render->psm);
 
@@ -58,10 +60,9 @@ void CreateManagerRenderTargets()
     SetupRenderTarget(g_Manager.targetBack, 0, 0);
 }
 
-void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize)
+void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize) 
 {
-
-    g_Manager.ScreenHeight = height;
+     g_Manager.ScreenHeight = height;
     g_Manager.ScreenWidth = width;
     g_Manager.ScreenHHalf = height / 2;
     g_Manager.ScreenWHalf = width / 2;
@@ -91,8 +92,14 @@ void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, 
     g_Manager.FPS = 0;
     g_Manager.timer = TimerZeroEnable();
     g_Manager.currentTime = g_Manager.lastTime = getTicks(g_Manager.timer);
+}
 
-    CreateManagerRenderTargets();
+void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize, u32 useZBuffer, u32 psm)
+{
+
+    CreateManagerStruct(width, height, doubleBuffer, bufferSize, programSize);
+
+    CreateManagerRenderTargets(useZBuffer, psm);
 
     SetupManagerTexture();
 }
