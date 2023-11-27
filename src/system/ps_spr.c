@@ -3,6 +3,7 @@
 #include <dma_registers.h>
 #include <dma.h>
 
+#include "dma/ps_dma.h"
 // Channel Control
 static u32 dma_chcr[10] = {0x10008000, 0x10009000, 0x1000A000, 0x1000B000, 0x1000B400, 0x1000C000, 0x1000C400, 0x1000C800, 0x1000D000, 0x1000D400};
 // Quadword Count
@@ -20,13 +21,9 @@ static u32 dma_sadr[10] = {0x10008080, 0x10009080, 0x1000A080, 0x00000000, 0x000
 
 void sendPacketSPR(void *data, u32 qwc)
 {
-	dma_channel_send_normal(DMA_CHANNEL_toSPR, data, qwc, 0, 1);
-}
-
-void sendPacketChainSPR(void *data)
-{
-
-	dma_channel_send_chain(DMA_CHANNEL_toSPR, data, 0, DMA_FLAG_TRANSFERTAG, 1);
+	qword_t *q = InitializeDMAObject();
+	DMATAG_REF(q, qwc, (u32)data, 0, 0, 0);
+	dma_channel_send_chain(DMA_CHANNEL_toSPR, q, 1, 0, 1);
 }
 
 void receiveSPR(void *data, void *dest, u32 qwc)
@@ -37,7 +34,7 @@ void receiveSPR(void *data, void *dest, u32 qwc)
 	// Set the size of the data, in quadwords.
 	*(vu32 *)dma_qwc[DMA_CHANNEL_fromSPR] = DMA_SET_QWC(qwc);
 
-	*(vu32 *)dma_sadr[DMA_CHANNEL_fromSPR] = DMA_SET_SADR((u32)data);
+	*(vu32 *)dma_sadr[DMA_CHANNEL_fromSPR] = DMA_SET_SADR(0);
 
 	// Set the address of the data.
 	*(vu32 *)dma_madr[DMA_CHANNEL_fromSPR] = DMA_SET_MADR((u32)dest, 0);
@@ -57,17 +54,20 @@ void ultimate_memcpy(void *from_data, u32 qwc, void *to_data)
 		if (totalSize >= 1024)
 		{
 			sendSize = 1024;
-			totalSize -= sendSize;
 		}
 		else
 		{
 			sendSize = totalSize;
-			totalSize -= sendSize;
 		}
+
+		totalSize -= sendSize;
 
 		sendPacketSPR(from_data, sendSize);
 		dma_channel_wait(DMA_CHANNEL_toSPR, -1);
 		receiveSPR(0, to_data, sendSize);
-		dma_channel_wait(DMA_CHANNEL_fromSPR, -1);
+		//dma_channel_wait(DMA_CHANNEL_fromSPR, -1);
+
+		to_data += sendSize * 4;
+		from_data += sendSize * 4;
 	}
 }
