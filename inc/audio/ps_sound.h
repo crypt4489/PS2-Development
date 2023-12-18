@@ -63,4 +63,12 @@ void LoadSample(unsigned char *wav, int size);
 
 int WaitAudio(int buflen);
 
+u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, u32 loopFlag);
+
+s16 *ConvertBytesToShortSamples(u8 *buffer, u32 size);
+
+void CreateVagSamplesBuffer(VagFile *vagFile, u8 *buffer);
+
+VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels);
+
 #endif

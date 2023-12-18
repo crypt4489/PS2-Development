@@ -3,10 +3,24 @@
 
 #include "ps_global.h"
 
-
 #define PS_FILTER_NNEIGHBOR 0
 #define PS_FILTER_BILINEAR 1
 
+#define SetFilters(tex, filter) \
+        do { \
+            (tex)->lod.min_filter = filter; \
+            (tex)->lod.mag_filter = filter; \
+        } while(0)
+
+#define SetMagFilter(tex, filter) \
+        do { \
+            (tex)->lod.mag_filter = filter; \
+        } while(0)
+
+#define SetMinFilter(tex, filter) \
+        do { \
+            (tex)->lod.min_filter = filter; \
+        } while(0)
 
 void CleanTextureStruct(Texture *tex);
 void AddStringNameToTexture(Texture *tex, const char *buffer);
@@ -19,10 +33,12 @@ qword_t *CreateTexChainWOTAGS(qword_t *input, Texture *tex);
 void UploadTextureViaManagerToVRAM(Texture *tex);
 void UploadTextureToVRAM(Texture *tex);
 //void UploadTextureViaManagerToVRAM(Texture *tex);
-Texture *SetTextureFilter(Texture *tex, u8 filter);
+
 u32 GetTextureIDByName(const char *name, TexManager *TexManager);
 Texture *GetTextureByID(u32 id, TexManager *texManager);
 void AddMipMapTexture(Texture *tex, Texture *toAdd);
 Texture *RemoveMipLevelFromTexture(Texture *tex, Texture *toRemove);
 void SetupTexLODStruct(Texture *tex, float _k, char _l, int max, int filter_min, int filter_mag);
+void SampleTextureByPixel(Texture *tex, Color *rgba, int x, int y);
+void SampleTextureByUV(Texture *tex, Color *rgba, float x, float y);
 #endif

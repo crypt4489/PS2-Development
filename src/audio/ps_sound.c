@@ -1,4 +1,5 @@
 #include "audio/ps_sound.h"
+#include "audio/ps_soundtypes.h"
 
 #include <string.h>
 #include <sifrpc.h>
@@ -10,6 +11,7 @@
 #include "log/ps_log.h"
 #include "io/ps_file_io.h"
 #include "math/ps_misc.h"
+#include "math/ps_fast_maths.h"
 
 extern void *_gp;
 
@@ -316,7 +318,7 @@ VagFile *LoadVagFile(const char *name)
 
 	if (vagFile == NULL)
 	{
-		ERRORLOG("Cannot create wav file holder");
+		ERRORLOG("Cannot create vag file holder");
 		free(bufferLoad);
 		return NULL;
 	}
@@ -328,6 +330,10 @@ VagFile *LoadVagFile(const char *name)
 	memcpy(&vagFile->header, buffer, 48);
 
 	buffer += 64;
+
+	vagFile->header.version = SWAP_ENDIAN(vagFile->header.version);
+	vagFile->header.sampleRate = SWAP_ENDIAN(vagFile->header.sampleRate);
+	vagFile->header.dataLength = SWAP_ENDIAN(vagFile->header.dataLength);
 
 	dataSize = vagFile->header.dataLength;
 
@@ -341,15 +347,250 @@ VagFile *LoadVagFile(const char *name)
 		return NULL;
 	}
 
+	CreateVagSamplesBuffer(vagFile, buffer);
+
+	free(bufferLoad);
+
+	return vagFile;
+}
+
+void CreateVagSamplesBuffer(VagFile *vagFile, u8 *buffer)
+{
 	u32 pitch = (vagFile->header.sampleRate * vagFile->header.channels * 4096) / 48000;
 
 	vagFile->samples[4] = vagFile->samples[5] = vagFile->samples[6] = vagFile->samples[7] = 0x02;
 
 	memcpy(vagFile->samples + 8, &pitch, 4);
 
-	memcpy(vagFile->samples + 16, buffer, dataSize);
+	memcpy(vagFile->samples + 16, buffer, vagFile->header.dataLength);
+}
 
-	free(bufferLoad);
+s16* ConvertBytesToShortSamples(u8 *buffer, u32 size)
+{
+	s16 *samples = (s16*)malloc(sizeof(s16) * (size>>1));
+
+	if (samples == NULL)
+	{
+		ERRORLOG("Failed to allocate samples");
+		return NULL;
+	}
+
+	for (u32 i = 0; i<size; i++)
+	{
+		u16 topByte = ((u16)(buffer[i * 2]));
+		u16 lowerByte = ((u16)buffer[(i * 2) + 1]) << 8;
+		samples[i] = topByte | lowerByte;
+	}
+
+	return samples;
+}
+
+
+u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, u32 loopFlag)
+{
+	float _hist_1 = 0.0, _hist_2 = 0.0;
+	float hist_1 = 0.0, hist_2 = 0.0;
+
+	int fullChunks = len * 0.035714;
+	int remaining = len - (fullChunks * 28);
+
+	if (remaining)
+	{
+		fullChunks++;
+	}
+
+	int sizeOfOut = fullChunks * 16;
+
+	u8* outBuffer = (u8*)malloc(sizeOfOut);
+
+	u8* ret = outBuffer;
+
+	u32 bytesRead = 0;
+	EncBlock block;
+
+	for (int i = 0; i < fullChunks; i++)
+	{
+
+		int chunkSize = 28;
+		if (i == fullChunks - 1)
+		{
+			chunkSize = remaining;
+		}
+		int predict = 0, shift;
+		float min = 1e10;
+		float s_1 = 0.0, s_2 = 0.0;
+		float predictBuf[28][5];
+		for (int j = 0; j < 5; j++)
+		{
+			float max = 0.0;
+
+			s_1 = _hist_1;
+			s_2 = _hist_2;
+
+			for (int k = 0; k < chunkSize; k++)
+			{
+				float sample = samples[k];
+				if (sample > 30719.0)
+				{
+					sample = 30719.0;
+				}
+				if (sample < -30720.0)
+				{
+					sample = -30720.0;
+				}
+
+				float ds = sample + s_1 * vaglut[j][0] + s_2 * vaglut[j][1];
+
+				predictBuf[k][j] = ds;
+
+				if (Abs(ds) > max)
+				{
+					max = Abs(ds);
+				}
+
+				s_2 = s_1;
+				s_1 = sample;
+			}
+			if (max < min)
+			{
+				min = max;
+				predict = j;
+			}
+			if (min <= 7)
+			{
+				predict = 0;
+				break;
+			}
+		}
+		
+		_hist_1 = s_1;
+		_hist_2 = s_2;
+
+		float d_samples[28];
+		for (int i = 0; i < 28; i++)
+		{
+			d_samples[i] = predictBuf[i][predict];
+		}
+
+		int min2 = (int)min;
+		int shift_mask = 0x4000;
+		shift = 0;
+
+		while (shift < 12)
+		{
+			if (shift_mask & (min2 + (shift_mask >> 3)))
+			{
+				break;
+			}
+			shift++;
+			shift_mask >>= 1;
+		}
+
+		block.predict = predict;
+		block.shift = shift;
+
+		if (len - bytesRead > 28)
+		{
+			block.flags = VAGF_NOTHING;
+			if (loopFlag)
+			{
+				block.flags = VAGF_LOOP_REGION;
+				if (i == loopStart)
+				{
+					block.flags = VAGF_LOOP_START;
+				}
+				if (i == loopEnd)
+				{
+					block.flags = VAGF_LOOP_END;
+				}
+			}
+		}
+		else
+		{
+			block.flags = VAGF_LOOP_LAST_BLOCK;
+			if (loopFlag)
+			{
+				block.flags = VAGF_LOOP_END;
+			}
+		}
+
+		s16 outBuf[28];
+		memset(outBuf, '\0', 56);
+		for (int k = 0; k < 28; k++)
+		{
+			float s_double_trans = d_samples[k] + hist_1 * vaglut[predict][0] + hist_2 * vaglut[predict][1];
+			float s_double = s_double_trans * (1 << shift);
+			int sample = (int)(((int)s_double + 0x800) & 0xFFFFF000);
+
+			if (sample > 32767)
+			{
+				sample = 32767;
+			}
+			if (sample < -32768)
+			{
+				sample = -32768;
+			}
+
+			outBuf[k] = (short)sample;
+
+			sample >>= shift;
+			hist_2 = hist_1;
+			hist_1 = sample - s_double_trans;
+		}
+
+		for (int k = 0; k < 14; k++)
+		{
+			block.sample[k] = (u8)(((outBuf[(k * 2) + 1] >> 8) & 0xf0) | ((outBuf[k * 2] >> 12) & 0xf));
+		}
+
+		samples += 28;
+		
+		s8 lastPredictAndShift = (((block.predict << 4) & 0xF0) | (block.shift & 0x0F));
+
+		*outBuffer++ = lastPredictAndShift;
+		*outBuffer++ = block.flags;
+		for (int h = 0; h < 14; h++)
+			*outBuffer++ = block.sample[h];
+
+		bytesRead += chunkSize;
+	}
+
+	*outSize = sizeOfOut;
+	
+	return ret;
+}
+
+VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels)
+{
+	VagFile *vagFile = (VagFile *)malloc(sizeof(VagFile));
+
+	if (vagFile == NULL)
+	{
+		ERRORLOG("Cannot create vag file holder");
+		return NULL;
+	}
+
+	s16 *pcmSamples = ConvertBytesToShortSamples(buffer, size);
+
+	if (pcmSamples == NULL)
+	{
+		free(vagFile);
+		ERRORLOG("PCM sample creation failed");
+		return NULL;
+	}
+
+	u32 outVagSize = 0;
+
+	u8 *vagSamples = CreateVagSamples(pcmSamples, (size >> 1), &outVagSize, 0, 0, 0);
+
+	vagFile->header.sampleRate = sampleRate;
+	vagFile->header.channels = channels;
+	vagFile->header.dataLength = outVagSize;
+	vagFile->samples = (u8 *)malloc(outVagSize + 16);
+	CreateVagSamplesBuffer(vagFile, vagSamples);
+
+	free(pcmSamples);
+	free(vagSamples);
 
 	return vagFile;
 }

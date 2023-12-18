@@ -222,7 +222,7 @@ static void update_cube(GameObject *cube)
 
 static void SetupFont()
 {
-    myFont = CreateFontStruct("FONTS\\DEFAULTFONT.BMP", "FONTS\\DEFAULTFONTDATA.DAT", READ_BMP);
+    myFont = CreateFontStruct("FONTS\\LAUNCHERFONT.BMP", "FONTS\\LAUNCHERDATA.DAT", READ_BMP);
 }
 
 static void SetupWorldObjects()
@@ -942,15 +942,14 @@ static void LoadInTextures()
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
+    Texture *tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
 
+    SetFilters(tex, PS_FILTER_BILINEAR);
 }
 
 int main(int argc, char **argv)
 {
     InitializeSystem(1, 640, 480, GS_PSM_32);
-
-
 
     InitASyncIO(25, 5.0f);
 

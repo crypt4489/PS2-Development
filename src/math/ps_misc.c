@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+#include <kernel.h>
 
 #include "math/ps_fast_maths.h"
 #include "math/ps_quat.h"
@@ -9,7 +12,7 @@
 #include "log/ps_log.h"
 #include "math/ps_vector.h"
 #include "gameobject/ps_ltm.h"
-#include <kernel.h>
+
 typedef struct zsort_pair_t
 {
     float dist;
@@ -116,7 +119,7 @@ static void ZSortMerge(float *arr1, u32* arr2, int left, int middle, int right)
     {
         if (arr1[i] < arr1[j])
             temp[k++] = arr1[i++];
-        else 
+        else
             temp[k++] = arr1[j++];
     }
 
@@ -152,12 +155,9 @@ void ZSortMergeSort(float *arr1, u32 *arr2, int left, int right)
 void ZSort(GameObject *obj, Camera *cam)
 {
 
-    
     u32 triangleCount = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount / 3;
-   // float *distances = (float *)malloc(sizeof(float) * triangleCount);
-   // u32 *indices = (u32 *)malloc(sizeof(u32) * triangleCount);
 
-    ZSortPair *pairs = (ZSortPair*)malloc(sizeof(ZSortPair) * triangleCount);
+    ZSortPair *pairs = (ZSortPair *)malloc(sizeof(ZSortPair) * triangleCount);
     VECTOR *triangles = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
     const float onethird = 0.333333;
     VECTOR camPos;
@@ -179,7 +179,7 @@ void ZSort(GameObject *obj, Camera *cam)
         float dist;
         u32 index = i * 3;
         ZSortPair *pair = &pairs[i];
-       asm __volatile__(
+        asm __volatile__(
             "lqc2 $vf1, 0x00(%1)\n"
             "lqc2 $vf2, 0x00(%2)\n"
             "lqc2 $vf3, 0x00(%3)\n"
@@ -207,13 +207,11 @@ void ZSort(GameObject *obj, Camera *cam)
             "qmfc2 %0, $vf7\n"
             : "=r"(dist)
             : "r"(triangles[index]), "r"(triangles[index + 1]), "r"(triangles[index + 2])
-            : "memory"); 
-       
+            : "memory");
+
         pair->dist = dist;
         pair->index = i;
-
     }
-    //FlushCache(0);
     qsort(pairs, triangleCount, sizeof(ZSortPair), cmpfunc);
 
     free(pairs);
@@ -363,15 +361,13 @@ void CreateGridIndices(int N, int M, float depth, float width, MeshBuffers *buff
     }
 }
 
-
-
 void Pathify(const char *name, char *file)
 {
     int len = strnlen(name, MAX_FILE_NAME);
     file[0] = 92;
     for (int i = 1; i <= len; i++)
     {
-        file[i] = name[i - 1];
+        file[i] = toupper(name[i - 1]);
     }
     file[len + 1] = 59;
     file[len + 2] = 49;

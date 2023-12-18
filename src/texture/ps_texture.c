@@ -19,6 +19,10 @@
 #include "log/ps_log.h"
 #include "util/ps_linkedlist.h"
 
+static void SamplePaletteImpl(Texture *tex, Color *rgba, int x, int y);
+static void SampleNonPaletteImpl(Texture *tex, Color *rgba, int x, int y, int stride);
+static inline void PackColor(Color *rgba, u8* buffer, int stride);
+
 static void StripFilePath(const char *filepath, char *texname)
 {
     const char *temp = strrchr(filepath, 92);
@@ -82,6 +86,11 @@ void CleanTextureStruct(Texture *tex)
         if (tex->pixels != NULL)
         {
             free(tex->pixels);
+        }
+
+        if (tex->upload != NULL)
+        {
+            free(tex->upload);
         }
 
         free(tex);
@@ -441,6 +450,7 @@ void UploadTextureToVRAM(Texture *tex)
     q = CreateTexChain(q, tex);
     ParseTextureUpload(tex->upload);
     SetupTexRegistersGIF(tex);
+    g_Manager.texManager->currIndex = tex->id;
 }
 
 void UploadTextureViaManagerToVRAM(Texture *tex)
@@ -500,16 +510,90 @@ void UploadTextureViaManagerToVRAM(Texture *tex)
     }
 }
 
-Texture *SetTextureFilter(Texture *tex, u8 filter)
+void SampleTextureByUV(Texture *tex, Color *rgba, float x, float y)
 {
-    if (filter == PS_FILTER_NNEIGHBOR)
-    {
-    }
-    else if (filter == PS_FILTER_BILINEAR)
-    {
-    }
+    int intx = x * tex->width; 
+    int inty = y * tex->height;
 
-    tex->lod.mag_filter = filter;
+    u32 psm = tex->texbuf.psm;
 
-    return tex;
+    if (psm == GS_PSM_8)
+    {
+        SamplePaletteImpl(tex, rgba, intx, inty);
+    } 
+    else 
+    {
+        int stride;
+        switch(psm)
+        {
+            case GS_PSM_16:
+                stride = 2;
+                break;
+            case GS_PSM_24:
+                stride = 3;
+                break;
+            default:
+                stride = 4;
+                break;
+        }
+        SampleNonPaletteImpl(tex, rgba, intx, inty, stride);
+    }
+}
+
+
+void SampleTextureByPixel(Texture *tex, Color *rgba, int x, int y)
+{
+    u32 psm = tex->texbuf.psm;
+    if (psm == GS_PSM_8)
+    {
+        SamplePaletteImpl(tex, rgba, x, y);
+    } 
+    else 
+    {
+        int stride;
+        switch(psm)
+        {
+            case GS_PSM_16:
+                stride = 2;
+                break;
+            case GS_PSM_24:
+                stride = 3;
+                break;
+            default:
+                stride = 4;
+                break;
+        }
+        SampleNonPaletteImpl(tex, rgba, x, y, stride);
+    }
+}
+
+static void SamplePaletteImpl(Texture *tex, Color *rgba, int x, int y)
+{
+    
+}
+
+static void SampleNonPaletteImpl(Texture *tex, Color *rgba, int x, int y, int stride)
+{
+    u8 *buffer = tex->pixels;
+    u32 offsetY = stride * tex->width * y;
+    buffer += (offsetY + x * stride);
+    PackColor(rgba, buffer, stride);
+}
+
+static inline void PackColor(Color *rgba, u8* buffer, int stride)
+{
+    switch(stride)
+    {
+        case 3:
+            rgba->r = buffer[0];
+            rgba->g = buffer[1];
+            rgba->b = buffer[2];
+            break;
+        case 4:
+            rgba->r = buffer[0];
+            rgba->g = buffer[1];
+            rgba->b = buffer[2];
+            rgba->a = buffer[3];
+            break;
+    }
 }

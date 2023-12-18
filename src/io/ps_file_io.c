@@ -60,8 +60,9 @@ u8 *ReadSector(u32 sector, u32 numOfSecs, u8 *buffer)
 
 int FileExist(const char *filename) {
 
-    sceCdlFILE file_struct; 
-     if (!(sceCdSearchFile(&file_struct, filename)))
+    sceCdlFILE file_struct;
+     
+    if (!(sceCdSearchFile(&file_struct, filename)))
     {
         ERRORLOG("FINDEXISTS: Not found %s", filename);
         
