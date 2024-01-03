@@ -65,10 +65,12 @@ int WaitAudio(int buflen);
 
 u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, u32 loopFlag);
 
-s16 *ConvertBytesToShortSamples(u8 *buffer, u32 size);
+s16 *Convert16PCMToShortSamples(u8 *buffer, u32 size);
+
+s16* Convert8PCMToShortSamples(u8 *buffer, u32 size);
 
 void CreateVagSamplesBuffer(VagFile *vagFile, u8 *buffer);
 
-VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels);
+VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels, u32 bitDepth);
 
 #endif

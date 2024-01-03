@@ -241,6 +241,8 @@ WavFile *LoadWavFile(const char *name)
 
 	// DEBUGLOG("BPS %d", wavFile->header.bits_per_sample);
 
+	buffer = bufferLoad + 20 + wavFile->header.fmt_length;
+
 	char list[4];
 
 	memcpy(&list, buffer, 4);
@@ -249,24 +251,12 @@ WavFile *LoadWavFile(const char *name)
 	{
 		memcpy(&wavFile->header.data_tag, list, 4);
 	}
-	else if (strncmp("list", list, 4) == 0)
+	else 
 	{
-		// DEBUGLOG("%x %x %x %x", list[0], list[1], list[2], list[3]);
-		int skip;
-		buffer += 4;
-		memcpy(&skip, buffer, 4);
-		////DEBUGLOG("SKIP %d", skip);
-		buffer += (skip + 4);
-		memcpy(&wavFile->header.data_tag, buffer, 4);
-	}
-	else if (list[0] == 0 && list[1] == 0)
-	{
-		buffer += 6;
-		int skip;
-		memcpy(&skip, buffer, 4);
-		////DEBUGLOG("SKIP %d", skip);
-		buffer += (skip + 4);
-		memcpy(&wavFile->header.data_tag, buffer, 4);
+		ERRORLOG("No DATA tag in the header file %s", list);
+		free(bufferLoad);
+		free(wavFile);
+		return NULL;
 	}
 
 	// DEBUGLOG("%c%c%c%c", wavFile->header.data_tag[0], wavFile->header.data_tag[1], wavFile->header.data_tag[2], wavFile->header.data_tag[3]);
@@ -365,9 +355,9 @@ void CreateVagSamplesBuffer(VagFile *vagFile, u8 *buffer)
 	memcpy(vagFile->samples + 16, buffer, vagFile->header.dataLength);
 }
 
-s16* ConvertBytesToShortSamples(u8 *buffer, u32 size)
+s16* Convert16PCMToShortSamples(u8 *buffer, u32 size)
 {
-	s16 *samples = (s16*)malloc(sizeof(s16) * (size>>1));
+	s16 *samples = (s16*)malloc(sizeof(s16) * (size));
 
 	if (samples == NULL)
 	{
@@ -385,14 +375,32 @@ s16* ConvertBytesToShortSamples(u8 *buffer, u32 size)
 	return samples;
 }
 
+s16* Convert8PCMToShortSamples(u8 *buffer, u32 size)
+{
+	s16 *samples = (s16*)malloc(sizeof(s16) * (size));
+
+	if (samples == NULL)
+	{
+		ERRORLOG("Failed to allocate samples");
+		return NULL;
+	}
+
+	for (u32 i = 0; i<size; i++)
+	{
+		samples[i] = (s16)(buffer[i] - 0x80) << 8;
+	}
+
+	return samples;
+}
+
 
 u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, u32 loopFlag)
 {
 	float _hist_1 = 0.0, _hist_2 = 0.0;
 	float hist_1 = 0.0, hist_2 = 0.0;
 
-	int fullChunks = len * 0.035714;
-	int remaining = len - (fullChunks * 28);
+	int fullChunks = len / 28;
+	int remaining = len % 28;
 
 	if (remaining)
 	{
@@ -560,7 +568,7 @@ u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loo
 	return ret;
 }
 
-VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels)
+VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels, u32 bitDepth)
 {
 	VagFile *vagFile = (VagFile *)malloc(sizeof(VagFile));
 
@@ -569,8 +577,23 @@ VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels)
 		ERRORLOG("Cannot create vag file holder");
 		return NULL;
 	}
+	
+	s16 *pcmSamples = NULL;
+	u32 conversionSize = size;
 
-	s16 *pcmSamples = ConvertBytesToShortSamples(buffer, size);
+	switch(bitDepth)
+	{
+		case 8:
+			pcmSamples = Convert8PCMToShortSamples(buffer, conversionSize);
+			break;
+		case 16:
+			conversionSize >>= 1;
+			pcmSamples = Convert16PCMToShortSamples(buffer, conversionSize);
+			break;
+		default:
+			ERRORLOG("Incorrect bitDepth for PCM");
+			break;
+	}
 
 	if (pcmSamples == NULL)
 	{
@@ -581,14 +604,15 @@ VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels)
 
 	u32 outVagSize = 0;
 
-	u8 *vagSamples = CreateVagSamples(pcmSamples, (size >> 1), &outVagSize, 0, 0, 0);
-
+	u8 *vagSamples = CreateVagSamples(pcmSamples, conversionSize, &outVagSize, 0, 0, 0);
+	
 	vagFile->header.sampleRate = sampleRate;
 	vagFile->header.channels = channels;
 	vagFile->header.dataLength = outVagSize;
 	vagFile->samples = (u8 *)malloc(outVagSize + 16);
-	CreateVagSamplesBuffer(vagFile, vagSamples);
 
+	CreateVagSamplesBuffer(vagFile, vagSamples);
+	
 	free(pcmSamples);
 	free(vagSamples);
 
