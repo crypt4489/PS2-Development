@@ -248,15 +248,17 @@ void CreateRotationMatrix(VECTOR axis, float angle, MATRIX output)
 
     MatrixIdentity(work);
 
-    work[0] = c + (x * x) * (1 - c);
-    work[1] = x * y * (1 - c) - (z * s);
-    work[2] = x * z * (1 - c) + (y * s);
-    work[4] = y * x * (1 - c) + (z * s);
-    work[5] = c + (y * y) * (1 - c);
-    work[6] = y * x * (1 - c) - (x * s);
-    work[8] = z * x * (1 - c) - (y * s);
-    work[9] = x * y * (1 - c) + (x * s);
-    work[10] = c + (z * z) * (1 - c);
+    float invC = 1 - c;
+
+    work[0] = c + (x * x) * invC;
+    work[1] = x * y * invC - (z * s);
+    work[2] = x * z * invC + (y * s);
+    work[4] = y * x * invC + (z * s);
+    work[5] = c + (y * y) * invC;
+    work[6] = y * x * invC - (x * s);
+    work[8] = z * x * invC - (y * s);
+    work[9] = x * y * invC + (x * s);
+    work[10] = c + (z * z) * invC;
 
     work[15] = 1.0f;
 

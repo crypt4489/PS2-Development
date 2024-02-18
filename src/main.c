@@ -349,7 +349,7 @@ static void SetupGrid()
     PitchLTM(grid->ltm, -45.0f);
     grid->update_object = NULL;
 
-    //InitOBB(grid, BBO_FIXED);
+    // InitOBB(grid, BBO_FIXED);
 
     CreateGraphicsPipeline(grid, "Clipper");
 
@@ -428,9 +428,9 @@ static void SetupMultiSphere()
     PitchLTM(multiSphere->ltm, -90.0f);
 
     CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
-    //float time1 = getTicks(g_Manager.timer);
+    // float time1 = getTicks(g_Manager.timer);
     InitOBB(multiSphere, BBO_FIT);
-    //DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
+    // DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
     multiSphere->update_object = RotateSphere;
 
     MatrixIdentity(lightTransform);
@@ -642,13 +642,13 @@ static void SetupTessObject()
 static void SetupGameObjects()
 {
 
-    //InitSkybox();
+    // InitSkybox();
 
     SetupGrid();
     SetupBody();
 
-    //SetupMultiSphere();
-    // SetupShadowViewer();
+    // SetupMultiSphere();
+    //  SetupShadowViewer();
 
     // SetupRoom();
 
@@ -815,30 +815,29 @@ int Render()
         float delta = (currentTime - lastTime) * 0.001f;
         lastTime = currentTime;
 
-      //  SetK();
+        //  SetK();
 
         UpdatePad();
         if (body != NULL)
             UpdateAnimator(body->objAnimator, delta);
 
-        //UpdateGlossTransform();
+        // UpdateGlossTransform();
 
         if (FrameCounter == 250)
         {
-          //  LoadWater();
-          //  LoadCube();
+            //  LoadWater();
+            //  LoadCube();
         }
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
         DrawWorld(world);
-        
+
         // DrawWorld(roomWorld);
 
         // RenderShadowScene();
 
-
-        //FindOBBMaxAndMinVerticesVU0(multiSphere);
+        // FindOBBMaxAndMinVerticesVU0(multiSphere);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
@@ -846,7 +845,7 @@ int Render()
 
         snprintf(print_out, 20, "K-VALUE %f", k);
 
-       // PrintText(myFont, print_out, -310, -200);
+        // PrintText(myFont, print_out, -310, -200);
 
         EndRendering(cam);
 
@@ -908,37 +907,37 @@ static void LoadInTextures()
 
     char _folder[9] = "TEXTURES\\";
 
-  /*  AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
+    /*  AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
+      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, face2Name, _file, MAX_FILE_NAME);
+      AppendString(_folder, face2Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
+      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, face3Name, _file, MAX_FILE_NAME);
+      AppendString(_folder, face3Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
+      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, face4Name, _file, MAX_FILE_NAME);
+      AppendString(_folder, face4Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
+      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, face5Name, _file, MAX_FILE_NAME);
+      AppendString(_folder, face5Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
+      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, face6Name, _file, MAX_FILE_NAME);
+      AppendString(_folder, face6Name, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
+      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, NewYorkName, _file, MAX_FILE_NAME);
+      AppendString(_folder, NewYorkName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
+      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
 
-    AppendString(_folder, glossName, _file, MAX_FILE_NAME);
+      AppendString(_folder, glossName, _file, MAX_FILE_NAME);
 
-    AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 1); */
+      AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 1); */
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
@@ -954,7 +953,7 @@ int main(int argc, char **argv)
     InitASyncIO(25, 5.0f);
 
     SetupWorldObjects();
-    
+
     float totalTime;
 
     float startTime = totalTime = getTicks(g_Manager.timer);
@@ -993,7 +992,7 @@ int main(int argc, char **argv)
 
     audsrv_adpcm_t sample;
 
-   // VagFile *vag = LoadVagFile("SOUNDS\\MUSIC.VAG");
+    VagFile *vag = LoadVagFile("SOUNDS\\COME.VAG");
 
     SifInitRpc(0);
     int ret;
@@ -1009,11 +1008,11 @@ int main(int argc, char **argv)
 
     audsrv_adpcm_init();
 
-   // audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength);
-   // DEBUGLOG("%d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size);
-    // int channel = audsrv_ch_play_adpcm(-1, &sample);
-    // audsrv_adpcm_set_volume(channel, MAX_VOLUME);
-    
+    audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength+16);
+    DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
+    int channel = audsrv_ch_play_adpcm(-1, &sample);
+    audsrv_adpcm_set_volume(channel, MAX_VOLUME);
+
     Render();
 
     CleanUpGame();

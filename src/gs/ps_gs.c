@@ -401,12 +401,16 @@ void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a)
 
 	qword_t *dmatag = q;
 
+	int alpha = ATEST_METHOD_NOTEQUAL;
+
 	q++;
 
-	float xOff = 2048.0f - (target->render->width / 2.0);
-	float yOff = 2048.0f - (target->render->height / 2.0);
+	float xOff = 2048.0f - (target->render->width >> 1);
+	float yOff = 2048.0f - (target->render->height >> 1);
+	if (!a)
+		alpha = ATEST_METHOD_EQUAL;
 
-	q = draw_disable_tests_alpha(q, context, a);
+	q = draw_disable_tests_alpha(q, context, alpha);
 	q = draw_clear_alpha(q, context, xOff, yOff, target->render->width, target->render->height, r, g, b, a);
 	q = draw_enable_tests_alpha(q, context, a, target->z->method);
 	q = draw_finish(q);
@@ -462,14 +466,7 @@ qword_t *draw_disable_tests_alpha(qword_t *q, int context, int alpha)
 	PACK_GIFTAG(q, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
 	q++;
 
-	if (alpha == 0)
-	{
-		PACK_GIFTAG(q, GS_SET_TEST(DRAW_ENABLE, ATEST_METHOD_EQUAL, 0x00, ATEST_KEEP_FRAMEBUFFER, DRAW_DISABLE, DRAW_DISABLE, DRAW_ENABLE, ZTEST_METHOD_ALLPASS), GS_REG_TEST + context);
-	}
-	else
-	{
-		PACK_GIFTAG(q, GS_SET_TEST(DRAW_ENABLE, ATEST_METHOD_NOTEQUAL, 0x00, ATEST_KEEP_FRAMEBUFFER, DRAW_DISABLE, DRAW_DISABLE, DRAW_ENABLE, ZTEST_METHOD_ALLPASS), GS_REG_TEST + context);
-	}
+	PACK_GIFTAG(q, GS_SET_TEST(DRAW_ENABLE, alpha, 0x00, ATEST_KEEP_FRAMEBUFFER, DRAW_DISABLE, DRAW_DISABLE, DRAW_ENABLE, ZTEST_METHOD_ALLPASS), GS_REG_TEST + context);
 
 	q++;
 
@@ -503,9 +500,6 @@ qword_t *SetupAlphaGS(qword_t *q, blend_t *blend, int context)
 {
 	PACK_GIFTAG(q, GS_SET_ALPHA(blend->color1, blend->color2, blend->alpha, blend->color3, blend->fixed_alpha), GS_REG_ALPHA + context);
 	q++;
-
-	/*  PACK_GIFTAG(q, GS_SET_PABE(DRAW_ENABLE), GS_REG_PABE);
-	  q++; */
 
 	return q;
 }

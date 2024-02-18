@@ -64,8 +64,8 @@ void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize
 {
      g_Manager.ScreenHeight = height;
     g_Manager.ScreenWidth = width;
-    g_Manager.ScreenHHalf = height / 2;
-    g_Manager.ScreenWHalf = width / 2;
+    g_Manager.ScreenHHalf = height >> 1;
+    g_Manager.ScreenWHalf = width >> 1;
     g_Manager.gs_context = 0;
 
     g_Manager.textureInVram = (Texture *)malloc(sizeof(Texture));

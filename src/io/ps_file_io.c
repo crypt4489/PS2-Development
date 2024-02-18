@@ -92,7 +92,7 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
 {
     u32 starting_sec = loc_file_struct->lsn;
 
-    float divisor = 1.f / SECTOR_SIZE;
+    const float divisor = .000488;
 
     u32 sectorOffset = offset * divisor;
 
@@ -102,7 +102,7 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
 
     u32 sectors = readSize * divisor;
 
-    u32 remaining = readSize % SECTOR_SIZE;
+    u32 remaining = readSize & SECTOR_SIZE-1;
 
     if (remaining)
     {
@@ -152,7 +152,7 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
     u32 starting_sec = loc_file_struct->lsn;
     u32 sectors = loc_file_struct->size / SECTOR_SIZE;
 
-    u32 remaining = loc_file_struct->size % SECTOR_SIZE;
+    u32 remaining = loc_file_struct->size & SECTOR_SIZE-1;
 
     u32 bufferSize = loc_file_struct->size;
 
@@ -213,27 +213,27 @@ MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 siz
 {
     buffers->meshData[MESHTRIANGLES]->vertexCount = size;
     buffers->meshAnimationData = NULL;
-    if ((code & 0x01) != 0)
+    if (code & 0x01)
     {
         buffers->meshData[MESHTRIANGLES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
-    if ((code & 0x04) != 0)
+    if (code & 0x04)
     {
         buffers->meshData[MESHTRIANGLES]->normals = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
-    if ((code & 0x02) != 0)
+    if (code & 0x02)
     {
         buffers->meshData[MESHTRIANGLES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
-    if ((code & 0x08) != 0)
+    if (code & 0x08)
     {
         buffers->indices = (u32 *)malloc(sizeof(u32) * size);
     }
 
-    if ((code & 0x20) != 0)
+    if ((code & 0x20))
     {
         buffers->meshData[MESHTRIANGLES]->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);
         buffers->meshData[MESHTRIANGLES]->bones = (VectorInt *)malloc(sizeof(VectorInt) * size);
@@ -729,22 +729,22 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 vertSize, u
             binaryBuffer[indexInBuffer] |= mask;
         }
 
-        if ((code & 0x01) != 0)
+        if (code & 0x01)
         {
             VectorCopy(buffers->meshData[MESHVERTICES]->vertices[index], buffers->meshData[MESHTRIANGLES]->vertices[i]);
         }
 
-        if ((code & 0x04) != 0)
+        if (code & 0x04)
         {
             VectorCopy(buffers->meshData[MESHVERTICES]->normals[index], buffers->meshData[MESHTRIANGLES]->normals[i]);
         }
 
-        if ((code & 0x02) != 0)
+        if (code & 0x02)
         {
             VectorCopy(buffers->meshData[MESHVERTICES]->texCoords[index], buffers->meshData[MESHTRIANGLES]->texCoords[i]);
         }
 
-        if ((code & 0x20) != 0)
+        if (code & 0x20)
         {
             VectorCopy(buffers->meshData[MESHVERTICES]->weights[index], buffers->meshData[MESHTRIANGLES]->weights[i]);
             VectorIntCopy(buffers->meshData[MESHVERTICES]->bones[index], buffers->meshData[MESHTRIANGLES]->bones[i]);
@@ -758,22 +758,22 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 vertSize, u
 static void AllocateVerticesBufferFromCode(MeshBuffers *buffers, u16 code, u32 size)
 {
     buffers->meshData[MESHVERTICES]->vertexCount = size;
-    if ((code & 0x01) != 0)
+    if (code & 0x01)
     {
         buffers->meshData[MESHVERTICES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
-    if ((code & 0x04) != 0)
+    if (code & 0x04)
     {
         buffers->meshData[MESHVERTICES]->normals = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
-    if ((code & 0x02) != 0)
+    if (code & 0x02)
     {
         buffers->meshData[MESHVERTICES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * size);
     }
 
-    if ((code & 0x20) != 0)
+    if (code & 0x20)
     {
 
         buffers->meshData[MESHVERTICES]->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);

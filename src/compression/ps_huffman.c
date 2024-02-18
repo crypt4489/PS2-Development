@@ -223,8 +223,7 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 		HuffmanNode *node = root;
 		while (!isLeaf(node))
 		{
-			int bit = readBoolean();
-			if (bit)
+			if (readBoolean())
 				node = node->right;
 			else
 				node = node->left;

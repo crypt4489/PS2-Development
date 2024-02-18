@@ -32,26 +32,19 @@ LinkedList *AddToLinkedList(LinkedList *head, LinkedList *node)
 
 LinkedList *RemoveNodeFromList(LinkedList *head, LinkedList *node)
 {
-    LinkedList *iter = head;
-    LinkedList *prev = head;
+    LinkedList **iter = &head;
 
-    while (iter != node)
+    while (*iter != node)
     {
-        prev = iter;
-        iter = iter->next;
-        if (iter == NULL)
+        iter = &(*iter)->next;
+        if (*iter == NULL)
         {
             ERRORLOG("Cannot find node in list to remove");
             return head;
         }
     }
 
-    if (iter == head)
-    {
-        return CleanLinkedListNode(iter);
-    }
-
-    prev->next = CleanLinkedListNode(iter);
+    *iter = CleanLinkedListNode(*iter);
 
     return head;
 }
