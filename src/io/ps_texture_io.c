@@ -37,22 +37,19 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
 
     int image_depth = bmih.biBitCount;
 
-    if (image_depth == 8)
-    {
-        tex->psm = GS_PSM_8;
-    }
-    else if (image_depth == 24)
-    {
-        tex->psm = GS_PSM_24;
-    }
-    else if (image_depth == 32)
-    {
-        tex->psm = GS_PSM_32;
-    }
-    else
-    {
-        ERRORLOG("unsupported bit depth %d", image_depth);
-        return;
+   switch (image_depth) {
+        case 8:
+            tex->psm = GS_PSM_8;
+            break;
+        case 24:
+            tex->psm = GS_PSM_24;
+            break;
+        case 32:
+            tex->psm = GS_PSM_32;
+            break;
+        default:
+            ERRORLOG("unsupported bit depth %d", image_depth);
+            return;
     }
 
     unsigned char temp = 0;
@@ -142,7 +139,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     }
 }
 
-void LoadPngRedux(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
+void LoadPng(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
 {
     u8 colormap[256*4];
     png_image image;
@@ -156,7 +153,9 @@ void LoadPngRedux(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
         return;
     }
 
-    tex->width = image.width, tex->height = image.height, imageSize = width*height;
+    tex->width = image.width;
+    tex->height = image.height;
+    int imageSize = PNG_IMAGE_SIZE(image);
 
     int clutStride = 4;
 
@@ -187,7 +186,7 @@ void LoadPngRedux(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
         ERRORLOG("Cannot load png image");
         free(tex->pixels);
         if (tex->clut_buffer)
-            free(tex->clutbuffer);
+            free(tex->clut_buffer);
         return;
     }
 
@@ -195,54 +194,19 @@ void LoadPngRedux(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
     {
         int j;
         u8 *copy = tex->clut_buffer;
-        for (int i = 0; i<image.colormap_entries*clutStride; i+=clutStride)
+        for (int i = 0, k = 0; i<image.colormap_entries*clutStride; k+=4, i+=clutStride)
         {
             for (j = 0; j<clutStride; j++)
             {
-                copy[i+j] = colormap[i+j];
+                copy[k+j] = colormap[i+j];
             }
 
             if (clutStride == 3)
             {
-                copy[i+3] = 0xFF;
+                copy[k+3] = 0xFF;
             }
         }
     }
-}
-
-void LoadPng(u8 *data, Texture *tex, u32 size)
-{
-    png_image image;
-    memset(&image, 0, sizeof(png_image));
-    image.version = PNG_IMAGE_VERSION;
-
-    if (!(png_image_begin_read_from_memory(&image, data, size)))
-    {
-        ERRORLOG("cannot decode png image!");
-        return;
-    }
-
-    tex->width = image.width;
-    tex->height = image.height;
-
-    tex->psm = GS_PSM_32;
-    image.format = PNG_FORMAT_RGBA;
-
-    tex->pixels = (unsigned char *)malloc(PNG_IMAGE_SIZE(image));
-
-    if (png_image_finish_read(&image, NULL, tex->pixels, 0, NULL) != 0)
-    {
-        return;
-    }
-
-    if (tex)
-    {
-        free(tex->pixels);
-        free(tex);
-        ERRORLOG("couldn't write png to memory.");
-    }
-
-    return;
 }
 
 void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen)
@@ -261,8 +225,7 @@ void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen)
     }
     else if (params->readType == READ_PNG)
     {
-        //LoadPng(buffer, tex, bufferLen);
-        LoadPngRedux(buffer, tex, bufferLen, params->useAlpha, params->alpha)
+        LoadPng(buffer, tex, bufferLen, params->useAlpha, params->alpha);
     }
 }
 
