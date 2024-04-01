@@ -39,7 +39,7 @@ typedef struct create_tex_params_t
 
 void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char alpha);
 
-void LoadPng(u8 *data, Texture *tex, u32 size);
+void LoadPng(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal);
 
 void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen);
 

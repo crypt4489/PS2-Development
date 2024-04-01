@@ -37,22 +37,19 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
 
     int image_depth = bmih.biBitCount;
 
-    if (image_depth == 8)
-    {
-        tex->psm = GS_PSM_8;
-    }
-    else if (image_depth == 24)
-    {
-        tex->psm = GS_PSM_24;
-    }
-    else if (image_depth == 32)
-    {
-        tex->psm = GS_PSM_32;
-    }
-    else
-    {
-        ERRORLOG("unsupported bit depth %d", image_depth);
-        return;
+   switch (image_depth) {
+        case 8:
+            tex->psm = GS_PSM_8;
+            break;
+        case 24:
+            tex->psm = GS_PSM_24;
+            break;
+        case 32:
+            tex->psm = GS_PSM_32;
+            break;
+        default:
+            ERRORLOG("unsupported bit depth %d", image_depth);
+            return;
     }
 
     unsigned char temp = 0;
@@ -142,46 +139,74 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     }
 }
 
-void LoadPngRedux(u8 *data, Texture *tex, u32 size)
+void LoadPng(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
 {
+    u8 colormap[256*4];
     png_image image;
     memset(&image, 0, sizeof(png_image));
     image.version = PNG_IMAGE_VERSION;
-}
-
-void LoadPng(u8 *data, Texture *tex, u32 size)
-{
-    png_image image;
-    memset(&image, 0, sizeof(png_image));
-    image.version = PNG_IMAGE_VERSION;
-
-    if (!(png_image_begin_read_from_memory(&image, data, size)))
+   
+    int ret = png_image_begin_read_from_memory(&image, data, size);
+    if (!ret)
     {
-        ERRORLOG("cannot decode png image!");
+        ERRORLOG("Error processing png!");
         return;
     }
 
     tex->width = image.width;
     tex->height = image.height;
+    int imageSize = PNG_IMAGE_SIZE(image);
 
-    tex->psm = GS_PSM_32;
-    image.format = PNG_FORMAT_RGBA;
+    int clutStride = 4;
 
-    tex->pixels = (unsigned char *)malloc(PNG_IMAGE_SIZE(image));
-
-    if (png_image_finish_read(&image, NULL, tex->pixels, 0, NULL) != 0)
+    switch(image.format&0x0F)
     {
+        case PNG_FORMAT_RGB:
+            tex->pixels = (u8*)malloc(imageSize*3);
+            tex->psm = GS_PSM_24;
+            break;
+        case PNG_FORMAT_RGBA:
+            tex->pixels = (u8*)malloc(imageSize*4);
+            tex->psm = GS_PSM_32;
+            break;
+        case PNG_FORMAT_RGB_COLORMAP:
+            clutStride = 3;
+        case PNG_FORMAT_RGBA_COLORMAP:
+            tex->pixels = (u8*)malloc(imageSize);
+            tex->clut_buffer = (u8*)malloc(256*4);
+            tex->psm = GS_PSM_8;
+            break;
+        default:
+            ERRORLOG("Unsupported bit depth and color format");
+            return;
+    }
+
+    if (!png_image_finish_read(&image, NULL, tex->pixels, 0, colormap))
+    {
+        ERRORLOG("Cannot load png image");
+        free(tex->pixels);
+        if (tex->clut_buffer)
+            free(tex->clut_buffer);
         return;
     }
 
-    if (tex)
+    if (tex->psm == GS_PSM_8)
     {
-        free(tex->pixels);
-        free(tex);
-        ERRORLOG("couldn't write png to memory.");
-    }
+        int j;
+        u8 *copy = tex->clut_buffer;
+        for (int i = 0, k = 0; i<image.colormap_entries*clutStride; k+=4, i+=clutStride)
+        {
+            for (j = 0; j<clutStride; j++)
+            {
+                copy[k+j] = colormap[i+j];
+            }
 
-    return;
+            if (clutStride == 3)
+            {
+                copy[k+3] = 0xFF;
+            }
+        }
+    }
 }
 
 void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen)
@@ -200,7 +225,7 @@ void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen)
     }
     else if (params->readType == READ_PNG)
     {
-        LoadPng(buffer, tex, bufferLen);
+        LoadPng(buffer, tex, bufferLen, params->useAlpha, params->alpha);
     }
 }
 
