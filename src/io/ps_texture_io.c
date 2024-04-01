@@ -142,11 +142,72 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     }
 }
 
-void LoadPngRedux(u8 *data, Texture *tex, u32 size)
+void LoadPngRedux(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
 {
+    u8 colormap[256*4];
     png_image image;
     memset(&image, 0, sizeof(png_image));
     image.version = PNG_IMAGE_VERSION;
+   
+    int ret = png_image_begin_read_from_memory(&image, data, size);
+    if (!ret)
+    {
+        ERRORLOG("Error processing png!");
+        return;
+    }
+
+    tex->width = image.width, tex->height = image.height, imageSize = width*height;
+
+    int clutStride = 4;
+
+    switch(image.format&0x0F)
+    {
+        case PNG_FORMAT_RGB:
+            tex->pixels = (u8*)malloc(imageSize*3);
+            tex->psm = GS_PSM_24;
+            break;
+        case PNG_FORMAT_RGBA:
+            tex->pixels = (u8*)malloc(imageSize*4);
+            tex->psm = GS_PSM_32;
+            break;
+        case PNG_FORMAT_RGB_COLORMAP:
+            clutStride = 3;
+        case PNG_FORMAT_RGBA_COLORMAP:
+            tex->pixels = (u8*)malloc(imageSize);
+            tex->clut_buffer = (u8*)malloc(256*4);
+            tex->psm = GS_PSM_8;
+            break;
+        default:
+            ERRORLOG("Unsupported bit depth and color format");
+            return;
+    }
+
+    if (!png_image_finish_read(&image, NULL, tex->pixels, 0, colormap))
+    {
+        ERRORLOG("Cannot load png image");
+        free(tex->pixels);
+        if (tex->clut_buffer)
+            free(tex->clutbuffer);
+        return;
+    }
+
+    if (tex->psm == GS_PSM_8)
+    {
+        int j;
+        u8 *copy = tex->clut_buffer;
+        for (int i = 0; i<image.colormap_entries*clutStride; i+=clutStride)
+        {
+            for (j = 0; j<clutStride; j++)
+            {
+                copy[i+j] = colormap[i+j];
+            }
+
+            if (clutStride == 3)
+            {
+                copy[i+3] = 0xFF;
+            }
+        }
+    }
 }
 
 void LoadPng(u8 *data, Texture *tex, u32 size)
@@ -200,7 +261,8 @@ void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen)
     }
     else if (params->readType == READ_PNG)
     {
-        LoadPng(buffer, tex, bufferLen);
+        //LoadPng(buffer, tex, bufferLen);
+        LoadPngRedux(buffer, tex, bufferLen, params->useAlpha, params->alpha)
     }
 }
 
