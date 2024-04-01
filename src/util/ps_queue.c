@@ -33,13 +33,12 @@ void* PopQueue(Queue *queue)
 {
     void *ret = NULL;
     if (queue->top == NULL)
-        return NULL;
+        return ret;
     if (queue->type == FIFO)
     {
         LinkedList *head = queue->top;
         ret = head->data;
         queue->top = RemoveNodeFromList(queue->top, head);
-        queue->count--;
     }
     else if (queue->type == LIFO)
     {
@@ -48,13 +47,14 @@ void* PopQueue(Queue *queue)
         LINKEDLIST_END(head, bottom);
         ret = bottom->data;
         queue->top = RemoveNodeFromList(queue->top, bottom);
-        queue->count--;
+       
     }
     else
     {
         ERRORLOG("invalid queue type");
+        return ret;
     }
-
+    queue->count--;
     return ret;
 }
 

@@ -829,9 +829,13 @@ int Render()
             //  LoadCube();
         }
 
+        float time1 = getTicks(g_Manager.timer);
+
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
         DrawWorld(world);
+
+       // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
 
         // DrawWorld(roomWorld);
 
@@ -849,7 +853,7 @@ int Render()
 
         EndRendering(cam);
 
-        EndFrame();
+        EndFrame(1);
 
         HandleASyncIO();
 

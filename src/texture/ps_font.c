@@ -74,6 +74,63 @@ unsigned char *RewriteAlphaTexBuffer(unsigned char *buffer, int dimX, int dimY)
     return buffer;
 }
 
+Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic, 
+                                 u8 *fontData, int read_type, 
+                                 u32 picSize, u32 dataSize)
+{
+    prim_t prim;
+    Color color;
+
+    Texture *myFontTex = NULL;
+    Font *font = (Font *)malloc(sizeof(Font));
+
+    prim.type = PRIM_TRIANGLE_STRIP;
+    prim.shading = PRIM_SHADE_GOURAUD;
+    prim.mapping = DRAW_ENABLE;
+    prim.fogging = DRAW_DISABLE;
+    prim.blending = DRAW_ENABLE;
+    prim.antialiasing = DRAW_DISABLE;
+    prim.mapping_type = PRIM_MAP_UV;
+    prim.colorfix = PRIM_UNFIXED;
+
+    color.r = 0xFF;
+    color.g = 0xFF;
+    color.b = 0xFF;
+    color.a = 0x80;
+    color.q = 1.0f;
+
+    font->color = color;
+    font->prim = prim;
+
+    myFontTex = AddAndCreateTextureFromBuffer(fontPic, picSize, 
+                                              fontName, read_type, 
+                                              1, 0x80, 
+                                              TEX_ADDRESS_CLAMP, 1);
+
+    if (myFontTex->psm == GS_PSM_8)
+    {
+        myFontTex->clut_buffer = RewriteAlphaClutBuffer(myFontTex->clut_buffer);
+    }
+    else if (myFontTex->psm == GS_PSM_32)
+    {
+        myFontTex->pixels = RewriteAlphaTexBuffer(myFontTex->pixels, myFontTex->width, myFontTex->height);
+    }
+
+    font->fontTex = myFontTex;
+    font->fontWidths = NULL;
+
+    CreateFontWidthsFromFile(font, NULL, fontData, dataSize);
+
+    CreateTexStructs(myFontTex, myFontTex->width, myFontTex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 1);
+
+    CreateClutStructs(myFontTex, 16, GS_PSM_32);
+
+    myFontTex->texbuf.address = g_Manager.textureInVram->texbuf.address;
+    myFontTex->clut.address = g_Manager.textureInVram->clut.address;
+
+    return font;
+}
+
 Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type)
 {
     prim_t prim;

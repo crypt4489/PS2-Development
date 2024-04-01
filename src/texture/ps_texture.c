@@ -197,6 +197,30 @@ void InitTextureResources(Texture *tex, u32 mode)
     }
 }
 
+Texture *AddAndCreateTextureFromBuffer(u8 *fileData, u32 size, 
+                                       const char *nameOfTex, u32 readType, 
+                                       u8 useAlpha, u8 alpha, 
+                                       u32 mode, u8 texFiltering)
+{
+
+    Texture *tex = (Texture*)malloc(sizeof(Texture));
+
+    CreateTextureParams params;
+
+    params.name = nameOfTex;
+    params.readType = readType;
+    params.alpha = alpha;
+    params.useAlpha = useAlpha;
+
+    CreateTextureFromFile(tex, &params, fileData, size);
+
+    InitTextureResources(tex, mode);
+
+    AddToManagerTexList(&g_Manager, tex);
+
+    return tex;
+}
+
 Texture *AddAndCreateTexture(const char *filePath, u32 readType, u8 useProgrammedAlpha, u8 alphaVal, u32 mode, u8 texFiltering)
 {
     char _file[MAX_FILE_NAME];

@@ -14,7 +14,7 @@ Texture *GetTexByName(TexManager *manager, const char *name);
 void ClearManagerStruct(GameManager *manager);
 void SwapManagerDMABuffers();
 void UpdateCurrentTexNameInGS(GameManager *manager, const char *name);
-void EndFrame();
+void EndFrame(u32 useVsync);
 void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize) ;
 
 inline void SetGlobalManagerCam(Camera *cam)

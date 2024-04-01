@@ -32,6 +32,10 @@ qword_t* CreateTexChain(qword_t *input, Texture *tex);
 qword_t *CreateTexChainWOTAGS(qword_t *input, Texture *tex);
 void UploadTextureViaManagerToVRAM(Texture *tex);
 void UploadTextureToVRAM(Texture *tex);
+Texture *AddAndCreateTextureFromBuffer(u8 *fileData, u32 size, 
+                                       const char *nameOfTex, u32 readType, 
+                                       u8 useAlpha, u8 alpha, 
+                                       u32 mode, u8 texFiltering);
 //void UploadTextureViaManagerToVRAM(Texture *tex);
 
 u32 GetTextureIDByName(const char *name, TexManager *TexManager);

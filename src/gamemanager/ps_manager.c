@@ -124,12 +124,12 @@ void SetupManagerTexture()
     g_Manager.textureInVram->clut.address = g_Manager.textureInVram->texbuf.address + graph_vram_size(256, 256, GS_PSM_8, GRAPH_ALIGN_BLOCK );
 }
 
-void EndFrame()
+void EndFrame(u32 useVsync)
 {
     static u32 frameCounter = 0;
     static u8 init = 0;
-
-    graph_wait_vsync();
+    if (useVsync)
+        graph_wait_vsync();
 
     if (g_Manager.enableDoubleBuffer != 0)
         SwapManagerDrawBuffers();

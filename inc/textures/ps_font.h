@@ -17,6 +17,9 @@ unsigned char * RewriteAlphaClutBuffer(unsigned char *buffer);
 void PrintText(Font *fontStruct, const char *text, int x, int y);
 
 Font *CreateFontStruct(const char* fontName, const char *fontData, int read_type);
+Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic, 
+                                 u8 *fontData, int read_type, 
+                                 u32 picSize, u32 dataSize);
 
 void CleanFontStruct(Font *font);
 
