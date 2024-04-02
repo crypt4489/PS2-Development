@@ -41,6 +41,9 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
         case 8:
             tex->psm = GS_PSM_8;
             break;
+        case 16:
+            tex->psm = GS_PSM_16;
+            break;
         case 24:
             tex->psm = GS_PSM_24;
             break;
@@ -99,7 +102,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
         image_size = bmfh.bfSize - bmfh.bfOffBits;
     }
 
-    tex->pixels = memalign(32, image_size); //(unsigned char *)malloc(sizeof(unsigned char) * image_size);
+    tex->pixels = memalign(32, image_size);
 
     unsigned int uLine;
     unsigned int bottomLine = tex->height - 1;
@@ -113,28 +116,52 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
 
     u8 *currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
 
-    for (i = 0; i <= bottomLine; i++)
+    if (image_depth != 16)
     {
 
-        memcpy(&(tex->pixels[offset]), currline, bytesPerRow);
-
-        --uLine;
-
-        currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
-
-        offset += bytesPerRow;
-    }
-
-    temp = 0;
-
-    if (image_depth == 24 || image_depth == 32)
-    {
-        int stride = (image_depth == 24) ? 3 : 4;
-        for (int j = 0; j < image_size; j += stride)
+        for (i = 0; i <= bottomLine; i++)
         {
-            temp = tex->pixels[j];
-            tex->pixels[j] = tex->pixels[j + 2];
-            tex->pixels[j + 2] = temp;
+
+            memcpy(&(tex->pixels[offset]), currline, bytesPerRow);
+
+            --uLine;
+
+            currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
+
+            offset += bytesPerRow;
+        }
+
+        temp = 0;
+
+        if (image_depth == 24 || image_depth == 32)
+        {
+            int stride = (image_depth == 24) ? 3 : 4;
+            for (int j = 0; j < image_size; j += stride)
+            {
+                temp = tex->pixels[j];
+                tex->pixels[j] = tex->pixels[j + 2];
+                tex->pixels[j + 2] = temp;
+            }
+        }
+    } else {
+    
+        for (i = 0; i <= bottomLine; i++)
+        {
+
+            u16 *pixels = (u16*)&tex->pixels[offset];
+
+            for (int j = 0; j<bytesPerRow; j+=2)
+            {
+                u16 *input = (u16*)&(currline[j]);
+                pixels[j] = (((*input & 0xF800)) | ((*input & 0x03E0) << 1) 
+                            |  ((*input & 0x001F) << 1) | ((useAlpha) ? 1 : 0)); 
+            }
+
+            --uLine;
+
+            currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
+
+            offset += bytesPerRow;
         }
     }
 }
