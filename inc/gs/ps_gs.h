@@ -26,7 +26,7 @@ void CopyVRAMToMemory(int address, int width, int height, int x, int y, int psm,
 
 void CreateClutBuf(clutbuffer_t *clut, int width, int psm);
 void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method);
-void CreateClutStructs(Texture *tex, int width, int psm);
+void CreateClutStructs(Texture *tex, int psm);
 void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter);
 void SetupRenderTarget(RenderTarget *target, int context, int wait);
 RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, int psm);

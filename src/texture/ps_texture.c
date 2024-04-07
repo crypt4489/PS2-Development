@@ -175,9 +175,9 @@ void InitTextureResources(Texture *tex, u32 mode)
 
         tex->type = PS_TEX_MEMORY;
 
-        if (tex->psm == GS_PSM_8)
+        if (tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4)
         {
-            CreateClutStructs(tex, 16, GS_PSM_32);
+            CreateClutStructs(tex, GS_PSM_32);
         }
 
         u32 components;
@@ -303,13 +303,14 @@ qword_t *CreateTexChain(qword_t *input, Texture *tex)
     qword_t *q = input;
     u32 sizeOfPipeline = 0;
 
-    if (tex->psm == GS_PSM_8)
+    if (tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4)
     {
         qword_t *dcode_tag_gif_clut = q;
 
         q++;
-
-        q = draw_texture_transfer(q, tex->clut_buffer, 16, 16, tex->clut.psm, tex->clut.address, 16);
+        int width = (tex-> psm  == GS_PSM_8) ? 16 : 8;
+        int height = (tex-> psm  == GS_PSM_8) ? 16 : 2;
+        q = draw_texture_transfer(q, tex->clut_buffer, width, height, tex->clut.psm, tex->clut.address, 16);
         q = draw_texture_flush(q);
 
         sizeOfPipeline = q - dcode_tag_gif_clut - 1;
@@ -336,7 +337,7 @@ static qword_t *CreateTexChainMipLevels(qword_t *input, Texture *tex, u32 texBuf
     qword_t *q = input;
     u32 sizeOfPipeline = 0;
 
-    if (tex->psm == GS_PSM_8)
+    if (tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4)
     {
         qword_t *dcode_tag_gif_clut = q;
 
@@ -368,9 +369,10 @@ qword_t *CreateTexChainWOTAGS(qword_t *input, Texture *tex)
 
     qword_t *q = input;
 
-    if (tex->psm == GS_PSM_8)
+    if (tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4)
     {
-
+        int width = (tex-> psm  == GS_PSM_8) ? 16 : 8;
+        int height = (tex-> psm  == GS_PSM_8) ? 16 : 2;
         q = draw_texture_transfer(q, tex->clut_buffer, 16, 16, tex->clut.psm, g_Manager.textureInVram->clut.address, 16);
         q = draw_texture_flush(q);
     }

@@ -115,7 +115,7 @@ void SetupManagerTexture()
 
     CreateTexStructs(g_Manager.textureInVram, g_Manager.textureInVram->width, g_Manager.textureInVram->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 0);
 
-    CreateClutBuf(&g_Manager.textureInVram->clut, 16, GS_PSM_32);
+    //CreateClutBuf(&g_Manager.textureInVram->clut, 16, GS_PSM_32);
 
     g_Manager.textureInVram->clut.start = 0;
     g_Manager.textureInVram->clut.load_method = CLUT_LOAD;

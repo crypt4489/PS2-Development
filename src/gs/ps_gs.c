@@ -266,7 +266,7 @@ void CopyVRAMToMemory(int address, int width, int height, int x, int y, int psm,
 	packet_free(packet);
 }
 
-void CreateClutStructs(Texture *tex, int width, int psm)
+void CreateClutStructs(Texture *tex, int psm)
 {
 	tex->clut.start = 0;
 	tex->clut.load_method = CLUT_LOAD;

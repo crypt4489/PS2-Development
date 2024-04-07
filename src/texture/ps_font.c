@@ -123,7 +123,7 @@ Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic,
 
     CreateTexStructs(myFontTex, myFontTex->width, myFontTex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 1);
 
-    CreateClutStructs(myFontTex, 16, GS_PSM_32);
+    CreateClutStructs(myFontTex, GS_PSM_32);
 
     myFontTex->texbuf.address = g_Manager.textureInVram->texbuf.address;
     myFontTex->clut.address = g_Manager.textureInVram->clut.address;
@@ -175,7 +175,7 @@ Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type
 
     CreateTexStructs(myFontTex, myFontTex->width, myFontTex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 1);
 
-    CreateClutStructs(myFontTex, 16, GS_PSM_32);
+    CreateClutStructs(myFontTex, GS_PSM_32);
 
     myFontTex->texbuf.address = g_Manager.textureInVram->texbuf.address;
     myFontTex->clut.address = g_Manager.textureInVram->clut.address;

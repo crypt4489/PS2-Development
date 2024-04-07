@@ -104,7 +104,7 @@ const char *face4Name = "FACE4.PNG";
 const char *face5Name = "FACE5.PNG";
 const char *face6Name = "FACE6.PNG";
 const char *glossName = "SPHERE.PNG";
-const char *worldName = "WORLD.PNG";
+const char *worldName = "WORLD.BMP";
 const char *wallName = "WALL.PNG";
 const char *alphaMap = "ALPHA_MAP.PNG";
 const char *digitZero = "DIGIT.PNG";
@@ -833,7 +833,9 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
-        DrawWorld(world);
+
+        DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
+       //DrawWorld(world);
 
        // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
 
@@ -945,7 +947,7 @@ static void LoadInTextures()
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
-    Texture *tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
+    Texture *tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
 
     SetFilters(tex, PS_FILTER_BILINEAR);
 }

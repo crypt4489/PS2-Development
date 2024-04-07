@@ -1,4 +1,5 @@
 # Ignore
 test.elf
+*.a
 # Except this file
 !.gitignore
