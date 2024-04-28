@@ -117,6 +117,7 @@ GameObject *sphere = NULL;
 GameObject *room = NULL;
 GameObject *multiSphere = NULL;
 GameObject *box = NULL;
+GameObject *bodyCollision = NULL;
 
 static float lodGrid[4] = {150.0f, 125.0f, 75.0f, 50.0f};
 
@@ -639,6 +640,70 @@ static void SetupTessObject()
     AddObjectToRenderWorld(world, lod_wall);
 }
 
+static void SetupAABBBox()
+{
+     Color color;
+
+    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
+
+    box = InitializeGameObject();
+    ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
+    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+
+    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
+
+    CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+
+    VECTOR pos = {50.0f, 0.0f, 0.0f, 1.0f};
+
+    VECTOR scales = {.5f, .5f, .5f, 1.0f};
+
+    SetupLTM(pos, up, right, forward,
+             scales,
+             1.0f, box->ltm);
+
+    
+    box->update_object = NULL;
+
+    InitOBB(box, BBO_FIT);
+
+    CreateGraphicsPipeline(box, "Clipper");
+
+    AddObjectToRenderWorld(world, box);
+}
+
+static void SetupOBBBody()
+{
+      Color color;
+
+    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
+
+    bodyCollision = InitializeGameObject();
+    ReadModelFile("MODELS\\BODY.BIN", &bodyCollision->vertexBuffer);
+    SetupGameObjectPrimRegs(bodyCollision, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+
+    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
+
+    CreateMaterial(&bodyCollision->vertexBuffer, 0, bodyCollision->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+
+    VECTOR pos = {-50.0f, 100.0f, 0.0f, 1.0f};
+
+    VECTOR scales = {10.0f, 10.0f, 10.0f, 1.0f};
+
+    SetupLTM(pos, up, right, forward,
+             scales,
+             1.0f, bodyCollision->ltm);
+
+    
+    bodyCollision->update_object = NULL;
+
+    InitOBB(bodyCollision, BBO_FIXED);
+
+    CreateGraphicsPipeline(bodyCollision, "Clipper");
+
+    AddObjectToRenderWorld(world, bodyCollision);
+}
+
 static void SetupGameObjects()
 {
 
@@ -646,6 +711,8 @@ static void SetupGameObjects()
 
     SetupGrid();
     SetupBody();
+    SetupAABBBox();
+    SetupOBBBody();
 
     // SetupMultiSphere();
     //  SetupShadowViewer();
@@ -834,8 +901,8 @@ int Render()
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
 
-        DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
-       //DrawWorld(world);
+        //DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
+       DrawWorld(world);
 
        // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
 
@@ -998,7 +1065,7 @@ int main(int argc, char **argv)
 
     audsrv_adpcm_t sample;
 
-    VagFile *vag = LoadVagFile("SOUNDS\\COME.VAG");
+    VagFile *vag = LoadVagFile("SOUNDS\\HOW.VAG");
 
     SifInitRpc(0);
     int ret;

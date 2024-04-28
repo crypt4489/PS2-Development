@@ -9,14 +9,18 @@
 
 u64 getTimeMs(TimerStruct *ts)
 {
+    DisableIntc(9);
     u64 time = (*R_EE_T0_COUNT + (ts->ctr << 16));
+    EnableIntc(9);
     return ((u64)(time * .001736)) + 1;
 }
 
 
 float getTicks(TimerStruct *ts)
 {
+    DisableIntc(9);
     float ticks = (*R_EE_T0_COUNT + (ts->ctr << 16)) * .001736;
+    EnableIntc(9);
     return ticks;
 }
 

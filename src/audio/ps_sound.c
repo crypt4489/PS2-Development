@@ -346,7 +346,7 @@ VagFile *LoadVagFile(const char *name)
 
 void CreateVagSamplesBuffer(VagFile *vagFile, u8 *buffer)
 {
-	u32 pitch = (vagFile->header.sampleRate * 4096) / 48000;
+	u32 pitch = (vagFile->header.sampleRate * 4096) * vagFile->header.channels / 48000;
 
 	vagFile->samples[4] = 0x00;
 	vagFile->samples[5] = 0x00;

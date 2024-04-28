@@ -316,9 +316,7 @@ void SetupRenderTarget(RenderTarget *target, int context, int wait)
 	hHeight = target->render->height / 2.0;
 	hWidth = target->render->width / 2.0;
 
-	while (PollVU1DoneProcessing(&g_Manager) < 0)
-	{
-	}
+	while (PollVU1DoneProcessing(&g_Manager) < 0);
 
 	InitDrawingEnvironment(target->render, target->z, hHeight, hWidth, context, wait);
 }

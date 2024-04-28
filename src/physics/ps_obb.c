@@ -17,6 +17,9 @@
 
 extern volatile u32 *vu1_data_address;
 
+#define NOCOLLISION 1
+#define COLLISION 0
+
 void DestroyOBB(ObjectBounds *bound)
 {
     if (bound)
@@ -152,29 +155,44 @@ int AABBCollision(VECTOR top1, VECTOR bottom1, VECTOR top2, VECTOR bottom2)
 {
     if ((top1[0] > bottom2[0]) && (bottom1[0] < top2[0]) && (top1[1] > bottom2[1]) && (bottom1[1] < top2[1]) && (top1[2] > bottom2[2]) && (bottom1[2] < top2[2]))
     {
-        return 1;
+        return NOCOLLISION;
     }
-    return 0;
+    return COLLISION;
+}
+
+int SphereCollision(BoundingSphere *s1, BoundingSphere *s2)
+{
+    VECTOR traj;
+    VectorSubtractXYZ(s1->center, s2->center, traj);
+    float radiisum = s1->radius + s2->radius;
+    if (DotProduct(traj, traj) <= (radiisum * radiisum)) return COLLISION;
+    return NOCOLLISION;
 }
 
 void FindCenterOfOBB(void *collisionData, int type, VECTOR center)
 {
-    if (type == BBO_FIT || type == BBO_FIXED)
+    
+    switch(type)
     {
-        BoundingBox *box = (BoundingBox *)collisionData;
-        VectorSubtractXYZ(box->top, box->bottom, center);
-        ScaleVectorXYZ(center, center, 0.5f);
-    }
-    else if (type == BBO_SPHERE)
-    {
-        BoundingSphere *sphere = (BoundingSphere *)collisionData;
-        VectorCopy(center, sphere->center);
+        case BBO_FIT:
+        case BBO_FIXED:
+            BoundingBox *box = (BoundingBox *)collisionData;
+            VectorSubtractXYZ(box->top, box->bottom, center);
+            ScaleVectorXYZ(center, center, 0.5f);
+            break;
+        case BBO_SPHERE:
+            BoundingSphere *sphere = (BoundingSphere *)collisionData;
+            VectorCopy(center, sphere->center);
+            break;
+        default:
+            ERRORLOG("Invalid OOB type %d", type);
+            break;
     }
 }
 
 int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
 {
-    int ret = 0;
+    int ret = 0, firstcondition = 0;
     va_list vectorArgs;
     va_start(vectorArgs, obj2);
     ObjectBounds *obb1 = obj1->obb;
@@ -256,6 +274,36 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         FindCenterAndHalfOBB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, right, up, forward, *obj2Right, *obj2Up, *obj2Forward);
+    } 
+    else if (obb1->type == BBO_SPHERE && obb2->type == BBO_SPHERE)
+    {
+        ret = SphereCollision((BoundingSphere *)obb1->obb, (BoundingSphere *)obb2->obb);
+    }
+    else if ((firstcondition = (obb1->type == BBO_FIT && obb2->type == BBO_SPHERE)) || (obb1->type == BBO_SPHERE  && obb2->type == BBO_FIT))
+    {
+        VECTOR aabbCenter, aabbHalf, traj;
+        BoundingBox *box;
+        BoundingSphere *sphere;
+        if (firstcondition)
+        {
+            box = (BoundingBox*)obb1->obb;
+            sphere = (BoundingSphere*)obb2->obb;
+        }
+        else 
+        {
+            box = (BoundingBox*)obb2->obb;
+            sphere = (BoundingSphere*)obb1->obb;
+        }
+
+        FindCenterAndHalfAABB(box, aabbCenter, aabbHalf);
+        VectorSubtractXYZ(aabbCenter, sphere->center, traj);
+        float d = DotProduct(traj, traj);
+        float x1 = sphere->radius;
+        float y1 = x1 + aabbHalf[1];
+        float z1 = x1 + aabbHalf[2];
+        x1 = x1 + aabbHalf[0];
+        if (d <= (x1 * x1) || d <= (y1 * y1) || d <= (z1 * z1)) ret = COLLISION;
+        ret = NOCOLLISION;
     }
 
     va_end(vectorArgs);
@@ -405,7 +453,7 @@ void FindOBBMaxAndMinVerticesVU0(GameObject *obj)
         : "r"(bounds->top), "r"(bounds->bottom), "r"(world)
         : "memory");
 
-    while (vertexCount > 0)
+    while (vertexCount-- > 0)
     {
         asm __volatile__(
             "lqc2 $vf3, 0x00(%0)\n"
@@ -418,7 +466,7 @@ void FindOBBMaxAndMinVerticesVU0(GameObject *obj)
             :
             : "r"(verts[offset++])
             : "memory");
-        vertexCount--;
+        ;
     }
     asm __volatile__(
         "sqc2 $vf1, 0x00(%0) \n"

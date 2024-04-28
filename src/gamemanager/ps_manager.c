@@ -175,7 +175,10 @@ Texture *GetTexByName(TexManager *manager, const char *name)
 
 int PollVU1DoneProcessing(GameManager *manager)
 {
-    if (!(manager->vu1DoneProcessing))
+    DisableIntc(5);
+    int cached = manager->vu1DoneProcessing;
+    EnableIntc(5);
+    if (!(cached))
     {
         return -1;
     }
