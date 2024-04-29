@@ -207,15 +207,15 @@ typedef struct
 
 enum ObjectBoundingTypes
 {
-    BBO_FIT = 0,
-    BBO_FIXED = 1,
+    BBO_FIT = 0, //aabb in world space
+    BBO_FIXED = 1, //rotated aabb in world space
     BBO_SPHERE = 2
 };
 
 typedef struct
 {
     u32 type;
-    void *obb;
+    void *vbo;
 } ObjectBounds;
 
 typedef struct
@@ -459,7 +459,7 @@ typedef struct camera_t
     Frustum *frus;
     MATRIX view;
     MATRIX proj;
-    ObjectBounds *obb;
+    ObjectBounds *vboContainer;
     MATRIX ltm;
 } Camera;
 
@@ -564,7 +564,7 @@ struct gameobject_t
     MeshBuffers vertexBuffer;
     void (*update_object)(struct gameobject_t *);
     void *objData;
-    ObjectBounds *obb;
+    ObjectBounds *vboContainer;
     VU1Pipeline *pipelines;
     VU1Pipeline *activePipeline;
     ObjectRenderState renderState;

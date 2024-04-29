@@ -1,8 +1,9 @@
-#include "physics/ps_obb.h"
+#include "physics/ps_vbo.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "system/ps_vumanager.h"
 #include "system/ps_vif.h"
@@ -20,36 +21,35 @@ extern volatile u32 *vu1_data_address;
 #define NOCOLLISION 1
 #define COLLISION 0
 
-void DestroyOBB(ObjectBounds *bound)
+void DestroyVBO(ObjectBounds *bound)
 {
     if (bound)
     {
-        if (bound->obb)
-            free(bound->obb);
+        if (bound->vbo)
+            free(bound->vbo);
         free(bound);
     }
 }
 
-void InitOBB(GameObject *obj, int type)
+void InitVBO(GameObject *obj, int type)
 {
-    float xMin, yMin, zMin, xMax, yMax, zMax;
 
-    VECTOR v, top, bot;
+    obj->vboContainer = (ObjectBounds *)malloc(sizeof(ObjectBounds));
 
-    MATRIX world;
-
-    obj->obb = (ObjectBounds *)malloc(sizeof(ObjectBounds));
+    obj->vboContainer->type = type;
 
     if (type == BBO_FIT || type == BBO_FIXED)
     {
-        obj->obb->obb = (void *)malloc(sizeof(BoundingBox));
+        obj->vboContainer->vbo = (void *)malloc(sizeof(BoundingBox));
+        FindAABBMaxAndMinVerticesVU0(obj);
     }
     else if (type == BBO_SPHERE)
     {
-        obj->obb->obb = (void *)malloc(sizeof(BoundingSphere));
+        obj->vboContainer->vbo = (void *)malloc(sizeof(BoundingSphere));
     }
 
-    CreateWorldMatrixLTM(obj->ltm, world);
+
+    /*CreateWorldMatrixLTM(obj->ltm, world);
 
     int vertCount = obj->vertexBuffer.meshData[MESHVERTICES]->vertexCount;
 
@@ -66,11 +66,11 @@ void InitOBB(GameObject *obj, int type)
     yMin = yMax = v[1];
     zMin = zMax = v[2];
     ptr++;
-
+    
     for (int i = 1; i < vertCount; i++)
     {
-
         VectorCopy(v, *ptr);
+    
 
         if (type == BBO_FIT)
         {
@@ -97,18 +97,12 @@ void InitOBB(GameObject *obj, int type)
     bot[1] = yMin;
     bot[2] = zMin;
     bot[3] = 1.0f;
-
-    obj->obb->type = type;
-    if (type == BBO_FIT || type == BBO_FIXED)
+    */
+    
+    
+    if (type == BBO_SPHERE)
     {
-        BoundingBox *box = (BoundingBox *)obj->obb->obb;
-
-        VectorCopy(box->top, top);
-        VectorCopy(box->bottom, bot);
-    }
-    else if (type == BBO_SPHERE)
-    {
-        BoundingSphere *sphere = (BoundingSphere *)obj->obb->obb;
+        /*BoundingSphere *sphere = (BoundingSphere *)obj->vboContainer->vbo;
         VECTOR add;
         VectorSubtractXYZ(top, bot, add);
         ScaleVectorXYZ(sphere->center, add, 0.5f);
@@ -117,16 +111,16 @@ void InitOBB(GameObject *obj, int type)
         mag += (top[2] - sphere->center[2]) * (top[2] - sphere->center[2]);
         sphere->radius = Sqrt(mag);
         DEBUGLOG("SPHERE RADIUS AND CENTER %f", sphere->radius);
-        DumpVector(sphere->center);
+        DumpVector(sphere->center); */
     }
 }
 
-void ReadOBBFromVU1(GameObject *obj)
+void ReadVBOFromVU1(GameObject *obj)
 {
     u32 *ptr = vu1_data_address + (14 * 4);
     Bin2Float val;
 
-    BoundingBox *box = (BoundingBox *)obj->obb->obb;
+    BoundingBox *box = (BoundingBox *)obj->vboContainer->vbo;
 
     val.int_x = *ptr;
     box->bottom[0] = val.float_x;
@@ -169,7 +163,7 @@ int SphereCollision(BoundingSphere *s1, BoundingSphere *s2)
     return NOCOLLISION;
 }
 
-void FindCenterOfOBB(void *collisionData, int type, VECTOR center)
+void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
 {
     
     switch(type)
@@ -195,12 +189,12 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
     int ret = 0, firstcondition = 0;
     va_list vectorArgs;
     va_start(vectorArgs, obj2);
-    ObjectBounds *obb1 = obj1->obb;
-    ObjectBounds *obb2 = obj2->obb;
+    ObjectBounds *obb1 = obj1->vboContainer;
+    ObjectBounds *obb2 = obj2->vboContainer;
     if (obb1->type == BBO_FIT && obb2->type == BBO_FIT)
     {
-        BoundingBox *box1 = (BoundingBox *)obb1->obb;
-        BoundingBox *box2 = (BoundingBox *)obb2->obb;
+        BoundingBox *box1 = (BoundingBox *)obb1->vbo;
+        BoundingBox *box2 = (BoundingBox *)obb2->vbo;
         VECTOR top1, bottom1, move;
         VectorCopy(move, va_arg(vectorArgs, float *));
         ScaleVectorXYZ(move, move, 0.25f);
@@ -211,8 +205,8 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
     }
     else if (obb1->type == BBO_FIXED && obb2->type == BBO_FIT)
     {
-        BoundingBox *box1 = (BoundingBox *)obb1->obb;
-        BoundingBox *box2 = (BoundingBox *)obb2->obb;
+        BoundingBox *box1 = (BoundingBox *)obb1->vbo;
+        BoundingBox *box2 = (BoundingBox *)obb2->vbo;
         VECTOR newAxisX, newAxisY, newAxisZ, pos, outCenter1, outHalf1, outCenter2, outHalf2, boxVector, obj1Scales;
 
         GetScaleVectorLTM(obj1->ltm, obj1Scales);
@@ -222,15 +216,15 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         VectorCopy(newAxisY, va_arg(vectorArgs, float *));
         VectorCopy(newAxisZ, va_arg(vectorArgs, float *));
 
-        FindCenterAndHalfOBB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
+        FindCenterAndHalfRotatedAABB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
         FindCenterAndHalfAABB(box2, outCenter2, outHalf2);
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, newAxisX, newAxisY, newAxisZ, right, up, forward);
     }
     else if (obb1->type == BBO_FIXED && obb2->type == BBO_FIXED)
     {
-        BoundingBox *box1 = (BoundingBox *)obb1->obb;
-        BoundingBox *box2 = (BoundingBox *)obb2->obb;
+        BoundingBox *box1 = (BoundingBox *)obb1->vbo;
+        BoundingBox *box2 = (BoundingBox *)obb2->vbo;
         VECTOR newAxisX, newAxisY, newAxisZ, pos, outCenter1, outHalf1, outCenter2, outHalf2, boxVector, obj1Scales, obj2Scales;
         VECTOR *obj2Pos, *obj2Up, *obj2Forward, *obj2Right;
 
@@ -247,15 +241,15 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         VectorCopy(newAxisY, va_arg(vectorArgs, float *));
         VectorCopy(newAxisZ, va_arg(vectorArgs, float *));
 
-        FindCenterAndHalfOBB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
-        FindCenterAndHalfOBB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
+        FindCenterAndHalfRotatedAABB(box1, pos, obj1Scales, newAxisX, newAxisY, newAxisZ, outCenter1, outHalf1);
+        FindCenterAndHalfRotatedAABB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, newAxisX, newAxisY, newAxisZ, *obj2Right, *obj2Up, *obj2Forward);
     }
     else if (obb1->type == BBO_FIT && obb2->type == BBO_FIXED)
     {
-        BoundingBox *box1 = (BoundingBox *)obb1->obb;
-        BoundingBox *box2 = (BoundingBox *)obb2->obb;
+        BoundingBox *box1 = (BoundingBox *)obb1->vbo;
+        BoundingBox *box2 = (BoundingBox *)obb2->vbo;
         VECTOR top1, bottom1, move;
         VECTOR outCenter1, outHalf1, outCenter2, outHalf2, boxVector, obj2Scales;
         VECTOR *obj2Pos, *obj2Up, *obj2Forward, *obj2Right;
@@ -271,13 +265,13 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         VectorAddXYZ(box1->top, move, top1);
         VectorAddXYZ(box1->bottom, move, bottom1);
         FindCenterAndHalfAABB(box1, outCenter1, outHalf1);
-        FindCenterAndHalfOBB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
+        FindCenterAndHalfRotatedAABB(box2, *obj2Pos, obj2Scales, *obj2Right, *obj2Up, *obj2Forward, outCenter2, outHalf2);
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, right, up, forward, *obj2Right, *obj2Up, *obj2Forward);
     } 
     else if (obb1->type == BBO_SPHERE && obb2->type == BBO_SPHERE)
     {
-        ret = SphereCollision((BoundingSphere *)obb1->obb, (BoundingSphere *)obb2->obb);
+        ret = SphereCollision((BoundingSphere *)obb1->vbo, (BoundingSphere *)obb2->vbo);
     }
     else if ((firstcondition = (obb1->type == BBO_FIT && obb2->type == BBO_SPHERE)) || (obb1->type == BBO_SPHERE  && obb2->type == BBO_FIT))
     {
@@ -286,13 +280,13 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         BoundingSphere *sphere;
         if (firstcondition)
         {
-            box = (BoundingBox*)obb1->obb;
-            sphere = (BoundingSphere*)obb2->obb;
+            box = (BoundingBox*)obb1->vbo;
+            sphere = (BoundingSphere*)obb2->vbo;
         }
         else 
         {
-            box = (BoundingBox*)obb2->obb;
-            sphere = (BoundingSphere*)obb1->obb;
+            box = (BoundingBox*)obb2->vbo;
+            sphere = (BoundingSphere*)obb1->vbo;
         }
 
         FindCenterAndHalfAABB(box, aabbCenter, aabbHalf);
@@ -389,7 +383,7 @@ int CheckSeparatingPlane(VECTOR pos, VECTOR plane, VECTOR half1, VECTOR half2, V
     return ret;
 }
 
-void FindCenterAndHalfOBB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAxis, VECTOR yAxis, VECTOR zAxis, VECTOR outCenter, VECTOR outHalf)
+void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAxis, VECTOR yAxis, VECTOR zAxis, VECTOR outCenter, VECTOR outHalf)
 {
     VECTOR center, worldTop, worldBottom;
     MATRIX world;
@@ -426,9 +420,9 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
     VectorCopy(outCenter, center);
 }
 
-void FindOBBMaxAndMinVerticesVU0(GameObject *obj)
+void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
 {
-    if (obj->obb->type != BBO_FIT)
+    if (!(obj->vboContainer->type == BBO_FIT || obj->vboContainer->type == BBO_FIXED))
     {
         ERRORLOG("Use Max and Min update for non-OBB bounding box");
         return;
@@ -438,36 +432,58 @@ void FindOBBMaxAndMinVerticesVU0(GameObject *obj)
     MATRIX world;
 
     CreateWorldMatrixLTM(obj->ltm, world);
-    BoundingBox *bounds = (BoundingBox *)obj->obb->obb;
+    BoundingBox *bounds = (BoundingBox *)obj->vboContainer->vbo;
+
+    bounds->top[0] = bounds->top[1] = bounds->top[3] = FLT_MIN;
+    bounds->bottom[0] = bounds->bottom[1] = bounds->bottom[3] = FLT_MAX; 
 
     u32 offset = 0;
 
     asm __volatile__(
         "lqc2 $vf1, 0x00(%0)\n"
         "lqc2 $vf2, 0x00(%1)\n"
-        "lqc2 $vf4, 0x00(%2)\n"
-        "lqc2 $vf5, 0x10(%2)\n"
-        "lqc2 $vf6, 0x20(%2)\n"
-        "lqc2 $vf7, 0x30(%2)\n"
         :
-        : "r"(bounds->top), "r"(bounds->bottom), "r"(world)
+        : "r"(bounds->top), "r"(bounds->bottom)
         : "memory");
 
-    while (vertexCount-- > 0)
+    if (obj->vboContainer->type == BBO_FIT)
     {
         asm __volatile__(
-            "lqc2 $vf3, 0x00(%0)\n"
-            "vmulax.xyzw $ACC, $vf4, $vf3\n"
-            "vmadday.xyzw $ACC, $vf5, $vf3\n"
-            "vmaddaz.xyzw $ACC, $vf6, $vf3\n"
-            "vmaddw.xyzw $vf3, $vf7, $vf3\n"
-            "vmax.xyz $vf1, $vf1, $vf3\n"
-            "vmini.xyz $vf2, $vf2, $vf3\n"
+            "lqc2 $vf4, 0x00(%0)\n"
+            "lqc2 $vf5, 0x10(%0)\n"
+            "lqc2 $vf6, 0x20(%0)\n"
+            "lqc2 $vf7, 0x30(%0)\n"
             :
-            : "r"(verts[offset++])
+            : "r"(world)
             : "memory");
-        ;
+
+        while (vertexCount-- > 0)
+        {
+            asm __volatile__(
+                "lqc2 $vf3, 0x00(%0)\n"
+                "vmulax.xyzw $ACC, $vf4, $vf3\n"
+                "vmadday.xyzw $ACC, $vf5, $vf3\n"
+                "vmaddaz.xyzw $ACC, $vf6, $vf3\n"
+                "vmaddw.xyzw $vf3, $vf7, $vf3\n"
+                "vmax.xyz $vf1, $vf1, $vf3\n"
+                "vmini.xyz $vf2, $vf2, $vf3\n"
+                :
+                : "r"(verts[offset++])
+                : "memory");
+        }
+    } else {
+        while (vertexCount-- > 0)
+        {
+            asm __volatile__(
+                "lqc2 $vf3, 0x00(%0)\n"
+                "vmax.xyz $vf1, $vf1, $vf3\n"
+                "vmini.xyz $vf2, $vf2, $vf3\n"
+                :
+                : "r"(verts[offset++])
+                : "memory");
+        }
     }
+
     asm __volatile__(
         "sqc2 $vf1, 0x00(%0) \n"
         "sqc2 $vf2, 0x00(%1) \n"

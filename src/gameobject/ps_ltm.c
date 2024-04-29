@@ -8,6 +8,22 @@ void SetLastAndDirtyLTM(MATRIX m, float w)
     SetLastLTM(m, w);
 }
 
+void CreateTransScaleMatrixLTM(MATRIX ltm, MATRIX m)
+{
+    MATRIX work;
+    MatrixIdentity(work);
+    work[0] = ltm[3];
+    work[5] = ltm[7];
+    work[10] = ltm[11];
+
+    work[12] = ltm[12];
+    work[13] = ltm[13];
+    work[14] = ltm[14];
+    work[15] = GetLastLTM(ltm);
+
+    MatrixCopy(m, work);
+}
+
 void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m)
 {
     MATRIX work;

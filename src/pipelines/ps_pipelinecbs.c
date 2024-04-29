@@ -13,7 +13,7 @@
 #include "gamemanager/ps_manager.h"
 #include "pipelines/ps_vu1pipeline.h"
 #include "world/ps_lights.h"
-#include "physics/ps_obb.h"
+#include "physics/ps_vbo.h"
 #include "gs/ps_gs.h"
 #include "math/ps_fast_maths.h"
 #include "animation/ps_morphtarget.h"

@@ -23,7 +23,7 @@ void UpdateViewMatrix();
 
 void UpdateCameraMatrix(Camera *cam);
 
-void InitCameraObb(Camera *cam, float x, float y, float z, u32 type);
+void InitCameraVBOContainer(Camera *cam, float x, float y, float z, u32 type);
 
 void CreateCameraWorldMatrix(Camera *cam, MATRIX output);
 

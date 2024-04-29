@@ -9,7 +9,7 @@
 #include "dma/ps_dma.h"
 #include "system/ps_vumanager.h"
 #include "gamemanager/ps_manager.h"
-#include "physics/ps_obb.h"
+#include "physics/ps_vbo.h"
 #include "gs/ps_gs.h"
 #include "system/ps_vif.h"
 #include "pipelines/ps_vu1pipeline.h"
@@ -85,9 +85,9 @@ void CleanGameObject(GameObject *obj)
       DeletePipeline(freepipe);
     }
 
-    if (obj->obb != NULL)
+    if (obj->vboContainer != NULL)
     {
-      DestroyOBB(obj->obb);
+      DestroyVBO(obj->vboContainer);
     }
 
     if (obj->vertexBuffer.indices != NULL)
@@ -159,7 +159,7 @@ GameObject *InitializeGameObject()
   go->vertexBuffer.matCount = 0;
   go->vertexBuffer.materials = NULL;
   go->vertexBuffer.meshAnimationData = NULL;
-  go->obb = NULL;
+  go->vboContainer = NULL;
   go->interpolator = NULL;
   go->objAnimator = NULL;
   return go;

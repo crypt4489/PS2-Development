@@ -28,7 +28,7 @@
 #include "camera/ps_camera.h"
 #include "io/ps_file_io.h"
 #include "gameobject/ps_gameobject.h"
-#include "physics/ps_obb.h"
+#include "physics/ps_vbo.h"
 #include "physics/ps_movement.h"
 #include "world/ps_lights.h"
 #include "world/ps_renderworld.h"
@@ -234,7 +234,7 @@ static void SetupWorldObjects()
 
     cam = InitCamera(640, 480, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
 
-    InitCameraObb(cam, 10.0f, 10.0f, 10.0f, BBO_FIT);
+    InitCameraVBOContainer(cam, 10.0f, 10.0f, 10.0f, BBO_FIT);
 
     CameraLookAt(cam, camera_position, at, up);
 
@@ -383,7 +383,7 @@ static void SetupBody()
 
     body->update_object = NULL;
 
-    InitOBB(body, BBO_FIXED);
+    InitVBO(body, BBO_FIXED);
 
     // CreateSphereTarget();
 
@@ -412,7 +412,7 @@ static void SetupMultiSphere()
     multiSphere = InitializeGameObject();
     float time1 = getTicks(g_Manager.timer);
     ReadModelFile("MODELS\\TORUS1.BIN", &multiSphere->vertexBuffer);
-    DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
+    DEBUGLOG("TIME ON CPU FOR VBO %f", getTicks(g_Manager.timer) - time1);
     // envmap
     SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
 
@@ -430,8 +430,8 @@ static void SetupMultiSphere()
 
     CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
     // float time1 = getTicks(g_Manager.timer);
-    InitOBB(multiSphere, BBO_FIT);
-    // DEBUGLOG("TIME ON CPU FOR OBB %f", getTicks(g_Manager.timer) - time1);
+    InitVBO(multiSphere, BBO_FIT);
+    // DEBUGLOG("TIME ON CPU FOR VBO %f", getTicks(g_Manager.timer) - time1);
     multiSphere->update_object = RotateSphere;
 
     MatrixIdentity(lightTransform);
@@ -471,7 +471,7 @@ static void SetupRoom()
 
     room->update_object = NULL;
 
-    InitOBB(room, BBO_FIT);
+    InitVBO(room, BBO_FIT);
 
     CreateGraphicsPipeline(room, GEN_PIPELINE_NAME);
 
@@ -648,7 +648,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
@@ -656,7 +656,7 @@ static void SetupAABBBox()
 
     VECTOR pos = {50.0f, 0.0f, 0.0f, 1.0f};
 
-    VECTOR scales = {.5f, .5f, .5f, 1.0f};
+    VECTOR scales = {1.f, 1.f, 1.f, 1.0f};
 
     SetupLTM(pos, up, right, forward,
              scales,
@@ -665,7 +665,7 @@ static void SetupAABBBox()
     
     box->update_object = NULL;
 
-    InitOBB(box, BBO_FIT);
+    InitVBO(box, BBO_FIT);
 
     CreateGraphicsPipeline(box, "Clipper");
 
@@ -697,7 +697,7 @@ static void SetupOBBBody()
     
     bodyCollision->update_object = NULL;
 
-    InitOBB(bodyCollision, BBO_FIXED);
+    InitVBO(bodyCollision, BBO_FIXED);
 
     CreateGraphicsPipeline(bodyCollision, "Clipper");
 
@@ -709,9 +709,9 @@ static void SetupGameObjects()
 
     // InitSkybox();
 
-    SetupGrid();
-    SetupBody();
-    SetupAABBBox();
+   //SetupGrid();
+   // SetupBody();
+   // SetupAABBBox();
     SetupOBBBody();
 
     // SetupMultiSphere();
@@ -816,7 +816,7 @@ static void RenderShadowScene()
 static void FinishCube(void *object)
 {
     GameObject *temp = box;
-    InitOBB(temp, BBO_FIT);
+    InitVBO(temp, BBO_FIT);
 
     u32 id = GetTextureIDByName("WATER", g_Manager.texManager);
 

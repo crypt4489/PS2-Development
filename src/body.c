@@ -2,7 +2,7 @@
 
 #include "physics/ps_movement.h"
 #include "gamemanager/ps_manager.h"
-#include "physics/ps_obb.h"
+#include "physics/ps_vbo.h"
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
 
@@ -20,7 +20,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
     switch (type)
     {
     case 1:
-        if (obj->obb->type == BBO_FIT)
+        if (obj->vboContainer->type == BBO_FIT)
         {
             ScaleVectorXYZ(tempDir, *forward, -1.0f);
             collision_check = CheckCollision(obj, check, tempDir);
@@ -30,7 +30,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
                 ret |= 1;
             }
         }
-        else if (obj->obb->type == BBO_FIXED)
+        else if (obj->vboContainer->type == BBO_FIXED)
         {
             StrafeLTMMove(obj->ltm, -0.5f, newPos);
             collision_check = CheckCollision(obj, check, newPos, *right, *up, *forward);
@@ -43,7 +43,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
 
         break;
     case 2:
-        if (obj->obb->type == BBO_FIT)
+        if (obj->vboContainer->type == BBO_FIT)
         {
             collision_check = CheckCollision(obj, check, *right);
             if (!(collision_check))
@@ -52,7 +52,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
                 ret |= 1;
             }
         }
-        else if (obj->obb->type == BBO_FIXED)
+        else if (obj->vboContainer->type == BBO_FIXED)
         {
             StrafeLTMMove(obj->ltm, +0.5f, newPos);
             collision_check = CheckCollision(obj, check, newPos, *right, *up, *forward);
@@ -74,7 +74,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
         ret |= 2;
         break;
     case 5:
-        if (obj->obb->type == BBO_FIT)
+        if (obj->vboContainer->type == BBO_FIT)
         {
             ScaleVectorXYZ(tempDir, *forward, -1.0f);
             collision_check = CheckCollision(obj, check, tempDir);
@@ -84,7 +84,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
                 ret |= 1;
             }
         }
-        else if (obj->obb->type == BBO_FIXED)
+        else if (obj->vboContainer->type == BBO_FIXED)
         {
             WalkLTMMove(obj->ltm, -0.5f, newPos);
             collision_check = CheckCollision(obj, check, newPos, *right, *up, *forward);
@@ -96,7 +96,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
         }
         break;
     case 6:
-        if (obj->obb->type == BBO_FIT)
+        if (obj->vboContainer->type == BBO_FIT)
         {
             collision_check = CheckCollision(obj, check, *forward);
             if (!(collision_check))
@@ -105,7 +105,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
                 ret |= 1;
             }
         }
-        else if (obj->obb->type == BBO_FIXED)
+        else if (obj->vboContainer->type == BBO_FIXED)
         {
             WalkLTMMove(obj->ltm, +0.5f, newPos);
             collision_check = CheckCollision(obj, check, newPos, *right, *up, *forward);

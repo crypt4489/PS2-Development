@@ -718,7 +718,7 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 vertSize, u
         u32 index = indices[i];
 
         u32 indexInBuffer = index * divisor;
-        u8 mask = index & 0x07;
+        u8 mask =  1 << (index & 0x07);
         u8 present = (binaryBuffer[indexInBuffer] & mask);
         if (present)
         {
@@ -807,7 +807,7 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
         // DEBUGLOG("%d", indicesSize);
         // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
         input_int = (u32 *)iter;
-        u32 verticesSize =*input_int;
+        u32 verticesSize = *input_int;
         iter += 4;
         // DEBUGLOG("%d", verticesSize);
 

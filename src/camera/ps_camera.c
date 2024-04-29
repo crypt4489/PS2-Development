@@ -29,7 +29,7 @@ Camera *EndRendering(Camera *cam)
     return cam;
 }
 
-void InitCameraObb(Camera *cam, float x, float y, float z, u32 type)
+void InitCameraVBOContainer(Camera *cam, float x, float y, float z, u32 type)
 {
     VECTOR top, bot;
     top[0] = x;
@@ -42,16 +42,16 @@ void InitCameraObb(Camera *cam, float x, float y, float z, u32 type)
     bot[2] = -z;
     bot[3] = 1.0f;
 
-    cam->obb = (ObjectBounds *)malloc(sizeof(ObjectBounds));
+    cam->vboContainer = (ObjectBounds *)malloc(sizeof(ObjectBounds));
 
-    cam->obb->type = type;
+    cam->vboContainer->type = type;
 
     if (type == BBO_FIT || type == BBO_FIXED)
     {
         BoundingBox *box = (BoundingBox *)malloc(sizeof(BoundingBox));
         VectorCopy(box->top, top);
         VectorCopy(box->bottom, bot);
-        cam->obb->obb = (void *)box;
+        cam->vboContainer->vbo = (void *)box;
     }
     else if (type == BBO_SPHERE)
     {
@@ -83,9 +83,9 @@ void CleanCameraObject(Camera *cam)
 {
     if (cam)
     {
-        if (cam->obb)
+        if (cam->vboContainer)
         {
-            free(cam->obb);
+            free(cam->vboContainer);
         }
 
         if (cam->frus)
@@ -170,7 +170,7 @@ void CreateCameraWorldMatrix(Camera *cam, MATRIX output)
 
     MatrixCopy(output, temp_out);
 }
-
+#define WIDTHEPSILON 0.275
 void CreateCameraFrustum(Camera *cam)
 {
     Frustum *frus = (Frustum *)malloc(sizeof(Frustum));
@@ -184,7 +184,7 @@ void CreateCameraFrustum(Camera *cam)
 
     float nw;
 
-    nw = cam->aspect * cam->near;
+    nw = (cam->aspect * cam->near) - WIDTHEPSILON;
 
     frus->nwidth = nw;
     frus->nheight = nh;
@@ -314,7 +314,7 @@ Camera *InitCamera(int width, int height, float near, float far, float aspect, f
     return cam;
 }
 
-void FindPosAndNegVertexOBB(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal, VECTOR pVertex, VECTOR nVertex)
+void FindPosAndNegVertexvbo(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal, VECTOR pVertex, VECTOR nVertex)
 {
     VectorCopy(nVertex, topExtent);
     VectorCopy(pVertex, bottomExtent);
@@ -346,29 +346,29 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
     int ret = 1;
 
-    CreateWorldMatrixLTM(obj->ltm, worldMatrix);
+    
 
-    if (obj->obb->type == BBO_FIXED || obj->obb->type == BBO_FIT)
+    if (obj->vboContainer->type == BBO_FIXED || obj->vboContainer->type == BBO_FIT)
     {
-        BoundingBox *box = (BoundingBox *)obj->obb->obb;
+        BoundingBox *box = (BoundingBox *)obj->vboContainer->vbo;
 
         VECTOR maxExtent, minExtent, topExtWorld, botExtWorld;
 
-        if (obj->obb->type == BBO_FIXED)
+        if (obj->vboContainer->type == BBO_FIXED)
         {
+            CreateWorldMatrixLTM(obj->ltm, worldMatrix);
             MatrixVectorMultiply(topExtWorld, worldMatrix, box->top);
             MatrixVectorMultiply(botExtWorld, worldMatrix, box->bottom);
 
-            CreateVector(Min(topExtWorld[0], botExtWorld[0]), Min(topExtWorld[1], botExtWorld[1]), Min(topExtWorld[2], botExtWorld[2]), 0.0f, minExtent);
-            CreateVector(Max(topExtWorld[0], botExtWorld[0]), Max(topExtWorld[1], botExtWorld[1]), Max(topExtWorld[2], botExtWorld[2]), 0.0f, maxExtent);
         }
-        else if (obj->obb->type == BBO_FIT)
+        else if (obj->vboContainer->type == BBO_FIT)
         {
-
-            CreateVector(Min(box->top[0], box->bottom[0]), Min(box->top[1], box->bottom[1]), Min(box->top[2], box->bottom[2]), 0.0f, minExtent);
-            CreateVector(Max(box->top[0], box->bottom[0]), Max(box->top[1], box->bottom[1]), Max(box->top[2], box->bottom[2]), 0.0f, maxExtent);
+           VectorCopy(topExtWorld, box->top);
+           VectorCopy(botExtWorld, box->bottom);
         }
 
+        CreateVector(Min(topExtWorld[0], botExtWorld[0]), Min(topExtWorld[1], botExtWorld[1]), Min(topExtWorld[2], botExtWorld[2]), 0.0f, minExtent);
+        CreateVector(Max(topExtWorld[0], botExtWorld[0]), Max(topExtWorld[1], botExtWorld[1]), Max(topExtWorld[2], botExtWorld[2]), 0.0f, maxExtent);
 
         CreateCameraWorldMatrix(cam, camMatrix);
         // DumpCameraFrustum(cam);
@@ -384,11 +384,10 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
             ComputePlane(tempPoint, tempNormal, tempPlane);
 
             // DumpVector(tempPlane);
-            FindPosAndNegVertexOBB(maxExtent, minExtent, tempNormal, pVert, nVert);
+            FindPosAndNegVertexvbo(maxExtent, minExtent, tempNormal, pVert, nVert);
 
             if (DistanceFromPlane(tempPlane, pVert) < 0)
             {
-                //DEBUGLOG("%d", i);
                 return 0;
             }
 
@@ -398,7 +397,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
             }
         }
     }
-    else if (obj->obb->type == BBO_SPHERE)
+    else if (obj->vboContainer->type == BBO_SPHERE)
     {
 
     }

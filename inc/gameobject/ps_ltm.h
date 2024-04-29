@@ -79,6 +79,8 @@ inline void GetScaleVectorLTM(MATRIX ltm, VECTOR out)
     out[3] = 1.0f;
 };
 
+void CreateTransScaleMatrixLTM(MATRIX ltm, MATRIX m);
+
 void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m);
 
 inline void SetRotationVectorsLTM(MATRIX ltm, VECTOR up, VECTOR right, VECTOR forward)
