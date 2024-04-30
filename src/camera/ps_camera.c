@@ -46,14 +46,14 @@ void InitCameraVBOContainer(Camera *cam, float x, float y, float z, u32 type)
 
     cam->vboContainer->type = type;
 
-    if (type == BBO_FIT || type == BBO_FIXED)
+    if (type == VBO_FIT || type == VBO_FIXED)
     {
         BoundingBox *box = (BoundingBox *)malloc(sizeof(BoundingBox));
         VectorCopy(box->top, top);
         VectorCopy(box->bottom, bot);
         cam->vboContainer->vbo = (void *)box;
     }
-    else if (type == BBO_SPHERE)
+    else if (type == VBO_SPHERE)
     {
     }
 }
@@ -348,20 +348,20 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
     
 
-    if (obj->vboContainer->type == BBO_FIXED || obj->vboContainer->type == BBO_FIT)
+    if (obj->vboContainer->type == VBO_FIXED || obj->vboContainer->type == VBO_FIT)
     {
         BoundingBox *box = (BoundingBox *)obj->vboContainer->vbo;
 
         VECTOR maxExtent, minExtent, topExtWorld, botExtWorld;
 
-        if (obj->vboContainer->type == BBO_FIXED)
+        if (obj->vboContainer->type == VBO_FIXED)
         {
             CreateWorldMatrixLTM(obj->ltm, worldMatrix);
             MatrixVectorMultiply(topExtWorld, worldMatrix, box->top);
             MatrixVectorMultiply(botExtWorld, worldMatrix, box->bottom);
 
         }
-        else if (obj->vboContainer->type == BBO_FIT)
+        else if (obj->vboContainer->type == VBO_FIT)
         {
            VectorCopy(topExtWorld, box->top);
            VectorCopy(botExtWorld, box->bottom);
@@ -397,7 +397,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
             }
         }
     }
-    else if (obj->vboContainer->type == BBO_SPHERE)
+    else if (obj->vboContainer->type == VBO_SPHERE)
     {
 
     }

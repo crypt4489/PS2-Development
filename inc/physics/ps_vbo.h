@@ -23,4 +23,8 @@ int PerformSAT(VECTOR pos, VECTOR half1, VECTOR half2, VECTOR xAxis1, VECTOR yAx
 
 void FindAABBMaxAndMinVerticesVU0(GameObject *obj);
 
+void ComputeBoundingSphere(GameObject *obj);
+
+void ComputeBoundingSphereIterative(GameObject *obj);
+
 #endif

@@ -38,12 +38,12 @@ void InitVBO(GameObject *obj, int type)
 
     obj->vboContainer->type = type;
 
-    if (type == BBO_FIT || type == BBO_FIXED)
+    if (type == VBO_FIT || type == VBO_FIXED)
     {
         obj->vboContainer->vbo = (void *)malloc(sizeof(BoundingBox));
         FindAABBMaxAndMinVerticesVU0(obj);
     }
-    else if (type == BBO_SPHERE)
+    else if (type == VBO_SPHERE)
     {
         obj->vboContainer->vbo = (void *)malloc(sizeof(BoundingSphere));
     }
@@ -57,7 +57,7 @@ void InitVBO(GameObject *obj, int type)
 
     VectorCopy(v, *ptr);
 
-    if (type == BBO_FIT)
+    if (type == VBO_FIT)
     {
         MatrixVectorMultiply(v, world, v);
     }
@@ -72,7 +72,7 @@ void InitVBO(GameObject *obj, int type)
         VectorCopy(v, *ptr);
     
 
-        if (type == BBO_FIT)
+        if (type == VBO_FIT)
         {
             MatrixVectorMultiply(v, world, v);
         }
@@ -100,7 +100,7 @@ void InitVBO(GameObject *obj, int type)
     */
     
     
-    if (type == BBO_SPHERE)
+    if (type == VBO_SPHERE)
     {
         /*BoundingSphere *sphere = (BoundingSphere *)obj->vboContainer->vbo;
         VECTOR add;
@@ -168,13 +168,13 @@ void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
     
     switch(type)
     {
-        case BBO_FIT:
-        case BBO_FIXED:
+        case VBO_FIT:
+        case VBO_FIXED:
             BoundingBox *box = (BoundingBox *)collisionData;
             VectorSubtractXYZ(box->top, box->bottom, center);
             ScaleVectorXYZ(center, center, 0.5f);
             break;
-        case BBO_SPHERE:
+        case VBO_SPHERE:
             BoundingSphere *sphere = (BoundingSphere *)collisionData;
             VectorCopy(center, sphere->center);
             break;
@@ -191,7 +191,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
     va_start(vectorArgs, obj2);
     ObjectBounds *obb1 = obj1->vboContainer;
     ObjectBounds *obb2 = obj2->vboContainer;
-    if (obb1->type == BBO_FIT && obb2->type == BBO_FIT)
+    if (obb1->type == VBO_FIT && obb2->type == VBO_FIT)
     {
         BoundingBox *box1 = (BoundingBox *)obb1->vbo;
         BoundingBox *box2 = (BoundingBox *)obb2->vbo;
@@ -203,7 +203,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
 
         ret = AABBCollision(top1, bottom1, box2->top, box2->bottom);
     }
-    else if (obb1->type == BBO_FIXED && obb2->type == BBO_FIT)
+    else if (obb1->type == VBO_FIXED && obb2->type == VBO_FIT)
     {
         BoundingBox *box1 = (BoundingBox *)obb1->vbo;
         BoundingBox *box2 = (BoundingBox *)obb2->vbo;
@@ -221,7 +221,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, newAxisX, newAxisY, newAxisZ, right, up, forward);
     }
-    else if (obb1->type == BBO_FIXED && obb2->type == BBO_FIXED)
+    else if (obb1->type == VBO_FIXED && obb2->type == VBO_FIXED)
     {
         BoundingBox *box1 = (BoundingBox *)obb1->vbo;
         BoundingBox *box2 = (BoundingBox *)obb2->vbo;
@@ -246,7 +246,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, newAxisX, newAxisY, newAxisZ, *obj2Right, *obj2Up, *obj2Forward);
     }
-    else if (obb1->type == BBO_FIT && obb2->type == BBO_FIXED)
+    else if (obb1->type == VBO_FIT && obb2->type == VBO_FIXED)
     {
         BoundingBox *box1 = (BoundingBox *)obb1->vbo;
         BoundingBox *box2 = (BoundingBox *)obb2->vbo;
@@ -261,7 +261,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         GetScaleVectorLTM(obj2->ltm, obj2Scales);
 
         VectorCopy(move, va_arg(vectorArgs, float *));
-        ScaleVectorXYZ(move, move, 1.5f);
+       // ScaleVectorXYZ(move, move, 1.5f);
         VectorAddXYZ(box1->top, move, top1);
         VectorAddXYZ(box1->bottom, move, bottom1);
         FindCenterAndHalfAABB(box1, outCenter1, outHalf1);
@@ -269,11 +269,11 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         VectorSubtractXYZ(outCenter1, outCenter2, boxVector);
         ret = PerformSAT(boxVector, outHalf1, outHalf2, right, up, forward, *obj2Right, *obj2Up, *obj2Forward);
     } 
-    else if (obb1->type == BBO_SPHERE && obb2->type == BBO_SPHERE)
+    else if (obb1->type == VBO_SPHERE && obb2->type == VBO_SPHERE)
     {
         ret = SphereCollision((BoundingSphere *)obb1->vbo, (BoundingSphere *)obb2->vbo);
     }
-    else if ((firstcondition = (obb1->type == BBO_FIT && obb2->type == BBO_SPHERE)) || (obb1->type == BBO_SPHERE  && obb2->type == BBO_FIT))
+    else if ((firstcondition = (obb1->type == VBO_FIT && obb2->type == VBO_SPHERE)) || (obb1->type == VBO_SPHERE  && obb2->type == VBO_FIT))
     {
         VECTOR aabbCenter, aabbHalf, traj;
         BoundingBox *box;
@@ -422,7 +422,7 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
 
 void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
 {
-    if (!(obj->vboContainer->type == BBO_FIT || obj->vboContainer->type == BBO_FIXED))
+    if (!(obj->vboContainer->type == VBO_FIT || obj->vboContainer->type == VBO_FIXED))
     {
         ERRORLOG("Use Max and Min update for non-OBB bounding box");
         return;
@@ -446,7 +446,7 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
         : "r"(bounds->top), "r"(bounds->bottom)
         : "memory");
 
-    if (obj->vboContainer->type == BBO_FIT)
+    if (obj->vboContainer->type == VBO_FIT)
     {
         asm __volatile__(
             "lqc2 $vf4, 0x00(%0)\n"
@@ -490,4 +490,119 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
         :
         : "r"(bounds->top), "r"(bounds->bottom)
         : "memory");
+}
+
+static void MostSeparatedPointsOnAABB(int *min, int *max, VECTOR *verts, u32 vertCount);
+static void ExpandSphere(VECTOR center, float *radius, VECTOR *verts, u32 vertCount, int randomize);
+
+void ComputeBoundingSphereIterative(GameObject *obj)
+{
+#define ITERATIONS 8
+    srand(getTimeMs(g_Manager.timer));
+    ComputeBoundingSphere(obj);
+    BoundingSphere *mainSphere = (BoundingSphere*)obj->vboContainer->vbo;
+    BoundingSphere checkSphere = *mainSphere;
+    VECTOR *verts = obj->vertexBuffer.meshData[MESHVERTICES]->vertices;
+    u32 vertexCount = obj->vertexBuffer.meshData[MESHVERTICES]->vertexCount;
+    for (int i = 0; i<ITERATIONS; i++)
+    {
+        checkSphere.radius = checkSphere.radius * 0.95f;
+        ExpandSphere(checkSphere.center, &checkSphere.radius, verts, vertexCount, 1);
+        if (checkSphere.radius < mainSphere->radius)
+        {
+            *mainSphere = checkSphere;
+        }
+
+    }
+}
+
+void ComputeBoundingSphere(GameObject *obj)
+{
+    VECTOR *verts = obj->vertexBuffer.meshData[MESHVERTICES]->vertices;
+    u32 vertexCount = obj->vertexBuffer.meshData[MESHVERTICES]->vertexCount;
+    BoundingSphere *sphere = (BoundingSphere*)obj->vboContainer->vbo;
+    int min, max;
+    MostSeparatedPointsOnAABB(&min, &max, verts, vertexCount);
+
+    VECTOR temp;
+    VectorAddXYZ(verts[min], verts[max], temp);
+    ScaleVectorXYZ(sphere->center, temp, 0.5f);
+    VectorSubtractXYZ(verts[max], sphere->center, temp);
+    sphere->radius = Sqrt(DotProduct(temp, temp));
+    ExpandSphere(sphere->center, &sphere->radius, verts, vertexCount, 0);
+}
+
+static void ExpandSphere(VECTOR center, float *radius, VECTOR *verts, u32 vertCount, int randomize)
+{
+    VECTOR d;
+    float temp = *radius * *radius;
+    for (int i = 0; i<vertCount; i++)
+    {
+        int j = i;
+        if (randomize)
+        {
+            int size = vertCount - (i+1);
+            j = (rand() % size) + (i+1); 
+        }
+        VectorSubtractXYZ(verts[j], center, d);
+        float dist2 = DotProduct(d, d);
+        if (dist2 < temp)
+        {
+            dist2 = Sqrt(dist2);
+            temp = (*radius + dist2) * 0.5f;
+            float k = (temp - *radius) / dist2;
+            *radius = temp;
+            temp *= temp;
+            ScaleVectorXYZ(d, d, k);
+            VectorAddXYZ(center, d, center);
+        }
+    }
+}
+
+static void MostSeparatedPointsOnAABB(int *min, int *max, VECTOR *verts, u32 vertCount)
+{
+    int mxX = 0, mnX = 0, mxY = 0, mnY = 0, mxZ = 0, mnZ = 0;
+    for (int i = 1; i < vertCount; i++)
+    {
+        // Check for minimum and maximum in X dimension
+        if (verts[mnX][0] > verts[i][0])
+            mnX = i;
+        if (verts[mxX][0] < verts[i][0])
+            mxX = i;
+
+        // Check for minimum and maximum in Y dimension
+        if (verts[mnY][1] > verts[i][1])
+            mnY = i;
+        if (verts[mxY][1] < verts[i][1])
+            mxY = i;
+
+        // Check for minimum and maximum in Z dimension
+        if (verts[mnZ][2] > verts[i][2])
+            mnZ = i;
+        if (verts[mxZ][2] < verts[i][2])
+            mxZ = i;
+    }
+
+    VECTOR xSub, ySub, zSub;
+    VectorSubtractXYZ(verts[mxX], verts[mnX], xSub);
+    VectorSubtractXYZ(verts[mxY], verts[mnY], ySub);
+    VectorSubtractXYZ(verts[mxZ], verts[mnZ], zSub);
+
+    float distXs = DotProduct(xSub, xSub);
+    float distYs = DotProduct(ySub, ySub);
+    float distZs = DotProduct(zSub, zSub);
+
+    *min = mnX;
+    *max = mxX;
+    if (distYs > distXs && distYs > distZs)
+    {
+        *max = mxY;
+        *min = mnY;
+    }
+
+    if (distZs > distXs && distZs > distYs)
+    {
+        *max = mxZ;
+        *min = mnZ;
+    }
 }

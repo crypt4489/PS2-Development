@@ -234,7 +234,7 @@ static void SetupWorldObjects()
 
     cam = InitCamera(640, 480, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
 
-    InitCameraVBOContainer(cam, 10.0f, 10.0f, 10.0f, BBO_FIT);
+    InitCameraVBOContainer(cam, 10.0f, 10.0f, 10.0f, VBO_FIT);
 
     CameraLookAt(cam, camera_position, at, up);
 
@@ -350,7 +350,7 @@ static void SetupGrid()
     PitchLTM(grid->ltm, -45.0f);
     grid->update_object = NULL;
 
-    // InitOBB(grid, BBO_FIXED);
+    // InitOBB(grid, VBO_FIXED);
 
     CreateGraphicsPipeline(grid, "Clipper");
 
@@ -383,7 +383,7 @@ static void SetupBody()
 
     body->update_object = NULL;
 
-    InitVBO(body, BBO_FIXED);
+    InitVBO(body, VBO_FIXED);
 
     // CreateSphereTarget();
 
@@ -430,7 +430,7 @@ static void SetupMultiSphere()
 
     CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
     // float time1 = getTicks(g_Manager.timer);
-    InitVBO(multiSphere, BBO_FIT);
+    InitVBO(multiSphere, VBO_FIT);
     // DEBUGLOG("TIME ON CPU FOR VBO %f", getTicks(g_Manager.timer) - time1);
     multiSphere->update_object = RotateSphere;
 
@@ -471,7 +471,7 @@ static void SetupRoom()
 
     room->update_object = NULL;
 
-    InitVBO(room, BBO_FIT);
+    InitVBO(room, VBO_FIT);
 
     CreateGraphicsPipeline(room, GEN_PIPELINE_NAME);
 
@@ -665,7 +665,7 @@ static void SetupAABBBox()
     
     box->update_object = NULL;
 
-    InitVBO(box, BBO_FIT);
+    InitVBO(box, VBO_FIT);
 
     CreateGraphicsPipeline(box, "Clipper");
 
@@ -697,7 +697,7 @@ static void SetupOBBBody()
     
     bodyCollision->update_object = NULL;
 
-    InitVBO(bodyCollision, BBO_FIXED);
+    InitVBO(bodyCollision, VBO_FIXED);
 
     CreateGraphicsPipeline(bodyCollision, "Clipper");
 
@@ -816,7 +816,7 @@ static void RenderShadowScene()
 static void FinishCube(void *object)
 {
     GameObject *temp = box;
-    InitVBO(temp, BBO_FIT);
+    InitVBO(temp, VBO_FIT);
 
     u32 id = GetTextureIDByName("WATER", g_Manager.texManager);
 

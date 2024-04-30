@@ -207,9 +207,10 @@ typedef struct
 
 enum ObjectBoundingTypes
 {
-    BBO_FIT = 0, //aabb in world space
-    BBO_FIXED = 1, //rotated aabb in world space
-    BBO_SPHERE = 2
+    VBO_FIT = 0, //aabb in world space
+    VBO_FIXED = 1, //rotated aabb in world space
+    VBO_SPHERE = 2,
+    VBO_OBB = 3
 };
 
 typedef struct
@@ -229,6 +230,13 @@ typedef struct
     VECTOR center;
     float radius;
 } BoundingSphere;
+
+typedef struct
+{
+    VECTOR center;
+    VECTOR axes[3];
+    VECTOR halfwidths;
+} BoundingOrientBox;
 
 struct morph_target_handle_t;
 typedef struct morph_target_handle_t MorphTargetBuffer;
