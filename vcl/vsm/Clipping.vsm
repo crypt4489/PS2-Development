@@ -595,7 +595,7 @@ next_verts:
          addz.x        VF01,VF01,VF02z                              NOP                                                      ;	STALL_LATENCY ?3
          NOP                                                        mr32.w        VF06,VF01                                  ;	STALL_LATENCY ?3
          NOP                                                        b             vertexLoop                          
-         NOP                                                        sq            VF06,1(VI00)                               ;	STALL_LATENCY ?2
+         NOP                                                        NOP                             ;	STALL_LATENCY ?2
 right_plane:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [right_plane]
          NOP                                                        iaddiu        VI07,VI00,0x00000003                

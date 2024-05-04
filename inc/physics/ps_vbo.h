@@ -27,4 +27,8 @@ void ComputeBoundingSphere(GameObject *obj);
 
 void ComputeBoundingSphereIterative(GameObject *obj);
 
+float SqrDistFromAABB(VECTOR p, BoundingBox *box);
+
+void ClosestPointToAABB(VECTOR p, BoundingBox *box, VECTOR out);
+
 #endif

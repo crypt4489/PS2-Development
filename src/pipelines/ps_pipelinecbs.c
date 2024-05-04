@@ -337,6 +337,7 @@ void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t
 
   MatrixMultiply(screen, screen, cam->view);
   MatrixMultiply(screen, screen, cam->proj);
+
   memcpy(pipeline_temp, screen, 4 * sizeof(qword_t));
 
   camProps[0] = cam->near;

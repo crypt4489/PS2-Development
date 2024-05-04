@@ -628,8 +628,6 @@ do_plane_check:
         move.xyz plane, planeNormal
         mr32.w plane, dot
 
-        sq    plane, 1(vi00)
-
         iaddi planes, planes, -1
         iadd    vertexCounter, iBase, clippedVertices
         iadd clippedVertices, vi00, vi00

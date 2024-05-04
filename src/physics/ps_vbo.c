@@ -387,13 +387,7 @@ void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VE
 {
     VECTOR center, worldTop, worldBottom;
     MATRIX world;
-    // MATRIX rot, trans, tempGlobal;
-    /* MatrixIdentity(rot);
-     MatrixIdentity(tempGlobal);
-     MatrixIdentity(trans);
-     CreateRotationAndCopyMatFromObjAxes(rot, yAxis, zAxis, xAxis);
-     CreateTranslationMatrix(pos, trans);
-     CreateWorldMatrix(tempGlobal, scale, rot, trans); */
+
     CreateWorldMatrixFromVectors(pos, yAxis, zAxis, xAxis, scale, world);
     MatrixVectorMultiply(worldTop, world, box->top);
     MatrixVectorMultiply(worldBottom, world, box->bottom);
@@ -490,6 +484,53 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
         :
         : "r"(bounds->top), "r"(bounds->bottom)
         : "memory");
+}
+
+void ClosestPointToAABB(VECTOR p, BoundingBox *box, VECTOR out)
+{
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%3)\n"
+        "lqc2 $vf2, 0x00(%0)\n"
+        "lqc2 $vf3, 0x00(%1)\n"
+        "vmax.xyz $vf1, $vf1, $vf3\n"
+        "vmini.xyz $vf1, $vf2, $vf1\n"
+        "sqc2 $vf1, 0x00(%2)\n"
+        :
+        : "r"(box->top), "r"(box->bottom), "r"(out), "r"(p)
+        : "memory");
+}
+
+float SqrDistFromAABB(VECTOR p, BoundingBox *box)
+{
+    float sqDist = 0.0f;
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%3)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "lqc2 $vf3, 0x00(%2)\n"
+        "vmini.xyz $vf7, $vf1, $vf3\n"
+        "vmax.xyz $vf6, $vf2, $vf1\n"
+        "vsub.xyz $vf4, $vf3, $vf7\n"
+        "vsub.xyz $vf5, $vf6, $vf2\n"
+        "vmul.xyz $vf4, $vf4, $vf4\n"
+        "vmul.xyz $vf5, $vf5, $vf5\n"
+        "vaddy.x $vf5x, $vf5x, $vf5y\n"
+        "vaddz.x $vf5x, $vf5x, $vf5z\n"
+        "vaddy.x $vf4x, $vf4x, $vf4y\n"
+        "vaddz.x $vf4x, $vf4x, $vf4z\n"
+        "vadd.x $vf5, $vf4, $vf5\n"
+        "qmfc2 %0, $vf5"
+        : "=r"(sqDist)
+        : "r"(box->top), "r"(box->bottom), "r"(p)
+        : "memory");
+    return sqDist;
+}
+
+void ClosestPointToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfWidths, VECTOR q)
+{
+    VECTOR d;
+    VectorSubtractXYZ(p, center, d);
+    VectorCopy(q, center);
+    float dist;
 }
 
 static void MostSeparatedPointsOnAABB(int *min, int *max, VECTOR *verts, u32 vertCount);

@@ -330,8 +330,8 @@ static void SetupGrid()
 
     int dw, dl;
     float w, h;
-    dw = 10;
-    dl = 10;
+    dw = 100;
+    dl = 100;
     w = 100;
     h = 100;
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
@@ -347,7 +347,7 @@ static void SetupGrid()
              scales,
              1.0f, grid->ltm);
 
-    PitchLTM(grid->ltm, -45.0f);
+   // PitchLTM(grid->ltm, -45.0f);
     grid->update_object = NULL;
 
     // InitOBB(grid, VBO_FIXED);
@@ -371,7 +371,7 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.BIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0));
+    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 1, 0));
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -648,13 +648,13 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 
     u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
     CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
-    VECTOR pos = {50.0f, 0.0f, 0.0f, 1.0f};
+    VECTOR pos = {0.0f, 0.0f, 0.0f, 1.0f};
 
     VECTOR scales = {1.f, 1.f, 1.f, 1.0f};
 
@@ -665,7 +665,7 @@ static void SetupAABBBox()
     
     box->update_object = NULL;
 
-    InitVBO(box, VBO_FIT);
+    //InitVBO(box, VBO_FIT);
 
     CreateGraphicsPipeline(box, "Clipper");
 
@@ -699,6 +699,22 @@ static void SetupOBBBody()
 
     InitVBO(bodyCollision, VBO_FIXED);
 
+    
+/*
+    VECTOR tempDir;
+    VECTOR *pos1 = GetPositionVectorLTM(bodyCollision->ltm);
+    VECTOR *right1 = GetRightVectorLTM(bodyCollision->ltm);
+    VECTOR *up1 = GetUpVectorLTM(bodyCollision->ltm);
+    VECTOR *forward1 = GetForwardVectorLTM(bodyCollision->ltm);
+
+    StrafeLTMMove(bodyCollision->ltm, -0.5f, tempDir);
+    
+    float time1 = getTicks(g_Manager.timer);
+
+    CheckCollision(bodyCollision, box, tempDir, *right1, *up1, *forward1);
+
+    DEBUGLOG("time to calculate vbo %f", getTicks(g_Manager.timer)-time1);
+*/
     CreateGraphicsPipeline(bodyCollision, "Clipper");
 
     AddObjectToRenderWorld(world, bodyCollision);
@@ -709,10 +725,10 @@ static void SetupGameObjects()
 
     // InitSkybox();
 
-   //SetupGrid();
-   // SetupBody();
-   // SetupAABBBox();
-    SetupOBBBody();
+  // SetupGrid();
+    //SetupBody();
+    SetupAABBBox();
+    //SetupOBBBody();
 
     // SetupMultiSphere();
     //  SetupShadowViewer();
@@ -903,6 +919,8 @@ int Render()
 
         //DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
        DrawWorld(world);
+
+
 
        // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
 
