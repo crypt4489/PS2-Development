@@ -330,8 +330,8 @@ static void SetupGrid()
 
     int dw, dl;
     float w, h;
-    dw = 100;
-    dl = 100;
+    dw = 10;
+    dl = 10;
     w = 100;
     h = 100;
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
@@ -347,7 +347,7 @@ static void SetupGrid()
              scales,
              1.0f, grid->ltm);
 
-   // PitchLTM(grid->ltm, -45.0f);
+    PitchLTM(grid->ltm, -45.0f);
     grid->update_object = NULL;
 
     // InitOBB(grid, VBO_FIXED);
@@ -654,7 +654,7 @@ static void SetupAABBBox()
 
     CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
-    VECTOR pos = {0.0f, 0.0f, 0.0f, 1.0f};
+    VECTOR pos = {50.0f, 0.0f, 0.0f, 1.0f};
 
     VECTOR scales = {1.f, 1.f, 1.f, 1.0f};
 
@@ -725,10 +725,10 @@ static void SetupGameObjects()
 
     // InitSkybox();
 
-  // SetupGrid();
-    //SetupBody();
-    SetupAABBBox();
-    SetupOBBBody();
+   SetupGrid();
+    SetupBody();
+    //SetupAABBBox();
+   // SetupOBBBody();
 
     // SetupMultiSphere();
     //  SetupShadowViewer();

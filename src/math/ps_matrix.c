@@ -37,22 +37,6 @@ void MatrixCopy(MATRIX dest, MATRIX in)
         : "memory");
 }
 
-void MatrixVoidCopy(void *dest, void *in)
-{
-    asm __volatile__(
-        "lqc2 $vf1, 0x00(%1)\n"
-        "lqc2 $vf2, 0x10(%1)\n"
-        "lqc2 $vf3, 0x20(%1)\n"
-        "lqc2 $vf4, 0x30(%1)\n"
-        "sqc2 $vf1, 0x00(%0)\n"
-        "sqc2 $vf2, 0x10(%0)\n"
-        "sqc2 $vf3, 0x20(%0)\n"
-        "sqc2 $vf4, 0x30(%0)\n"
-        :
-        : "r"(dest), "r"(in)
-        : "memory");
-}
-
 void MatrixMultiply(MATRIX out, MATRIX in1, MATRIX in2)
 {
     asm __volatile__(
@@ -94,17 +78,10 @@ void CreateRotationAndCopyMatFromObjAxes(MATRIX out, VECTOR up, VECTOR forward, 
     MATRIX temp_out;
     MatrixIdentity(temp_out);
 
-    temp_out[0] = right[0];
-    temp_out[1] = right[1];
-    temp_out[2] = right[2];
+    VectorCopy(&temp_out[0], right);
+    VectorCopy(&temp_out[4], up);
+    VectorCopy(&temp_out[8], forward);
 
-    temp_out[4] = up[0];
-    temp_out[5] = up[1];
-    temp_out[6] = up[2];
-
-    temp_out[8] = forward[0];
-    temp_out[9] = forward[1];
-    temp_out[10] = forward[2];
 
     temp_out[12] = 0.0f;
     temp_out[13] = 0.0f;
@@ -177,10 +154,7 @@ void CreateProjectionMatrix(MATRIX output, float width, float height, float aspe
     float n = near;                          // Near plane
     float f = far;                           // Far plane
     float FovYdiv2 = DegToRad(angle) * 0.5f; // 60 degree FOV
-    // float fAspect = 4.0f / 3.0f;			 // Aspect ratio
     float cotFOV = 1.0f / (Sin(FovYdiv2) / Cos(FovYdiv2));
-    // We will be projecting to the 4096 wide drawing area, but we only want
-    // the projection matrix to cover the visible area
     float w = cotFOV * (width / 4096.0f) / aspect;
     float h = cotFOV * (height / 4096.0f);
 
@@ -250,17 +224,21 @@ void CreateRotationMatrix(VECTOR axis, float angle, MATRIX output)
 
     float invC = 1 - c;
 
-    work[0] = c + (x * x) * invC;
-    work[1] = x * y * invC - (z * s);
-    work[2] = x * z * invC + (y * s);
-    work[4] = y * x * invC + (z * s);
-    work[5] = c + (y * y) * invC;
-    work[6] = y * x * invC - (x * s);
-    work[8] = z * x * invC - (y * s);
-    work[9] = x * y * invC + (x * s);
-    work[10] = c + (z * z) * invC;
+    float xy = x*y;
+    float xz = x*z;
+    float xs = x*s;
+    float ys = y*s;
+    float zs = z*s;
 
-    work[15] = 1.0f;
+    work[0] = c + (x * x) * invC;
+    work[1] = xy * invC - zs;
+    work[2] = xz * invC + ys;
+    work[4] = xy * invC + zs;
+    work[5] = c + (y * y) * invC;
+    work[6] = xy * invC - xs;
+    work[8] = xz * invC - ys;
+    work[9] = xy * invC + xs;
+    work[10] = c + (z * z) * invC;
 
     MatrixCopy(output, work);
 }
@@ -284,7 +262,6 @@ void CreateScaleMatrix(VECTOR scales, MATRIX output)
     work[0] = scales[0];
     work[5] = scales[1];
     work[10] = scales[2];
-    work[15] = 1.0f;
 
     MatrixCopy(output, work);
 }
@@ -358,31 +335,27 @@ void MatrixInverse(MATRIX src, MATRIX out)
 void MatrixTranspose(MATRIX src)
 {
     MATRIX out;
-    out[0] = src[0];
     out[1] = src[4];
     out[2] = src[8];
     out[3] = src[12];
 
     out[4] = src[1];
-    out[5] = src[5];
     out[6] = src[9];
     out[7] = src[13];
 
     out[8] = src[2];
     out[9] = src[6];
-    out[10] = src[10];
     out[11] = src[14];
 
     out[12] = src[3];
     out[13] = src[7];
     out[14] = src[11];
-    out[15] = src[15];
+  
     MatrixCopy(src, out);
 }
 
 void ComputeReflectionMatrix(VECTOR normal, MATRIX res)
 {
-
     res[0] = 1 - 2 * normal[0] * normal[0];
     res[1] = -2 * normal[0] * normal[1];
     res[2] = -2 * normal[0] * normal[2];
@@ -408,17 +381,9 @@ void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR 
 {
     MATRIX work;
     MatrixIdentity(work);
-    work[0] = right[0] * scales[0];
-    work[1] = right[1] * scales[0];
-    work[2] = right[2] * scales[0];
-
-    work[4] = up[0] * scales[1];
-    work[5] = up[1] * scales[1];
-    work[6] = up[2] * scales[1];
-
-    work[8] = forward[0] * scales[2];
-    work[9] = forward[1] * scales[2];
-    work[10] = forward[2] * scales[2];
+    ScaleVectorXYZ(&work[0], right, scales[0]);
+    ScaleVectorXYZ(&work[4], up, scales[1]);
+    ScaleVectorXYZ(&work[8], forward, scales[2]);
 
     work[12] = pos[0];
     work[13] = pos[1];
@@ -565,17 +530,11 @@ void ExtractVectorFromMatrix(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
     scale[2] = sz;
 
     MATRIX mat;
-    mat[0] = m[0] / sx;
-    mat[1] = m[1] / sx;
-    mat[2] = m[2] / sx;
 
-    mat[4] = m[4] / sy;
-    mat[5] = m[5] / sy;
-    mat[6] = m[6] / sy;
+    ScaleVectorXYZ(&mat[0], &m[0], 1/sx);
+    ScaleVectorXYZ(&mat[4], &m[4], 1/sy);
+    ScaleVectorXYZ(&mat[8], &m[8], 1/sz);
 
-    mat[8] = m[8] / sz;
-    mat[9] = m[9] / sz;
-    mat[10] = m[10] / sz;
 
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rot);
 }
@@ -589,17 +548,9 @@ void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale
     float sy = scale[1];
     float sz = scale[2];
 
-    m[0] *= sx;
-    m[1] *= sx;
-    m[2] *= sx;
-
-    m[4] *= sy;
-    m[5] *= sy;
-    m[6] *= sy;
-
-    m[8] *= sz;
-    m[9] *= sz;
-    m[10] *= sz;
+    ScaleVectorXYZ(&m[0], &m[0], sx);
+    ScaleVectorXYZ(&m[4], &m[4], sy);
+    ScaleVectorXYZ(&m[8], &m[8], sz);
 
     m[12] = trans[0];
     m[13] = trans[1];

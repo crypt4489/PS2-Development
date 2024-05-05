@@ -4,6 +4,10 @@
 #include "math/ps_quat.h"
 #include "log/ps_log.h"
 
+
+#define VECTORIZE
+
+
 VECTOR forward = {0.0f, 0.0f, 1.0f, 1.0f};
 VECTOR up = {0.0f, 1.0f, 0.0f, 1.0f};
 VECTOR right = {1.0f, 0.0f, 0.0f, 1.0f};
@@ -126,9 +130,22 @@ void DumpVectorInt(VectorInt elem)
 
 void VectorAddXYZ(VECTOR in, VECTOR in2, VECTOR out)
 {
+#ifndef VECTORIZE
     out[0] = in[0] + in2[0];
     out[1] = in[1] + in2[1];
     out[2] = in[2] + in2[2];
+#else
+    asm __volatile(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "lqc2 $vf3, 0x00(%2)\n"
+        "vadd.xyz $vf3, $vf2, $vf1\n"
+        "sqc2 $vf3, 0x00(%2)\n"
+        :
+        : "r"(in), "r"(in2), "r"(out)
+        : "memory"
+    );
+#endif
 }
 
 void Normalize(VECTOR in, VECTOR out)
@@ -162,12 +179,48 @@ void CreateVector(float x, float y, float z, float w, VECTOR out)
 
 void VectorSubtractXYZ(VECTOR in, VECTOR in2, VECTOR out)
 {
+#ifndef VECTORIZE
     VECTOR work;
     work[0] = in[0] - in2[0];
     work[1] = in[1] - in2[1];
     work[2] = in[2] - in2[2];
     work[3] = in[3];
     VectorCopy(out, work);
+#else
+     asm __volatile(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "lqc2 $vf3, 0x00(%2)\n"
+        "vsub.xyz $vf3, $vf1, $vf2\n"
+        "sqc2 $vf3, 0x00(%2)\n"
+        :
+        : "r"(in), "r"(in2), "r"(out)
+        : "memory"
+    );
+#endif
+}
+
+void VectorMultiply(VECTOR in, VECTOR in2, VECTOR out)
+{
+#ifndef VECTORIZE
+    VECTOR work;
+    work[0] = in[0] * in2[0];
+    work[1] = in[1] * in2[1];
+    work[2] = in[2] * in2[2];
+    work[3] = in[3] * in2[3];
+    VectorCopy(out, work);
+#else
+     asm __volatile(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "lqc2 $vf3, 0x00(%2)\n"
+        "vmul $vf3, $vf1, $vf2\n"
+        "sqc2 $vf3, 0x00(%2)\n"
+        :
+        : "r"(in), "r"(in2), "r"(out)
+        : "memory"
+    );
+#endif
 }
 
 qword_t *VectorToQWord(qword_t *q, VECTOR v)
@@ -217,9 +270,22 @@ void CrossProduct(VECTOR m, VECTOR n, VECTOR out)
 
 void ScaleVectorXYZ(VECTOR vec, VECTOR input, float scale)
 {
+#ifndef VECTORIZE
     vec[0] = input[0] * scale;
     vec[1] = input[1] * scale;
     vec[2] = input[2] * scale;
+#else
+    asm __volatile(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "qmtc2 %2, $vf3\n"
+        "vmulx.xyz $vf1, $vf2, $vf3\n"
+        "sqc2 $vf1, 0x00(%0)\n"
+        :
+        : "r"(vec), "r"(input), "r"(scale)
+        : "memory"
+    );
+#endif
 }
 
 void ZeroVector(VECTOR out)

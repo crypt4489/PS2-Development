@@ -23,4 +23,5 @@ void ZeroVector(VECTOR out);
 void VectorCopyXYZ(VECTOR in, VECTOR out);
 void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components);
 void CrossProduct(VECTOR m, VECTOR n, VECTOR out);
+void VectorMultiply(VECTOR in, VECTOR in2, VECTOR out);
 #endif

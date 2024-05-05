@@ -33,7 +33,6 @@ void DestroyVBO(ObjectBounds *bound)
 
 void InitVBO(GameObject *obj, int type)
 {
-
     obj->vboContainer = (ObjectBounds *)malloc(sizeof(ObjectBounds));
 
     obj->vboContainer->type = type;
@@ -46,72 +45,6 @@ void InitVBO(GameObject *obj, int type)
     else if (type == VBO_SPHERE)
     {
         obj->vboContainer->vbo = (void *)malloc(sizeof(BoundingSphere));
-    }
-
-
-    /*CreateWorldMatrixLTM(obj->ltm, world);
-
-    int vertCount = obj->vertexBuffer.meshData[MESHVERTICES]->vertexCount;
-
-    VECTOR *ptr = obj->vertexBuffer.meshData[MESHVERTICES]->vertices;
-
-    VectorCopy(v, *ptr);
-
-    if (type == VBO_FIT)
-    {
-        MatrixVectorMultiply(v, world, v);
-    }
-
-    xMin = xMax = v[0];
-    yMin = yMax = v[1];
-    zMin = zMax = v[2];
-    ptr++;
-    
-    for (int i = 1; i < vertCount; i++)
-    {
-        VectorCopy(v, *ptr);
-    
-
-        if (type == VBO_FIT)
-        {
-            MatrixVectorMultiply(v, world, v);
-        }
-
-        xMin = Min(xMin, v[0]);
-        yMin = Min(yMin, v[1]);
-        zMin = Min(zMin, v[2]);
-
-        xMax = Max(xMax, v[0]);
-        yMax = Max(yMax, v[1]);
-        zMax = Max(zMax, v[2]);
-
-        ptr++;
-    }
-
-    top[0] = xMax;
-    top[1] = yMax;
-    top[2] = zMax;
-    top[3] = 1.0f;
-
-    bot[0] = xMin;
-    bot[1] = yMin;
-    bot[2] = zMin;
-    bot[3] = 1.0f;
-    */
-    
-    
-    if (type == VBO_SPHERE)
-    {
-        /*BoundingSphere *sphere = (BoundingSphere *)obj->vboContainer->vbo;
-        VECTOR add;
-        VectorSubtractXYZ(top, bot, add);
-        ScaleVectorXYZ(sphere->center, add, 0.5f);
-        float mag = (top[0] - sphere->center[0]) * (top[0] - sphere->center[0]);
-        mag += (top[1] - sphere->center[1]) * (top[1] - sphere->center[1]);
-        mag += (top[2] - sphere->center[2]) * (top[2] - sphere->center[2]);
-        sphere->radius = Sqrt(mag);
-        DEBUGLOG("SPHERE RADIUS AND CENTER %f", sphere->radius);
-        DumpVector(sphere->center); */
     }
 }
 
@@ -261,7 +194,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         GetScaleVectorLTM(obj2->ltm, obj2Scales);
 
         VectorCopy(move, va_arg(vectorArgs, float *));
-       // ScaleVectorXYZ(move, move, 1.5f);
+        ScaleVectorXYZ(move, move, 1.5f);
         VectorAddXYZ(box1->top, move, top1);
         VectorAddXYZ(box1->bottom, move, bottom1);
         FindCenterAndHalfAABB(box1, outCenter1, outHalf1);

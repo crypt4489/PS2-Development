@@ -1,16 +1,11 @@
 #include "math/ps_plane.h"
-
 #include "math/ps_vector.h"
 #include "math/ps_fast_maths.h"
 
 void ComputePlane(VECTOR vec, VECTOR normal, VECTOR plane)
 {
-    float x0, y0, z0, d;
-    x0 = vec[0] * normal[0];
-    y0 = vec[1] * normal[1];
-    z0 = vec[2] * normal[2];
-    d = x0 + y0 + z0;
-    d *= -1.0f;
+    float d;
+    d = DotProduct(vec, normal) * -1.0f;
     CreateVector(normal[0], normal[1], normal[2], d, plane);
 }
 
@@ -20,7 +15,6 @@ void PointInPlane(VECTOR plane, VECTOR p, VECTOR pointInPlane, VECTOR planePoint
     VectorCopy(n, plane);
     VectorSubtractXYZ(pointInPlane, p, v);
     float d = Abs(DotProduct(v, n));
-    // printf("%f\n", d);
     ScaleVectorXYZ(n, n, d);
     VectorSubtractXYZ(p, n, planePoint);
 }
@@ -38,7 +32,6 @@ float DistanceFromPlane(VECTOR planeEquation, VECTOR point)
 
 void NormalizePlane(VECTOR in, VECTOR out)
 {
-    // float w = in[3];
     asm __volatile__(
         "lqc2 $vf1, 0x00(%1)\n"
         "vsuba.xyzw $ACC, $vf0, $vf0\n"
@@ -54,20 +47,4 @@ void NormalizePlane(VECTOR in, VECTOR out)
         :
         : "r"(out), "r"(in)
         : "memory");
-
-    /* DumpVector(in);
-
-     float x = (in[0] * in[0]) + (in[1] * in[1]) + (in[2] * in[2]);
-
-     x = 1.0f / Sqrt(x);
-
-     DEBUGLOG("%f\n", x);
-
-     out[0] = x * in[0];
-
-     out[1] = x * in[1];
-
-     out[2] = x * in[2];
-
-     out[3] = x * in[3]; */
 }
