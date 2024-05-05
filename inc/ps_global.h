@@ -235,7 +235,7 @@ typedef struct
 {
     VECTOR center;
     VECTOR axes[3];
-    VECTOR halfwidths;
+    float halfwidths[3];
 } BoundingOrientBox;
 
 struct morph_target_handle_t;

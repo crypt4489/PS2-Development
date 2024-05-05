@@ -275,7 +275,6 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
     }
     else if ((firstcondition = (obb1->type == VBO_FIT && obb2->type == VBO_SPHERE)) || (obb1->type == VBO_SPHERE  && obb2->type == VBO_FIT))
     {
-        VECTOR aabbCenter, aabbHalf, traj;
         BoundingBox *box;
         BoundingSphere *sphere;
         if (firstcondition)
@@ -289,15 +288,25 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
             sphere = (BoundingSphere*)obb1->vbo;
         }
 
-        FindCenterAndHalfAABB(box, aabbCenter, aabbHalf);
-        VectorSubtractXYZ(aabbCenter, sphere->center, traj);
-        float d = DotProduct(traj, traj);
-        float x1 = sphere->radius;
-        float y1 = x1 + aabbHalf[1];
-        float z1 = x1 + aabbHalf[2];
-        x1 = x1 + aabbHalf[0];
-        if (d <= (x1 * x1) || d <= (y1 * y1) || d <= (z1 * z1)) ret = COLLISION;
-        ret = NOCOLLISION;
+        float d = SqrDistFromAABB(sphere->center, box);
+        
+        if (d <= sphere->radius * sphere->radius) ret = COLLISION;
+        else ret = NOCOLLISION;
+    } else if ((firstcondition = (obb1->type == VBO_FIXED && obb2->type == VBO_SPHERE)) || (obb1->type == VBO_SPHERE  && obb2->type == VBO_FIXED))
+    {
+        VECTOR half, pos, right, up, forward, center;
+        BoundingBox *box;
+        BoundingSphere *sphere;
+        if (firstcondition)
+        {
+            box = (BoundingBox*)obb1->vbo;
+            sphere = (BoundingSphere*)obb2->vbo;
+        }
+        else 
+        {
+            box = (BoundingBox*)obb2->vbo;
+            sphere = (BoundingSphere*)obb1->vbo;
+        }
     }
 
     va_end(vectorArgs);
@@ -351,21 +360,14 @@ int CheckSeparatingPlane(VECTOR pos, VECTOR plane, VECTOR half1, VECTOR half2, V
     int ret = 0;
     VECTOR xProj1, yProj1, zProj1;
     VECTOR xProj2, yProj2, zProj2;
-    VectorCopy(xProj1, xAxis1);
-    VectorCopy(yProj1, yAxis1);
-    VectorCopy(zProj1, zAxis1);
 
-    VectorCopy(xProj2, xAxis2);
-    VectorCopy(yProj2, yAxis2);
-    VectorCopy(zProj2, zAxis2);
+    ScaleVectorXYZ(xProj1, xAxis1, half1[0]);
+    ScaleVectorXYZ(yProj1, yAxis1, half1[1]);
+    ScaleVectorXYZ(zProj1, zAxis1, half1[2]);
 
-    ScaleVectorXYZ(xProj1, xProj1, half1[0]);
-    ScaleVectorXYZ(yProj1, yProj1, half1[1]);
-    ScaleVectorXYZ(zProj1, zProj1, half1[2]);
-
-    ScaleVectorXYZ(xProj2, xProj2, half2[0]);
-    ScaleVectorXYZ(yProj2, yProj2, half2[1]);
-    ScaleVectorXYZ(zProj2, zProj2, half2[2]);
+    ScaleVectorXYZ(xProj2, xAxis2, half2[0]);
+    ScaleVectorXYZ(yProj2, yAxis2, half2[1]);
+    ScaleVectorXYZ(zProj2, zAxis2, half2[2]);
 
     float pdp = Abs(DotProduct(pos, plane));
     float x1dp = Abs(DotProduct(xProj1, plane));
@@ -525,12 +527,61 @@ float SqrDistFromAABB(VECTOR p, BoundingBox *box)
     return sqDist;
 }
 
+float SqDistToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfwidths)
+{
+    float dist = 0.0f;
+    VECTOR dots, d;
+    VectorSubtractXYZ(p, center, d);
+
+    dots[0] = DotProduct(d, right);
+    dots[1] = DotProduct(d, up);
+    dots[2] = DotProduct(d, forward);
+
+    for (int i = 0; i<3; i++)
+    {
+        float d = dots[i];
+        float excess = 0.0f;
+        float hw = halfwidths[i];
+        if (d < -hw) excess = hw + d;
+        else if (d > hw) excess = d - hw;
+        dist + excess * excess;
+    }
+
+    return dist;
+
+}
+
 void ClosestPointToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfWidths, VECTOR q)
 {
-    VECTOR d;
+    VECTOR d, haflwidthneg;
     VectorSubtractXYZ(p, center, d);
     VectorCopy(q, center);
-    float dist;
+    ScaleVectorXYZ(haflwidthneg, halfWidths, -1.0f);
+    VECTOR dists;
+    dists[0] = DotProduct(d, right);
+    dists[1] = DotProduct(d, up);
+    dists[2] = DotProduct(d, forward);
+
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%0)\n" //right
+        "lqc2 $vf2, 0x00(%1)\n" //up
+        "lqc2 $vf3, 0x00(%2)\n" //forward
+        "lqc2 $vf4, 0x00(%3)\n" //halfwidths
+        "lqc2 $vf5, 0x00(%4)\n" //halfwidthsneg
+        "lqc2 $vf6, 0x00(%6)\n" //dists
+        "lqc2 $vf7, 0x00(%5)\n" //q
+        "vmini.xyz $vf6, $vf6, $vf4\n"
+        "vmax.xyz $vf6, $vf6, $vf5\n"
+        "vmulx.xyz $vf1, $vf1, $vf6x\n"
+        "vmuly.xyz $vf2, $vf2, $vf6y\n"
+        "vmulz.xyz $vf3, $vf3, $vf6z\n"
+        "vadd.xyz $vf7, $vf1, $vf7\n"
+        "vadd.xyz $vf7, $vf2, $vf7\n"
+        "vadd.xyz $vf7, $vf3, $vf7\n"
+        "sqc2 $vf7, 0x00(%5)\n"
+        :
+        : "r"(right), "r"(up), "r"(forward), "r"(halfWidths), "r"(haflwidthneg), "r"(q), "r"(dists)
+        : "memory");
 }
 
 static void MostSeparatedPointsOnAABB(int *min, int *max, VECTOR *verts, u32 vertCount);

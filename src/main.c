@@ -680,7 +680,7 @@ static void SetupOBBBody()
 
     bodyCollision = InitializeGameObject();
     ReadModelFile("MODELS\\BODY.BIN", &bodyCollision->vertexBuffer);
-    SetupGameObjectPrimRegs(bodyCollision, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(bodyCollision, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 
     u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
@@ -728,7 +728,7 @@ static void SetupGameObjects()
   // SetupGrid();
     //SetupBody();
     SetupAABBBox();
-    //SetupOBBBody();
+    SetupOBBBody();
 
     // SetupMultiSphere();
     //  SetupShadowViewer();

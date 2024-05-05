@@ -31,4 +31,8 @@ float SqrDistFromAABB(VECTOR p, BoundingBox *box);
 
 void ClosestPointToAABB(VECTOR p, BoundingBox *box, VECTOR out);
 
+float SqDistToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfwidths);
+
+void ClosestPointToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfWidths, VECTOR q);
+
 #endif
