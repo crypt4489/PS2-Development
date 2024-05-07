@@ -1038,6 +1038,9 @@ static void LoadInTextures()
 
 int main(int argc, char **argv)
 {
+
+   
+
     InitializeSystem(1, 640, 480, GS_PSM_32);
 
     InitASyncIO(25, 5.0f);

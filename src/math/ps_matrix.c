@@ -380,9 +380,9 @@ void CreateWorldMatrixFromVectors(VECTOR pos, VECTOR up, VECTOR forward, VECTOR 
 {
     MATRIX work;
     MatrixIdentity(work);
-    ScaleVectorXYZ(&work[0], right, scales[0]);
-    ScaleVectorXYZ(&work[4], up, scales[1]);
-    ScaleVectorXYZ(&work[8], forward, scales[2]);
+    VectorScaleXYZ(&work[0], right, scales[0]);
+    VectorScaleXYZ(&work[4], up, scales[1]);
+    VectorScaleXYZ(&work[8], forward, scales[2]);
 
     work[12] = pos[0];
     work[13] = pos[1];
@@ -530,9 +530,9 @@ void ExtractVectorFromMatrix(VECTOR trans, VECTOR rot, VECTOR scale, MATRIX m)
 
     MATRIX mat;
 
-    ScaleVectorXYZ(&mat[0], &m[0], 1/sx);
-    ScaleVectorXYZ(&mat[4], &m[4], 1/sy);
-    ScaleVectorXYZ(&mat[8], &m[8], 1/sz);
+    VectorScaleXYZ(&mat[0], &m[0], 1/sx);
+    VectorScaleXYZ(&mat[4], &m[4], 1/sy);
+    VectorScaleXYZ(&mat[8], &m[8], 1/sz);
 
 
     CreateQuatRotationAxes(&mat[0], &mat[4], &mat[8], rot);
@@ -547,9 +547,9 @@ void CreateWorldMatrixFromQuatScalesTrans(VECTOR trans, VECTOR rot, VECTOR scale
     float sy = scale[1];
     float sz = scale[2];
 
-    ScaleVectorXYZ(&m[0], &m[0], sx);
-    ScaleVectorXYZ(&m[4], &m[4], sy);
-    ScaleVectorXYZ(&m[8], &m[8], sz);
+    VectorScaleXYZ(&m[0], &m[0], sx);
+    VectorScaleXYZ(&m[4], &m[4], sy);
+    VectorScaleXYZ(&m[8], &m[8], sz);
 
     m[12] = trans[0];
     m[13] = trans[1];

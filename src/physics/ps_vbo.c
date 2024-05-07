@@ -105,7 +105,7 @@ void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
         case VBO_FIXED:
             BoundingBox *box = (BoundingBox *)collisionData;
             VectorSubtractXYZ(box->top, box->bottom, center);
-            ScaleVectorXYZ(center, center, 0.5f);
+            VectorScaleXYZ(center, center, 0.5f);
             break;
         case VBO_SPHERE:
             BoundingSphere *sphere = (BoundingSphere *)collisionData;
@@ -130,7 +130,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         BoundingBox *box2 = (BoundingBox *)obb2->vbo;
         VECTOR top1, bottom1, move;
         VectorCopy(move, va_arg(vectorArgs, float *));
-        ScaleVectorXYZ(move, move, 0.25f);
+        VectorScaleXYZ(move, move, 0.25f);
         VectorAddXYZ(box1->top, move, top1);
         VectorAddXYZ(box1->bottom, move, bottom1);
 
@@ -194,7 +194,7 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
         GetScaleVectorLTM(obj2->ltm, obj2Scales);
 
         VectorCopy(move, va_arg(vectorArgs, float *));
-        ScaleVectorXYZ(move, move, 1.5f);
+        VectorScaleXYZ(move, move, 1.5f);
         VectorAddXYZ(box1->top, move, top1);
         VectorAddXYZ(box1->bottom, move, bottom1);
         FindCenterAndHalfAABB(box1, outCenter1, outHalf1);
@@ -294,13 +294,13 @@ int CheckSeparatingPlane(VECTOR pos, VECTOR plane, VECTOR half1, VECTOR half2, V
     VECTOR xProj1, yProj1, zProj1;
     VECTOR xProj2, yProj2, zProj2;
 
-    ScaleVectorXYZ(xProj1, xAxis1, half1[0]);
-    ScaleVectorXYZ(yProj1, yAxis1, half1[1]);
-    ScaleVectorXYZ(zProj1, zAxis1, half1[2]);
+    VectorScaleXYZ(xProj1, xAxis1, half1[0]);
+    VectorScaleXYZ(yProj1, yAxis1, half1[1]);
+    VectorScaleXYZ(zProj1, zAxis1, half1[2]);
 
-    ScaleVectorXYZ(xProj2, xAxis2, half2[0]);
-    ScaleVectorXYZ(yProj2, yAxis2, half2[1]);
-    ScaleVectorXYZ(zProj2, zAxis2, half2[2]);
+    VectorScaleXYZ(xProj2, xAxis2, half2[0]);
+    VectorScaleXYZ(yProj2, yAxis2, half2[1]);
+    VectorScaleXYZ(zProj2, zAxis2, half2[2]);
 
     float pdp = Abs(DotProduct(pos, plane));
     float x1dp = Abs(DotProduct(xProj1, plane));
@@ -328,7 +328,7 @@ void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VE
     MatrixVectorMultiply(worldBottom, world, box->bottom);
 
     VectorSubtractXYZ(worldTop, worldBottom, center);
-    ScaleVectorXYZ(outCenter, center, 0.5f);
+    VectorScaleXYZ(outCenter, center, 0.5f);
     VectorAddXYZ(worldBottom, center, center);
 
     outHalf[0] = Abs(worldTop[0] - outCenter[0]);
@@ -340,7 +340,7 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
 {
     VECTOR center;
     VectorSubtractXYZ(box->top, box->bottom, center);
-    ScaleVectorXYZ(center, center, 0.5f);
+    VectorScaleXYZ(center, center, 0.5f);
     VectorAddXYZ(outCenter, box->bottom, center);
     outHalf[0] = Abs(box->top[0] - outCenter[0]);
     outHalf[1] = Abs(box->top[1] - outCenter[1]);
@@ -487,7 +487,7 @@ void ClosestPointToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR
     VECTOR d, haflwidthneg;
     VectorSubtractXYZ(p, center, d);
     VectorCopy(q, center);
-    ScaleVectorXYZ(haflwidthneg, halfWidths, -1.0f);
+    VectorScaleXYZ(haflwidthneg, halfWidths, -1.0f);
     VECTOR dists;
     dists[0] = DotProduct(d, right);
     dists[1] = DotProduct(d, up);
@@ -549,7 +549,7 @@ void ComputeBoundingSphere(GameObject *obj)
 
     VECTOR temp;
     VectorAddXYZ(verts[min], verts[max], temp);
-    ScaleVectorXYZ(sphere->center, temp, 0.5f);
+    VectorScaleXYZ(sphere->center, temp, 0.5f);
     VectorSubtractXYZ(verts[max], sphere->center, temp);
     sphere->radius = Sqrt(DotProduct(temp, temp));
     ExpandSphere(sphere->center, &sphere->radius, verts, vertexCount, 0);
@@ -576,7 +576,7 @@ static void ExpandSphere(VECTOR center, float *radius, VECTOR *verts, u32 vertCo
             float k = (temp - *radius) / dist2;
             *radius = temp;
             temp *= temp;
-            ScaleVectorXYZ(d, d, k);
+            VectorScaleXYZ(d, d, k);
             VectorAddXYZ(center, d, center);
         }
     }

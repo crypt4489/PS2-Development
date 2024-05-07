@@ -207,6 +207,17 @@ typedef struct
     LinkedList *mipMaps;
 } Texture;
 
+
+typedef struct
+{
+    VECTOR p1, p2;
+} Line;
+
+typedef struct {
+    VECTOR origin;
+    VECTOR direction;
+} Ray;
+
 enum ObjectBoundingTypes
 {
     VBO_FIT = 0, //aabb in world space

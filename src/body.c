@@ -22,7 +22,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
     case 1:
         if (obj->vboContainer->type == VBO_FIT)
         {
-            ScaleVectorXYZ(tempDir, *forward, -1.0f);
+            VectorScaleXYZ(tempDir, *forward, -1.0f);
             collision_check = CheckCollision(obj, check, tempDir);
             if (!(collision_check))
             {
@@ -76,7 +76,7 @@ int HandleBodyMovement(GameObject *obj, u32 type)
     case 5:
         if (obj->vboContainer->type == VBO_FIT)
         {
-            ScaleVectorXYZ(tempDir, *forward, -1.0f);
+            VectorScaleXYZ(tempDir, *forward, -1.0f);
             collision_check = CheckCollision(obj, check, tempDir);
             if (!(collision_check))
             {

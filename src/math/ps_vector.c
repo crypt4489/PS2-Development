@@ -268,7 +268,7 @@ void CrossProduct(VECTOR m, VECTOR n, VECTOR out)
         : "memory");
 }
 
-void ScaleVectorXYZ(VECTOR vec, VECTOR input, float scale)
+void VectorScaleXYZ(VECTOR vec, VECTOR input, float scale)
 {
 #ifndef VECTORIZE
     vec[0] = input[0] * scale;

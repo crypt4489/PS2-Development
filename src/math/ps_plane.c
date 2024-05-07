@@ -15,7 +15,7 @@ void PointInPlane(VECTOR plane, VECTOR p, VECTOR pointInPlane, VECTOR planePoint
     VectorCopy(n, plane);
     VectorSubtractXYZ(pointInPlane, p, v);
     float d = Abs(DotProduct(v, n));
-    ScaleVectorXYZ(n, n, d);
+    VectorScaleXYZ(n, n, d);
     VectorSubtractXYZ(p, n, planePoint);
 }
 

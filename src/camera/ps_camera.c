@@ -192,11 +192,11 @@ void CreateCameraFrustum(Camera *cam)
     VECTOR nearCenter, farCenter;
     VECTOR tempScale, tempOut, tempNormal;
 
-    ScaleVectorXYZ(tempScale, forward, -1.0f);
+    VectorScaleXYZ(tempScale, forward, -1.0f);
 
-    ScaleVectorXYZ(farCenter, tempScale, cam->far);
+    VectorScaleXYZ(farCenter, tempScale, cam->far);
     // VectorSubtractXYZ(cam->pos, tempScale, farCenter);
-    ScaleVectorXYZ(nearCenter, tempScale, cam->near);
+    VectorScaleXYZ(nearCenter, tempScale, cam->near);
     // VectorSubtractXYZ(cam->pos, tempScale, nearCenter);
     tempOut[3] = tempScale[3] = nearCenter[3] = farCenter[3] = 1.0f;
 
@@ -205,7 +205,7 @@ void CreateCameraFrustum(Camera *cam)
 
     // side top
 
-    ScaleVectorXYZ(tempOut, up, nh);
+    VectorScaleXYZ(tempOut, up, nh);
     VectorAddXYZ(nearCenter, tempOut, tempOut);
 
     // VectorSubtractXYZ(tempOut, cam->pos, tempNormal);
@@ -219,7 +219,7 @@ void CreateCameraFrustum(Camera *cam)
     SetupPlane(tempNormal, tempOut, &frus->sides[2]);
 
     /// side bottom
-    ScaleVectorXYZ(tempOut, up, nh);
+    VectorScaleXYZ(tempOut, up, nh);
     VectorSubtractXYZ(nearCenter, tempOut, tempOut);
 
     //  VectorSubtractXYZ(tempOut, cam->pos, tempNormal);
@@ -233,7 +233,7 @@ void CreateCameraFrustum(Camera *cam)
     SetupPlane(tempNormal, tempOut, &frus->sides[3]);
 
     /// side right
-    ScaleVectorXYZ(tempOut, right, nw);
+    VectorScaleXYZ(tempOut, right, nw);
     VectorSubtractXYZ(nearCenter, tempOut, tempOut);
 
     //  VectorSubtractXYZ(tempOut, cam->pos, tempNormal);
@@ -246,7 +246,7 @@ void CreateCameraFrustum(Camera *cam)
     SetupPlane(tempNormal, tempOut, &frus->sides[4]);
 
     /// side left
-    ScaleVectorXYZ(tempOut, right, nw);
+    VectorScaleXYZ(tempOut, right, nw);
     VectorAddXYZ(nearCenter, tempOut, tempOut);
 
     //  VectorSubtractXYZ(tempOut, cam->pos, tempNormal);

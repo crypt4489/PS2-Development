@@ -18,7 +18,7 @@ qword_t *VectorToQWord(qword_t *q, VECTOR v);
 void ComputeNormal(VECTOR v0, VECTOR v1, VECTOR v2, VECTOR out);
 float DotProductFour(VECTOR in1, VECTOR in2);
 void CreateVector(float x, float y, float z, float w, VECTOR out);
-void ScaleVectorXYZ(VECTOR vec, VECTOR input, float scale);
+void VectorScaleXYZ(VECTOR vec, VECTOR input, float scale);
 void ZeroVector(VECTOR out);
 void VectorCopyXYZ(VECTOR in, VECTOR out);
 void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components);
