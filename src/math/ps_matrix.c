@@ -82,7 +82,6 @@ void CreateRotationAndCopyMatFromObjAxes(MATRIX out, VECTOR up, VECTOR forward, 
     VectorCopy(&temp_out[4], up);
     VectorCopy(&temp_out[8], forward);
 
-
     temp_out[12] = 0.0f;
     temp_out[13] = 0.0f;
     temp_out[14] = 0.0f;

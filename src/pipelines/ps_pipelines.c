@@ -34,34 +34,34 @@ static inline u32 MaterialSizeDMACount(u32 msize)
 
 static void CreateSizesFromRenderFlags(OBJ_RENDER_STATE renderState, u32 *pCode, u16 *dCode, u32 *renderPasses)
 {
-    if (renderState.CLIPPING & 1)
+    if (renderState.CLIPPING)
     {
         *pCode = *pCode | VU1StageClip;
     }
 
-    if (renderState.COLOR_ENABLE & 1)
+    if (renderState.COLOR_ENABLE)
     {
         *dCode = *dCode | DRAW_COLOR;
     }
 
-    if (renderState.TEXTURE_MAPPING & 1)
+    if (renderState.TEXTURE_MAPPING)
     {
         *dCode = *dCode | DRAW_TEXTURE;
     }
 
-    if (renderState.LIGHTING_ENABLE & 1)
+    if (renderState.LIGHTING_ENABLE)
     {
         *dCode = *dCode | DRAW_NORMAL;
         *pCode = *pCode | VU1Stage3;
     }
 
-    if (renderState.MORPH_TARGET & 1)
+    if (renderState.MORPH_TARGET)
     {
         *dCode = *dCode | DRAW_MORPH;
         *pCode = *pCode | VU1Stage1;
     }
 
-    if (renderState.ENVIRONMENTMAP & 1)
+    if (renderState.ENVIRONMENTMAP)
     {
         *dCode = *dCode | DRAW_TEXTURE;
         // *pCode = *pCode | VU1Stage2;
@@ -70,27 +70,27 @@ static void CreateSizesFromRenderFlags(OBJ_RENDER_STATE renderState, u32 *pCode,
         *renderPasses = 2;
     }
 
-    if (renderState.ANIMATION_TEXUTRE & 1)
+    if (renderState.ANIMATION_TEXUTRE)
     {
         *dCode = *dCode | DRAW_TEXTURE;
         *pCode = *pCode | VU1Stage2;
         *renderPasses = 1;
     }
 
-    if (renderState.SPECULAR & 1)
+    if (renderState.SPECULAR)
     {
         *dCode = *dCode | DRAW_NORMAL;
         //  *pCode = *pCode | VU1Stage3;
         *renderPasses = 2;
     }
 
-    if (renderState.SKELETAL_ANIMATION & 1)
+    if (renderState.SKELETAL_ANIMATION)
     {
         *dCode = *dCode | DRAW_SKINNED;
         *pCode = *pCode | VU1Stage1;
     }
 
-    if (renderState.ALPHA_MAPPING & 1)
+    if (renderState.ALPHA_MAPPING)
     {
         *dCode = *dCode | DRAW_ALPHAMAP;
         *renderPasses = 3;

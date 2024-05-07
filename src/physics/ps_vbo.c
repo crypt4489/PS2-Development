@@ -328,13 +328,12 @@ void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VE
     MatrixVectorMultiply(worldBottom, world, box->bottom);
 
     VectorSubtractXYZ(worldTop, worldBottom, center);
-    ScaleVectorXYZ(center, center, 0.5f);
+    ScaleVectorXYZ(outCenter, center, 0.5f);
     VectorAddXYZ(worldBottom, center, center);
 
-    outHalf[0] = Abs(worldTop[0] - center[0]);
-    outHalf[1] = Abs(worldTop[1] - center[1]);
-    outHalf[2] = Abs(worldTop[2] - center[2]);
-    VectorCopy(outCenter, center);
+    outHalf[0] = Abs(worldTop[0] - outCenter[0]);
+    outHalf[1] = Abs(worldTop[1] - outCenter[1]);
+    outHalf[2] = Abs(worldTop[2] - outCenter[2]);
 }
 
 void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
@@ -342,11 +341,10 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
     VECTOR center;
     VectorSubtractXYZ(box->top, box->bottom, center);
     ScaleVectorXYZ(center, center, 0.5f);
-    VectorAddXYZ(center, box->bottom, center);
-    outHalf[0] = Abs(box->top[0] - center[0]);
-    outHalf[1] = Abs(box->top[1] - center[1]);
-    outHalf[2] = Abs(box->top[2] - center[2]);
-    VectorCopy(outCenter, center);
+    VectorAddXYZ(outCenter, box->bottom, center);
+    outHalf[0] = Abs(box->top[0] - outCenter[0]);
+    outHalf[1] = Abs(box->top[1] - outCenter[1]);
+    outHalf[2] = Abs(box->top[2] - outCenter[2]);
 }
 
 void FindAABBMaxAndMinVerticesVU0(GameObject *obj)

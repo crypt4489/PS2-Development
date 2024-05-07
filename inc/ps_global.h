@@ -7,6 +7,8 @@
 #include <draw_primitives.h>
 #include <draw_sampling.h>
 
+#include "ps_renderflags.h"
+
 #define DEFAULT_PIPELINE_SIZE 200
 
 #define MAX_CHAR_TEXTURE_NAME 20

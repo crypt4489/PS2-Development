@@ -325,8 +325,7 @@ static void SetupGrid()
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
     grid = InitializeGameObject();
-    // ReadModelFile("MODELS\\BOX.BIN", &grid->vertexBuffer);
-    SetupGameObjectPrimRegs(grid, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(grid, color, RENDERTEXTUREMAPPED | CLIPPING);
 
     int dw, dl;
     float w, h;
@@ -371,7 +370,7 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.BIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 1, 0));
+    SetupGameObjectPrimRegs(body, color, RENDERTEXTUREMAPPED | CLIPPING | SKELETAL_ANIMATION);
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -414,7 +413,7 @@ static void SetupMultiSphere()
     ReadModelFile("MODELS\\TORUS1.BIN", &multiSphere->vertexBuffer);
     DEBUGLOG("TIME ON CPU FOR VBO %f", getTicks(g_Manager.timer) - time1);
     // envmap
-    SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 1, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(multiSphere, color, RENDERTEXTUREMAPPED | RENDERLIT | CLIPPING);
 
     // alphamap
     // SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 1));
@@ -459,7 +458,7 @@ static void SetupRoom()
 
     room = InitializeGameObject();
     ReadModelFile("MODELS\\ROOM.BIN", &room->vertexBuffer);
-    SetupGameObjectPrimRegs(room, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(room, color, RENDERLIT | RENDERTEXTUREMAPPED | CULLING_OPTION);
 
     VECTOR scales = {25.0f, 25.0f, 25.0f, 1.0f};
 
@@ -496,7 +495,7 @@ static void SetupShadowViewer()
     dh = 1;
     CreateGrid(w, l, dw, dh, &shadowTexView->vertexBuffer);
 
-    SetupGameObjectPrimRegs(shadowTexView, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(shadowTexView, color, RENDERTEXTUREMAPPED);
 
     u32 id = 0;
 #ifdef RESAMPLED
@@ -594,7 +593,7 @@ static void SetupTessObject()
              scales,
              1.0f, lod_floor->ltm);
 
-    SetupGameObjectPrimRegs(lod_floor, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_floor, color, RENDERCOLORED);
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid.extent.top);
 
@@ -622,7 +621,7 @@ static void SetupTessObject()
              1.0f, lod_wall->ltm);
     PitchLTM(lod_wall->ltm, -90.0f);
 
-    SetupGameObjectPrimRegs(lod_wall, color, RENDER_STATE(1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(lod_wall, color, RENDERCOLORED);
 
     CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid2.extent.top);
 
@@ -648,7 +647,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CLIPPING);
 
     u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
@@ -680,7 +679,7 @@ static void SetupOBBBody()
 
     bodyCollision = InitializeGameObject();
     ReadModelFile("MODELS\\BODY.BIN", &bodyCollision->vertexBuffer);
-    SetupGameObjectPrimRegs(bodyCollision, color, RENDER_STATE(1, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+    SetupGameObjectPrimRegs(bodyCollision, color, RENDERTEXTUREMAPPED | CLIPPING);
 
     u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
@@ -727,8 +726,8 @@ static void SetupGameObjects()
 
    SetupGrid();
     SetupBody();
-    //SetupAABBBox();
-   // SetupOBBBody();
+    SetupAABBBox();
+   SetupOBBBody();
 
     // SetupMultiSphere();
     //  SetupShadowViewer();
