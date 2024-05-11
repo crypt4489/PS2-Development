@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
@@ -46,6 +47,9 @@
 #include "animation/ps_animation.h"
 #include "audio/ps_sound.h"
 #include "io/ps_async.h"
+
+#include <draw2d.h>
+#include <draw3d.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -155,6 +159,90 @@ int FrameCounter = 0;
 MeshBuffers sphereTarget;
 
 float k = -1.0f;
+
+Line mainLine = { {0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, 100.0f, 0.0f, 1.0f}};
+
+static void RenderLine(Line *line, Color color)
+{
+    PollVU1DoneProcessing(&g_Manager);
+    MATRIX vp;
+    VECTOR v[2];
+
+
+    MatrixIdentity(vp);
+
+    MatrixMultiply( vp, vp, cam->view);
+    MatrixMultiply( vp, vp, cam->proj);
+
+    qword_t *ret = InitializeDMAObject();
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
+    
+    ret = CreateDMATag(ret, DMA_CNT, 4, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 3, 0);
+
+    ret = CreateGSSetTag(ret, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+    
+    PACK_GIFTAG(ret, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), GS_REG_PRIM);
+    ret++;
+
+    ret = SetupZTestGS(ret, 1, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+
+    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+    
+    qword_t *pipeline_temp = ret;
+
+    pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
+
+    pipeline_temp = VIFSetupScaleVector(pipeline_temp);
+
+    pipeline_temp->sw[0] = color.r;
+    pipeline_temp->sw[1] = color.b;
+    pipeline_temp->sw[2] = color.g;
+    pipeline_temp->sw[3] = color.a;
+    pipeline_temp++;
+
+    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
+    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+    pipeline_temp += 2;
+    pipeline_temp->sw[3] = 0;
+
+    pipeline_temp = ret;
+
+    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
+
+    ret += 16; 
+    
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+    qword_t *dma_vif1 = ret;
+    ret++;
+    
+    ret = ReadUnpackData(ret, 0, 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = 2;
+    ret++;
+
+    ret = ReadUnpackData(ret, 1, 2, 1, VIF_CMD_UNPACK(0, 3, 0));
+    ret = VectorToQWord(ret, line->p1);
+    ret = VectorToQWord(ret, line->p2);
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+    
+    u32 meshPipe = ret - dma_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    CreateDCODETag(ret, DMA_DCODE_END);
+    
+    SubmitDMABuffersAsPipeline(ret, NULL);
+
+}
 
 static void UpdateGlossTransform()
 {
@@ -889,6 +977,8 @@ static void LoadWater()
 
 int Render()
 {
+    Color lineColor;
+    CREATE_RGBAQ_STRUCT(lineColor, 255, 0, 0, 128, 0);
     float lastTime = getTicks(g_Manager.timer);
 
     for (;;)
@@ -919,7 +1009,7 @@ int Render()
         //DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
        DrawWorld(world);
 
-
+        RenderLine(&mainLine, lineColor);
 
        // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
 
@@ -931,7 +1021,7 @@ int Render()
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
-        PrintText(myFont, print_out, -310, -220);
+        //PrintText(myFont, print_out, -310, -220);
 
         snprintf(print_out, 20, "K-VALUE %f", k);
 

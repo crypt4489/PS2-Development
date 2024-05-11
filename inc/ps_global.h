@@ -213,7 +213,8 @@ typedef struct
     VECTOR p1, p2;
 } Line;
 
-typedef struct {
+typedef struct 
+{
     VECTOR origin;
     VECTOR direction;
 } Ray;

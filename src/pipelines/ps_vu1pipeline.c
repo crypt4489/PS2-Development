@@ -13,7 +13,7 @@
 
 u32 GetDoubleBufferOffset(u32 base)
 {
-    u32 half = (1024 - base) / 2;
+    u32 half = (1024 - base) >> 1;
     return half + base;
 }
 

@@ -53,7 +53,7 @@ void DrawQuad(int height, int width, int xOffset, int yOffset, u8 blend, Texture
         ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
     }
 
-    ret = SetupZTestGS(ret, 1, 1, 0x80, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+    ret = SetupZTestGS(ret, 1, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
     qword_t *dmatag = ret;
     ret++;

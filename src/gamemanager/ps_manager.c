@@ -173,6 +173,8 @@ Texture *GetTexByName(TexManager *manager, const char *name)
     return NULL;
 }
 
+
+
 int PollVU1DoneProcessing(GameManager *manager)
 {
     DisableIntc(5);
