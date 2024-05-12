@@ -162,6 +162,8 @@ float k = -1.0f;
 
 Line mainLine = { {0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, 100.0f, 0.0f, 1.0f}};
 
+#include "math/ps_line.h"
+
 static void RenderLine(Line *line, Color color)
 {
     PollVU1DoneProcessing(&g_Manager);
@@ -174,6 +176,41 @@ static void RenderLine(Line *line, Color color)
     MatrixMultiply( vp, vp, cam->view);
     MatrixMultiply( vp, vp, cam->proj);
 
+    VectorCopy(v[0], line->p1);
+    VectorCopy(v[1], line->p2);
+
+    MATRIX camMatrix;
+/*
+    CreateCameraWorldMatrix(cam, camMatrix);
+
+    for (int i = 0; i<6; i++)
+    {
+        VECTOR tempPlane, tempNormal, tempPoint;
+
+        Matrix3VectorMultiply(tempNormal, camMatrix, cam->frus->sides[i].planeEquation);
+        MatrixVectorMultiply(tempPoint, camMatrix, cam->frus->sides[i].pointInPlane);
+
+        Normalize(tempNormal, tempNormal);
+
+        ComputePlane(tempPoint, tempNormal, tempPlane);
+
+      
+            int c = LineSeqmentIntersectPlane(line, tempPlane, tempPoint);
+
+            DEBUGLOG("%d ", c);
+
+            if (c) {
+                VectorCopy(v[1], tempPoint);
+                v[1][3] = 1.0f;
+                //DumpVector(v[1]);
+            }
+       
+    }
+
+
+    //DumpVector(v[0]);
+    //DumpVector(v[1]);
+*/
     qword_t *ret = InitializeDMAObject();
 
     qword_t *dcode_tag_vif1 = ret;
@@ -229,8 +266,8 @@ static void RenderLine(Line *line, Color color)
     ret++;
 
     ret = ReadUnpackData(ret, 1, 2, 1, VIF_CMD_UNPACK(0, 3, 0));
-    ret = VectorToQWord(ret, line->p1);
-    ret = VectorToQWord(ret, line->p2);
+    ret = VectorToQWord(ret, v[0]);
+    ret = VectorToQWord(ret, v[1]);
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
     ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
@@ -1007,7 +1044,7 @@ int Render()
 
 
         //DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
-       DrawWorld(world);
+     //  DrawWorld(world);
 
         RenderLine(&mainLine, lineColor);
 

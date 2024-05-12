@@ -104,7 +104,7 @@ void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
         case VBO_FIT:
         case VBO_FIXED:
             BoundingBox *box = (BoundingBox *)collisionData;
-            VectorSubtractXYZ(box->top, box->bottom, center);
+            VectorAddXYZ(box->top, box->bottom, center);
             VectorScaleXYZ(center, center, 0.5f);
             break;
         case VBO_SPHERE:
@@ -327,9 +327,8 @@ void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VE
     MatrixVectorMultiply(worldTop, world, box->top);
     MatrixVectorMultiply(worldBottom, world, box->bottom);
 
-    VectorSubtractXYZ(worldTop, worldBottom, center);
+    VectorAddXYZ(worldTop, worldBottom, center);
     VectorScaleXYZ(outCenter, center, 0.5f);
-    VectorAddXYZ(worldBottom, center, center);
 
     outHalf[0] = Abs(worldTop[0] - outCenter[0]);
     outHalf[1] = Abs(worldTop[1] - outCenter[1]);
@@ -339,9 +338,9 @@ void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VE
 void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
 {
     VECTOR center;
-    VectorSubtractXYZ(box->top, box->bottom, center);
+    VectorAddXYZ(box->top, box->bottom, center);
     VectorScaleXYZ(center, center, 0.5f);
-    VectorAddXYZ(outCenter, box->bottom, center);
+
     outHalf[0] = Abs(box->top[0] - outCenter[0]);
     outHalf[1] = Abs(box->top[1] - outCenter[1]);
     outHalf[2] = Abs(box->top[2] - outCenter[2]);

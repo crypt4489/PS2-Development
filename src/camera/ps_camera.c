@@ -388,6 +388,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
             if (DistanceFromPlane(tempPlane, pVert) < 0)
             {
+                DEBUGLOG("%d", i+1);
                 return 0;
             }
 
