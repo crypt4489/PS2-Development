@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <sifrpc.h>
 
 #include "gs/ps_gs.h"
 #include "gameobject/ps_gameobject.h"
@@ -27,6 +28,8 @@ u32 slot = 0;
 void InitializeSystem(u32 useZBuffer, u32 width, u32 height, u32 psm)
 {
     InitializeDMAChannels();
+
+    SifInitRpc(0);
 
     InitDVDDrive();
 

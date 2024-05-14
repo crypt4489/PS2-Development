@@ -360,8 +360,8 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
     CreateWorldMatrixLTM(obj->ltm, world);
     BoundingBox *bounds = (BoundingBox *)obj->vboContainer->vbo;
 
-    bounds->top[0] = bounds->top[1] = bounds->top[3] = FLT_MIN;
-    bounds->bottom[0] = bounds->bottom[1] = bounds->bottom[3] = FLT_MAX; 
+    bounds->top[0] = bounds->top[1] = bounds->top[2] = FLT_MIN;
+    bounds->bottom[0] = bounds->bottom[1] = bounds->bottom[2] = FLT_MAX; 
 
     u32 offset = 0;
 

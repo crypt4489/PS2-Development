@@ -47,6 +47,7 @@
 #include "animation/ps_animation.h"
 #include "audio/ps_sound.h"
 #include "io/ps_async.h"
+#include "pipelines/ps_pipelinecbs.h"
 
 #include <draw2d.h>
 #include <draw3d.h>
@@ -162,7 +163,182 @@ float k = -1.0f;
 
 Line mainLine = { {0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, 100.0f, 0.0f, 1.0f}};
 
+
+
+static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
+{
+    PollVU1DoneProcessing(&g_Manager);
+    MATRIX vp;
+    VECTOR v[8];
+
+
+    MatrixIdentity(vp);
+
+    MatrixMultiply(vp, vp, world);
+
+    MatrixMultiply( vp, vp, cam->view);
+    MatrixMultiply( vp, vp, cam->proj);
+
+    VectorCopy(v[0], boxx->top);
+    VectorCopy(v[7], boxx->bottom);
+
+    v[0][3] = v[7][3] = 1.0f;;
+    CreateVector(boxx->top[0], boxx->top[1], boxx->bottom[2], 1.0f, v[1]);
+    CreateVector(boxx->top[0], boxx->bottom[1], boxx->bottom[2], 1.0f, v[2]);
+    CreateVector(boxx->top[0], boxx->bottom[1], boxx->top[2], 1.0f, v[3]);
+
+    CreateVector(boxx->bottom[0], boxx->top[1], boxx->bottom[2], 1.0f, v[4]);
+    CreateVector(boxx->bottom[0], boxx->top[1], boxx->top[2], 1.0f, v[5]);
+    CreateVector(boxx->bottom[0], boxx->bottom[1], boxx->top[2], 1.0f, v[6]);
+
+
+    qword_t *ret = InitializeDMAObject();
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
+    
+    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 2, 0);
+
+    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+
+    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+    
+    qword_t *pipeline_temp = ret;
+
+    pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
+
+    pipeline_temp = VIFSetupScaleVector(pipeline_temp);
+
+    pipeline_temp->sw[0] = color.r;
+    pipeline_temp->sw[1] = color.b;
+    pipeline_temp->sw[2] = color.g;
+    pipeline_temp->sw[3] = color.a;
+    pipeline_temp++;
+
+    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
+    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+    pipeline_temp += 2;
+    pipeline_temp->sw[3] = 0;
+
+    pipeline_temp = ret;
+
+    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
+
+    ret += 16; 
+    
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+    qword_t *dma_vif1 = ret;
+    ret++;
+    
+    ret = ReadUnpackData(ret, 0, 1+(2*12), 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = 24;
+    ret++;
+    ret = VectorToQWord(ret, v[0]);
+    ret = VectorToQWord(ret, v[1]);
+    ret = VectorToQWord(ret, v[1]);
+    ret = VectorToQWord(ret, v[2]);
+    ret = VectorToQWord(ret, v[2]);
+    ret = VectorToQWord(ret, v[3]);
+    ret = VectorToQWord(ret, v[3]);
+    ret = VectorToQWord(ret, v[0]);
+
+    ret = VectorToQWord(ret, v[7]);
+    ret = VectorToQWord(ret, v[4]);
+    ret = VectorToQWord(ret, v[4]);
+    ret = VectorToQWord(ret, v[5]);
+    ret = VectorToQWord(ret, v[5]);
+    ret = VectorToQWord(ret, v[6]);
+    ret = VectorToQWord(ret, v[6]);
+    ret = VectorToQWord(ret, v[7]);
+
+    ret = VectorToQWord(ret, v[5]);
+    ret = VectorToQWord(ret, v[0]);
+    ret = VectorToQWord(ret, v[7]);
+    ret = VectorToQWord(ret, v[2]);
+    ret = VectorToQWord(ret, v[4]);
+    ret = VectorToQWord(ret, v[1]);
+    ret = VectorToQWord(ret, v[3]);
+    ret = VectorToQWord(ret, v[6]);
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+    
+    u32 meshPipe = ret - dma_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    CreateDCODETag(ret, DMA_DCODE_END);
+    
+    SubmitDMABuffersAsPipeline(ret, NULL);
+
+}
+
+
 #include "math/ps_line.h"
+
+static void RenderGameObject(GameObject *obj)
+{
+    PollVU1DoneProcessing(&g_Manager);
+    MATRIX vp;
+
+    MatrixIdentity(vp);
+
+    MatrixMultiply( vp, vp, cam->view);
+    MatrixMultiply( vp, vp, cam->proj);
+
+    qword_t *ret = InitializeDMAObject();
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
+    
+    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 2, 0);
+
+    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+
+    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+    
+    qword_t *pipeline_temp = ret;
+
+    SetupPerObjDrawVU1Header(NULL, obj, NULL, pipeline_temp);
+
+    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
+
+    ret += 16; 
+    
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+    qword_t *dma_vif1 = ret;
+    ret++;
+    
+    ret = ReadUnpackData(ret, 0, 3, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+    
+    u32 meshPipe = ret - dma_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    CreateDCODETag(ret, DMA_DCODE_END);
+    
+    SubmitDMABuffersAsPipeline(ret, NULL);
+}
 
 static void RenderLine(Line *line, Color color)
 {
@@ -218,16 +394,13 @@ static void RenderLine(Line *line, Color color)
 
     ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
     
-    ret = CreateDMATag(ret, DMA_CNT, 4, 0, 0, 0);
+    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
 
-    ret = CreateDirectTag(ret, 3, 0);
+    ret = CreateDirectTag(ret, 2, 0);
 
-    ret = CreateGSSetTag(ret, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
-    
-    PACK_GIFTAG(ret, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), GS_REG_PRIM);
-    ret++;
+    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
 
-    ret = SetupZTestGS(ret, 1, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
     ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
     
@@ -260,12 +433,10 @@ static void RenderLine(Line *line, Color color)
     qword_t *dma_vif1 = ret;
     ret++;
     
-    ret = ReadUnpackData(ret, 0, 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+    ret = ReadUnpackData(ret, 0, 3, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     ret->sw[3] = 2;
     ret++;
-
-    ret = ReadUnpackData(ret, 1, 2, 1, VIF_CMD_UNPACK(0, 3, 0));
     ret = VectorToQWord(ret, v[0]);
     ret = VectorToQWord(ret, v[1]);
 
@@ -474,7 +645,7 @@ static void SetupGrid()
     PitchLTM(grid->ltm, -45.0f);
     grid->update_object = NULL;
 
-    // InitOBB(grid, VBO_FIXED);
+    //InitOBB(grid, VBO_FIXED);
 
     CreateGraphicsPipeline(grid, "Clipper");
 
@@ -789,7 +960,7 @@ static void SetupAABBBox()
     
     box->update_object = NULL;
 
-    //InitVBO(box, VBO_FIT);
+    InitVBO(box, VBO_FIT);
 
     CreateGraphicsPipeline(box, "Clipper");
 
@@ -821,24 +992,10 @@ static void SetupOBBBody()
     
     bodyCollision->update_object = NULL;
 
+    RotateYLTM(bodyCollision->ltm, 45.0f);
+
     InitVBO(bodyCollision, VBO_FIXED);
 
-    
-/*
-    VECTOR tempDir;
-    VECTOR *pos1 = GetPositionVectorLTM(bodyCollision->ltm);
-    VECTOR *right1 = GetRightVectorLTM(bodyCollision->ltm);
-    VECTOR *up1 = GetUpVectorLTM(bodyCollision->ltm);
-    VECTOR *forward1 = GetForwardVectorLTM(bodyCollision->ltm);
-
-    StrafeLTMMove(bodyCollision->ltm, -0.5f, tempDir);
-    
-    float time1 = getTicks(g_Manager.timer);
-
-    CheckCollision(bodyCollision, box, tempDir, *right1, *up1, *forward1);
-
-    DEBUGLOG("time to calculate vbo %f", getTicks(g_Manager.timer)-time1);
-*/
     CreateGraphicsPipeline(bodyCollision, "Clipper");
 
     AddObjectToRenderWorld(world, bodyCollision);
@@ -1044,9 +1201,21 @@ int Render()
 
 
         //DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
-     //  DrawWorld(world);
+      // DrawWorld(world);
 
         RenderLine(&mainLine, lineColor);
+
+        BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
+
+        MATRIX m;
+
+       MatrixIdentity(m);
+
+        RenderAABBBoxLine(boxx, lineColor, m);
+
+        CreateWorldMatrixLTM(bodyCollision->ltm, m);
+
+        RenderAABBBoxLine((BoundingBox*)bodyCollision->vboContainer->vbo, lineColor, m);
 
        // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
 
@@ -1058,7 +1227,7 @@ int Render()
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
-        //PrintText(myFont, print_out, -310, -220);
+        PrintText(myFont, print_out, -310, -220);
 
         snprintf(print_out, 20, "K-VALUE %f", k);
 
@@ -1214,7 +1383,7 @@ int main(int argc, char **argv)
 
     VagFile *vag = LoadVagFile("SOUNDS\\HOW.VAG");
 
-    SifInitRpc(0);
+    
     int ret;
     printf("sample: kicking IRXs\n");
     ret = SifLoadModule("cdrom0:\\LIBSD.IRX", 0, NULL);
