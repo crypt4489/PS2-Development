@@ -281,6 +281,104 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
 
 }
 
+static BoundingSphere lolSphere = {{0.0, 10.0f, 50.0f, 1.0f}, 5.0f};
+
+static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
+{
+    PollVU1DoneProcessing(&g_Manager);
+    MATRIX vp;
+    VECTOR *v = (VECTOR*)malloc(size * sizeof(VECTOR));
+    VECTOR center;
+    VectorCopy(center, sphere->center);
+    float r = sphere->radius;
+
+    float step = TWOPI / size;
+    float ang = 0;
+
+    for (int i = 0; i<size; i++)
+    {
+        CreateVector(r*Cos(ang) + center[0], r*Sin(ang) + center[1], center[2], 1.0f, v[i]);
+        ang+=step;
+    }
+
+    MatrixIdentity(vp);
+
+    MatrixMultiply( vp, vp, cam->view);
+    MatrixMultiply( vp, vp, cam->proj);
+
+    qword_t *ret = InitializeDMAObject();
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
+    
+    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 2, 0);
+
+    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+
+    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+    
+    qword_t *pipeline_temp = ret;
+
+    pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
+
+    pipeline_temp = VIFSetupScaleVector(pipeline_temp);
+
+    pipeline_temp->sw[0] = color.r;
+    pipeline_temp->sw[1] = color.b;
+    pipeline_temp->sw[2] = color.g;
+    pipeline_temp->sw[3] = color.a;
+    pipeline_temp++;
+
+    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
+    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+    pipeline_temp += 2;
+    pipeline_temp->sw[3] = 0;
+
+    pipeline_temp = ret;
+
+    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
+
+    ret += 16; 
+    
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+    qword_t *dma_vif1 = ret;
+    ret++;
+    
+    ret = ReadUnpackData(ret, 0, (size*2)+1, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = size<<1;
+    ret++;
+    for (int i = 0;i<size-1; i++)
+    {
+        ret = VectorToQWord(ret, v[i]);
+        ret = VectorToQWord(ret, v[i+1]);
+    }
+
+    ret = VectorToQWord(ret, v[size-1]);
+    ret = VectorToQWord(ret, v[0]);
+
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+    
+    u32 meshPipe = ret - dma_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    CreateDCODETag(ret, DMA_DCODE_END);
+    
+    SubmitDMABuffersAsPipeline(ret, NULL);
+
+    free(v);
+}
+
 
 #include "math/ps_line.h"
 
@@ -355,38 +453,6 @@ static void RenderLine(Line *line, Color color)
     VectorCopy(v[0], line->p1);
     VectorCopy(v[1], line->p2);
 
-    MATRIX camMatrix;
-/*
-    CreateCameraWorldMatrix(cam, camMatrix);
-
-    for (int i = 0; i<6; i++)
-    {
-        VECTOR tempPlane, tempNormal, tempPoint;
-
-        Matrix3VectorMultiply(tempNormal, camMatrix, cam->frus->sides[i].planeEquation);
-        MatrixVectorMultiply(tempPoint, camMatrix, cam->frus->sides[i].pointInPlane);
-
-        Normalize(tempNormal, tempNormal);
-
-        ComputePlane(tempPoint, tempNormal, tempPlane);
-
-      
-            int c = LineSeqmentIntersectPlane(line, tempPlane, tempPoint);
-
-            DEBUGLOG("%d ", c);
-
-            if (c) {
-                VectorCopy(v[1], tempPoint);
-                v[1][3] = 1.0f;
-                //DumpVector(v[1]);
-            }
-       
-    }
-
-
-    //DumpVector(v[0]);
-    //DumpVector(v[1]);
-*/
     qword_t *ret = InitializeDMAObject();
 
     qword_t *dcode_tag_vif1 = ret;
@@ -455,15 +521,6 @@ static void RenderLine(Line *line, Color color)
 static void UpdateGlossTransform()
 {
     CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(direct->ltm), *GetForwardVectorLTM(direct->ltm), *GetRightVectorLTM(direct->ltm));
-
-    // MATRIX screen, m, camMatrix;
-    // CreateWorldMatrixLTM(multiSphere->ltm, m);
-    // MatrixIdentity(screen);
-
-    // MatrixMultiply(screen, screen, m);
-    // MatrixMultiply(screen, screen, cam->view);
-
-    // MatrixInverse(lightTransform, lightTransform);
 
     MatrixTranspose(lightTransform);
 
@@ -1216,6 +1273,8 @@ int Render()
         CreateWorldMatrixLTM(bodyCollision->ltm, m);
 
         RenderAABBBoxLine((BoundingBox*)bodyCollision->vboContainer->vbo, lineColor, m);
+
+        RenderSphereLine(&lolSphere, lineColor, 40);
 
        // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
 
