@@ -318,6 +318,21 @@ int CheckSeparatingPlane(VECTOR pos, VECTOR plane, VECTOR half1, VECTOR half2, V
     return ret;
 }
 
+void MoveBox(BoundingBox *box, VECTOR move)
+{
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "lqc2 $vf3, 0x00(%2)\n"
+        "vadd.xyz $vf1, $vf3, $vf1\n"
+        "vadd.xyz $vf2, $vf3, $vf2\n"
+        "sqc2 $vf1, 0x00(%0) \n"
+        "sqc2 $vf2, 0x00(%1) \n"
+        :
+        : "r"(box->top), "r"(box->bottom), "r"(move)
+        : "memory");
+}
+
 void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAxis, VECTOR yAxis, VECTOR zAxis, VECTOR outCenter, VECTOR outHalf)
 {
     VECTOR center, worldTop, worldBottom;
@@ -330,9 +345,20 @@ void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VE
     VectorAddXYZ(worldTop, worldBottom, center);
     VectorScaleXYZ(outCenter, center, 0.5f);
 
-    outHalf[0] = Abs(worldTop[0] - outCenter[0]);
-    outHalf[1] = Abs(worldTop[1] - outCenter[1]);
-    outHalf[2] = Abs(worldTop[2] - outCenter[2]);
+  //  outHalf[0] = worldTop[0] - outCenter[0]);
+  //  outHalf[1] = Abs(worldTop[1] - outCenter[1]);
+  //  outHalf[2] = Abs(worldTop[2] - outCenter[2]);
+}
+
+void FindCenterAndHalfRotatedAABBNew(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
+{
+    VECTOR center;
+    VectorAddXYZ(box->top, box->bottom, center);
+    VectorScaleXYZ(outCenter, center, 0.5f);
+
+    outHalf[0] = (Max(box->top[0], box->bottom[0]) - Min(box->top[0], box->bottom[0]))/2.0f;
+    outHalf[1] = (Max(box->top[1], box->bottom[1]) - Min(box->top[1], box->bottom[1]))/2.0f;
+    outHalf[2] = (Max(box->top[2], box->bottom[2]) - Min(box->top[2], box->bottom[2]))/2.0f;
 }
 
 void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
@@ -416,6 +442,7 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
         :
         : "r"(bounds->top), "r"(bounds->bottom)
         : "memory");
+    bounds->top[3] = bounds->bottom[3] = 1.0f;
 }
 
 void ClosestPointToAABB(VECTOR p, BoundingBox *box, VECTOR out)
@@ -457,60 +484,50 @@ float SqrDistFromAABB(VECTOR p, BoundingBox *box)
     return sqDist;
 }
 
-float SqDistToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfwidths)
+float SqDistToOBB(VECTOR p, VECTOR center, VECTOR halfwidths)
 {
     float dist = 0.0f;
-    VECTOR dots, d;
+    VECTOR d;
     VectorSubtractXYZ(p, center, d);
-
-    dots[0] = DotProduct(d, right);
-    dots[1] = DotProduct(d, up);
-    dots[2] = DotProduct(d, forward);
 
     for (int i = 0; i<3; i++)
     {
-        float d = dots[i];
+        float duh = d[i];
         float excess = 0.0f;
         float hw = halfwidths[i];
-        if (d < -hw) excess = hw + d;
-        else if (d > hw) excess = d - hw;
-        dist + excess * excess;
+        if (duh < -hw) 
+        {
+            excess = hw + duh;
+        }
+        else if (duh > hw)
+        {
+            excess = duh - hw;
+        } 
+        dist += excess * excess;
     }
 
     return dist;
 
 }
 
-void ClosestPointToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfWidths, VECTOR q)
+void ClosestPointToOBB(VECTOR p, VECTOR center, VECTOR halfWidths, VECTOR q)
 {
     VECTOR d, haflwidthneg;
     VectorSubtractXYZ(p, center, d);
     VectorCopy(q, center);
     VectorScaleXYZ(haflwidthneg, halfWidths, -1.0f);
-    VECTOR dists;
-    dists[0] = DotProduct(d, right);
-    dists[1] = DotProduct(d, up);
-    dists[2] = DotProduct(d, forward);
 
     asm __volatile__(
-        "lqc2 $vf1, 0x00(%0)\n" //right
-        "lqc2 $vf2, 0x00(%1)\n" //up
-        "lqc2 $vf3, 0x00(%2)\n" //forward
         "lqc2 $vf4, 0x00(%3)\n" //halfwidths
         "lqc2 $vf5, 0x00(%4)\n" //halfwidthsneg
         "lqc2 $vf6, 0x00(%6)\n" //dists
         "lqc2 $vf7, 0x00(%5)\n" //q
         "vmini.xyz $vf6, $vf6, $vf4\n"
         "vmax.xyz $vf6, $vf6, $vf5\n"
-        "vmulx.xyz $vf1, $vf1, $vf6x\n"
-        "vmuly.xyz $vf2, $vf2, $vf6y\n"
-        "vmulz.xyz $vf3, $vf3, $vf6z\n"
-        "vadd.xyz $vf7, $vf1, $vf7\n"
-        "vadd.xyz $vf7, $vf2, $vf7\n"
-        "vadd.xyz $vf7, $vf3, $vf7\n"
+        "vadd.xyz $vf7, $vf6, $vf7\n"
         "sqc2 $vf7, 0x00(%5)\n"
         :
-        : "r"(right), "r"(up), "r"(forward), "r"(halfWidths), "r"(haflwidthneg), "r"(q), "r"(dists)
+        : "r"(right), "r"(up), "r"(forward), "r"(halfWidths), "r"(haflwidthneg), "r"(q), "r"(d)
         : "memory");
 }
 

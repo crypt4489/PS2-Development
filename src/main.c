@@ -181,8 +181,7 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     VectorCopy(v[0], boxx->top);
     VectorCopy(v[7], boxx->bottom);
 
-    v[0][3] = v[7][3] = 1.0f;
-    ;
+    
     CreateVector(boxx->top[0], boxx->top[1], boxx->bottom[2], 1.0f, v[1]);
     CreateVector(boxx->top[0], boxx->bottom[1], boxx->bottom[2], 1.0f, v[2]);
     CreateVector(boxx->top[0], boxx->bottom[1], boxx->top[2], 1.0f, v[3]);
@@ -1039,7 +1038,7 @@ static void SetupOBBBody()
 
     bodyCollision->update_object = NULL;
 
-    RotateYLTM(bodyCollision->ltm, 45.0f);
+    PitchLTM(bodyCollision->ltm, 90.0f);
 
     InitVBO(bodyCollision, VBO_FIXED);
 
@@ -1226,44 +1225,40 @@ void TestObjects()
 {
     VECTOR temp;
     int ret = 0;
+    CreateVector(moveX * 1.25, moveY * 1.25, moveZ *1.25, 1.0f, temp);
     if (objectIndex == 1)
     {
         BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
-        if (moveX)
-        {
-            boxx->bottom[0] += (moveX * 1.25);
-            boxx->top[0] += (moveX * 1.25);
-            box->ltm[12] += (moveX * 1.25);
-        }
-
-        if (moveY)
-        {
-            boxx->bottom[1] += (moveY * 1.25);
-            boxx->top[1] += (moveY * 1.25);
-            box->ltm[13] += (moveY * 1.25);
-        }
+        
+        MoveBox(boxx, temp);    
+        
+        
         ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
+
+        DEBUGLOG("%f", Sqrt(SqrDistFromAABB(lolSphere.center, boxx)));
     } 
     else if (objectIndex == 3)
     {
 
         BoundingSphere *sph = &lolSphere;
-        if (moveX)
-        {
-            sph->center[0] += (moveX * 1.25);
-        }
+        VectorAddXYZ(sph->center, temp, sph->center);
 
-        if (moveY)
-        {
-            sph->center[1] += (moveY * 1.25);
-        }
+        ret = LineSegmentIntersectSphere(&mainLine, sph, temp);
 
-        if (moveZ)
-        {
-            sph->center[2] += (moveZ * 1.25);
-        }
+        BoundingBox boxx;
+        BoundingBox *boxx2 = (BoundingBox*)bodyCollision->vboContainer->vbo;
+        MATRIX world;
+        VECTOR center, half;
+        CreateWorldMatrixLTM(bodyCollision->ltm, world);
 
-       ret = LineSegmentIntersectSphere(&mainLine, sph, temp);
+        MatrixVectorMultiply(boxx.top, world, boxx2->top);
+        MatrixVectorMultiply(boxx.bottom, world, boxx2->bottom);
+        FindCenterAndHalfAABB(&boxx, center, half);
+
+
+        DEBUGLOG("%f", SqDistToOBB(lolSphere.center, center, half));
+        ClosestPointToOBB(lolSphere.center, center, half, temp);
+         
     }
 
     if (ret)

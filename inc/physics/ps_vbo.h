@@ -12,7 +12,7 @@ int AABBCollision(VECTOR top1, VECTOR bottom1, VECTOR top2, VECTOR bottom2);
 
 int CheckCollision(GameObject *obj1, GameObject *obj2, ...);
 
-
+int SphereCollision(BoundingSphere *s1, BoundingSphere *s2);
 //find center and half pos from trans, scale, and axes of a RotatedAABB
 void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAxis, VECTOR yAxis, VECTOR zAxis, VECTOR outCenter, VECTOR outHalf);
 void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf);
@@ -31,8 +31,12 @@ float SqrDistFromAABB(VECTOR p, BoundingBox *box);
 
 void ClosestPointToAABB(VECTOR p, BoundingBox *box, VECTOR out);
 
-float SqDistToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfwidths);
+float SqDistToOBB(VECTOR p, VECTOR center, VECTOR halfwidths);
 
-void ClosestPointToOBB(VECTOR p, VECTOR right, VECTOR up, VECTOR forward, VECTOR center, VECTOR halfWidths, VECTOR q);
+void ClosestPointToOBB(VECTOR p, VECTOR center, VECTOR halfWidths, VECTOR q);
+
+void FindCenterAndHalfRotatedAABBNew(BoundingBox *box, VECTOR outCenter, VECTOR outHalf);
+
+void MoveBox(BoundingBox *box, VECTOR move);
 
 #endif
