@@ -161,7 +161,7 @@ MeshBuffers sphereTarget;
 
 float k = -1.0f;
 
-Line mainLine = { {0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, 100.0f, 0.0f, 1.0f}};
+Line mainLine = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 100.0f, 0.0f, 1.0f}};
 
 
 
@@ -171,18 +171,18 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     MATRIX vp;
     VECTOR v[8];
 
-
     MatrixIdentity(vp);
 
     MatrixMultiply(vp, vp, world);
 
-    MatrixMultiply( vp, vp, cam->view);
-    MatrixMultiply( vp, vp, cam->proj);
+    MatrixMultiply(vp, vp, cam->view);
+    MatrixMultiply(vp, vp, cam->proj);
 
     VectorCopy(v[0], boxx->top);
     VectorCopy(v[7], boxx->bottom);
 
-    v[0][3] = v[7][3] = 1.0f;;
+    v[0][3] = v[7][3] = 1.0f;
+    ;
     CreateVector(boxx->top[0], boxx->top[1], boxx->bottom[2], 1.0f, v[1]);
     CreateVector(boxx->top[0], boxx->bottom[1], boxx->bottom[2], 1.0f, v[2]);
     CreateVector(boxx->top[0], boxx->bottom[1], boxx->top[2], 1.0f, v[3]);
@@ -191,14 +191,13 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     CreateVector(boxx->bottom[0], boxx->top[1], boxx->top[2], 1.0f, v[5]);
     CreateVector(boxx->bottom[0], boxx->bottom[1], boxx->top[2], 1.0f, v[6]);
 
-
     qword_t *ret = InitializeDMAObject();
 
     qword_t *dcode_tag_vif1 = ret;
     ret++;
 
     ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
-    
+
     ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
 
     ret = CreateDirectTag(ret, 2, 0);
@@ -208,7 +207,7 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
     ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
-    
+
     qword_t *pipeline_temp = ret;
 
     pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
@@ -230,15 +229,15 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
 
     memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
 
-    ret += 16; 
-    
+    ret += 16;
+
     u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
     qword_t *dma_vif1 = ret;
     ret++;
-    
-    ret = ReadUnpackData(ret, 0, 1+(2*12), 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret = ReadUnpackData(ret, 0, 1 + (2 * 12), 1, VIF_CMD_UNPACK(0, 3, 0));
 
     ret->sw[3] = 24;
     ret++;
@@ -271,14 +270,13 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
     ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
-    
+
     u32 meshPipe = ret - dma_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
     CreateDCODETag(ret, DMA_DCODE_END);
-    
-    SubmitDMABuffersAsPipeline(ret, NULL);
 
+    SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
 static BoundingSphere lolSphere = {{0.0, 10.0f, 50.0f, 1.0f}, 5.0f};
@@ -287,7 +285,7 @@ static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
 {
     PollVU1DoneProcessing(&g_Manager);
     MATRIX vp;
-    VECTOR *v = (VECTOR*)malloc(size * sizeof(VECTOR));
+    VECTOR *v = (VECTOR *)malloc(size * sizeof(VECTOR));
     VECTOR center;
     VectorCopy(center, sphere->center);
     float r = sphere->radius;
@@ -295,16 +293,16 @@ static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     float step = TWOPI / size;
     float ang = 0;
 
-    for (int i = 0; i<size; i++)
+    for (int i = 0; i < size; i++)
     {
-        CreateVector(r*Cos(ang) + center[0], r*Sin(ang) + center[1], center[2], 1.0f, v[i]);
-        ang+=step;
+        CreateVector(r * Cos(ang) + center[0], r * Sin(ang) + center[1], center[2], 1.0f, v[i]);
+        ang += step;
     }
 
     MatrixIdentity(vp);
 
-    MatrixMultiply( vp, vp, cam->view);
-    MatrixMultiply( vp, vp, cam->proj);
+    MatrixMultiply(vp, vp, cam->view);
+    MatrixMultiply(vp, vp, cam->proj);
 
     qword_t *ret = InitializeDMAObject();
 
@@ -312,7 +310,7 @@ static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     ret++;
 
     ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
-    
+
     ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
 
     ret = CreateDirectTag(ret, 2, 0);
@@ -322,7 +320,7 @@ static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
     ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
-    
+
     qword_t *pipeline_temp = ret;
 
     pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
@@ -344,41 +342,39 @@ static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
 
     memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
 
-    ret += 16; 
-    
+    ret += 16;
+
     u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
     qword_t *dma_vif1 = ret;
     ret++;
-    
-    ret = ReadUnpackData(ret, 0, (size*2)+1, 1, VIF_CMD_UNPACK(0, 3, 0));
 
-    ret->sw[3] = size<<1;
+    ret = ReadUnpackData(ret, 0, (size * 2) + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = size << 1;
     ret++;
-    for (int i = 0;i<size-1; i++)
+    for (int i = 0; i < size - 1; i++)
     {
         ret = VectorToQWord(ret, v[i]);
-        ret = VectorToQWord(ret, v[i+1]);
+        ret = VectorToQWord(ret, v[i + 1]);
     }
 
-    ret = VectorToQWord(ret, v[size-1]);
+    ret = VectorToQWord(ret, v[size - 1]);
     ret = VectorToQWord(ret, v[0]);
-
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
     ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
-    
+
     u32 meshPipe = ret - dma_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
     CreateDCODETag(ret, DMA_DCODE_END);
-    
+
     SubmitDMABuffersAsPipeline(ret, NULL);
 
     free(v);
 }
-
 
 #include "math/ps_line.h"
 
@@ -389,8 +385,8 @@ static void RenderGameObject(GameObject *obj)
 
     MatrixIdentity(vp);
 
-    MatrixMultiply( vp, vp, cam->view);
-    MatrixMultiply( vp, vp, cam->proj);
+    MatrixMultiply(vp, vp, cam->view);
+    MatrixMultiply(vp, vp, cam->proj);
 
     qword_t *ret = InitializeDMAObject();
 
@@ -398,7 +394,7 @@ static void RenderGameObject(GameObject *obj)
     ret++;
 
     ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
-    
+
     ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
 
     ret = CreateDirectTag(ret, 2, 0);
@@ -408,33 +404,31 @@ static void RenderGameObject(GameObject *obj)
     ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
     ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
-    
+
     qword_t *pipeline_temp = ret;
 
     SetupPerObjDrawVU1Header(NULL, obj, NULL, pipeline_temp);
 
     memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
 
-    ret += 16; 
-    
+    ret += 16;
+
     u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
     qword_t *dma_vif1 = ret;
     ret++;
-    
-    ret = ReadUnpackData(ret, 0, 3, 1, VIF_CMD_UNPACK(0, 3, 0));
 
-    
+    ret = ReadUnpackData(ret, 0, 3, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
     ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
-    
+
     u32 meshPipe = ret - dma_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
     CreateDCODETag(ret, DMA_DCODE_END);
-    
+
     SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
@@ -444,11 +438,10 @@ static void RenderLine(Line *line, Color color)
     MATRIX vp;
     VECTOR v[2];
 
-
     MatrixIdentity(vp);
 
-    MatrixMultiply( vp, vp, cam->view);
-    MatrixMultiply( vp, vp, cam->proj);
+    MatrixMultiply(vp, vp, cam->view);
+    MatrixMultiply(vp, vp, cam->proj);
 
     VectorCopy(v[0], line->p1);
     VectorCopy(v[1], line->p2);
@@ -459,7 +452,7 @@ static void RenderLine(Line *line, Color color)
     ret++;
 
     ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
-    
+
     ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
 
     ret = CreateDirectTag(ret, 2, 0);
@@ -469,7 +462,7 @@ static void RenderLine(Line *line, Color color)
     ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
     ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
-    
+
     qword_t *pipeline_temp = ret;
 
     pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
@@ -491,14 +484,14 @@ static void RenderLine(Line *line, Color color)
 
     memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
 
-    ret += 16; 
-    
+    ret += 16;
+
     u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
     qword_t *dma_vif1 = ret;
     ret++;
-    
+
     ret = ReadUnpackData(ret, 0, 3, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     ret->sw[3] = 2;
@@ -508,14 +501,13 @@ static void RenderLine(Line *line, Color color)
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
     ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
-    
+
     u32 meshPipe = ret - dma_vif1 - 1;
 
     CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
     CreateDCODETag(ret, DMA_DCODE_END);
-    
-    SubmitDMABuffersAsPipeline(ret, NULL);
 
+    SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
 static void UpdateGlossTransform()
@@ -702,7 +694,7 @@ static void SetupGrid()
     PitchLTM(grid->ltm, -45.0f);
     grid->update_object = NULL;
 
-    //InitOBB(grid, VBO_FIXED);
+    // InitOBB(grid, VBO_FIXED);
 
     CreateGraphicsPipeline(grid, "Clipper");
 
@@ -994,7 +986,7 @@ static void SetupTessObject()
 
 static void SetupAABBBox()
 {
-     Color color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
@@ -1014,7 +1006,6 @@ static void SetupAABBBox()
              scales,
              1.0f, box->ltm);
 
-    
     box->update_object = NULL;
 
     InitVBO(box, VBO_FIT);
@@ -1026,7 +1017,7 @@ static void SetupAABBBox()
 
 static void SetupOBBBody()
 {
-      Color color;
+    Color color;
 
     CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
 
@@ -1046,7 +1037,6 @@ static void SetupOBBBody()
              scales,
              1.0f, bodyCollision->ltm);
 
-    
     bodyCollision->update_object = NULL;
 
     RotateYLTM(bodyCollision->ltm, 45.0f);
@@ -1063,10 +1053,10 @@ static void SetupGameObjects()
 
     // InitSkybox();
 
-   SetupGrid();
+    SetupGrid();
     SetupBody();
     SetupAABBBox();
-   SetupOBBBody();
+    SetupOBBBody();
 
     // SetupMultiSphere();
     //  SetupShadowViewer();
@@ -1225,11 +1215,75 @@ static void LoadWater()
     Texture *tex = (Texture *)malloc(sizeof(Texture));
     LoadASync("TEXTURES\\MONET.PNG", tex, params, CreateTextureFromFile, FinishWater);
 }
+Color *colors[4];
+static Color lcolors[4];
+Color highlight;
+Color *held = NULL;
+int objectIndex;
+int moveX, moveY, moveZ;
+
+void TestObjects()
+{
+    VECTOR temp;
+    int ret = 0;
+    if (objectIndex == 1)
+    {
+        BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
+        if (moveX)
+        {
+            boxx->bottom[0] += (moveX * 1.25);
+            boxx->top[0] += (moveX * 1.25);
+            box->ltm[12] += (moveX * 1.25);
+        }
+
+        if (moveY)
+        {
+            boxx->bottom[1] += (moveY * 1.25);
+            boxx->top[1] += (moveY * 1.25);
+            box->ltm[13] += (moveY * 1.25);
+        }
+        ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
+    } 
+    else if (objectIndex == 3)
+    {
+
+        BoundingSphere *sph = &lolSphere;
+        if (moveX)
+        {
+            sph->center[0] += (moveX * 1.25);
+        }
+
+        if (moveY)
+        {
+            sph->center[1] += (moveY * 1.25);
+        }
+
+        if (moveZ)
+        {
+            sph->center[2] += (moveZ * 1.25);
+        }
+
+       ret = LineSegmentIntersectSphere(&mainLine, sph, temp);
+    }
+
+    if (ret)
+        DEBUGLOG("%d hits the line", objectIndex);
+}
+
 
 int Render()
 {
-    Color lineColor;
-    CREATE_RGBAQ_STRUCT(lineColor, 255, 0, 0, 128, 0);
+    CREATE_RGBAQ_STRUCT(highlight, 255, 0, 0, 128, 0);
+    CREATE_RGBAQ_STRUCT(lcolors[0], 0, 0, 255, 128, 0);
+    CREATE_RGBAQ_STRUCT(lcolors[1], 0, 255, 0, 128, 0);
+    CREATE_RGBAQ_STRUCT(lcolors[2], 255, 0, 255, 128, 0);
+    CREATE_RGBAQ_STRUCT(lcolors[3], 255, 255, 0, 128, 0);
+
+    colors[0] = &highlight;
+    held = &lcolors[0];
+    colors[1] = &lcolors[1];
+    colors[2] = &lcolors[2];
+    colors[3] = &lcolors[3];
     float lastTime = getTicks(g_Manager.timer);
 
     for (;;)
@@ -1238,67 +1292,41 @@ int Render()
         float delta = (currentTime - lastTime) * 0.001f;
         lastTime = currentTime;
 
-        //  SetK();
+        TestObjects();
 
         UpdatePad();
+
         if (body != NULL)
             UpdateAnimator(body->objAnimator, delta);
 
-        // UpdateGlossTransform();
-
-        if (FrameCounter == 250)
-        {
-            //  LoadWater();
-            //  LoadCube();
-        }
 
         float time1 = getTicks(g_Manager.timer);
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
+      //   DrawWorld(world);
 
-        //DrawQuad(240, 320, 0, 0, 0, GetTexByName(g_Manager.texManager, worldName));
-      // DrawWorld(world);
-
-        RenderLine(&mainLine, lineColor);
-
-        BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
+        RenderLine(&mainLine, *colors[0]);
 
         MATRIX m;
 
-       MatrixIdentity(m);
+        MatrixIdentity(m);
 
-        RenderAABBBoxLine(boxx, lineColor, m);
+        RenderAABBBoxLine(box->vboContainer->vbo, *colors[1], m);
 
         CreateWorldMatrixLTM(bodyCollision->ltm, m);
 
-        RenderAABBBoxLine((BoundingBox*)bodyCollision->vboContainer->vbo, lineColor, m);
+        RenderAABBBoxLine(bodyCollision->vboContainer->vbo, *colors[2], m);
 
-        RenderSphereLine(&lolSphere, lineColor, 40);
-
-       // DEBUGLOG("%f\n", getTicks(g_Manager.timer) - time1);
-
-        // DrawWorld(roomWorld);
-
-        // RenderShadowScene();
-
-        // FindOBBMaxAndMinVerticesVU0(multiSphere);
+        RenderSphereLine(&lolSphere, *colors[3], 40);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
         PrintText(myFont, print_out, -310, -220);
 
-        snprintf(print_out, 20, "K-VALUE %f", k);
-
-        // PrintText(myFont, print_out, -310, -200);
-
         EndRendering(cam);
 
         EndFrame(1);
-
-        HandleASyncIO();
-
-        WakeupIOThread();
 
         UpdateLight();
 
@@ -1394,8 +1422,6 @@ static void LoadInTextures()
 int main(int argc, char **argv)
 {
 
-   
-
     InitializeSystem(1, 640, 480, GS_PSM_32);
 
     InitASyncIO(25, 5.0f);
@@ -1442,7 +1468,6 @@ int main(int argc, char **argv)
 
     VagFile *vag = LoadVagFile("SOUNDS\\HOW.VAG");
 
-    
     int ret;
     printf("sample: kicking IRXs\n");
     ret = SifLoadModule("cdrom0:\\LIBSD.IRX", 0, NULL);
@@ -1456,7 +1481,7 @@ int main(int argc, char **argv)
 
     audsrv_adpcm_init();
 
-    audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength+16);
+    audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength + 16);
     DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
     int channel = audsrv_ch_play_adpcm(-1, &sample);
     audsrv_adpcm_set_volume(channel, MAX_VOLUME);

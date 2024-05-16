@@ -83,7 +83,7 @@ int LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
     return COLLISION;
 }
 
-int LineSegmentInterectSphere(Line *line, BoundingSphere *sphere, VECTOR point)
+int LineSegmentIntersectSphere(Line *line, BoundingSphere *sphere, VECTOR point)
 {
     VECTOR dir, m;
     VectorSubtractXYZ(line->p2, line->p1, dir);

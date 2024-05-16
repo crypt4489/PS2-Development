@@ -339,7 +339,7 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
 {
     VECTOR center;
     VectorAddXYZ(box->top, box->bottom, center);
-    VectorScaleXYZ(center, center, 0.5f);
+    VectorScaleXYZ(outCenter, center, 0.5f);
 
     outHalf[0] = Abs(box->top[0] - outCenter[0]);
     outHalf[1] = Abs(box->top[1] - outCenter[1]);

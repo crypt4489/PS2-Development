@@ -40,6 +40,15 @@ extern int alpha;
 
 extern float k;
 
+extern Color *colors[4];
+extern Color highlight;
+extern Color *held;
+
+extern int objectIndex;
+extern int moveX;
+extern int moveY;
+extern int moveZ;
+
 void UpdatePad()
 {
     s32 state = padGetState(port, 0);
@@ -49,6 +58,10 @@ void UpdatePad()
         ERRORLOG("Pad(%d, %d) is disconnected", port, slot);
         return;
     }
+
+    int toggleZ = 0;
+
+    moveX = moveY = moveZ = 0;
 
     state = padRead(port, 0, &buttons);
 
@@ -104,103 +117,63 @@ void UpdatePad()
 
         if (new_pad & PAD_SQUARE)
         {
-            //  localHighAngle+=5.5f;
-            // SetLightHighAngle(spotLight, localHighAngle);
-            //  INFOLOG("hi %f",localHighAngle);
-            pointpos[0] += 0.5f;
-            SetPositionVectorLTM(spotLight->ltm, pointpos);
-            DumpVector(pointpos);
+            
         }
         if (new_pad & PAD_CIRCLE)
         {
-            //   localHighAngle-=5.5f;
-            //   SetLightHighAngle(spotLight, localHighAngle);
-            //  INFOLOG("hi %f",localHighAngle);
-            pointpos[0] -= 0.5f;
-            SetPositionVectorLTM(spotLight->ltm, pointpos);
-            DumpVector(pointpos);
+           
         }
         if (new_pad & PAD_TRIANGLE)
         {
-            //  localLowAngle+=5.5f;
-            // SetLightRadius(point, localLowAngle);
-            //  INFOLOG("low %f",localLowAngle);
-            pointpos[1] += 0.5f;
-            SetPositionVectorLTM(spotLight->ltm, pointpos);
-            DumpVector(pointpos);
+           
         }
         if (new_pad & PAD_CROSS)
         {
-            //   localLowAngle-=5.5f;
-            // SetLightRadius(point, localLowAngle);
-            //  INFOLOG("low %f", localLowAngle);
-            pointpos[1] -= 0.5f;
-            SetPositionVectorLTM(spotLight->ltm, pointpos);
-            DumpVector(pointpos);
+       
         }
 
         if (new_pad & PAD_L1)
         {
-            pointpos[2] += 0.5f;
-            SetPositionVectorLTM(spotLight->ltm, pointpos);
-            DumpVector(pointpos);
+           colors[objectIndex] = held;
+           objectIndex = (objectIndex - 1) & 0x3;
+           held = colors[objectIndex];
+           colors[objectIndex] = &highlight;
         }
 
         if (new_pad & PAD_R1)
         {
-            pointpos[2] -= 0.5f;
-            SetPositionVectorLTM(spotLight->ltm, pointpos);
-            DumpVector(pointpos);
+           colors[objectIndex] = held;
+           objectIndex = (objectIndex + 1) & 0x3;
+           held = colors[objectIndex];
+           colors[objectIndex] = &highlight;
         }
 
-        if (new_pad & PAD_L2)
+        if (currData & PAD_L2)
         {
-            localLowAngle += 5.5f;
-            SetLightRadius(spotLight, localLowAngle);
-            INFOLOG("low %f", localLowAngle);
+            toggleZ = 1;
+            
         }
 
         if (new_pad & PAD_R2)
         {
-            localLowAngle -= 5.5f;
-            SetLightRadius(spotLight, localLowAngle);
-            INFOLOG("low %f", localLowAngle);
         }
         if (new_pad & PAD_DOWN)
         {
-            // SetActivePipelineByName(sphere, "WIREFRAME_PIPELINE");
-            // sphere->renderState.state.render_state.LIGHTING_ENABLE = 0;
-            // INFOLOG("here wire?");
-            AddObjectToRenderWorld(world, sphere);
+            if (toggleZ) moveZ = -1;
+            else moveY = -1;
         }
         if (new_pad & PAD_UP)
         {
-            // SetActivePipelineByName(sphere, "LIGHTS_PIPELINE");
-            // sphere->renderState.state.render_state.LIGHTING_ENABLE = 1;
-            // INFOLOG("here gneeric?");
-            RemoveObjectFromRenderWorld(world, sphere);
+            if (toggleZ) moveZ = 1;
+            else moveY = 1;
         }
         if (new_pad & PAD_LEFT)
         {
-            // world = RemoveObjectFromRenderWorld(world, sphere);
-            alpha++;
-            INFOLOG("%d", alpha);
+            moveX = -1;
         }
         if (new_pad & PAD_RIGHT)
         {
-            // AddObjectToRenderWorld(world, sphere);
-            alpha--;
-            INFOLOG("%d", alpha);
-        }
-
-        if (new_pad & PAD_R1)
-        {
-            k += 0.25f;
-        }
-
-         if (new_pad & PAD_L1)
-        {
-            k -= 0.25f;
+            moveX = 1;
         }
     }
 }
