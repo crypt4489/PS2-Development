@@ -6,51 +6,9 @@
 
 #include <float.h>
 
-#define COLLISION 1
-#define NOCOLLISION 0
+#define COLLISION 0
+#define NOCOLLISION 1
 
-
-/*
-int LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
-{
-    float tmin = 0.0f;
-    float tmax = FLT_MAX;
-     VECTOR dir;
-    VectorSubtractXYZ(line->p2, line->p1, dir);
-    Normalize(dir, dir);
-    VECTOR *p = &line->p1;
-    for (int i = 0; i<3; i++)
-    {
-        if (Abs(dir[i]) < .001)
-        {
-            if (*p[i] < box->bottom[i] || *p[i] > box->top[i]) return NOCOLLISION;
-        } 
-        else 
-        {
-            float ood = 1.0f / dir[i];
-            float t1 = (box->bottom[i] - *p[i]) * ood;
-            float t2 = (box->top[i] - *p[i]) * ood;
-
-            if (t2 > t1)
-            {
-                t2 = t2 + t1;
-                t1 = t2 - t1;
-                t2 = t2 - t1;
-            }
-
-
-            tmin = Max(tmin, t1);
-            tmax = Min(tmax, t2);
-
-            if (tmin > tmax) return NOCOLLISION;
-
-        }
-    }
-
-    VectorScaleXYZ(dir, dir , tmin);
-    VectorAddXYZ(line->p1, dir, point);
-    return COLLISION;
-} */
 
 int LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
 {
@@ -110,18 +68,18 @@ int LineSegmentIntersectSphere(Line *line, BoundingSphere *sphere, VECTOR point)
     return COLLISION;
 }
 
-int LineSeqmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
+int LineSegmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
 {
     VECTOR dist;
 
     VectorSubtractXYZ(line->p2, line->p1, dist);
     float p1n = DotProduct(plane, line->p1);
     float distn = DotProduct(plane, dist);
-    float d = plane[3];
+    float d = -plane[3];
 
     if (distn == 0.0f)
     {
-        DEBUGLOG("Division by zero upcoming");
+        DEBUGLOG("Division by zero avoided");
         distn+=.001;
     }
 
@@ -135,4 +93,28 @@ int LineSeqmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
     }
 
     return NOCOLLISION;
+}
+
+float DistanceFromLineSegment(Line *line, VECTOR point)
+{
+    VECTOR dir, m;
+    VectorSubtractXYZ(line->p2, line->p1, dir);
+    VectorSubtractXYZ(point, line->p1, m);
+
+    float dots = DotProduct(m, dir) / DotProduct(dir, dir);
+
+    if (dots <= 0.0f)
+    {
+        VectorCopy(m, line->p1);
+    } else if (dots >= 1.0f) {
+        VectorCopy(m, line->p2);
+    } else {    
+
+        VectorScaleXYZ(m, dir, dots);
+
+        VectorAddXYZ(m, line->p1, m);
+    }
+
+    return DistFromPoints(m, point);
+
 }

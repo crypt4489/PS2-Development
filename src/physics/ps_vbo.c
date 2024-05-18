@@ -15,6 +15,7 @@
 #include "dma/ps_dma.h"
 #include "system/ps_timer.h"
 #include "math/ps_misc.h"
+#include "math/ps_plane.h"
 
 extern volatile u32 *vu1_data_address;
 
@@ -45,6 +46,7 @@ void InitVBO(GameObject *obj, int type)
     else if (type == VBO_SPHERE)
     {
         obj->vboContainer->vbo = (void *)malloc(sizeof(BoundingSphere));
+        ComputeBoundingSphere(obj);
     }
 }
 
@@ -94,6 +96,36 @@ int SphereCollision(BoundingSphere *s1, BoundingSphere *s2)
     float radiisum = s1->radius + s2->radius;
     if (DotProduct(traj, traj) <= (radiisum * radiisum)) return COLLISION;
     return NOCOLLISION;
+}
+
+int SpherePlaneCollision(BoundingSphere *s, Plane *p)
+{
+    float dist = DistanceFromPlane(p->planeEquation, s->center);
+    return Abs(dist) <= s->radius;
+}
+
+int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point)
+{
+    CrossProduct(p1->planeEquation, p2->planeEquation, axisOfIntersect);
+
+    float den = DotProduct(axisOfIntersect, axisOfIntersect);
+
+    if (den < 0.001) return NOCOLLISION;
+
+    float invDen = 1.0f / den;
+
+    VECTOR cross1, cross2;
+
+    VectorScaleXYZ(cross1, p2->planeEquation, -p1->planeEquation[3]);
+    VectorScaleXYZ(cross2, p1->planeEquation, -p2->planeEquation[3]);
+
+    VectorSubtractXYZ(cross1, cross2, cross1);
+
+    CrossProduct(cross1, axisOfIntersect, cross1);
+
+    VectorScaleXYZ(point, cross1, invDen);
+
+    return COLLISION;
 }
 
 void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
@@ -345,20 +377,9 @@ void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VE
     VectorAddXYZ(worldTop, worldBottom, center);
     VectorScaleXYZ(outCenter, center, 0.5f);
 
-  //  outHalf[0] = worldTop[0] - outCenter[0]);
-  //  outHalf[1] = Abs(worldTop[1] - outCenter[1]);
-  //  outHalf[2] = Abs(worldTop[2] - outCenter[2]);
-}
-
-void FindCenterAndHalfRotatedAABBNew(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
-{
-    VECTOR center;
-    VectorAddXYZ(box->top, box->bottom, center);
-    VectorScaleXYZ(outCenter, center, 0.5f);
-
-    outHalf[0] = (Max(box->top[0], box->bottom[0]) - Min(box->top[0], box->bottom[0]))/2.0f;
-    outHalf[1] = (Max(box->top[1], box->bottom[1]) - Min(box->top[1], box->bottom[1]))/2.0f;
-    outHalf[2] = (Max(box->top[2], box->bottom[2]) - Min(box->top[2], box->bottom[2]))/2.0f;
+    outHalf[0] = Abs(worldTop[0] - outCenter[0]);
+    outHalf[1] = Abs(worldTop[1] - outCenter[1]);
+    outHalf[2] = Abs(worldTop[2] - outCenter[2]);
 }
 
 void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
@@ -514,20 +535,19 @@ void ClosestPointToOBB(VECTOR p, VECTOR center, VECTOR halfWidths, VECTOR q)
 {
     VECTOR d, haflwidthneg;
     VectorSubtractXYZ(p, center, d);
-    VectorCopy(q, center);
     VectorScaleXYZ(haflwidthneg, halfWidths, -1.0f);
 
     asm __volatile__(
         "lqc2 $vf4, 0x00(%3)\n" //halfwidths
         "lqc2 $vf5, 0x00(%4)\n" //halfwidthsneg
         "lqc2 $vf6, 0x00(%6)\n" //dists
-        "lqc2 $vf7, 0x00(%5)\n" //q
+        "lqc2 $vf7, 0x00(%0)\n" //q
         "vmini.xyz $vf6, $vf6, $vf4\n"
         "vmax.xyz $vf6, $vf6, $vf5\n"
         "vadd.xyz $vf7, $vf6, $vf7\n"
         "sqc2 $vf7, 0x00(%5)\n"
         :
-        : "r"(right), "r"(up), "r"(forward), "r"(halfWidths), "r"(haflwidthneg), "r"(q), "r"(d)
+        : "r"(center), "r"(up), "r"(forward), "r"(halfWidths), "r"(haflwidthneg), "r"(q), "r"(d)
         : "memory");
 }
 

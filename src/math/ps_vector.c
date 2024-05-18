@@ -78,6 +78,13 @@ float dist(VECTOR in)
     return d;
 }
 
+float DistFromPoints(VECTOR p1, VECTOR p2)
+{
+    VECTOR d;
+    VectorSubtractXYZ(p2, p1, d);
+    return dist(d);
+}
+
 void VectorCopyXYZ(VECTOR in, VECTOR out)
 {
     out[0] = in[0];

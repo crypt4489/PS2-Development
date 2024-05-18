@@ -35,8 +35,10 @@ float SqDistToOBB(VECTOR p, VECTOR center, VECTOR halfwidths);
 
 void ClosestPointToOBB(VECTOR p, VECTOR center, VECTOR halfWidths, VECTOR q);
 
-void FindCenterAndHalfRotatedAABBNew(BoundingBox *box, VECTOR outCenter, VECTOR outHalf);
-
 void MoveBox(BoundingBox *box, VECTOR move);
+
+int SpherePlaneCollision(BoundingSphere *s, Plane *p);
+
+int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point);
 
 #endif

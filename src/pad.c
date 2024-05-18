@@ -40,7 +40,7 @@ extern int alpha;
 
 extern float k;
 
-extern Color *colors[4];
+extern Color *colors[5];
 extern Color highlight;
 extern Color *held;
 
@@ -135,7 +135,11 @@ void UpdatePad()
         if (new_pad & PAD_L1)
         {
            colors[objectIndex] = held;
-           objectIndex = (objectIndex - 1) & 0x3;
+           objectIndex = (objectIndex - 1) % 5;
+           if (objectIndex < 0)
+           {
+            objectIndex += 5;
+           }
            held = colors[objectIndex];
            colors[objectIndex] = &highlight;
         }
@@ -143,7 +147,7 @@ void UpdatePad()
         if (new_pad & PAD_R1)
         {
            colors[objectIndex] = held;
-           objectIndex = (objectIndex + 1) & 0x3;
+           objectIndex = (objectIndex + 1) % 5;
            held = colors[objectIndex];
            colors[objectIndex] = &highlight;
         }

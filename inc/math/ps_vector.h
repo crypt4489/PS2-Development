@@ -8,6 +8,7 @@ float DotProduct(VECTOR in1, VECTOR in2);
 void RandomVectorsInit(VECTOR in);
 void GetRandomVectors(VECTOR in);
 float dist(VECTOR in);
+float DistFromPoints(VECTOR p1, VECTOR p2);
 void Normalize(VECTOR in, VECTOR out);
 float distCOP2(VECTOR in);
 void DumpVector(VECTOR elem);

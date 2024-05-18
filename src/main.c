@@ -278,6 +278,8 @@ static void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
+static BoundingSphere lol2Sphere = {{-15.0f, 10.0f, 50.0f, 1.0f}, 10.0f};
+
 static BoundingSphere lolSphere = {{0.0, 10.0f, 50.0f, 1.0f}, 5.0f};
 
 static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
@@ -373,6 +375,114 @@ static void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     SubmitDMABuffersAsPipeline(ret, NULL);
 
     free(v);
+}
+
+static Plane planer = {{1.0, 1.0, 0.0, 1.0f}, {1.0, 2.0, -1.0, -3.0f}};
+
+static Plane plane2 = {{0.0, 0.0, 7.0, 1.0f}, {2.0, 3.0, -1.0, -7.0f}};
+
+static void RenderPlaneLine(Plane *plane, Color color, int size)
+{
+    PollVU1DoneProcessing(&g_Manager);
+    MATRIX vp;
+    VECTOR v[4];
+    VECTOR temp, temp2, temp3;
+  
+
+    CreateVector(1.0f *size, 0.0f, 1.0 *size, 1.0f, v[0]);
+    CreateVector(1.0f *size, 0.0f, -1.0 *size, 1.0f, v[1]);
+    CreateVector(-1.0f *size, 0.0f, 1.0 *size, 1.0f, v[2]);
+    CreateVector(-1.0f *size, 0.0f, -1.0 *size, 1.0f, v[3]);
+    
+    CrossProduct(plane->planeEquation, up, temp);
+    float angle = ASin(dist(temp));  
+
+    MATRIX m;
+
+    CreateRotationMatrix(temp, angle, m); 
+
+    VectorCopy(&m[12], plane->pointInPlane);
+
+    MatrixIdentity(vp);
+
+    MatrixMultiply(vp, vp, m);
+    MatrixMultiply(vp, vp, cam->view);
+    MatrixMultiply(vp, vp, cam->proj);
+
+    qword_t *ret = InitializeDMAObject();
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
+
+    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 2, 0);
+
+    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+
+    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+
+    qword_t *pipeline_temp = ret;
+
+    pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
+
+    pipeline_temp = VIFSetupScaleVector(pipeline_temp);
+
+    pipeline_temp->sw[0] = color.r;
+    pipeline_temp->sw[1] = color.b;
+    pipeline_temp->sw[2] = color.g;
+    pipeline_temp->sw[3] = color.a;
+    pipeline_temp++;
+
+    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
+    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+    pipeline_temp += 2;
+    pipeline_temp->sw[3] = 0;
+
+    pipeline_temp = ret;
+
+    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
+
+    ret += 16;
+
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+    qword_t *dma_vif1 = ret;
+    ret++;
+
+    ret = ReadUnpackData(ret, 0, (5 * 2) + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = 10;
+    ret++;
+
+    ret = VectorToQWord(ret, v[0]);
+    ret = VectorToQWord(ret, v[1]);
+
+    ret = VectorToQWord(ret, v[1]);
+    ret = VectorToQWord(ret, v[3]);
+
+    ret = VectorToQWord(ret, v[3]);
+    ret = VectorToQWord(ret, v[2]);
+    ret = VectorToQWord(ret, v[2]);
+    ret = VectorToQWord(ret, v[0]);
+    ret = VectorToQWord(ret, v[3]);
+    ret = VectorToQWord(ret, v[0]); 
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+
+    u32 meshPipe = ret - dma_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    CreateDCODETag(ret, DMA_DCODE_END);
+
+    SubmitDMABuffersAsPipeline(ret, NULL);
+
 }
 
 #include "math/ps_line.h"
@@ -1214,8 +1324,8 @@ static void LoadWater()
     Texture *tex = (Texture *)malloc(sizeof(Texture));
     LoadASync("TEXTURES\\MONET.PNG", tex, params, CreateTextureFromFile, FinishWater);
 }
-Color *colors[4];
-static Color lcolors[4];
+Color *colors[5];
+static Color lcolors[5];
 Color highlight;
 Color *held = NULL;
 int objectIndex;
@@ -1224,7 +1334,7 @@ int moveX, moveY, moveZ;
 void TestObjects()
 {
     VECTOR temp;
-    int ret = 0;
+    int ret = 1;
     CreateVector(moveX * 1.25, moveY * 1.25, moveZ *1.25, 1.0f, temp);
     if (objectIndex == 1)
     {
@@ -1256,12 +1366,26 @@ void TestObjects()
         FindCenterAndHalfAABB(&boxx, center, half);
 
 
-        DEBUGLOG("%f", SqDistToOBB(lolSphere.center, center, half));
+        //DEBUGLOG("%f", SqDistToOBB(lolSphere.center, center, half));
         ClosestPointToOBB(lolSphere.center, center, half, temp);
-         
-    }
 
-    if (ret)
+        //DEBUGLOG("spherecollision %d", SphereCollision(&lol2Sphere, &lolSphere));
+
+        DumpVector(lolSphere.center);
+
+        //DEBUGLOG("plane dist %f", DistanceFromPlane(planer.planeEquation, lolSphere.center));
+
+        DEBUGLOG("dist from line %f", DistanceFromLineSegment(&mainLine, lolSphere.center));
+         
+    } 
+    else if (objectIndex == 4)
+    {
+        ret = LineSegmentIntersectPlane(&mainLine, planer.planeEquation, planer.pointInPlane);
+        //DEBUGLOG("%d", LineSegmentIntersectPlane(&mainLine, plane2.planeEquation, plane2.pointInPlane));
+    }
+    //VECTOR axis, point;
+   // DEBUGLOG("%d", PlaneCollision(&planer, &plane2, axis, point));
+    if (!ret)
         DEBUGLOG("%d hits the line", objectIndex);
 }
 
@@ -1273,12 +1397,14 @@ int Render()
     CREATE_RGBAQ_STRUCT(lcolors[1], 0, 255, 0, 128, 0);
     CREATE_RGBAQ_STRUCT(lcolors[2], 255, 0, 255, 128, 0);
     CREATE_RGBAQ_STRUCT(lcolors[3], 255, 255, 0, 128, 0);
+    CREATE_RGBAQ_STRUCT(lcolors[4], 128, 128, 128, 128, 0);
 
     colors[0] = &highlight;
     held = &lcolors[0];
     colors[1] = &lcolors[1];
     colors[2] = &lcolors[2];
     colors[3] = &lcolors[3];
+    colors[4] = &lcolors[4];
     float lastTime = getTicks(g_Manager.timer);
 
     for (;;)
@@ -1314,6 +1440,12 @@ int Render()
         RenderAABBBoxLine(bodyCollision->vboContainer->vbo, *colors[2], m);
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
+
+         RenderSphereLine(&lol2Sphere, *colors[4], 40);
+
+         RenderPlaneLine(&planer, *colors[4], 20); 
+
+         RenderPlaneLine(&plane2, *colors[1], 20);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
@@ -1480,6 +1612,8 @@ int main(int argc, char **argv)
     DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
     int channel = audsrv_ch_play_adpcm(-1, &sample);
     audsrv_adpcm_set_volume(channel, MAX_VOLUME);
+
+    NormalizePlane(planer.planeEquation, planer.planeEquation);
 
     Render();
 
