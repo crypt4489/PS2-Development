@@ -213,6 +213,7 @@ write_color:
         loi 255
         mini.xyz  outColor, outColor, I
         max.xyz   outColor, outColor, vf00[x]
+        ftoi0     outColor, outColor
 
 
         sq outColor,    0(normData)

@@ -83,7 +83,6 @@ loadColor:
         ibeq    useColor,            vi00,         Data
         iadd    inPtr,          inPtr,        vertCount
         lq      outColor,       0(inPtr)
-        ftoi0   outColor,       outColor
 
 
 

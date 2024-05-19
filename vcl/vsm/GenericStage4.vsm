@@ -81,7 +81,7 @@ loadColor:
 ; _LNOPT_w=[ normal2 ] 3 [6 0] 6   [__v___wsl__Ubuntu_home_dfletcher_ps2dev_PS2_PS2_Demo_vcl_Processed_GenericStage4_vcl_16]
          NOP                                                        iadd          VI01,VI07,VI06                      
          NOP                                                        lq            VF06,0(VI01)                        
-         ftoi0         VF06,VF06                                    NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                  NOP                                                      ;	STALL_LATENCY ?3
 Data:
 ; _LNOPT_w=[ normal2 ] 7 [7 0] 7   [Data]
          NOP                                                        isubiu        VI10,VI10,1                         

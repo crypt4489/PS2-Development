@@ -123,6 +123,7 @@ GameObject *room = NULL;
 GameObject *multiSphere = NULL;
 GameObject *box = NULL;
 GameObject *bodyCollision = NULL;
+GameObject *shotBox = NULL;
 
 static float lodGrid[4] = {150.0f, 125.0f, 75.0f, 50.0f};
 
@@ -161,7 +162,10 @@ MeshBuffers sphereTarget;
 
 float k = -1.0f;
 
-Line mainLine = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 100.0f, 0.0f, 1.0f}};
+Line mainLine = {{-45.0f, 0.0f, 50.0f, 1.0f}, {-45.0f, 0.0f, -50.0f, 1.0f}};
+
+int highlightIndex;
+
 
 
 
@@ -487,12 +491,35 @@ static void RenderPlaneLine(Plane *plane, Color color, int size)
 
 #include "math/ps_line.h"
 
+static Color shotBoxColor[36];
+static Color normal;
+static Color boxhigh;
+
+
+static void ShotBoxIntersectCB(VECTOR *verts, int index)
+{
+    for (int i = index+2; i>=index; i--)
+    {
+        shotBoxColor[i].r = boxhigh.r;
+        shotBoxColor[i].g = boxhigh.g;
+        shotBoxColor[i].b = boxhigh.b;
+        shotBoxColor[i].a = boxhigh.a;
+    }
+}
+
+
 static void RenderGameObject(GameObject *obj)
 {
     PollVU1DoneProcessing(&g_Manager);
     MATRIX vp;
 
     MatrixIdentity(vp);
+
+    MATRIX m;
+
+    CreateWorldMatrixLTM(obj->ltm, m);
+
+    MatrixMultiply(vp, vp, m);
 
     MatrixMultiply(vp, vp, cam->view);
     MatrixMultiply(vp, vp, cam->proj);
@@ -528,7 +555,30 @@ static void RenderGameObject(GameObject *obj)
     qword_t *dma_vif1 = ret;
     ret++;
 
-    ret = ReadUnpackData(ret, 0, 3, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    u32 count = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
+    ret = ReadUnpackData(ret, 0,  count*2 + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = count ;
+    ret++;
+
+    VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
+    for (int i = 0; i<count; i++)
+    {
+        ret = VectorToQWord(ret, verts[i]);
+    }
+
+    for (int i = 0; i<count; i++)
+    {
+        
+        ret->sw[0] = (int)shotBoxColor[i].r;
+        ret->sw[1] = (int)shotBoxColor[i].g;
+        ret->sw[2] = (int)shotBoxColor[i].b;
+        ret->sw[3] = (int)shotBoxColor[i].a;
+        
+        
+        ret++; 
+    }
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
     ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
@@ -1124,6 +1174,34 @@ static void SetupAABBBox()
     AddObjectToRenderWorld(world, box);
 }
 
+static void SetupShootBoxBox()
+{
+    Color color;
+
+    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
+
+    shotBox = InitializeGameObject();
+    ReadModelFile("MODELS\\BOX.BIN", &shotBox->vertexBuffer);
+    SetupGameObjectPrimRegs(shotBox, color, RENDERCOLORED);
+
+    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
+
+    CreateMaterial(&shotBox->vertexBuffer, 0, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+
+    VECTOR pos = {-50.0f, 0.0f, 0.0f, 1.0f};
+
+    VECTOR scales = {1.f, 1.f, 1.f, 1.0f};
+
+    SetupLTM(pos, up, right, forward,
+             scales,
+             1.0f, shotBox->ltm);
+
+    shotBox->update_object = NULL;
+
+    InitVBO(shotBox, VBO_FIT);
+
+}
+
 static void SetupOBBBody()
 {
     Color color;
@@ -1166,7 +1244,7 @@ static void SetupGameObjects()
     SetupBody();
     SetupAABBBox();
     SetupOBBBody();
-
+    SetupShootBoxBox();
     // SetupMultiSphere();
     //  SetupShadowViewer();
 
@@ -1336,6 +1414,12 @@ void TestObjects()
     VECTOR temp;
     int ret = 1;
     CreateVector(moveX * 1.25, moveY * 1.25, moveZ *1.25, 1.0f, temp);
+
+    if (objectIndex == 0)
+    {
+        VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
+        VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
+    }
     if (objectIndex == 1)
     {
         BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
@@ -1381,14 +1465,11 @@ void TestObjects()
     else if (objectIndex == 4)
     {
         ret = LineSegmentIntersectPlane(&mainLine, planer.planeEquation, planer.pointInPlane);
-        //DEBUGLOG("%d", LineSegmentIntersectPlane(&mainLine, plane2.planeEquation, plane2.pointInPlane));
     }
-    //VECTOR axis, point;
-   // DEBUGLOG("%d", PlaneCollision(&planer, &plane2, axis, point));
+
     if (!ret)
         DEBUGLOG("%d hits the line", objectIndex);
 }
-
 
 int Render()
 {
@@ -1398,6 +1479,15 @@ int Render()
     CREATE_RGBAQ_STRUCT(lcolors[2], 255, 0, 255, 128, 0);
     CREATE_RGBAQ_STRUCT(lcolors[3], 255, 255, 0, 128, 0);
     CREATE_RGBAQ_STRUCT(lcolors[4], 128, 128, 128, 128, 0);
+
+    CREATE_RGBAQ_STRUCT(boxhigh, 255, 128, 128, 128, 0);
+    CREATE_RGBAQ_STRUCT(normal, 128, 255, 128, 128, 0);
+
+    for (int i = 0; i<36; i++)
+    {
+        CREATE_RGBAQ_STRUCT(shotBoxColor[i], 128, 255, 128, 128, 0);
+    }
+
 
     colors[0] = &highlight;
     held = &lcolors[0];
@@ -1420,12 +1510,11 @@ int Render()
         if (body != NULL)
             UpdateAnimator(body->objAnimator, delta);
 
-
         float time1 = getTicks(g_Manager.timer);
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
-      //   DrawWorld(world);
+        //   DrawWorld(world);
 
         RenderLine(&mainLine, *colors[0]);
 
@@ -1441,11 +1530,20 @@ int Render()
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
 
-         RenderSphereLine(&lol2Sphere, *colors[4], 40);
+        RenderSphereLine(&lol2Sphere, *colors[4], 40);
 
-         RenderPlaneLine(&planer, *colors[4], 20); 
+        RenderPlaneLine(&planer, *colors[4], 20);
 
-         RenderPlaneLine(&plane2, *colors[1], 20);
+        RenderPlaneLine(&plane2, *colors[1], 20);
+
+        CreateWorldMatrixLTM(shotBox->ltm, m);
+
+        LineSegmentIntersectForAllTriangles(&mainLine,
+         shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices,
+          shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount,
+         m, ShotBoxIntersectCB);
+
+        RenderGameObject(shotBox);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 

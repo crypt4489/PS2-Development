@@ -3,6 +3,7 @@
 #include "log/ps_log.h"
 #include "math/ps_fast_maths.h"
 #include "physics/ps_vbo.h"
+#include "math/ps_matrix.h"
 
 #include <float.h>
 
@@ -117,4 +118,66 @@ float DistanceFromLineSegment(Line *line, VECTOR point)
 
     return DistFromPoints(m, point);
 
+}
+
+int LineSegmentIntersectsTriangle(Line *line, VECTOR a, VECTOR b, VECTOR c, VECTOR coordinates)
+{
+    VECTOR ab, ac, qp;
+    VectorSubtractXYZ(b, a, ab);
+    VectorSubtractXYZ(c, a, ac);
+    VectorSubtractXYZ(line->p1, line->p2, qp);
+
+    VECTOR n;
+    CrossProduct(ab, ac, n);
+    float d = DotProduct(qp, n);
+    if (d <= 0.0f) return NOCOLLISION;
+
+    VECTOR ap;
+
+    VectorSubtractXYZ(line->p1, a, ap);
+    float t = DotProduct(ap, n);
+    if (t > d || t < 0.0f) return NOCOLLISION;
+
+    VECTOR e;
+    CrossProduct(qp, ap, e);
+
+    float v = DotProduct(ac, e);
+    if (v < 0.0f || v > d) return NOCOLLISION;
+    float w = -DotProduct(ab, e);
+    if (w < 0.0f || (v+w)>d) return NOCOLLISION;
+
+    float o = 1.0f / d;
+    t *= o;
+    w *= o;
+    v *= o;
+    float u = 1.0f - v - w;
+    CreateVector(u, v, w, t, coordinates);
+    return COLLISION;
+}
+
+int LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MATRIX m, void(*ft)(float*, int))
+{
+        
+
+    
+    for (int i = 0; i<count; i+=3)
+    {
+        VECTOR a, b, c, d;
+       
+        MatrixVectorMultiply(a, m, verts[i]);
+        MatrixVectorMultiply(b, m, verts[i+1]);
+        MatrixVectorMultiply(c, m, verts[i+2]);
+        int ret =  LineSegmentIntersectsTriangle(line, c, b, a, d);
+        if (ret)
+        {
+            ret =  LineSegmentIntersectsTriangle(line, a, b, c, d);
+        }
+
+
+         if (!ret)
+        {
+            ft(verts+i, i);
+        }
+
+    }
 }
