@@ -44,29 +44,9 @@ int LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
 
 int LineSegmentIntersectSphere(Line *line, BoundingSphere *sphere, VECTOR point)
 {
-    VECTOR dir, m;
-    VectorSubtractXYZ(line->p2, line->p1, dir);
-    Normalize(dir, dir);
-    VectorSubtractXYZ(line->p1, sphere->center, m);
-
-    float b = DotProduct(m, dir);
-    float c = DotProduct(m, m) - sphere->radius * sphere->radius;
-
-    if (c > 0.0f && b > 0.0f) return NOCOLLISION;
-
-    float bbc = b*b - c;
-
-    if (bbc < 0.0f) return NOCOLLISION;
-
-    float t = -b - Sqrt(bbc);
-
-    if (t < 0.0f) t = 0.0f;
-
-    VectorScaleXYZ(dir, dir, t);
-
-    VectorAddXYZ(dir, line->p1, point);
-
-    return COLLISION;
+   float d = DistanceFromLineSegment(line, sphere->center, point);
+   if (Abs(d) < sphere->radius) return COLLISION;
+   return NOCOLLISION;
 }
 
 int LineSegmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
@@ -96,7 +76,7 @@ int LineSegmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
     return NOCOLLISION;
 }
 
-float DistanceFromLineSegment(Line *line, VECTOR point)
+float DistanceFromLineSegment(Line *line, VECTOR point, VECTOR close)
 {
     VECTOR dir, m;
     VectorSubtractXYZ(line->p2, line->p1, dir);
@@ -106,17 +86,17 @@ float DistanceFromLineSegment(Line *line, VECTOR point)
 
     if (dots <= 0.0f)
     {
-        VectorCopy(m, line->p1);
+        VectorCopy(close, line->p1);
     } else if (dots >= 1.0f) {
-        VectorCopy(m, line->p2);
+        VectorCopy(close, line->p2);
     } else {    
 
         VectorScaleXYZ(m, dir, dots);
 
-        VectorAddXYZ(m, line->p1, m);
+        VectorAddXYZ(m, line->p1, close);
     }
 
-    return DistFromPoints(m, point);
+    return DistFromPoints(close, point);
 
 }
 
@@ -155,7 +135,7 @@ int LineSegmentIntersectsTriangle(Line *line, VECTOR a, VECTOR b, VECTOR c, VECT
     return COLLISION;
 }
 
-int LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MATRIX m, void(*ft)(float*, int))
+int LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MATRIX m, void(*ft)(VECTOR*, int))
 {
         
 
@@ -180,4 +160,5 @@ int LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MA
         }
 
     }
+    return 0;
 }

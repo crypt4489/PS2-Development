@@ -669,6 +669,90 @@ static void RenderLine(Line *line, Color color)
     SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
+
+static Ray rayray = {{0.0f, 0.0f, -10.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
+
+static void RenderRay(Ray *ray, Color color, float t)
+{
+    PollVU1DoneProcessing(&g_Manager);
+    MATRIX vp;
+    VECTOR v[2];
+
+    MatrixIdentity(vp);
+
+    MatrixMultiply(vp, vp, cam->view);
+    MatrixMultiply(vp, vp, cam->proj);
+
+    VectorCopy(v[0], ray->origin);
+    //VectorCopy(v[1], line->p2);
+    VectorScaleXYZ(v[1], ray->direction, t);
+    VectorAddXYZ(v[1], ray->origin, v[1]);
+    v[1][3] = v[0][3] = 1.0f;
+
+    qword_t *ret = InitializeDMAObject();
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
+
+    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 2, 0);
+
+    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+
+    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+
+    qword_t *pipeline_temp = ret;
+
+    pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
+
+    pipeline_temp = VIFSetupScaleVector(pipeline_temp);
+
+    pipeline_temp->sw[0] = color.r;
+    pipeline_temp->sw[1] = color.b;
+    pipeline_temp->sw[2] = color.g;
+    pipeline_temp->sw[3] = color.a;
+    pipeline_temp++;
+
+    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
+    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+    pipeline_temp += 2;
+    pipeline_temp->sw[3] = 0;
+
+    pipeline_temp = ret;
+
+    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
+
+    ret += 16;
+
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+    qword_t *dma_vif1 = ret;
+    ret++;
+
+    ret = ReadUnpackData(ret, 0, 3, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = 2;
+    ret++;
+    ret = VectorToQWord(ret, v[0]);
+    ret = VectorToQWord(ret, v[1]);
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+
+    u32 meshPipe = ret - dma_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    CreateDCODETag(ret, DMA_DCODE_END);
+
+    SubmitDMABuffersAsPipeline(ret, NULL);
+}
+
 static void UpdateGlossTransform()
 {
     CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(direct->ltm), *GetForwardVectorLTM(direct->ltm), *GetRightVectorLTM(direct->ltm));
@@ -686,35 +770,7 @@ static void SetK()
     SetupTexLODStruct(zero, k, 0, 2, 5, mag);
 }
 
-static void CreateSphereTarget()
-{
 
-    u32 size = 2;
-
-    CreateMorphTargetBuffersFromFile("MODELS\\SPHEREDEFORMED.BIN", &sphereTarget);
-
-    sphere = CreateObjectMorphBuffer(sphere, size);
-
-    AddMeshToTargetBuffer(sphere->interpolator, &sphereTarget);
-
-    CreateInterpolatorNodes(sphere->interpolator, size);
-
-    for (int i = 1; i < size; i++)
-    {
-        AddInterpolatorNode(sphere->interpolator, 0, i, (float)((i) / 2.0f));
-
-        AddInterpolatorNode(sphere->interpolator, i, 0, (float)((i + 1) / 2.0f));
-    }
-
-    SetInterpolatorNode(sphere->interpolator, 0);
-}
-
-static void UpdateSphereMorph()
-{
-    Interpolator *node = GetCurrentInterpolatorNode(sphere->interpolator);
-    node->position -= 0.005f;
-    SetDirtyLTM(sphere->ltm);
-}
 
 static void update_cube(GameObject *cube)
 {
@@ -899,249 +955,7 @@ static void SetupBody()
     AddObjectToRenderWorld(world, body);
 }
 
-static void RotateSphere()
-{
-    PitchLTM(multiSphere->ltm, 1.0f);
-}
 
-static void SetupMultiSphere()
-{
-    Color color;
-
-    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
-
-    VECTOR object_position = {+50.0f, 0.0f, +100.0f, 0.0f};
-
-    multiSphere = InitializeGameObject();
-    float time1 = getTicks(g_Manager.timer);
-    ReadModelFile("MODELS\\TORUS1.BIN", &multiSphere->vertexBuffer);
-    DEBUGLOG("TIME ON CPU FOR VBO %f", getTicks(g_Manager.timer) - time1);
-    // envmap
-    SetupGameObjectPrimRegs(multiSphere, color, RENDERTEXTUREMAPPED | RENDERLIT | CLIPPING);
-
-    // alphamap
-    // SetupGameObjectPrimRegs(multiSphere, color, RENDER_STATE(1, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 1));
-    VECTOR scales = {5.0f, 5.0f, 5.0f, 1.0f};
-
-    SetupLTM(object_position, up, right, forward,
-             scales,
-             1.0f, multiSphere->ltm);
-
-    multiSphere->update_object = NULL;
-
-    PitchLTM(multiSphere->ltm, -90.0f);
-
-    CreateMaterial(&multiSphere->vertexBuffer, 0, multiSphere->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(NewYorkName, g_Manager.texManager));
-    // float time1 = getTicks(g_Manager.timer);
-    InitVBO(multiSphere, VBO_FIT);
-    // DEBUGLOG("TIME ON CPU FOR VBO %f", getTicks(g_Manager.timer) - time1);
-    multiSphere->update_object = RotateSphere;
-
-    MatrixIdentity(lightTransform);
-
-    CreateEnvMapPipeline(multiSphere, "ENVMAP_PIPE");
-
-    SetEnvMapMATRIX(multiSphere->activePipeline, lightTransform);
-
-    SetEnvMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, glossName));
-
-    // CreateAlphaMapPipeline(multiSphere, "ALPHAMAP");
-
-    // SetAlphaMapTexture(multiSphere->activePipeline, GetTexByName(g_Manager.texManager, alphaMap));
-
-    AddObjectToRenderWorld(world, multiSphere);
-}
-
-static void SetupRoom()
-{
-    Color color;
-
-    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
-
-    VECTOR object_position = {+0.0f, +0.0f, 50.0f, 0.0f};
-
-    room = InitializeGameObject();
-    ReadModelFile("MODELS\\ROOM.BIN", &room->vertexBuffer);
-    SetupGameObjectPrimRegs(room, color, RENDERLIT | RENDERTEXTUREMAPPED | CULLING_OPTION);
-
-    VECTOR scales = {25.0f, 25.0f, 25.0f, 1.0f};
-
-    SetupLTM(object_position, up, right, forward,
-             scales,
-             1.0f, room->ltm);
-
-    RotateYLTM(room->ltm, -90.0f);
-
-    room->update_object = NULL;
-
-    InitVBO(room, VBO_FIT);
-
-    CreateGraphicsPipeline(room, GEN_PIPELINE_NAME);
-
-    AddObjectToRenderWorld(roomWorld, room);
-}
-
-static void SetupShadowViewer()
-{
-    Color color;
-
-    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
-
-    VECTOR pos = {+75.0f, +15.0f, -200.0f, 0.0f};
-
-    shadowTexView = InitializeGameObject();
-    // ReadModelFile("\\ROOM2.BIN;1", room);
-    int w, l;
-    float dw, dh;
-    w = 25;
-    l = 25;
-    dw = 1;
-    dh = 1;
-    CreateGrid(w, l, dw, dh, &shadowTexView->vertexBuffer);
-
-    SetupGameObjectPrimRegs(shadowTexView, color, RENDERTEXTUREMAPPED);
-
-    u32 id = 0;
-#ifdef RESAMPLED
-    id = resampledTexture->id;
-#else
-    id = shadowTexture->id;
-#endif
-
-    CreateMaterial(&shadowTexView->vertexBuffer, 0, shadowTexView->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
-
-    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
-
-    SetupLTM(pos, up, right, forward,
-             scales,
-             1.0f, shadowTexView->ltm);
-
-    // create_pipeline_obj_vu1pipeline(shadowTexView, VU1GenericTex3D, 1000);
-
-    CreateGraphicsPipeline(shadowTexView, GEN_PIPELINE_NAME);
-}
-
-float ComputeDistanceFromFinitePlane(GameObject *obj, VECTOR pos, VECTOR topExtent, VECTOR bottomExtent)
-{
-    VECTOR pointInPlane = {0.0f, 0.0f, 1.0f, 1.0f};
-    VECTOR planeNormal = {0.0, 1.0f, 0.0, 0.0f};
-    VECTOR plane, planePoint, extentTopL, extentBottomL, temp1, temp2;
-    MATRIX world;
-    CreateWorldMatrixLTM(obj->ltm, world);
-
-    MatrixVectorMultiply(planeNormal, world, planeNormal);
-    MatrixVectorMultiply(pointInPlane, world, pointInPlane);
-    MatrixVectorMultiply(temp1, world, topExtent);
-    MatrixVectorMultiply(temp2, world, bottomExtent);
-
-    extentTopL[0] = Max(temp1[0], temp2[0]);
-    extentTopL[1] = Max(temp1[1], temp2[1]);
-    extentTopL[2] = Max(temp1[2], temp2[2]);
-
-    extentBottomL[0] = Min(temp1[0], temp2[0]);
-    extentBottomL[1] = Min(temp1[1], temp2[1]);
-    extentBottomL[2] = Min(temp1[2], temp2[2]);
-
-    ComputePlane(pointInPlane, planeNormal, plane);
-
-    PointInPlane(plane, pos, pointInPlane, planePoint);
-
-    planePoint[0] = Min(Max(planePoint[0], extentBottomL[0]), extentTopL[0]);
-    planePoint[1] = Min(Max(planePoint[1], extentBottomL[1]), extentTopL[1]);
-    planePoint[2] = Min(Max(planePoint[2], extentBottomL[2]), extentTopL[2]);
-
-    VECTOR distVec;
-    VectorSubtractXYZ(pos, planePoint, distVec);
-
-    return dist(distVec);
-}
-
-static void UpdateTessGrid(GameObject *obj)
-{
-    TessGrid *grid = (TessGrid *)obj->objData;
-    float d = ComputeDistanceFromFinitePlane(obj, *GetPositionVectorLTM(cam->ltm), grid->extent.top, grid->extent.bottom);
-    int i;
-    for (i = 0; i < 4; i++)
-    {
-        if (d > lodGrid[i])
-        {
-            // INFOLOG("dist %f", d);
-            break;
-        }
-    }
-
-    float xDim = pow(2, (float)((i + 3)));
-    float yDim = pow(2, (float)((i + 3)));
-
-    grid->xDim = (int)xDim;
-    grid->yDim = (int)yDim;
-
-    // int totalVerts = xDim+1 * 2;
-
-    //  INFOLOG("total verts in row %d", totalVerg_Manager.timer);
-}
-
-static void SetupTessObject()
-{
-    Color color;
-    // CREATE_ALPHA_REGS(blender, BLEND_COLOR_DEST, BLEND_COLOR_SOURCE, BLEND_COLOR_SOURCE, BLEND_ALPHA_DEST, 0x80);
-    CREATE_RGBAQ_STRUCT(color, 0xFF, 0xFF, 0xFF, 0x80, 1.0f);
-
-    GameObject *lod_floor = InitializeGameObject();
-
-    VECTOR tempPos2 = {0.0f, -20.0f, 0.0f, 1.0f};
-
-    VECTOR scales = {1.0f, 1.0f, 1.0f, 1.0f};
-
-    SetupLTM(tempPos2, up, right, forward,
-             scales,
-             1.0f, lod_floor->ltm);
-
-    SetupGameObjectPrimRegs(lod_floor, color, RENDERCOLORED);
-
-    CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid.extent.top);
-
-    CreateVector(250.0f, 0.0f, 250.0f, 1.0f, tessGrid.extent.bottom);
-
-    tessGrid.xDim = 2;
-    tessGrid.yDim = 2;
-
-    lod_floor->objData = (void *)&tessGrid;
-
-    lod_floor->update_object = UpdateTessGrid;
-
-    create_pipeline_tess_grid_vu1pipeline(lod_floor, 2, 100, &tessGrid);
-
-    AddObjectToRenderWorld(world, lod_floor);
-
-    /// second wall
-
-    GameObject *lod_wall = InitializeGameObject();
-
-    VECTOR tempPos = {0.0f, +230.0f, -250.0f, 1.0f};
-
-    SetupLTM(tempPos, up, right, forward,
-             scales,
-             1.0f, lod_wall->ltm);
-    PitchLTM(lod_wall->ltm, -90.0f);
-
-    SetupGameObjectPrimRegs(lod_wall, color, RENDERCOLORED);
-
-    CreateVector(-250.0f, 0.0f, -250.0f, 1.0f, tessGrid2.extent.top);
-
-    CreateVector(250.0f, 0.0f, 250.0f, 1.0f, tessGrid2.extent.bottom);
-
-    tessGrid2.xDim = 2;
-    tessGrid2.yDim = 2;
-
-    lod_wall->objData = (void *)&tessGrid2;
-
-    lod_wall->update_object = UpdateTessGrid;
-
-    create_pipeline_tess_grid_vu1pipeline(lod_wall, 2, 100, &tessGrid2);
-
-    AddObjectToRenderWorld(world, lod_wall);
-}
 
 static void SetupAABBBox()
 {
@@ -1262,153 +1076,14 @@ static void CleanUpGame()
     ClearManagerStruct(&g_Manager);
 }
 
-int shadowRes = 8;
-static void SetupShadowRenderTarget()
-{
-    u32 res = 1 << shadowRes;
 
-    shadowTarget = CreateRenderTarget(res, res, GS_PSMZ_24, ZTEST_METHOD_ALLPASS, GS_PSM_32);
-    shadowTexture = CreateTextureFromRenderTarget(shadowTarget, 1, TEXTURE_FUNCTION_MODULATE);
-
-    u32 small = res >> 1;
-
-    resampledTarget = CreateRenderTarget(small, small, GS_PSMZ_24, ZTEST_METHOD_ALLPASS, GS_PSM_32);
-    resampledTexture = CreateTextureFromRenderTarget(resampledTarget, 0, TEXTURE_FUNCTION_DECAL);
-
-    AddToManagerTexList(&g_Manager, resampledTexture);
-    AddToManagerTexList(&g_Manager, shadowTexture);
-
-    VECTOR camPos = {0.0f, 0.0f, +10.0f, 0.0f}; //{-1.0f, 5.0f, +9.0f, 0.0f};
-    VECTOR camAt = {0.0f, 0.0f, 0.0f, 0.0f};
-
-    CameraLookAt(&shadowCam, camPos, camAt, up);
-
-    CreateOrthoGraphicMatrix(+40.0f, -40.0f, +40.0f, -40.0f, 0.1, 100.0f, shadowCam.proj);
-
-    UpdateCameraMatrix(&shadowCam);
-}
-
-static void RenderShadowScene()
-{
-
-    SetGlobalDrawingCamera(&shadowCam);
-
-    SetupRenderTarget(shadowTarget, g_Manager.gs_context, 0);
-
-    ClearScreen(shadowTarget, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, alpha);
-
-    GameObject *obj = grid;
-
-    VU1Pipeline *pipe = GetPipelineByName("GENERIC_SHADOW_MAP", obj);
-
-    if (pipe == NULL)
-    {
-        return;
-    }
-
-    RenderPipeline(obj, pipe);
-
-#ifndef RESAMPLED
-    RenderTarget *targ = shadowTarget;
-
-    targetTex = shadowTexture;
-#else
-    SetupRenderTarget(resampledTarget, g_Manager.gs_context, 0);
-
-    ClearScreen(resampledTarget, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
-
-    RenderTarget *targ = resampledTarget;
-
-    targetTex = resampledTexture;
-
-#endif
-    u32 screenRes = targ->render->width >> 1;
-
-    // INFOLOG("%d", screenRes);
-#ifdef RESAMPLED
-    DrawQuad(screenRes, screenRes, 0, 0, 0, shadowTexture);
-#endif
-    float uvStep = 1.0f / targ->render->width;
-
-    float uvOff = 5.0f * uvStep;
-
-    int texOFfW = (int)(uvOff * (targ->render->width >> 1));
-
-    DrawQuad(screenRes, screenRes, texOFfW, texOFfW, 1, targetTex);
-
-    EndRendering(&shadowCam);
-
-    SetGlobalDrawingCamera(cam);
-
-    SetupRenderTarget(g_Manager.targetBack, g_Manager.gs_context, 1);
-
-    RenderPipeline(shadowTexView, shadowTexView->activePipeline);
-}
-static void FinishCube(void *object)
-{
-    GameObject *temp = box;
-    InitVBO(temp, VBO_FIT);
-
-    u32 id = GetTextureIDByName("WATER", g_Manager.texManager);
-
-    CreateMaterial(&temp->vertexBuffer, 0, temp->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
-
-    DEBUGLOG("COUNT %d", temp->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount);
-
-    CreateGraphicsPipeline(temp, GEN_PIPELINE_NAME);
-
-    AddObjectToRenderWorld(world, temp);
-}
-static void LoadCube()
-{
-    Color color;
-
-    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
-
-    box = InitializeGameObject();
-
-    SetupGameObjectPrimRegs(box, color, RENDER_STATE(1, 1, 0, 0, 1, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-
-    VECTOR pos = {0.0f, 50.0f, 5.0f, 1.0f};
-
-    VECTOR scales = {1.5f, 1.5f, 1.5f, 1.0f};
-
-    SetupLTM(pos, up, right, forward,
-             scales,
-             1.0f, box->ltm);
-
-    PitchLTM(box->ltm, -45.0f);
-    box->update_object = NULL;
-
-    LoadASync("MODELS\\ROOM.BIN", &box->vertexBuffer, NULL, CreateMeshBuffersFromFile, FinishCube);
-}
-
-static void FinishWater(void *object)
-{
-    // Material *mat = (Material*)grid->vertexBuffer.materials->data;
-    Texture *tex = (Texture *)object;
-    InitTextureResources(tex, TEX_ADDRESS_CLAMP);
-    AddToManagerTexList(&g_Manager, tex);
-    // mat->materialId = tex->id;
-}
-
-static void LoadWater()
-{
-    CreateTextureParams *params = (CreateTextureParams *)malloc(sizeof(CreateTextureParams));
-    params->name = "WATER";
-    params->readType = READ_PNG;
-    params->useAlpha = 1;
-    params->alpha = 0x80;
-    Texture *tex = (Texture *)malloc(sizeof(Texture));
-    LoadASync("TEXTURES\\MONET.PNG", tex, params, CreateTextureFromFile, FinishWater);
-}
 Color *colors[5];
 static Color lcolors[5];
 Color highlight;
 Color *held = NULL;
 int objectIndex;
 int moveX, moveY, moveZ;
-
+#include "math/ps_ray.h"
 void TestObjects()
 {
     VECTOR temp;
@@ -1417,15 +1092,15 @@ void TestObjects()
 
     if (objectIndex == 0)
     {
-        VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
-        VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
+        VectorAddXYZ(rayray.origin, temp, rayray.origin);
+      //  VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
+       ret = RayIntersectPlane(&rayray, &plane2, temp);
     }
     if (objectIndex == 1)
     {
         BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
         
         MoveBox(boxx, temp);    
-        
         
         ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
 
@@ -1449,17 +1124,11 @@ void TestObjects()
         MatrixVectorMultiply(boxx.bottom, world, boxx2->bottom);
         FindCenterAndHalfAABB(&boxx, center, half);
 
-
-        //DEBUGLOG("%f", SqDistToOBB(lolSphere.center, center, half));
-        ClosestPointToOBB(lolSphere.center, center, half, temp);
-
-        //DEBUGLOG("spherecollision %d", SphereCollision(&lol2Sphere, &lolSphere));
-
         DumpVector(lolSphere.center);
 
-        //DEBUGLOG("plane dist %f", DistanceFromPlane(planer.planeEquation, lolSphere.center));
+        DEBUGLOG("dist from line %f", DistanceFromLineSegment(&mainLine, lolSphere.center, temp));
 
-        DEBUGLOG("dist from line %f", DistanceFromLineSegment(&mainLine, lolSphere.center));
+
          
     } 
     else if (objectIndex == 4)
@@ -1544,6 +1213,8 @@ int Render()
          m, ShotBoxIntersectCB);
 
         RenderGameObject(shotBox);
+
+        RenderRay(&rayray, *colors[0], 50.0);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
@@ -1670,8 +1341,6 @@ int main(int argc, char **argv)
     endTime = getTicks(g_Manager.timer);
 
     DEBUGLOG("texes %f", endTime - startTime);
-
-    SetupShadowRenderTarget();
 
     CreateLights();
 
