@@ -162,3 +162,53 @@ int LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MA
     }
     return 0;
 }
+
+
+int LineIntersectLine(Line *l1, Line *l2, VECTOR point)
+{
+    VECTOR l12l11, l22l21, l21l11, ab, cb, ca;
+    VectorSubtractXYZ(l1->p2, l1->p1, l12l11);
+    VectorSubtractXYZ(l2->p2, l2->p1, l22l21);
+    VectorSubtractXYZ(l2->p1, l1->p1, l21l11);
+    CrossProduct(l12l11, l22l21, ab);
+    CrossProduct(l21l11, l22l21, cb);
+    CrossProduct(l21l11, l12l11, ca);
+
+
+    float num = DotProduct(l21l11, ab);
+
+    if (num != 0.0f)
+    {
+        return NOCOLLISION;
+    }
+
+    float denom = DotProduct(ab, ab);
+
+    if (denom == 0.0f)
+    {
+       
+        if ((Min(l1->p1[0], l1->p2[0]) <= l2->p1[0] && Max(l1->p1[0], l1->p2[0]) >= l2->p2[0])
+       && (Min(l1->p1[1], l1->p2[1]) <= l2->p1[1] && Max(l1->p1[1], l1->p2[1]) >= l2->p2[1])
+        && (Min(l1->p1[2], l1->p2[2]) <= l2->p1[2] && Max(l1->p1[2], l1->p2[2]) >= l2->p2[2]))
+        {
+            VectorCopy(point, l2->p1);
+            return COLLISION;
+        }
+        return NOCOLLISION;
+    }
+
+    float s = DotProduct(cb, ab)/denom;
+    float t = DotProduct(ca, ab)/denom;
+
+    if ((t >= 0.0f && t <= 1.0f) && (s >= 0.0f && s <= 1.0f))
+    {
+    
+        VectorScaleXYZ(point, l12l11, s);
+        VectorAddXYZ(point, l1->p1, point);
+        DumpVector(l1->p1);
+        DumpVector(l12l11);
+        return COLLISION;
+    } 
+
+    return NOCOLLISION;
+}

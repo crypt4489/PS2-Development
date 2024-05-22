@@ -164,6 +164,8 @@ float k = -1.0f;
 
 Line mainLine = {{-45.0f, 0.0f, 50.0f, 1.0f}, {-45.0f, 0.0f, -50.0f, 1.0f}};
 
+Line whatter = {{-35.0f, 0.0f, -25.0f, 1.0f}, {-35.0f, 0.0, 25.0f, 1.0f}};
+
 int highlightIndex;
 
 
@@ -1092,9 +1094,14 @@ void TestObjects()
 
     if (objectIndex == 0)
     {
-        VectorAddXYZ(rayray.origin, temp, rayray.origin);
-      //  VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
-       ret = RayIntersectPlane(&rayray, &plane2, temp);
+        VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
+        VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
+        ret = LineIntersectLine(&mainLine, &whatter, temp);
+        //DumpVector(temp);
+      /* ret = RayIntersectPlane(&rayray, &plane2, temp);
+       float tmep;
+       DEBUGLOG("%d %d", RayIntersectSphere(&rayray, &lolSphere, temp),
+        RayIntersectBox(&rayray, box->vboContainer->vbo, temp, &tmep)); */
     }
     if (objectIndex == 1)
     {
@@ -1215,6 +1222,8 @@ int Render()
         RenderGameObject(shotBox);
 
         RenderRay(&rayray, *colors[0], 50.0);
+
+        RenderLine(&whatter, *colors[0]);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
