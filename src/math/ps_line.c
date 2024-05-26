@@ -188,7 +188,7 @@ int LineIntersectLine(Line *l1, Line *l2, VECTOR point)
     {
        
         if ((Min(l1->p1[0], l1->p2[0]) <= l2->p1[0] && Max(l1->p1[0], l1->p2[0]) >= l2->p2[0])
-       && (Min(l1->p1[1], l1->p2[1]) <= l2->p1[1] && Max(l1->p1[1], l1->p2[1]) >= l2->p2[1])
+        && (Min(l1->p1[1], l1->p2[1]) <= l2->p1[1] && Max(l1->p1[1], l1->p2[1]) >= l2->p2[1])
         && (Min(l1->p1[2], l1->p2[2]) <= l2->p1[2] && Max(l1->p1[2], l1->p2[2]) >= l2->p2[2]))
         {
             VectorCopy(point, l2->p1);
@@ -205,8 +205,6 @@ int LineIntersectLine(Line *l1, Line *l2, VECTOR point)
     
         VectorScaleXYZ(point, l12l11, s);
         VectorAddXYZ(point, l1->p1, point);
-        DumpVector(l1->p1);
-        DumpVector(l12l11);
         return COLLISION;
     } 
 

@@ -249,7 +249,7 @@ typedef struct
 {
     VECTOR center;
     VECTOR axes[3];
-    float halfwidths[3];
+    VECTOR halfwidths;
 } BoundingOrientBox;
 
 struct morph_target_handle_t;

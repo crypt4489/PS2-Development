@@ -2,7 +2,8 @@
 #define PS_VBO_H
 
 #include "ps_global.h"
-
+#define NOCOLLISION 1
+#define COLLISION 0
 
 void ReadVBOFromVU1(GameObject *obj);
 void InitVBO(GameObject *obj, int type);
@@ -40,5 +41,9 @@ void MoveBox(BoundingBox *box, VECTOR move);
 int SpherePlaneCollision(BoundingSphere *s, Plane *p);
 
 int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point);
+
+int PlaneOBBCollision(Plane *p, BoundingOrientBox *box);
+int PlaneRotatedAABBCollision(Plane *p, BoundingBox *box, VECTOR right, VECTOR up, VECTOR forward);
+int PlaneAABBCollision(Plane *plane, BoundingBox *box);
 
 #endif

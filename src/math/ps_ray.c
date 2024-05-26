@@ -90,3 +90,13 @@ int RayIntersectPlane(Ray *ray, Plane *plane, VECTOR point)
     VectorAddXYZ(point, ray->origin, point);
     return COLLISION;
 }
+
+int RayIntersectRay(Ray *ray, Ray *ray2)
+{
+    VECTOR dirs, dist;
+    VectorSubtractXYZ(ray->origin, ray2->origin, dist);
+    CrossProduct(ray->direction, ray2->direction, dirs);
+    float d = DotProduct(dirs, dist);
+    if (d == 0.0f) return COLLISION;
+    return NOCOLLISION;
+}

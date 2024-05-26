@@ -128,6 +128,62 @@ int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point)
     return COLLISION;
 }
 
+static int PlaneRotatedBox(VECTOR right, VECTOR up, VECTOR forward, VECTOR planeEquation,
+                            VECTOR half, VECTOR center)
+{
+    VECTOR dots;
+    dots[0] = Abs(DotProduct(planeEquation, right));
+    dots[1] = Abs(DotProduct(planeEquation, up));
+    dots[2] = Abs(DotProduct(planeEquation, forward));
+    
+    float r = DotProduct(half, dots);
+    float s = DotProduct(planeEquation, center) + planeEquation[3];
+    if (Abs(s) <= r) return COLLISION;
+    return NOCOLLISION;
+}
+
+int PlaneOBBCollision(Plane *p, BoundingOrientBox *box)
+{
+    return PlaneRotatedBox( box->axes[0], box->axes[1], 
+                            box->axes[2], p->planeEquation, 
+                            box->halfwidths, box->center );
+}
+
+
+int PlaneRotatedAABBCollision(Plane *p, BoundingBox *box, VECTOR right, VECTOR up, VECTOR forward)
+{
+    VECTOR center, half, dots;
+    FindCenterAndHalfAABB(box, center, half);
+    return PlaneRotatedBox(right, up, forward, p->planeEquation, half, center);
+}
+
+int PlaneAABBCollision(Plane *plane, BoundingBox *box)
+{
+    VECTOR center, half;
+    FindCenterAndHalfAABB(box, center, half);
+    float r, s;
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%2)\n"
+        "lqc2 $vf2, 0x00(%3)\n"
+        "lqc2 $vf4, 0x00(%4)\n"
+        "vmul.xyz $vf3, $vf1, $vf4\n"
+        "vaddy.x $vf3x, $vf3x, $vf3y\n"
+        "vaddz.x $vf3x, $vf3x, $vf3z\n"
+        "qmfc2 %1, $vf3\n"
+        "vabs.xyz $vf1, $vf1\n"
+        "vmul.xyz $vf3, $vf1, $vf2\n"
+        "vaddy.x $vf3x, $vf3x, $vf3y\n"
+        "vaddz.x $vf3x, $vf3x, $vf3z\n"
+        "qmfc2 %0, $vf3\n"
+        : "=r"(r), "=r"(s)
+        : "r"(plane->planeEquation), "r"(half), "r"(center)
+        : "memory");
+
+    if (Abs(s + plane->planeEquation[3]) <= r) return COLLISION;
+
+    return NOCOLLISION;
+}
+
 void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
 {
     

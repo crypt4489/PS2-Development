@@ -164,7 +164,7 @@ float k = -1.0f;
 
 Line mainLine = {{-45.0f, 0.0f, 50.0f, 1.0f}, {-45.0f, 0.0f, -50.0f, 1.0f}};
 
-Line whatter = {{-35.0f, 0.0f, -25.0f, 1.0f}, {-35.0f, 0.0, 25.0f, 1.0f}};
+Line whatter = {{-65.0f, 0.0f, -25.0f, 1.0f}, {-35.0f, 0.0, -25.0f, 1.0f}};
 
 int highlightIndex;
 
@@ -674,6 +674,8 @@ static void RenderLine(Line *line, Color color)
 
 static Ray rayray = {{0.0f, 0.0f, -10.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 
+static Ray rayray2 = {{-5.0f, 0.0f, -5.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}};
+
 static void RenderRay(Ray *ray, Color color, float t)
 {
     PollVU1DoneProcessing(&g_Manager);
@@ -1096,7 +1098,8 @@ void TestObjects()
     {
         VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
         VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
-        ret = LineIntersectLine(&mainLine, &whatter, temp);
+       // ret = LineIntersectLine(&whatter, &mainLine, temp);
+        ret = RayIntersectRay(&rayray, &rayray2);
         //DumpVector(temp);
       /* ret = RayIntersectPlane(&rayray, &plane2, temp);
        float tmep;
@@ -1112,6 +1115,8 @@ void TestObjects()
         ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
 
         DEBUGLOG("%f", Sqrt(SqrDistFromAABB(lolSphere.center, boxx)));
+
+        DEBUGLOG("wowowowo %d", PlaneRotatedAABBCollision(&planer, boxx, right, up, forward));
     } 
     else if (objectIndex == 3)
     {
@@ -1224,6 +1229,8 @@ int Render()
         RenderRay(&rayray, *colors[0], 50.0);
 
         RenderLine(&whatter, *colors[0]);
+
+        RenderRay(&rayray2, *colors[1], 50.0);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
