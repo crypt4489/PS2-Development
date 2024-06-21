@@ -670,6 +670,8 @@ typedef struct font_t
     u32 widthSize;
 } Font;
 
+#define EPSILON 0.0001
+
 // Global Variables
 
 extern RenderWorld *g_DrawWorld; // active render world. PS_RenderWorld.c

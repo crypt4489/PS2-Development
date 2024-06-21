@@ -1,7 +1,9 @@
 #include "math/ps_plane.h"
 #include "math/ps_vector.h"
 #include "math/ps_fast_maths.h"
-
+#include "math/ps_line.h"
+#define COLLISION 0
+#define NOCOLLISION 1
 void ComputePlane(VECTOR vec, VECTOR normal, VECTOR plane)
 {
     float d;
@@ -47,4 +49,59 @@ void NormalizePlane(VECTOR in, VECTOR out)
         :
         : "r"(out), "r"(in)
         : "memory");
+}
+
+static int IsSign(float t)
+{
+    if (t == 0)
+    {
+        return -1;
+    }
+    Bin2Float x;
+    x.float_x = t;
+    return ((x.int_x & 0x80000000) >> 31);
+}
+
+int PlaneIntersectsTriangle(Plane *plane, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
+{
+    float d1 = DistanceFromPlane(plane->planeEquation, a);
+    float d2 = DistanceFromPlane(plane->planeEquation, b);
+    float d3 = DistanceFromPlane(plane->planeEquation, c);
+
+    int i1 = IsSign(d1);
+    int i2 = IsSign(d2);
+    int i3 = IsSign(d3);
+
+    if ((!i1 && !i2 && !i3) || (i1 > 0 && i2 > 0 && i3 > 0)) 
+    {
+        return NOCOLLISION;
+    }
+
+    if (i1 < 0 && i2 < 0 && i3 < 0)
+    {
+        VectorCopy(intersect, a);
+        return COLLISION;
+    }
+    Line line;
+    if (i1 != i2)
+    {
+        VectorCopy(line.p1, a);
+        VectorCopy(line.p2, b);
+        
+    } 
+    else if (i2 != i3)
+    {
+        VectorCopy(line.p1, b);
+        VectorCopy(line.p2, c);
+    } 
+    else if (i3 != i1)
+    {
+        VectorCopy(line.p1, c);
+        VectorCopy(line.p2, a);
+    }
+
+    LineSegmentIntersectPlane(&line, plane->planeEquation, intersect);
+
+    return COLLISION;
+
 }

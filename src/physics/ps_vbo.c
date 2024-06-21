@@ -110,7 +110,7 @@ int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point)
 
     float den = DotProduct(axisOfIntersect, axisOfIntersect);
 
-    if (den < 0.001) return NOCOLLISION;
+    if (den < EPSILON) return NOCOLLISION;
 
     float invDen = 1.0f / den;
 

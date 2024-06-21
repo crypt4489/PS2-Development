@@ -99,7 +99,7 @@ void Slerp(VECTOR q1, VECTOR q2, float delta, VECTOR out)
     float halfTheta = ACos(dot4);
     float sinHalfTheta = Sqrt(1.0f - dot4 * dot4);
 
-    if (Abs(sinHalfTheta) < 0.001)
+    if (Abs(sinHalfTheta) < EPSILON)
     {
         // DEBUGLOG("HERE");
         out[0] = (q1[0] * 0.5f + q2[0] * 0.5);

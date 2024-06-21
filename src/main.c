@@ -48,6 +48,7 @@
 #include "audio/ps_sound.h"
 #include "io/ps_async.h"
 #include "pipelines/ps_pipelinecbs.h"
+#include "physics/ps_primtest.h"
 
 #include <draw2d.h>
 #include <draw3d.h>
@@ -1098,13 +1099,25 @@ void TestObjects()
     {
         VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
         VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
+        VectorAddXYZ(rayray2.origin, temp, rayray2.origin);
        // ret = LineIntersectLine(&whatter, &mainLine, temp);
-        ret = RayIntersectRay(&rayray, &rayray2);
+       // ret = RayIntersectRay(&rayray, &rayray2);
         //DumpVector(temp);
       /* ret = RayIntersectPlane(&rayray, &plane2, temp);
        float tmep;
        DEBUGLOG("%d %d", RayIntersectSphere(&rayray, &lolSphere, temp),
         RayIntersectBox(&rayray, box->vboContainer->vbo, temp, &tmep)); */
+        VectorAddXYZ(*GetPositionVectorLTM(shotBox->ltm), temp, *GetPositionVectorLTM(shotBox->ltm));
+         MATRIX m;
+        CreateWorldMatrixLTM(shotBox->ltm, m);
+        VECTOR v[4];
+        for(int i = 0; i<3; i++)
+        {
+            MatrixVectorMultiply(v[i], m, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
+        }
+
+        ret = PlaneIntersectsTriangle(&planer, v[0], v[1], v[2], v[3]);
+
     }
     if (objectIndex == 1)
     {
@@ -1140,7 +1153,7 @@ void TestObjects()
 
         DEBUGLOG("dist from line %f", DistanceFromLineSegment(&mainLine, lolSphere.center, temp));
 
-
+       
          
     } 
     else if (objectIndex == 4)
@@ -1164,7 +1177,12 @@ int Render()
     CREATE_RGBAQ_STRUCT(boxhigh, 255, 128, 128, 128, 0);
     CREATE_RGBAQ_STRUCT(normal, 128, 255, 128, 128, 0);
 
-    for (int i = 0; i<36; i++)
+    for (int i = 0; i<3; i++)
+    {
+        CREATE_RGBAQ_STRUCT(shotBoxColor[i], 128, 255, 255, 128, 0);
+    }
+
+    for (int i = 3; i<36; i++)
     {
         CREATE_RGBAQ_STRUCT(shotBoxColor[i], 128, 255, 128, 128, 0);
     }
@@ -1219,10 +1237,10 @@ int Render()
 
         CreateWorldMatrixLTM(shotBox->ltm, m);
 
-        LineSegmentIntersectForAllTriangles(&mainLine,
-         shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices,
-          shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount,
-         m, ShotBoxIntersectCB);
+       // LineSegmentIntersectForAllTriangles(&mainLine,
+        // shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices,
+        //  shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount,
+        // m, ShotBoxIntersectCB);
 
         RenderGameObject(shotBox);
 

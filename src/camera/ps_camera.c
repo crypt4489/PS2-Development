@@ -319,20 +319,20 @@ void FindPosAndNegVertexvbo(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal
     VectorCopy(nVertex, topExtent);
     VectorCopy(pVertex, bottomExtent);
 
-    if (normal[0] > 0.001f)
+    if (normal[0] > EPSILON)
     {
         pVertex[0] = topExtent[0];
         nVertex[0] = bottomExtent[0];
     }
 
-    if (normal[1] > 0.001f)
+    if (normal[1] > EPSILON)
     {
 
         pVertex[1] = topExtent[1];
         nVertex[1] = bottomExtent[1];
     }
 
-    if (normal[2] > 0.001f)
+    if (normal[2] > EPSILON)
     {
         pVertex[2] = topExtent[2];
         nVertex[2] = bottomExtent[2];

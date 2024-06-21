@@ -31,7 +31,7 @@ int LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
     float adz = Abs(d[2]);
     if (Abs(m[2]) > halfwidths[2] + adz) return NOCOLLISION;
 
-    adx += 0.001; ady += 0.001; adz += 0.001;
+    adx += EPSILON; ady += EPSILON; adz += EPSILON;
 
     if (Abs(m[1] * d[2] - m[2] * d[1]) > halfwidths[1] * adz + halfwidths[2] * ady) return NOCOLLISION;
     if (Abs(m[2] * d[0] - m[0] * d[2]) > halfwidths[0] * adz + halfwidths[2] * adx) return NOCOLLISION;

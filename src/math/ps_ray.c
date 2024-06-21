@@ -43,7 +43,7 @@ int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
     float max = FLT_MAX;
     for (int i = 0; i<3; i++)
     {
-        if (Abs(ray->direction[i]) < 0.001)
+        if (Abs(ray->direction[i]) < EPSILON)
         {
             if (ray->origin[i] < box->bottom[i] || ray->origin[i] > box->top[i]) return NOCOLLISION;
         }
@@ -98,5 +98,48 @@ int RayIntersectRay(Ray *ray, Ray *ray2)
     CrossProduct(ray->direction, ray2->direction, dirs);
     float d = DotProduct(dirs, dist);
     if (d == 0.0f) return COLLISION;
+    return NOCOLLISION;
+}
+
+int RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
+{
+    VECTOR e1, e2, cross_out;
+    VectorSubtractXYZ(b, a, e1);
+    VectorSubtractXYZ(c, a, e2);
+    CrossProduct(ray->direction, e2, cross_out);
+    float det = DotProduct(e1, cross_out);
+
+    if (det > -EPSILON && det < EPSILON)
+    {
+        return NOCOLLISION;
+    }
+
+    float inv = 1.f / det;
+    VECTOR s;
+    VectorSubtractXYZ(ray->origin, a, s);
+    float u = inv * DotProduct(s, cross_out);
+    if (u < 0 || u > 1)
+    {
+        return NOCOLLISION;
+    }
+
+    VECTOR cross_out2;
+    CrossProduct(s, e1, cross_out2);
+    float v = inv * DotProduct(ray->direction, cross_out2);
+
+    if (v < 0 || u + v > 1)
+    {
+        return NOCOLLISION;
+    }
+
+    float t = inv * DotProduct(e2, cross_out2);
+
+    if (t > EPSILON)
+    {
+        VectorScaleXYZ(intersect, ray->direction, t);
+        VectorAddXYZ(intersect, ray->origin, intersect);
+        return COLLISION;
+    }
+
     return NOCOLLISION;
 }
