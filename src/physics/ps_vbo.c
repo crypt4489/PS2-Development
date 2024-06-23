@@ -177,7 +177,7 @@ int PlaneAABBCollision(Plane *plane, BoundingBox *box)
         "qmfc2 %0, $vf3\n"
         : "=r"(r), "=r"(s)
         : "r"(plane->planeEquation), "r"(half), "r"(center)
-        : "memory");
+        : "memory");  
 
     if (Abs(s + plane->planeEquation[3]) <= r) return COLLISION;
 
@@ -444,9 +444,15 @@ void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf)
     VectorAddXYZ(box->top, box->bottom, center);
     VectorScaleXYZ(outCenter, center, 0.5f);
 
-    outHalf[0] = Abs(box->top[0] - outCenter[0]);
-    outHalf[1] = Abs(box->top[1] - outCenter[1]);
-    outHalf[2] = Abs(box->top[2] - outCenter[2]);
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%1)\n"
+        "lqc2 $vf2, 0x00(%2)\n"
+        "vsub.xyz $vf1, $vf1, $vf2\n"
+        "vabs.xyz $vf1, $vf1\n"
+        "sqc2 $vf1, 0x00(%0)\n"
+        : 
+        : "r"(outHalf), "r"(box->top), "r"(outCenter)
+        : "memory");
 }
 
 void FindAABBMaxAndMinVerticesVU0(GameObject *obj)

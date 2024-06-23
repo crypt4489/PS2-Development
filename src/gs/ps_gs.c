@@ -1,7 +1,6 @@
 #include "gs/ps_gs.h"
 
-#include <graph.h>
-#include <draw.h>
+
 #include <kernel.h>
 #include <malloc.h>
 #include <stdlib.h>

@@ -671,6 +671,8 @@ typedef struct font_t
 } Font;
 
 #define EPSILON 0.0001
+#define NOCOLLISION 1
+#define COLLISION 0
 
 // Global Variables
 

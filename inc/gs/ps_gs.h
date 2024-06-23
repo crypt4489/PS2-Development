@@ -6,7 +6,8 @@
 #include <gs_privileged.h>
 #include <gs_gp.h>
 #include <draw_tests.h>
-
+#include <graph.h>
+#include <draw.h>
 
 #define CreateGSScreenCoordinates(input, operand)   ((2048 operand input) << 4)
 
