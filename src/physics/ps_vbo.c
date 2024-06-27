@@ -520,12 +520,13 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
     }
 
     asm __volatile__(
+        "vmove.w $vf1, $vf0\n"
+        "vmove.w $vf2, $vf0\n"
         "sqc2 $vf1, 0x00(%0) \n"
         "sqc2 $vf2, 0x00(%1) \n"
         :
         : "r"(bounds->top), "r"(bounds->bottom)
         : "memory");
-    bounds->top[3] = bounds->bottom[3] = 1.0f;
 }
 
 void ClosestPointToAABB(VECTOR p, BoundingBox *box, VECTOR out)
@@ -572,7 +573,7 @@ float SqDistToOBB(VECTOR p, VECTOR center, VECTOR halfwidths)
     float dist = 0.0f;
     VECTOR d;
     VectorSubtractXYZ(p, center, d);
-
+ 
     for (int i = 0; i<3; i++)
     {
         float duh = d[i];

@@ -12,23 +12,26 @@
 
 int RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point)
 {
-     VECTOR dir, m;
-  
+    VECTOR dir, m;
+
     Normalize(ray->direction, dir);
     VectorSubtractXYZ(ray->origin, sphere->center, m);
 
     float b = DotProduct(m, dir);
     float c = DotProduct(m, m) - sphere->radius * sphere->radius;
 
-    if (c > 0.0f && b > 0.0f) return NOCOLLISION;
+    if (c > 0.0f && b > 0.0f)
+        return NOCOLLISION;
 
-    float bbc = b*b - c;
+    float bbc = b * b - c;
 
-    if (bbc < 0.0f) return NOCOLLISION;
+    if (bbc < 0.0f)
+        return NOCOLLISION;
 
     float t = -b - Sqrt(bbc);
 
-    if (t < 0.0f) t = 0.0f;
+    if (t < 0.0f)
+        t = 0.0f;
 
     VectorScaleXYZ(dir, dir, t);
 
@@ -39,41 +42,67 @@ int RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point)
 
 int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
 {
+    
     *t = 0.0f;
     float max = FLT_MAX;
-    for (int i = 0; i<3; i++)
+    VECTOR epsilonVec = {EPSILON, EPSILON, EPSILON, 0};
+    u32 retMac, retMac2, retMac3;
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%3)\n"
+        "lqc2 $vf2, 0x00(%4)\n"
+        "lqc2 $vf3, 0x00(%5)\n"
+        "lqc2 $vf4, 0x00(%6)\n"
+        "lqc2 $vf5, 0x00(%7)\n"
+        "vabs.xyz $vf1, $vf1\n"
+        "vsub.xyz $vf1, $vf1, $vf5\n"
+        "cfc2 %0, $vi17\n"
+        "vsub.xyz $vf1, $vf2, $vf4\n"
+        "cfc2 %1, $vi17\n"
+        "vsub.xyz $vf1, $vf2, $vf3\n"
+        "cfc2 %2, $vi17\n"
+        : "=r"(retMac), "=r"(retMac2), "=r"(retMac3)
+        : "r"(ray->direction), "r"(ray->origin), "r"(box->top), "r"(box->bottom), "r"(epsilonVec)
+        : "memory");
+
+
+    retMac = retMac & 0x00EE;    
+
+    if (((retMac & (retMac2 & 0x00EE)) || (retMac & (retMac3 & 0x00EE))))
     {
-        if (Abs(ray->direction[i]) < EPSILON)
-        {
-            if (ray->origin[i] < box->bottom[i] || ray->origin[i] > box->top[i]) return NOCOLLISION;
-        }
+        return NOCOLLISION;
     }
 
     VECTOR odd, t1, t2;
-    CreateVector(1.f/ray->direction[0], 1.f/ray->direction[1], 1.f/ray->direction[2], 1.0f, odd);
+    CreateVector(1.f / ray->direction[0], 1.f / ray->direction[1], 1.f / ray->direction[2], 1.0f, odd);
     VectorSubtractXYZ(box->bottom, ray->origin, t1);
     VectorMultiply(t1, odd, t1);
 
     VectorSubtractXYZ(box->top, ray->origin, t2);
     VectorMultiply(t2, odd, t2);
 
-    for (int i = 0; i<3; i++)
+    asm __volatile__(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "vmax.xyz $vf4, $vf1, $vf2\n"
+        "vmini.xyz $vf5, $vf1, $vf2\n"
+        "sqc2 $vf5, 0x00(%0)\n"
+        "sqc2 $vf4, 0x00(%1)\n"
+        :
+        : "r"(t1), "r"(t2)
+        : "memory");
+
+    for (int i = 0; i < 3; i++)
     {
         float tsub1 = t1[i], tsub2 = t2[i];
-        if (tsub1 > tsub2)
-        {
-            tsub1=t2[i];
-            tsub2=t1[i];
-        }
-
         *t = Max(*t, tsub1);
         max = Min(max, tsub2);
-        if (*t > max)  return NOCOLLISION;
+        if (*t > max)
+            return NOCOLLISION;
     }
     VectorScaleXYZ(p, ray->direction, *t);
     VectorAddXYZ(p, ray->origin, p);
+    
     return COLLISION;
-
 }
 int RayIntersectPlane(Ray *ray, Plane *plane, VECTOR point)
 {
@@ -83,9 +112,10 @@ int RayIntersectPlane(Ray *ray, Plane *plane, VECTOR point)
     {
         return NOCOLLISION;
     }
-    float t = -orignormal/normaldir;
+    float t = -orignormal / normaldir;
 
-    if (t < 0.0f) return NOCOLLISION;
+    if (t < 0.0f)
+        return NOCOLLISION;
     VectorScaleXYZ(point, ray->direction, t);
     VectorAddXYZ(point, ray->origin, point);
     return COLLISION;
@@ -97,7 +127,8 @@ int RayIntersectRay(Ray *ray, Ray *ray2)
     VectorSubtractXYZ(ray->origin, ray2->origin, dist);
     CrossProduct(ray->direction, ray2->direction, dirs);
     float d = DotProduct(dirs, dist);
-    if (d == 0.0f) return COLLISION;
+    if (d == 0.0f)
+        return COLLISION;
     return NOCOLLISION;
 }
 

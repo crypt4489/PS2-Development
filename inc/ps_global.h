@@ -670,6 +670,14 @@ typedef struct font_t
     u32 widthSize;
 } Font;
 
+typedef struct wingedtriangle_t
+{
+    u32 v1, v2, v3;
+    struct wingedtriangle_t *t1, *t2, *t3;
+} WingedTriangle;
+
+typedef WingedTriangle* FaceVertexTable;
+
 #define EPSILON 0.0001
 #define NOCOLLISION 1
 #define COLLISION 0

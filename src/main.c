@@ -49,7 +49,8 @@
 #include "io/ps_async.h"
 #include "pipelines/ps_pipelinecbs.h"
 #include "physics/ps_primtest.h"
-#include "graphics/ps_renderdirect.h"  
+#include "graphics/ps_renderdirect.h"
+#include "geometry/ps_adjacency.h"  
 
 #include <draw2d.h>
 #include <draw3d.h>
@@ -435,6 +436,8 @@ static void SetupAABBBox()
     AddObjectToRenderWorld(world, box);
 }
 
+
+
 static void SetupShootBoxBox()
 {
     Color color;
@@ -460,6 +463,10 @@ static void SetupShootBoxBox()
     shotBox->update_object = NULL;
 
     InitVBO(shotBox, VBO_FIT);
+
+    FaceVertexTable table = ComputeFaceToVertexTable(
+        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
+        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount);
 
 }
 
@@ -565,7 +572,7 @@ void TestObjects()
     {
         BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
         
-        MoveBox(boxx, temp);    
+        MoveBox(boxx, temp); 
         
       //  ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
 
@@ -580,8 +587,11 @@ void TestObjects()
         {
             MatrixVectorMultiply(v[i], m, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
         }
+        float t = 0.f;
+        //ret = AABBIntersectTriangle(v[0], v[1], v[2], boxx);
+        
+        ret = RayIntersectBox(&rayray2, boxx, v[3], &t);
 
-        ret = AABBIntersectTriangle(v[0], v[1], v[2], boxx);
     } 
     else if (objectIndex == 3)
     {

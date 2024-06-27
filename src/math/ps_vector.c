@@ -324,3 +324,24 @@ void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components)
         output[i] = temp + in1[i];
     }
 }
+
+int EqualVectors(VECTOR v1, VECTOR v2)
+{
+    VECTOR diff;
+    
+     asm __volatile(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "vsub.xyz $vf2, $vf1, $vf2\n"
+        "vabs.xyz $vf2, $vf2\n"
+        "sqc2 $vf2, 0x00(%2)\n"
+        :
+        : "r"(v1), "r"(v2), "r"(diff)
+        : "memory"
+    );
+
+    if (diff[0] > EPSILON) return 0;
+    if (diff[1] > EPSILON) return 0;
+    if (diff[2] > EPSILON) return 0;
+    return 1;
+}
