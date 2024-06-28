@@ -1,6 +1,7 @@
 #include "geometry/ps_adjacency.h"
 #include "math/ps_vector.h"
 #include "log/ps_log.h"
+#include "math/ps_plane.h"
 
 #include <stdlib.h>
 
@@ -69,7 +70,7 @@ FaceVertexTable ComputeFaceToVertexTable(VECTOR *vertices, u32 numVertices)
     {
        WingedTriangle *triangle = &faces[i];
        u32 *facesIndex = &triangle->v1;
-       WingedTriangle **neighbor = &triangle->t1;
+       s32 *neighbor = &triangle->t1;
        
        
        for (int j = 0; j<3; j++)
@@ -77,7 +78,7 @@ FaceVertexTable ComputeFaceToVertexTable(VECTOR *vertices, u32 numVertices)
             u32 idx1 = facesIndex[j];
             u32 idx2 = facesIndex[(j+1)%3];
             UniqueVertex *vert = &unique[reverse[idx1]];
-            *neighbor = NULL;
+            *neighbor = -1;
             for (int h = 0; h<vert->faceCount; h++)
             {
                 u32 faceIdx = vert->faceIndices[h];
@@ -92,27 +93,35 @@ FaceVertexTable ComputeFaceToVertexTable(VECTOR *vertices, u32 numVertices)
                     (idx1 == cIdx2 && idx2 == cIdx3) || (idx1 == cIdx3 && idx2 == cIdx2) ||
                     (idx1 == cIdx3 && idx2 == cIdx) || (idx1 == cIdx && idx2 == cIdx3))
                 {
-                    *neighbor = test;
+                    *neighbor = faceIdx;
                     break;
                 }
             }
             neighbor++;
        }
+       VECTOR diff1, diff2, cross;
+       VectorSubtractXYZ(vertices[triangle->v2], vertices[triangle->v1], diff1);
+       VectorSubtractXYZ(vertices[triangle->v3], vertices[triangle->v2], diff2);
+       CrossProduct(diff1, diff2, cross);
+       Normalize(cross, cross);
+       ComputePlane(vertices[triangle->v1], cross, triangle->plane);
+
     }
 
-    /*
-
+    
+/*
     WingedTriangle *tri = faces;
-
+    WingedTriangle *tri3;
     DEBUGLOG("%d %d %d", tri->v1, tri->v2, tri->v3);
-    WingedTriangle **tri2 = &tri->t1;
+    DEBUGLOG("%d %d %d", tri->t1, tri->t2, tri->t3);
+    s32 *tri2 = &tri->t1;
     for (int i = 0; i<3; i++)
     {
-        tri = *tri2;
-        DEBUGLOG("%d %d %d", tri->v1, tri->v2, tri->v3);
+        tri3 = &faces[*tri2];
+        DEBUGLOG("%d %d %d", tri3->v1, tri3->v2, tri3->v3);
         tri2++;
-    } */
-
+    } 
+*/
     free(reverse);
 
     free(unique);

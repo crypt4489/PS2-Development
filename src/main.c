@@ -52,9 +52,6 @@
 #include "graphics/ps_renderdirect.h"
 #include "geometry/ps_adjacency.h"  
 
-#include <draw2d.h>
-#include <draw3d.h>
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -155,6 +152,8 @@ Texture *targetTex = NULL;
 
 Texture *zero = NULL;
 
+FaceVertexTable table = NULL;
+
 int alpha = 0x80;
 
 // #define RESAMPLED
@@ -173,7 +172,7 @@ int highlightIndex;
 
 static BoundingSphere lol2Sphere = {{-15.0f, 10.0f, 50.0f, 1.0f}, 10.0f};
 
-static BoundingSphere lolSphere = {{0.0, 10.0f, 50.0f, 1.0f}, 5.0f};
+static BoundingSphere lolSphere = {{-20.0f, 15.0f, -20.0f, 1.0f}, 5.0f};
 
 
 static Plane planer = {{1.0, 1.0, 0.0, 1.0f}, {1.0, 2.0, -1.0, -3.0f}};
@@ -200,6 +199,81 @@ static void ShotBoxIntersectCB(VECTOR *verts, int index)
 static Ray rayray = {{0.0f, 0.0f, -10.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 
 static Ray rayray2 = {{-5.0f, 0.0f, -5.0f, 1.0f}, {-1.0f, 0.0f, 0.0f, 1.0f}};
+
+
+static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
+
+VECTOR drawVECS[250];
+u32 drawCnt;
+
+static void DrawShadowExtrusion(VECTOR *vertices, u32 numVerts, MATRIX m, FaceVertexTable table)
+{
+    u32 faceCount = numVerts / 3;
+    u32 *visible = (u32*)malloc(sizeof(u32)*faceCount);
+    memset(visible, 0, sizeof(u32)*faceCount);
+    VECTOR *vecs = (VECTOR*)malloc(sizeof(VECTOR)*numVerts);
+    VECTOR *out = vecs;
+    for (int i = 0; i<faceCount; i++)
+    {
+        WingedTriangle *tri = &table[i];
+        VECTOR plane;
+        MatrixVectorMultiply(out[0], m, vertices[tri->v1]);
+        MatrixVectorMultiply(out[1], m, vertices[tri->v2]);
+        MatrixVectorMultiply(out[2], m, vertices[tri->v3]);
+        Matrix3VectorMultiply(plane, m, tri->plane);
+        ComputePlane(out[0], plane, plane);
+        out+=3;
+
+        float d = DistanceFromPlane(plane, volLightPos);
+
+        if (d > 0.0f)
+        {
+            visible[i] = 1;
+        }
+
+    }
+
+    drawCnt = 0;
+    for (int i = 0; i<faceCount; i++)
+    {
+        if (!visible[i])
+            continue;
+        WingedTriangle *tri = &table[i];
+        s32 *tris = &tri->t1;
+        u32 *verts = &tri->v1;
+        for (int j = 0; j<3; j++)
+        {
+            u32 idx1 = verts[j];
+            u32 idx2 = verts[(j+1)%3];
+            if (*tris == -1 || !visible[*tris])
+            {
+                VECTOR v3 = {0.0f, 0.0f, 0.0f, 1.0f};
+                VECTOR v4 = {0.0f, 0.0f, 0.0f, 1.0f};
+                VectorSubtractXYZ(vecs[idx1], volLightPos, v3);
+                VectorScaleXYZ(v3, v3, 2.0f);
+                VectorSubtractXYZ(vecs[idx2], volLightPos, v4);
+                VectorScaleXYZ(v4, v4, 2.0f);
+                v4[3] = v3[3] = 1.0f;
+                VectorCopy(drawVECS[drawCnt], vecs[idx1]);
+                VectorAddXYZ(v3, vecs[idx1], drawVECS[drawCnt+1]);
+                VectorCopy(drawVECS[drawCnt+2], vecs[idx2]);
+                VectorAddXYZ(v3, vecs[idx1], drawVECS[drawCnt+3]);
+                VectorCopy(drawVECS[drawCnt+4], vecs[idx2]);
+                VectorAddXYZ(v4, vecs[idx2], drawVECS[drawCnt+5]);
+                for (int v = drawCnt; v<drawCnt+6; v++)
+                {
+                    drawVECS[v][3] = 1.0f;
+                }
+                drawCnt+=6;
+
+            }
+            tris++;
+        }
+    }
+
+    free(visible);
+    free(vecs);
+}
 
 static void UpdateGlossTransform()
 {
@@ -464,9 +538,18 @@ static void SetupShootBoxBox()
 
     InitVBO(shotBox, VBO_FIT);
 
-    FaceVertexTable table = ComputeFaceToVertexTable(
+    table = ComputeFaceToVertexTable(
         shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
         shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount);
+
+    MATRIX m;
+
+    CreateWorldMatrixLTM(shotBox->ltm, m);
+
+    DrawShadowExtrusion(shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
+        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount, m,
+        table
+        );
 
 }
 
@@ -711,6 +794,8 @@ int Render()
         RenderLine(&whatter, *colors[0]);
 
         RenderRay(&rayray2, *colors[1], 50.0);
+
+        RenderVertices(drawVECS, drawCnt, *colors[0]);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 

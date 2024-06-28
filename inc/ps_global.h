@@ -673,7 +673,8 @@ typedef struct font_t
 typedef struct wingedtriangle_t
 {
     u32 v1, v2, v3;
-    struct wingedtriangle_t *t1, *t2, *t3;
+    s32 t1, t2, t3;
+    VECTOR plane;
 } WingedTriangle;
 
 typedef WingedTriangle* FaceVertexTable;

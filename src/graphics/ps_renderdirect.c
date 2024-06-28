@@ -174,6 +174,85 @@ void RenderLine(Line *line, Color color)
     SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
+void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
+{
+    PollVU1DoneProcessing(&g_Manager);
+    MATRIX vp;
+
+    MatrixIdentity(vp);
+
+    MatrixMultiply(vp, vp, g_DrawCamera->view);
+    MatrixMultiply(vp, vp, g_DrawCamera->proj);
+
+    qword_t *ret = InitializeDMAObject();
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
+
+    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 2, 0);
+
+    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+
+    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
+
+    qword_t *pipeline_temp = ret;
+
+    pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
+
+    pipeline_temp = VIFSetupScaleVector(pipeline_temp);
+
+    pipeline_temp->sw[0] = color.r;
+    pipeline_temp->sw[1] = color.b;
+    pipeline_temp->sw[2] = color.g;
+    pipeline_temp->sw[3] = color.a;
+    pipeline_temp++;
+
+    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
+    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+    pipeline_temp += 2;
+    pipeline_temp->sw[3] = 0;
+
+    pipeline_temp = ret;
+
+    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
+
+    ret += 16;
+
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
+    qword_t *dma_vif1 = ret;
+    ret++;
+
+
+    u32 count = numVerts;
+    ret = ReadUnpackData(ret, 0,  count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = count;
+    ret++;
+
+    for (int i = 0; i<count; i++)
+    {
+        ret = VectorToQWord(ret, verts[i]);
+    }
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+
+    u32 meshPipe = ret - dma_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
+    CreateDCODETag(ret, DMA_DCODE_END);
+
+    SubmitDMABuffersAsPipeline(ret, NULL);
+}
+
 void RenderGameObject(GameObject *obj, Color *colors)
 {
     PollVU1DoneProcessing(&g_Manager);

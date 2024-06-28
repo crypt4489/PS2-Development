@@ -146,7 +146,8 @@ void VectorAddXYZ(VECTOR in, VECTOR in2, VECTOR out)
         "lqc2 $vf1, 0x00(%0)\n"
         "lqc2 $vf2, 0x00(%1)\n"
         "lqc2 $vf3, 0x00(%2)\n"
-        "vadd.xyz $vf3, $vf2, $vf1\n"
+        "vadd.xyz $vf2, $vf2, $vf1\n"
+        "vmove.xyz $vf3, $vf2\n"
         "sqc2 $vf3, 0x00(%2)\n"
         :
         : "r"(in), "r"(in2), "r"(out)

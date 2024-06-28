@@ -8,4 +8,5 @@ void RenderGameObject(GameObject *obj, Color *colors);
 void RenderPlaneLine(Plane *plane, Color color, int size);
 void RenderSphereLine(BoundingSphere *sphere, Color color, int size);
 void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world);
+void RenderVertices(VECTOR *verts, u32 numVerts, Color color);
 #endif
