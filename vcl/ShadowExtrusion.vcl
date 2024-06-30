@@ -70,11 +70,9 @@ begin:
 
         fmand res, comp
 
-        ibne res, vi00, adjTest
+        ibeq res, vi00, adjTest
 
-        iadd vertexData, vertexData, disp
-
-        b vertexLoop
+        b Data
 
 adjTest:
         add dists, vf00, vf00
@@ -90,7 +88,7 @@ adjTest:
 
         iand    comp, triNeighbors, comp
 
-        ibne  comp, vi00, distAB
+        ibeq  comp, vi00, distAB
 
         move  writeVer1, vertex
 
@@ -112,7 +110,7 @@ check2Face:
 
         iand    comp, triNeighbors, comp
 
-        ibne  comp, vi00, distBC
+        ibeq  comp, vi00, distBC
 
         move  writeVer1, vertex1
 
@@ -137,7 +135,7 @@ check3Face:
 
         iand    comp, triNeighbors, comp
 
-        ibne  comp, vi00, distCA
+        ibeq  comp, vi00, distCA
 
         move  writeVer1, vertex2
 
@@ -168,7 +166,7 @@ checkDists:
 
         iand comp, comp, triNeighbors
 
-        ibne comp, vi00, checkDistB
+        ibeq comp, vi00, checkDistB
 
         move  writeVer1, vertex
 
@@ -183,7 +181,7 @@ checkDistB:
 
         iand comp, comp, triNeighbors
 
-        ibne comp, vi00, checkDistC
+        ibeq comp, vi00, checkDistC
 
         move writeVer1, vertex1
 
@@ -198,7 +196,7 @@ checkDistC:
 
         iand comp, comp, triNeighbors
 
-        ibne comp, vi00, Data
+        ibeq comp, vi00, Data
 
         move  writeVer1, vertex2
 
@@ -209,7 +207,7 @@ checkDistC:
 Data:
     
 
-        iaddiu          vertexData,     vertexData,     disp
+        iadd          vertexData,     vertexData,     disp
 
         iaddi   vertexCounter,  vertexCounter,  -1
         isub    vertexCounter,  vertexCounter, disp 
@@ -240,15 +238,17 @@ dotFace:
     jr ret
 
 writeOut:
-
-    sub.xyz v3, lightPos, writeVer1
-    add.xyz v3, v3, v3
-    sub.xyz v4, lightPos, writeVer2
-    add.xyz v4, v4, v4
+    loi 10.0
+    sub.xyz v3, writeVer1, lightPos
+    muli.xyz v3, v3, I
+    sub.xyz v4, writeVer2, lightPos
+    muli.xyz v4, v4, I
     add.xyz v3, v3, writeVer1
     add.xyz v4, v4, writeVer2
     move.w v4, vf00
     move.w v3, vf00
+    move.w writeVer1, vf00
+    move.w writeVer2, vf00
     MatrixMultiplyVertex{ writeVer1, viewProj, writeVer1 }
     MatrixMultiplyVertex{ writeVer2, viewProj, writeVer2 }
     MatrixMultiplyVertex{ v3, viewProj, v3 }
@@ -288,6 +288,10 @@ clipp:
     jr ret2   
 
 end:
+
+    xgkick  kickAddress
+
+    --barrier
 
     --cont
 
