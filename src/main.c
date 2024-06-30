@@ -206,6 +206,102 @@ static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
 VECTOR drawVECS[250];
 u32 drawCnt;
 
+
+static void WriteOut(VECTOR a, VECTOR b)
+{
+    VECTOR v3 = {0.0f, 0.0f, 0.0f, 1.0f};
+    VECTOR v4 = {0.0f, 0.0f, 0.0f, 1.0f};
+    VectorSubtractXYZ(a, volLightPos, v3);
+    VectorScaleXYZ(v3, v3, 2.0f);
+    VectorSubtractXYZ(b, volLightPos, v4);
+    VectorScaleXYZ(v4, v4, 2.0f);
+    VectorCopy(drawVECS[drawCnt], a);
+    VectorAddXYZ(v3, a, drawVECS[drawCnt + 1]);
+    VectorCopy(drawVECS[drawCnt + 2], b);
+    VectorAddXYZ(v3, a, drawVECS[drawCnt + 3]);
+    VectorCopy(drawVECS[drawCnt + 4], b);
+    VectorAddXYZ(v4, b, drawVECS[drawCnt + 5]);
+    for (int v = drawCnt; v < drawCnt + 6; v++)
+    {
+        drawVECS[v][3] = 1.0f;
+    }
+    drawCnt += 6;
+}
+
+static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
+{
+    u32 count = 0;
+    u32 face = 0;
+    for (int i = 0; i<numVerts; i+=count+1, face++)
+    {
+        
+        count = *((u32*)&vertices[i][3]);
+        VECTOR v1, v2, v3, v7, v8, v9, cross, dists;
+        ZeroVector(dists);
+        int ind = 1;
+        MatrixVectorMultiply(v1, m, vertices[i+ind++]);
+        MatrixVectorMultiply(v2, m, vertices[i+ind++]);
+        MatrixVectorMultiply(v3, m, vertices[i+ind++]);
+        VectorSubtractXYZ(v2, v1, v7);
+        VectorSubtractXYZ(v3, v2, v8);
+        CrossProduct(v7, v8, cross);
+        VectorSubtractXYZ(volLightPos, v1, v9);      
+        float d = DotProduct(cross, v9);
+        if (d <= 0.0f) continue;
+        if (vertices[i][0] < 0.0f)
+        {
+            WriteOut(v1, v2);
+        } else {
+            MatrixVectorMultiply(v9, m, vertices[i+ind++]);
+            VectorSubtractXYZ(v9, v2, v9);
+            CrossProduct(v9, v7, cross);
+            VectorSubtractXYZ(volLightPos, v1, v9);
+            dists[0] = DotProduct(cross, v9);
+        }
+
+        if (vertices[i][1] < 0.0f)
+        {
+            WriteOut(v2, v3);
+        } else {
+            MatrixVectorMultiply(v9, m, vertices[i+ind++]);
+            VectorSubtractXYZ(v9, v3, v9);
+            CrossProduct(v9, v8, cross);
+            VectorSubtractXYZ(volLightPos, v2, v9);
+            dists[1] = DotProduct(cross, v9);
+        }
+
+        if (vertices[i][2] < 0.0f)
+        {
+            WriteOut(v3, v1);
+        } else {
+            MatrixVectorMultiply(v9, m, vertices[i+ind++]);
+            VectorSubtractXYZ(v1, v3, v8);
+            VectorSubtractXYZ(v9, v3, v9);
+            CrossProduct(v9, v8, cross);
+            VectorSubtractXYZ(volLightPos, v3, v9);
+            dists[2] = DotProduct(cross, v9);
+        }
+
+        if (dists[0] <= 0.0f)
+        {
+            WriteOut(v1, v2);
+        }
+
+        if (dists[1] <= 0.0f)
+        {
+            WriteOut(v2, v3);
+        }
+
+        
+        if (dists[2] <= 0.0f)
+        {
+            WriteOut(v3, v1);
+        }
+
+        
+    }
+}
+
 static void DrawShadowExtrusion(VECTOR *vertices, u32 numVerts, MATRIX m, FaceVertexTable table)
 {
     u32 faceCount = numVerts / 3;
@@ -260,9 +356,12 @@ static void DrawShadowExtrusion(VECTOR *vertices, u32 numVerts, MATRIX m, FaceVe
                 VectorAddXYZ(v3, vecs[idx1], drawVECS[drawCnt+3]);
                 VectorCopy(drawVECS[drawCnt+4], vecs[idx2]);
                 VectorAddXYZ(v4, vecs[idx2], drawVECS[drawCnt+5]);
+                
                 for (int v = drawCnt; v<drawCnt+6; v++)
                 {
+                   
                     drawVECS[v][3] = 1.0f;
+                  
                 }
                 drawCnt+=6;
 
@@ -546,10 +645,17 @@ static void SetupShootBoxBox()
 
     CreateWorldMatrixLTM(shotBox->ltm, m);
 
-    DrawShadowExtrusion(shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
-        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount, m,
-        table
-        );
+    u32 count;
+
+    VECTOR *adjs = CreateAdjacencyVertices(table, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
+        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount, &count);
+
+    DrawShadowExtrusion2(adjs, count, m);
+
+   // DrawShadowExtrusion(shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
+    //    shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount, m, table);
+
+    DEBUGLOG("%d", drawCnt);
 
 }
 

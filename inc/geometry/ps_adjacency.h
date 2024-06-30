@@ -3,4 +3,5 @@
 
 #include "ps_global.h"
 FaceVertexTable ComputeFaceToVertexTable(VECTOR *vertices, u32 numVertices);
+VECTOR *CreateAdjacencyVertices(FaceVertexTable table, VECTOR *verts, u32 numVerts, u32 *numAdjVerts);
 #endif

@@ -2,6 +2,7 @@
 #include "math/ps_vector.h"
 #include "log/ps_log.h"
 #include "math/ps_plane.h"
+#include <limits.h>
 
 #include <stdlib.h>
 
@@ -127,4 +128,72 @@ FaceVertexTable ComputeFaceToVertexTable(VECTOR *vertices, u32 numVertices)
     free(unique);
 
     return faces;
+}
+
+static u32 GetOppositeIndex(WingedTriangle *tri, u32 idx1, u32 idx2)
+{
+    u32 *vidx = &tri->v1;
+    for (int j = 0; j<3; j++)
+    {
+        if (vidx[j] != idx1 && vidx[j] != idx2)
+        {
+            return vidx[j];
+        }
+    }
+    ERRORLOG("Made it here in GetOppositeIndex");
+    return INT_MAX;
+}
+
+
+VECTOR *CreateAdjacencyVertices(FaceVertexTable table, VECTOR *verts, u32 numVerts, u32 *numAdjVerts)
+{
+    u32 faceCount = numVerts / 3;
+    *numAdjVerts = (faceCount * 6) + faceCount;
+    VECTOR *adjVerts = (VECTOR*)malloc(sizeof(VECTOR) * *numAdjVerts);
+    VECTOR *out = adjVerts;
+    for (int i = 0; i<faceCount; i++)
+    {
+        WingedTriangle *tri = table+i;
+        u32 *vidx = &tri->v1;
+        s32 *tidx = &tri->t1;
+        VECTOR *faceBools = out++;
+        VECTOR *mainTriangle = out;
+        VECTOR *oppo = out+3;
+        u32 outCount = 6;
+        for (int j = 0; j<3; j++)
+        {
+            if (tidx[j] == -1)
+            {
+                faceBools[0][j] = -1.0f;
+                outCount -= 1;
+                *numAdjVerts -= 1;
+                VectorCopy(mainTriangle[0], verts[vidx[j]]);
+                mainTriangle++;
+                continue;
+            }
+            else
+            {
+                faceBools[0][j] = 1.0f;
+            }    
+            u32 v1 = vidx[j], v2 = vidx[(j+1)%3];
+            u32 v3 = GetOppositeIndex(&table[tidx[j]], v1, v2);
+            if (v3 == INT_MAX)
+            {
+                free(adjVerts);
+                return NULL;
+            }
+            VectorCopy(mainTriangle[0], verts[v1]);
+            mainTriangle++;
+            
+            VectorCopy(oppo[0], verts[v3]);
+            oppo++;
+        }
+        *((u32*)&(faceBools[0][3])) = outCount; 
+        out += outCount;
+       // u32 what = (*(u32*)&faceBools[0][3]);
+       // DEBUGLOG("%d %d", what, outCount);
+    }
+
+
+    return adjVerts;
 }
