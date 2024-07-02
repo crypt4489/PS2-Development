@@ -32,4 +32,6 @@ enum RenderFlags {
 
 #define RENDERLIT (LIGHTING_ENABLE | COLOR_ENABLE)
 
+#define RENDERNORMAL (DRAWING_OPTION | ZSTATE(3) )
+
 #endif

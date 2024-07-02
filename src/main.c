@@ -506,23 +506,23 @@ static void SetupGrid()
 {
     Color color;
 
-    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
+    CREATE_RGBAQ_STRUCT(color, 0xFF, 0xFF, 0xFF, 0x80, 1.0f);
 
     grid = InitializeGameObject();
-    SetupGameObjectPrimRegs(grid, color, RENDERTEXTUREMAPPED | CLIPPING);
+    SetupGameObjectPrimRegs(grid, color, RENDERNORMAL | CLIPPING);
 
     int dw, dl;
     float w, h;
     dw = 10;
     dl = 10;
-    w = 100;
-    h = 100;
+    w = 1000;
+    h = 1000;
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
     u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
     CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
-    VECTOR pos = {0.0f, 0.0f, 0.0f, 1.0f};
+    VECTOR pos = {-50.0f, -15.0f, 0.0f, 1.0f};
 
     VECTOR scales = {.5f, .5f, .5f, 1.0f};
 
@@ -530,7 +530,7 @@ static void SetupGrid()
              scales,
              1.0f, grid->ltm);
 
-    PitchLTM(grid->ltm, -45.0f);
+    PitchLTM(grid->ltm, 0.0f);
     grid->update_object = NULL;
 
     // InitOBB(grid, VBO_FIXED);
@@ -696,9 +696,9 @@ static void SetupGameObjects()
     // InitSkybox();
 
     SetupGrid();
-    SetupBody();
-    SetupAABBBox();
-    SetupOBBBody();
+   // SetupBody();
+    //SetupAABBBox();
+   // SetupOBBBody();
     SetupShootBoxBox();
     // SetupMultiSphere();
     //  SetupShadowViewer();
@@ -715,6 +715,98 @@ static void CleanUpGame()
     DestoryRenderWorld(roomWorld);
     ClearManagerTexList(&g_Manager);
     ClearManagerStruct(&g_Manager);
+}
+
+void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha)
+{
+    qword_t *ret = InitializeDMAObject();
+
+    // u64 reglist = ((u64)DRAW_UV_REGLIST) << 8 | DRAW_UV_REGLIST;
+
+    qword_t *dcode_tag_vif1 = ret;
+    ret++;
+
+    blend_t blender;
+
+    u8 red, green, blue;
+
+    red = green = blue = 0x00;;
+
+    u32 count = 2;
+
+
+
+    if (setFrameMask)
+        count++;
+
+    ret = CreateDMATag(ret, DMA_CNT, count + 2, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, count+1, 0);
+
+    ret = CreateGSSetTag(ret, count, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    u32 destTestEnable = 0;
+
+    if (setFrameMask)
+    {
+        ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, setFrameMask, g_Manager.gs_context);
+    }
+
+    if (destTest)
+    {
+       destTestEnable = 1;
+    }
+   
+
+    ret = SetupZTestGS(ret, 1, 1, 0xFF, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, destTestEnable, destTest, g_Manager.gs_context);
+    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 1, g_Manager.gs_context);
+    qword_t *dmatag = ret;
+    ret++;
+    qword_t *direct = ret;
+
+    ret++;
+    PACK_GIFTAG(ret, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
+    ret++;
+
+    PACK_GIFTAG(ret, GS_SET_PRIM(PRIM_TRIANGLE_STRIP, PRIM_SHADE_FLAT, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), GS_REG_PRIM);
+    ret++;
+
+    u32 regCount = 2;
+
+    u64 regFlag =  DRAW_RGBAQ_REGLIST;
+
+    PACK_GIFTAG(ret, GIF_SET_TAG(4, 1, 0, 0, GIF_FLG_REGLIST, regCount), regFlag);
+    ret++;
+
+    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
+    ret++;
+    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+    ret++;
+    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
+    ret++;
+    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+    ret++;
+
+    ret = CreateDMATag(ret, DMA_END, 4, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 3, 1);
+
+    ret = CreateGSSetTag(ret, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x0000000, g_Manager.gs_context);
+    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 0, g_Manager.gs_context);
+
+    CreateDMATag(dmatag, DMA_CNT, ret - dmatag - 1 - 5, 0, 0, 0);
+
+    CreateDirectTag(direct, ret - direct - 1 - 5, 0);
+
+    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 0, 1, sizeOfPipeline);
+
+    CreateDCODETag(ret, DMA_DCODE_END);
+
+    SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRIX m)
@@ -734,14 +826,18 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
 
     ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
 
-    ret = CreateDMATag(ret, DMA_CNT, 3, 0, 0, 0);
+    ret = CreateDMATag(ret, DMA_CNT, 5, 0, 0, 0);
 
-    ret = CreateDirectTag(ret, 2, 0);
+    ret = CreateDirectTag(ret, 4, 0);
 
-    ret = CreateGSSetTag(ret, 1, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+    ret = CreateGSSetTag(ret, 3, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
 
-    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
 
+    ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x00FFFFFF, g_Manager.gs_context);
+
+    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 1, g_Manager.gs_context);
+    
     ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
 
     qword_t *pipeline_temp = ret;
@@ -750,22 +846,25 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
 
     pipeline_temp = VIFSetupScaleVector(pipeline_temp);
 
-    pipeline_temp->sw[0] = color.r;
-    pipeline_temp->sw[1] = color.b;
-    pipeline_temp->sw[2] = color.g;
-    pipeline_temp->sw[3] = color.a;
+    pipeline_temp->sw[0] = 0;
+    pipeline_temp->sw[1] = 0;
+    pipeline_temp->sw[2] = 0;
+    pipeline_temp->sw[3] = 0x80;
     pipeline_temp++;
 
     pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
     pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
-    pipeline_temp += 2;
+    pipeline_temp += 1;
     memcpy(pipeline_temp, volLightPos, sizeof(VECTOR));
+    pipeline_temp->sw[3] = 0x3;
 
     pipeline_temp = ret;
 
     memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
     pipeline_temp += 4;
      memcpy(pipeline_temp, m, 4 * sizeof(qword_t));
+     pipeline_temp += 11;
+     memcpy(pipeline_temp, *GetPositionVectorLTM(cam->ltm), sizeof(VECTOR));
     ret += 16;
 
     u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
@@ -787,7 +886,51 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
     }
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, 8), 0, VIF_CMD_MSCAL, 0), 0);
-    ret = CreateDMATag(ret, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
+    
+    
+    
+    ret = ReadUnpackData(ret, 9,  3, 0, VIF_CMD_UNPACK(0, 3, 0));
+    pipeline_temp = ret;
+    pipeline_temp->sw[0] = 0;
+    pipeline_temp->sw[1] = 0;
+    pipeline_temp->sw[2] = 0;
+    pipeline_temp->sw[3] = 0x0;
+    pipeline_temp++;
+
+    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
+    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
+    pipeline_temp += 1;
+    memcpy(pipeline_temp, volLightPos, sizeof(VECTOR));
+    pipeline_temp->sw[3] = 0x0;
+
+    ret += 3;
+ 
+   
+
+    count = numVerts;
+    ret = ReadUnpackData(ret, 0,  count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret->sw[3] = count;
+    ret++;
+
+    for (int i = 0; i<count; i++)
+    {
+        ret = VectorToQWord(ret, verts[i]);
+    }
+
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, 8), 0, VIF_CMD_MSCAL, 0), 0);
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0); 
+
+    ret = CreateDMATag(ret, DMA_END, 4, 0, 0, 0);
+
+    ret = CreateDirectTag(ret, 3, 1);
+
+    ret = CreateGSSetTag(ret, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x00000000, g_Manager.gs_context);
+
+    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 0, g_Manager.gs_context);
 
     u32 meshPipe = ret - dma_vif1 - 1;
 
@@ -943,7 +1086,9 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
 
-        //   DrawWorld(world);
+        DrawWorld(world);
+
+        /*
 
         RenderLine(&mainLine, *colors[0]);
 
@@ -972,7 +1117,7 @@ int Render()
         //  shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount,
         // m, ShotBoxIntersectCB);
 
-        RenderGameObject(shotBox, shotBoxColor);
+        
 
         RenderRay(&rayray, *colors[0], 50.0);
 
@@ -985,11 +1130,19 @@ int Render()
        //for(int i = 0; i<drawCnt; i++)
        {
       //  DumpVector(drawVECS[i]);
-       }
+       } */
+    DumpVector(&cam->ltm[12]);
+    RenderSphereLine(&lolSphere, *colors[3], 40);
+        RenderGameObject(shotBox, shotBoxColor);
+
+       DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0);
 
        RenderShadowVertices(adjs, count, *colors[1], m);
 
 
+    DrawShadowQuad(480, 640, 0, 0, 1,0xFF000000, 0);
+
+        RenderPlaneLine(&plane2, *colors[1], 20);
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
         PrintText(myFont, print_out, -310, -220);

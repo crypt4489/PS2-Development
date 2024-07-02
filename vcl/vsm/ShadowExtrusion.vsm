@@ -18,254 +18,282 @@ START:
          NOP                                                        fcset         0                                   
          NOP                                                        lq.xyz        VF09,8(VI00)                        
 begin:
-; _LNOPT_w=[ normal2 ] 12 [12 0] 12   [begin]
+; _LNOPT_w=[ normal2 ] 14 [14 0] 14   [begin]
          NOP                                                        xtop          VI02                                
-         NOP                                                        ilw.w         VI07,0(VI02)                        
-         NOP                                                        lq.yzw        VF12,10(VI00)                       
-         NOP                                                        iaddiu        VI03,VI02,0x00000001                
+         NOP                                                        iaddiu        VI04,VI02,0x00000001                
+         NOP                                                        ilw.w         VI08,0(VI02)                        
          NOP                                                        lq            VF10,9(VI00)                        
-         NOP                                                        iadd          VI06,VI03,VI07                      
-         NOP                                                        lq.xyz        VF11,12(VI00)                       
-         NOP                                                        iaddiu        VI04,VI00,0                         
-         NOP                                                        iaddiu        VI05,VI06,0                         
-         NOP                                                        sq.yzw        VF12,0(VI06)                        
-         NOP                                                        iaddiu        VI06,VI06,0x00000001                
-         NOP                                                        iadd          VI07,VI02,VI07                      
+         NOP                                                        lq.xyz        VF11,11(VI00)                       
+         NOP                                                        lq.yzw        VF13,10(VI00)                       
+         NOP                                                        iadd          VI07,VI04,VI08                      
+         NOP                                                        ilw.w         VI03,11(VI00)                       
+         NOP                                                        lq.xyz        VF12,15(VI00)                       
+         NOP                                                        iaddiu        VI05,VI00,0                         
+         NOP                                                        iaddiu        VI06,VI07,0                         
+         NOP                                                        sq.yzw        VF13,0(VI07)                        
+         NOP                                                        iaddiu        VI07,VI07,0x00000001                
+         NOP                                                        iadd          VI08,VI02,VI08                      
 vertexLoop:
 ; _LNOPT_w=[ another ] 27 [36 0] 44   [vertexLoop]
-         NOP                                                        iaddiu        VI10,VI03,0x00000001                
-         NOP                                                        lq            VF13,1(VI10)                        
-         mulax.xyz     ACC,VF05,VF13x                               lq            VF12,0(VI10)                               ;	STALL_LATENCY ?3
-         madday.xyz    ACC,VF06,VF13y                               iaddiu        VI09,VI00,0x000000e0                
-         maddaz.xyz    ACC,VF07,VF13z                               ilw.w         VI08,0(VI03)                        
-         maddw.xyz     VF13,VF08,VF13w                              NOP                                               
-         mulax.xyz     ACC,VF05,VF12x                               lq            VF14,2(VI10)                        
-         madday.xyz    ACC,VF06,VF12y                               NOP                                               
-         maddaz.xyz    ACC,VF07,VF12z                               NOP                                               
-         maddw.xyz     VF12,VF08,VF12w                              NOP                                               
-         mulax.xyz     ACC,VF05,VF14x                               NOP                                               
-         madday.xyz    ACC,VF06,VF14y                               lq.xyz        VF16,0(VI03)                        
-         maddaz.xyz    ACC,VF07,VF14z                               iaddiu        VI03,VI00,0x00000088                
+         NOP                                                        iaddiu        VI11,VI04,0x00000001                
+         NOP                                                        lq            VF14,1(VI11)                        
+         mulax.xyz     ACC,VF05,VF14x                               lq            VF13,0(VI11)                               ;	STALL_LATENCY ?3
+         madday.xyz    ACC,VF06,VF14y                               iaddiu        VI10,VI00,0x000000e0                
+         maddaz.xyz    ACC,VF07,VF14z                               ilw.w         VI09,0(VI04)                        
          maddw.xyz     VF14,VF08,VF14w                              NOP                                               
-         add.xyz       VF00,VF16,VF00                               NOP                                                      ;	STALL_LATENCY ?1
-         sub.xyz       VF15,VF13,VF12                               NOP                                               
+         mulax.xyz     ACC,VF05,VF13x                               lq            VF15,2(VI11)                        
+         madday.xyz    ACC,VF06,VF13y                               NOP                                               
+         maddaz.xyz    ACC,VF07,VF13z                               NOP                                               
+         maddw.xyz     VF13,VF08,VF13w                              NOP                                               
+         mulax.xyz     ACC,VF05,VF15x                               NOP                                               
+         madday.xyz    ACC,VF06,VF15y                               lq.xyz        VF17,0(VI04)                        
+         maddaz.xyz    ACC,VF07,VF15z                               iaddiu        VI04,VI00,0x00000088                
+         maddw.xyz     VF15,VF08,VF15w                              NOP                                               
+         add.xyz       VF00,VF17,VF00                               NOP                                                      ;	STALL_LATENCY ?1
          sub.xyz       VF16,VF14,VF13                               NOP                                               
+         sub.xyz       VF17,VF15,VF14                               NOP                                               
          NOP                                                        NOP                                               
-         sub.xyz       VF17,VF11,VF12                               fmand         VI09,VI09                           
-         opmula.xyz    ACCxyz,VF15xyz,VF16xyz                       NOP                                                      ;	STALL_LATENCY ?1
-         opmsub.xyz    VF18xyz,VF16xyz,VF15xyz                      NOP                                               
-         mul.xyz       VF17,VF18,VF17                               NOP                                                      ;	STALL_LATENCY ?3
-         addy.x        VF17,VF17,VF17y                              NOP                                                      ;	STALL_LATENCY ?3
-         addz.x        VF19,VF17,VF17z                              NOP                                                      ;	STALL_LATENCY ?3
-         abs.x         VF00,VF19                                    fmand         VI03,VI03                                  ;	STALL_LATENCY ?3
-         NOP                                                        ibeq          VI03,VI00,adjTest                   
+         sub.xyz       VF18,VF11,VF13                               fmand         VI10,VI10                           
+         opmula.xyz    ACCxyz,VF16xyz,VF17xyz                       NOP                                                      ;	STALL_LATENCY ?1
+         opmsub.xyz    VF19xyz,VF17xyz,VF16xyz                      NOP                                               
+         mul.xyz       VF18,VF19,VF18                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF18,VF18,VF18y                              NOP                                                      ;	STALL_LATENCY ?3
+         addz.x        VF20,VF18,VF18z                              NOP                                                      ;	STALL_LATENCY ?3
+         abs.x         VF00,VF20                                    fmand         VI04,VI04                                  ;	STALL_LATENCY ?3
+         NOP                                                        ibeq          VI04,VI00,adjTest                   
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_7]
          NOP                                                        b             Data                                
          NOP                                                        NOP                                               
 adjTest:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [adjTest]
-         addw.x        VF17,VF00,VF00w                              iaddiu        VI03,VI00,0x00000080                
-         NOP                                                        iand          VI11,VI09,VI03                      
+         addw.x        VF18,VF00,VF00w                              iaddiu        VI04,VI00,0x00000080                
+         NOP                                                        iand          VI12,VI10,VI04                      
          NOP                                                        NOP                                               
-         addw.y        VF17,VF00,VF00w                              ibeq          VI11,VI00,distAB                    
-         addw.z        VF17,VF00,VF00w                              iaddiu        VI03,VI10,0x00000003                
+         addw.y        VF18,VF00,VF00w                              ibeq          VI12,VI00,distAB                    
+         addw.z        VF18,VF00,VF00w                              iaddiu        VI04,VI11,0x00000003                
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_10]
-         max.xyz       VF15,VF12,VF12                               bal           VI11,writeOut                       
-         NOP                                                        move.xyz      VF18,VF13                           
+         max.xyz       VF16,VF13,VF13                               bal           VI12,writeOut                       
+         NOP                                                        move.xyz      VF19,VF14                           
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_11]
          NOP                                                        b             check2Face                          
          NOP                                                        NOP                                               
 distAB:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [distAB]
-         max.xyz       VF18,VF13,VF13                               bal           VI11,dotFace                        
+         max.xyz       VF19,VF14,VF14                               bal           VI12,dotFace                        
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v_ShadowExtrusion_vcl_14]
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
-         max.x         VF17,VF19,VF19                               NOP                                               
+         max.x         VF18,VF20,VF20                               NOP                                               
 check2Face:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [check2Face]
-         NOP                                                        iaddiu        VI11,VI00,0x00000040                
-         NOP                                                        iand          VI11,VI09,VI11                      
+         NOP                                                        iaddiu        VI12,VI00,0x00000040                
+         NOP                                                        iand          VI12,VI10,VI12                      
          NOP                                                        NOP                                               
-         NOP                                                        ibeq          VI11,VI00,distBC                    
+         NOP                                                        ibeq          VI12,VI00,distBC                    
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_16]
-         max.xyz       VF15,VF13,VF13                               bal           VI11,writeOut                       
-         NOP                                                        move.xyz      VF18,VF14                           
+         max.xyz       VF16,VF14,VF14                               bal           VI12,writeOut                       
+         NOP                                                        move.xyz      VF19,VF15                           
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_17]
          NOP                                                        b             check3Face                          
          NOP                                                        NOP                                               
 distBC:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [distBC]
-         NOP                                                        bal           VI11,dotFace                        
-         max.xyz       VF18,VF14,VF14                               move.xyz      VF15,VF16                           
+         NOP                                                        bal           VI12,dotFace                        
+         max.xyz       VF19,VF15,VF15                               move.xyz      VF16,VF17                           
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v_ShadowExtrusion_vcl_20]
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
-         addx.y        VF17,VF00,VF19x                              NOP                                               
+         addx.y        VF18,VF00,VF20x                              NOP                                               
 check3Face:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [check3Face]
-         NOP                                                        iaddiu        VI11,VI00,0x00000020                
-         NOP                                                        iand          VI09,VI09,VI11                      
+         NOP                                                        iaddiu        VI12,VI00,0x00000020                
+         NOP                                                        iand          VI10,VI10,VI12                      
          NOP                                                        NOP                                               
-         NOP                                                        ibeq          VI09,VI00,distCA                    
+         NOP                                                        ibeq          VI10,VI00,distCA                    
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_22]
-         max.xyz       VF15,VF14,VF14                               bal           VI11,writeOut                       
-         NOP                                                        move.xyz      VF18,VF12                           
+         max.xyz       VF16,VF15,VF15                               bal           VI12,writeOut                       
+         NOP                                                        move.xyz      VF19,VF13                           
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_23]
          NOP                                                        b             checkDists                          
          NOP                                                        NOP                                               
 distCA:
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [distCA]
-         NOP                                                        bal           VI11,dotFace                        
-         sub.xyz       VF15,VF12,VF14                               move.xyz      VF18,VF14                           
+         NOP                                                        bal           VI12,dotFace                        
+         sub.xyz       VF16,VF13,VF15                               move.xyz      VF19,VF15                           
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [__v_ShadowExtrusion_vcl_26]
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
-         addx.z        VF17,VF00,VF19x                              NOP                                               
+         addx.z        VF18,VF00,VF20x                              NOP                                               
 checkDists:
 ; _LNOPT_w=[ normal2 ] 10 [9 0] 12   [checkDists]
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
-         add.xyz       VF15,VF17,VF00                               iaddiu        VI09,VI00,0x00000088                
-         NOP                                                        iaddiu        VI03,VI00,0x000000ee                
-         abs.xyz       VF00,VF15                                    fmand         VI03,VI03                                  ;	STALL_LATENCY ?2
-         NOP                                                        iand          VI09,VI09,VI03                      
+         add.xyz       VF16,VF18,VF00                               iaddiu        VI10,VI00,0x00000088                
+         NOP                                                        iaddiu        VI04,VI00,0x000000ee                
+         abs.xyz       VF00,VF16                                    fmand         VI04,VI04                                  ;	STALL_LATENCY ?2
+         NOP                                                        iand          VI10,VI10,VI04                      
          NOP                                                        NOP                                               
-         NOP                                                        ibeq          VI09,VI00,checkDistB                
+         NOP                                                        ibeq          VI10,VI00,checkDistB                
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_28]
-         max.xyz       VF15,VF12,VF12                               bal           VI11,writeOut                       
-         NOP                                                        move.xyz      VF18,VF13                           
+         max.xyz       VF16,VF13,VF13                               bal           VI12,writeOut                       
+         NOP                                                        move.xyz      VF19,VF14                           
 checkDistB:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [checkDistB]
-         NOP                                                        iaddiu        VI09,VI00,0x00000044                
-         NOP                                                        iand          VI09,VI09,VI03                      
+         NOP                                                        iaddiu        VI10,VI00,0x00000044                
+         NOP                                                        iand          VI10,VI10,VI04                      
          NOP                                                        NOP                                               
-         NOP                                                        ibeq          VI09,VI00,checkDistC                
+         NOP                                                        ibeq          VI10,VI00,checkDistC                
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_31]
-         max.xyz       VF15,VF13,VF13                               bal           VI11,writeOut                       
-         NOP                                                        move.xyz      VF18,VF14                           
+         max.xyz       VF16,VF14,VF14                               bal           VI12,writeOut                       
+         NOP                                                        move.xyz      VF19,VF15                           
 checkDistC:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [checkDistC]
-         NOP                                                        iaddiu        VI09,VI00,0x00000022                
-         NOP                                                        iand          VI03,VI09,VI03                      
+         NOP                                                        iaddiu        VI10,VI00,0x00000022                
+         NOP                                                        iand          VI04,VI10,VI04                      
          NOP                                                        NOP                                               
-         NOP                                                        ibeq          VI03,VI00,Data                      
+         NOP                                                        ibeq          VI04,VI00,Data                      
          NOP                                                        NOP                                               
 ; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_34]
-         max.xyz       VF15,VF14,VF14                               bal           VI11,writeOut                       
-         NOP                                                        move.xyz      VF18,VF12                           
+         max.xyz       VF16,VF15,VF15                               bal           VI12,writeOut                       
+         NOP                                                        move.xyz      VF19,VF13                           
 Data:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [Data]
-         NOP                                                        isubiu        VI07,VI07,1                         
-         NOP                                                        isub          VI07,VI07,VI08                      
+         NOP                                                        isubiu        VI08,VI08,1                         
+         NOP                                                        isub          VI08,VI08,VI09                      
          NOP                                                        NOP                                               
-         NOP                                                        ibne          VI07,VI02,vertexLoop                
-         NOP                                                        iadd          VI03,VI10,VI08                      
+         NOP                                                        ibne          VI08,VI02,vertexLoop                
+         NOP                                                        iadd          VI04,VI11,VI09                      
 ; _LNOPT_w=[ normal2 ] 4 [6 0] 7   [__v_ShadowExtrusion_vcl_37]
          NOP                                                        ilw.x         VI02,10(VI00)                       
-         NOP                                                        ior           VI02,VI02,VI04                             ;	STALL_LATENCY ?3
+         NOP                                                        ior           VI02,VI02,VI05                             ;	STALL_LATENCY ?3
          NOP                                                        b             end                                 
-         NOP                                                        isw.x         VI02,0(VI05)                        
+         NOP                                                        isw.x         VI02,0(VI06)                        
 dotFace:
 ; _LNOPT_w=[ normal2 ] 13 [29 0] 29   [dotFace]
-         NOP                                                        lq            VF20,0(VI03)                        
-         mulax.xyz     ACC,VF05,VF20x                               NOP                                                      ;	STALL_LATENCY ?3
-         madday.xyz    ACC,VF06,VF20y                               NOP                                               
-         maddaz.xyz    ACC,VF07,VF20z                               NOP                                               
-         maddw.xyz     VF20,VF08,VF20w                              NOP                                               
-         sub.xyz       VF19,VF11,VF18                               NOP                                               
-         sub.xyz       VF18,VF20,VF18                               NOP                                                      ;	STALL_LATENCY ?2
-         opmula.xyz    ACCxyz,VF18xyz,VF15xyz                       NOP                                                      ;	STALL_LATENCY ?3
-         opmsub.xyz    VF15xyz,VF15xyz,VF18xyz                      NOP                                               
-         mul.xyz       VF19,VF15,VF19                               NOP                                                      ;	STALL_LATENCY ?3
-         addy.x        VF19,VF19,VF19y                              NOP                                                      ;	STALL_LATENCY ?3
-         NOP                                                        jr            VI11                                
-         addz.x        VF19,VF19,VF19z                              iaddiu        VI03,VI03,0x00000001                       ;	STALL_LATENCY ?2
+         NOP                                                        lq            VF21,0(VI04)                        
+         mulax.xyz     ACC,VF05,VF21x                               NOP                                                      ;	STALL_LATENCY ?3
+         madday.xyz    ACC,VF06,VF21y                               NOP                                               
+         maddaz.xyz    ACC,VF07,VF21z                               NOP                                               
+         maddw.xyz     VF21,VF08,VF21w                              NOP                                               
+         sub.xyz       VF20,VF11,VF19                               NOP                                               
+         sub.xyz       VF19,VF21,VF19                               NOP                                                      ;	STALL_LATENCY ?2
+         opmula.xyz    ACCxyz,VF19xyz,VF16xyz                       NOP                                                      ;	STALL_LATENCY ?3
+         opmsub.xyz    VF16xyz,VF16xyz,VF19xyz                      NOP                                               
+         mul.xyz       VF20,VF16,VF20                               NOP                                                      ;	STALL_LATENCY ?3
+         addy.x        VF20,VF20,VF20y                              NOP                                                      ;	STALL_LATENCY ?3
+         NOP                                                        jr            VI12                                
+         addz.x        VF20,VF20,VF20z                              iaddiu        VI04,VI04,0x00000001                       ;	STALL_LATENCY ?2
 writeOut:
-; _LNOPT_w=[ normal2 ] 24 [24 0] 24   [writeOut]
-         max.w         VF06,VF00,VF00                               NOP                                               
-         max.w         VF05,VF00,VF00                               NOP                                               
-         sub.xyz       VF20,VF15,VF11                               NOP                                               
-         sub.xyz       VF22,VF18,VF11                               NOP                                               
-         mulax         ACC,VF01,VF15x                               NOP                                               
-         madday        ACC,VF02,VF15y                               loi           0x41200000                         
-         muli.xyz      VF20,VF20,I                                  NOP                                               
-         maddaz        ACC,VF03,VF15z                               NOP                                               
-         muli.xyz      VF22,VF22,I                                  NOP                                               
-         maddw         VF19,VF04,VF06w                              NOP                                               
-         mulax         ACC,VF01,VF18x                               NOP                                               
-         add.xyz       VF20,VF20,VF15                               move.w        VF06,VF00                           
-         madday        ACC,VF02,VF18y                               NOP                                               
-         add.xyz       VF15,VF22,VF18                               NOP                                               
-         maddaz        ACC,VF03,VF18z                               NOP                                               
-         maddw         VF19,VF04,VF06w                              move          VF22,VF19                           
+; _LNOPT_w=[ normal2 ] 19 [34 0] 36   [writeOut]
+         NOP                                                        NOP                                               
+         NOP                                                        NOP                                               
+         sub.xyz       VF20,VF16,VF11                               loi           0x41200000                          
+         muli.xyz      VF20,VF20,I                                  move.w        VF07,VF00                                  ;	STALL_LATENCY ?3
+         add.xyz       VF20,VF20,VF16                               NOP                                                      ;	STALL_LATENCY ?3
+         sub.xyz       VF23,VF19,VF16                               NOP                                               
+         sub.xyz       VF24,VF20,VF16                               NOP                                                      ;	STALL_LATENCY ?2
+         sub.xyz       VF22,VF12,VF16                               NOP                                               
+         opmula.xyz    ACCxyz,VF24xyz,VF23xyz                       NOP                                                      ;	STALL_LATENCY ?2
+         opmsub.xyz    VF23xyz,VF23xyz,VF24xyz                      NOP                                               
+         mul.xyz       VF22,VF22,VF23                               NOP                                                      ;	STALL_LATENCY ?3
+         sub.xyz       VF21,VF19,VF11                               NOP                                               
+         addy.x        VF22,VF22,VF22y                              NOP                                                      ;	STALL_LATENCY ?2
+         muli.xyz      VF21,VF21,I                                  NOP                                               
+         addz.x        VF00,VF22,VF22z                              NOP                                                      ;	STALL_LATENCY ?2
+         NOP                                                        NOP                                               
+         max.w         VF05,VF00,VF00                               move.w        VF08,VF00                           
+         max.w         VF06,VF00,VF00                               ibne          VI03,VI00,determineFace             
+         add.xyz       VF21,VF21,VF19                               fsand         VI13,0x00000003                     
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_42]
+         NOP                                                        ibne          VI13,VI00,contWritingVertex         
+         NOP                                                        NOP                                               
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_43]
+         NOP                                                        jr            VI12                                
+         NOP                                                        NOP                                               
+determineFace:
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [determineFace]
+         NOP                                                        ibeq          VI13,VI00,contWritingVertex         
+         NOP                                                        NOP                                               
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_46]
+         NOP                                                        jr            VI12                                
+         NOP                                                        NOP                                               
+contWritingVertex:
+; _LNOPT_w=[ normal2 ] 16 [16 0] 16   [contWritingVertex]
+         mulax         ACC,VF01,VF16x                               NOP                                               
+         madday        ACC,VF02,VF16y                               NOP                                               
+         maddaz        ACC,VF03,VF16z                               NOP                                               
+         maddw         VF22,VF04,VF07w                              NOP                                               
+         mulax         ACC,VF01,VF19x                               NOP                                               
+         madday        ACC,VF02,VF19y                               NOP                                               
+         maddaz        ACC,VF03,VF19z                               NOP                                               
+         maddw         VF22,VF04,VF08w                              move          VF25,VF22                           
          mulax         ACC,VF01,VF20x                               NOP                                               
          madday        ACC,VF02,VF20y                               NOP                                               
          maddaz        ACC,VF03,VF20z                               NOP                                               
-         maddw         VF20,VF04,VF05w                              move.w        VF05,VF00                           
-         mulax         ACC,VF01,VF15x                               NOP                                               
-         madday        ACC,VF02,VF15y                               NOP                                               
-         maddaz        ACC,VF03,VF15z                               bal           VI12,clipp                          
-         maddw         VF21,VF04,VF05w                              NOP                                               
-; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_42]
-         max           VF22,VF20,VF20                               bal           VI12,clipp                          
+         maddw         VF23,VF04,VF06w                              NOP                                               
+         mulax         ACC,VF01,VF21x                               NOP                                               
+         madday        ACC,VF02,VF21y                               NOP                                               
+         maddaz        ACC,VF03,VF21z                               bal           VI13,clipp                          
+         maddw         VF24,VF04,VF05w                              NOP                                               
+; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_49]
+         max           VF25,VF23,VF23                               bal           VI13,clipp                          
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_43]
-         max           VF22,VF19,VF19                               bal           VI12,clipp                          
+; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_50]
+         max           VF25,VF22,VF22                               bal           VI13,clipp                          
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_44]
-         max           VF22,VF20,VF20                               bal           VI12,clipp                          
+; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_51]
+         max           VF25,VF23,VF23                               bal           VI13,clipp                          
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_45]
-         max           VF22,VF19,VF19                               bal           VI12,clipp                          
+; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_52]
+         max           VF25,VF22,VF22                               bal           VI13,clipp                          
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_46]
-         max           VF22,VF21,VF21                               bal           VI12,clipp                          
+; _LNOPT_w=[ normal2 ] 2 [4 0] 2   [__v_ShadowExtrusion_vcl_53]
+         max           VF25,VF24,VF24                               bal           VI13,clipp                          
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_47]
-         NOP                                                        jr            VI11                                
-         NOP                                                        iaddiu        VI04,VI04,0x00000006                
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_54]
+         NOP                                                        jr            VI12                                
+         NOP                                                        iaddiu        VI05,VI05,0x00000006                
 clipp:
 ; _LNOPT_w=[ normal2 ] 17 [20 0] 22   [clipp]
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
-         clipw.xyz     VF22xyz,VF22w                                div           Q,VF00w,VF22w                       
+         clipw.xyz     VF25xyz,VF25w                                div           Q,VF00w,VF25w                       
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
          NOP                                                        NOP                                               
-         mulq.xyz      VF22,VF22,Q                                  sq            VF10,0(VI06)                        
-         mulaw.xyz     ACC,VF09,VF00w                               iaddiu        VI06,VI06,0x00000002                
-         madd.xyz      VF22,VF22,VF09                               NOP                                                      ;	STALL_LATENCY ?2
-         ftoi4.xyz     VF22,VF22                                    fcand         VI01,262143                                ;	STALL_LATENCY ?3
-         NOP                                                        iaddiu        VI13,VI01,0x00007fff                
-         NOP                                                        isw.w         VI13,-1(VI06)                       
-         NOP                                                        jr            VI12                                
-         NOP                                                        sq.xyz        VF22,-1(VI06)                       
+         mulq.xyz      VF25,VF25,Q                                  sq            VF10,0(VI07)                        
+         mulaw.xyz     ACC,VF09,VF00w                               iaddiu        VI07,VI07,0x00000002                
+         madd.xyz      VF25,VF25,VF09                               NOP                                                      ;	STALL_LATENCY ?2
+         ftoi4.xyz     VF25,VF25                                    fcand         VI01,262143                                ;	STALL_LATENCY ?3
+         NOP                                                        iaddiu        VI14,VI01,0x00007fff                
+         NOP                                                        isw.w         VI14,-1(VI07)                       
+         NOP                                                        jr            VI13                                
+         NOP                                                        sq.xyz        VF25,-1(VI07)                       
 end:
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [end]
-         NOP                                                        xgkick        VI05                                
-; _LNOPT_w=[ normal2 ] 2 [0 0] 2   [__v_ShadowExtrusion_vcl_52]
+         NOP                                                        xgkick        VI06                                
+; _LNOPT_w=[ normal2 ] 2 [0 0] 2   [__v_ShadowExtrusion_vcl_59]
          NOP[E]                                                     NOP                                               
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_53]
+; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [__v_ShadowExtrusion_vcl_60]
          NOP                                                        b             begin                               
          NOP                                                        NOP                                               
 		.align 4
 VU1_ShadowExtrusion_CodeEnd:
-;	iCount=202
+;	iCount=223
 ; register stats:
-;  14 VU User integer
-;  23 VU User floating point
+;  15 VU User integer
+;  26 VU User floating point

@@ -17,7 +17,9 @@ begin:
     xtop    iBase
 
     lq     outColor, 9(vi00)
-    lq.xyz     lightPos, 12(vi00)
+    lq.xyz     lightPos, 11(vi00)
+    ilw.w     side, 11(vi00)
+    lq.xyz   camPos, 15(vi00)
 
     iaddiu  vertexData,     iBase,        1
     ilw.w   vertCount,      0(iBase)
@@ -249,6 +251,14 @@ writeOut:
     move.w v3, vf00
     move.w writeVer1, vf00
     move.w writeVer2, vf00
+    TriangleWinding{ res, writeVer1, v3, writeVer2, camPos }
+    ibne side, vi00, determineFace
+    ibne res, vi00, contWritingVertex
+    jr ret
+determineFace:
+    ibeq res, vi00, contWritingVertex
+    jr ret
+contWritingVertex:
     MatrixMultiplyVertex{ writeVer1, viewProj, writeVer1 }
     MatrixMultiplyVertex{ writeVer2, viewProj, writeVer2 }
     MatrixMultiplyVertex{ v3, viewProj, v3 }
