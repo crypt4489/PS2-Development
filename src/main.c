@@ -50,7 +50,7 @@
 #include "pipelines/ps_pipelinecbs.h"
 #include "physics/ps_primtest.h"
 #include "graphics/ps_renderdirect.h"
-#include "geometry/ps_adjacency.h"  
+#include "geometry/ps_adjacency.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -177,11 +177,9 @@ static BoundingSphere lol2Sphere = {{-15.0f, 10.0f, 50.0f, 1.0f}, 10.0f};
 
 static BoundingSphere lolSphere = {{-20.0f, 15.0f, -20.0f, 1.0f}, 5.0f};
 
-
 static Plane planer = {{1.0, 1.0, 0.0, 1.0f}, {1.0, 2.0, -1.0, -3.0f}};
 
 static Plane plane2 = {{0.0, 0.0, 7.0, 1.0f}, {2.0, 3.0, -1.0, -7.0f}};
-
 
 #include "math/ps_line.h"
 
@@ -190,7 +188,7 @@ static Color normal;
 static Color boxhigh;
 static void ShotBoxIntersectCB(VECTOR *verts, int index)
 {
-    for (int i = index+2; i>=index; i--)
+    for (int i = index + 2; i >= index; i--)
     {
         shotBoxColor[i].r = boxhigh.r;
         shotBoxColor[i].g = boxhigh.g;
@@ -203,12 +201,12 @@ static Ray rayray = {{0.0f, 0.0f, -10.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 
 static Ray rayray2 = {{-5.0f, 0.0f, -5.0f, 1.0f}, {-1.0f, 0.0f, 0.0f, 1.0f}};
 
-
 static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
 
+
+#if 0
 VECTOR drawVECS[250];
 u32 drawCnt;
-
 
 static void WriteOut(VECTOR a, VECTOR b)
 {
@@ -235,27 +233,30 @@ static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
 {
     u32 count = 0;
     u32 face = 0;
-    for (int i = 0; i<numVerts; i+=count+1, face++)
+    for (int i = 0; i < numVerts; i += count + 1, face++)
     {
-        
-        count = *((u32*)&vertices[i][3]);
+
+        count = *((u32 *)&vertices[i][3]);
         VECTOR v1, v2, v3, v7, v8, v9, cross, dists;
         ZeroVector(dists);
         int ind = 1;
-        MatrixVectorMultiply(v1, m, vertices[i+ind++]);
-        MatrixVectorMultiply(v2, m, vertices[i+ind++]);
-        MatrixVectorMultiply(v3, m, vertices[i+ind++]);
+        MatrixVectorMultiply(v1, m, vertices[i + ind++]);
+        MatrixVectorMultiply(v2, m, vertices[i + ind++]);
+        MatrixVectorMultiply(v3, m, vertices[i + ind++]);
         VectorSubtractXYZ(v2, v1, v7);
         VectorSubtractXYZ(v3, v2, v8);
         CrossProduct(v7, v8, cross);
-        VectorSubtractXYZ(volLightPos, v1, v9);      
+        VectorSubtractXYZ(volLightPos, v1, v9);
         float d = DotProduct(cross, v9);
-        if (d <= 0.0f) continue;
+        if (d <= 0.0f)
+            continue;
         if (vertices[i][0] < 0.0f)
         {
             WriteOut(v1, v2);
-        } else {
-            MatrixVectorMultiply(v9, m, vertices[i+ind++]);
+        }
+        else
+        {
+            MatrixVectorMultiply(v9, m, vertices[i + ind++]);
             VectorSubtractXYZ(v9, v2, v9);
             CrossProduct(v9, v7, cross);
             VectorSubtractXYZ(volLightPos, v1, v9);
@@ -265,8 +266,10 @@ static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
         if (vertices[i][1] < 0.0f)
         {
             WriteOut(v2, v3);
-        } else {
-            MatrixVectorMultiply(v9, m, vertices[i+ind++]);
+        }
+        else
+        {
+            MatrixVectorMultiply(v9, m, vertices[i + ind++]);
             VectorSubtractXYZ(v9, v3, v9);
             CrossProduct(v9, v8, cross);
             VectorSubtractXYZ(volLightPos, v2, v9);
@@ -276,8 +279,10 @@ static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
         if (vertices[i][2] < 0.0f)
         {
             WriteOut(v3, v1);
-        } else {
-            MatrixVectorMultiply(v9, m, vertices[i+ind++]);
+        }
+        else
+        {
+            MatrixVectorMultiply(v9, m, vertices[i + ind++]);
             VectorSubtractXYZ(v1, v3, v8);
             VectorSubtractXYZ(v9, v3, v9);
             CrossProduct(v9, v8, cross);
@@ -295,87 +300,14 @@ static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
             WriteOut(v2, v3);
         }
 
-        
         if (dists[2] <= 0.0f)
         {
             WriteOut(v3, v1);
         }
-
-        
     }
 }
 
-static void DrawShadowExtrusion(VECTOR *vertices, u32 numVerts, MATRIX m, FaceVertexTable table)
-{
-    u32 faceCount = numVerts / 3;
-    u32 *visible = (u32*)malloc(sizeof(u32)*faceCount);
-    memset(visible, 0, sizeof(u32)*faceCount);
-    VECTOR *vecs = (VECTOR*)malloc(sizeof(VECTOR)*numVerts);
-    VECTOR *out = vecs;
-    for (int i = 0; i<faceCount; i++)
-    {
-        WingedTriangle *tri = &table[i];
-        VECTOR plane;
-        MatrixVectorMultiply(out[0], m, vertices[tri->v1]);
-        MatrixVectorMultiply(out[1], m, vertices[tri->v2]);
-        MatrixVectorMultiply(out[2], m, vertices[tri->v3]);
-        Matrix3VectorMultiply(plane, m, tri->plane);
-        ComputePlane(out[0], plane, plane);
-        out+=3;
-
-        float d = DistanceFromPlane(plane, volLightPos);
-
-        if (d > 0.0f)
-        {
-            visible[i] = 1;
-        }
-
-    }
-
-    drawCnt = 0;
-    for (int i = 0; i<faceCount; i++)
-    {
-        if (!visible[i])
-            continue;
-        WingedTriangle *tri = &table[i];
-        s32 *tris = &tri->t1;
-        u32 *verts = &tri->v1;
-        for (int j = 0; j<3; j++)
-        {
-            u32 idx1 = verts[j];
-            u32 idx2 = verts[(j+1)%3];
-            if (*tris == -1 || !visible[*tris])
-            {
-                VECTOR v3 = {0.0f, 0.0f, 0.0f, 1.0f};
-                VECTOR v4 = {0.0f, 0.0f, 0.0f, 1.0f};
-                VectorSubtractXYZ(vecs[idx1], volLightPos, v3);
-                VectorScaleXYZ(v3, v3, 2.0f);
-                VectorSubtractXYZ(vecs[idx2], volLightPos, v4);
-                VectorScaleXYZ(v4, v4, 2.0f);
-                v4[3] = v3[3] = 1.0f;
-                VectorCopy(drawVECS[drawCnt], vecs[idx1]);
-                VectorAddXYZ(v3, vecs[idx1], drawVECS[drawCnt+1]);
-                VectorCopy(drawVECS[drawCnt+2], vecs[idx2]);
-                VectorAddXYZ(v3, vecs[idx1], drawVECS[drawCnt+3]);
-                VectorCopy(drawVECS[drawCnt+4], vecs[idx2]);
-                VectorAddXYZ(v4, vecs[idx2], drawVECS[drawCnt+5]);
-                
-                for (int v = drawCnt; v<drawCnt+6; v++)
-                {
-                   
-                    drawVECS[v][3] = 1.0f;
-                  
-                }
-                drawCnt+=6;
-
-            }
-            tris++;
-        }
-    }
-
-    free(visible);
-    free(vecs);
-}
+#endif
 
 static void UpdateGlossTransform()
 {
@@ -393,8 +325,6 @@ static void SetK()
 
     SetupTexLODStruct(zero, k, 0, 2, 5, mag);
 }
-
-
 
 static void update_cube(GameObject *cube)
 {
@@ -579,8 +509,6 @@ static void SetupBody()
     AddObjectToRenderWorld(world, body);
 }
 
-
-
 static void SetupAABBBox()
 {
     Color color;
@@ -645,16 +573,13 @@ static void SetupShootBoxBox()
     InitVBO(shotBox, VBO_FIT);
 
     table = ComputeFaceToVertexTable(
-        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
+        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices,
         shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount);
-
-    
 
     CreateWorldMatrixLTM(shotBox->ltm, m);
 
-    adjs = CreateAdjacencyVertices(table, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices, 
-        shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount, &count);
-
+    adjs = CreateAdjacencyVertices(table, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices,
+                                   shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount, &count);
 }
 
 static void SetupOBBBody()
@@ -696,9 +621,9 @@ static void SetupGameObjects()
     // InitSkybox();
 
     SetupGrid();
-   // SetupBody();
-    //SetupAABBBox();
-   // SetupOBBBody();
+    // SetupBody();
+    // SetupAABBBox();
+    // SetupOBBBody();
     SetupShootBoxBox();
     // SetupMultiSphere();
     //  SetupShadowViewer();
@@ -730,18 +655,17 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
 
     u8 red, green, blue;
 
-    red = green = blue = 0x00;;
+    red = green = blue = 0x00;
+    ;
 
     u32 count = 2;
-
-
 
     if (setFrameMask)
         count++;
 
     ret = CreateDMATag(ret, DMA_CNT, count + 2, 0, 0, 0);
 
-    ret = CreateDirectTag(ret, count+1, 0);
+    ret = CreateDirectTag(ret, count + 1, 0);
 
     ret = CreateGSSetTag(ret, count, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
 
@@ -754,9 +678,8 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
 
     if (destTest)
     {
-       destTestEnable = 1;
+        destTestEnable = 1;
     }
-   
 
     ret = SetupZTestGS(ret, 1, 1, 0xFF, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, destTestEnable, destTest, g_Manager.gs_context);
     ret = SetZBufferMask(ret, g_Manager.targetBack->z, 1, g_Manager.gs_context);
@@ -773,7 +696,7 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
 
     u32 regCount = 2;
 
-    u64 regFlag =  DRAW_RGBAQ_REGLIST;
+    u64 regFlag = DRAW_RGBAQ_REGLIST;
 
     PACK_GIFTAG(ret, GIF_SET_TAG(4, 1, 0, 0, GIF_FLG_REGLIST, regCount), regFlag);
     ret++;
@@ -837,7 +760,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
     ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x00FFFFFF, g_Manager.gs_context);
 
     ret = SetZBufferMask(ret, g_Manager.targetBack->z, 1, g_Manager.gs_context);
-    
+
     ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
 
     qword_t *pipeline_temp = ret;
@@ -862,9 +785,9 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
 
     memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
     pipeline_temp += 4;
-     memcpy(pipeline_temp, m, 4 * sizeof(qword_t));
-     pipeline_temp += 11;
-     memcpy(pipeline_temp, *GetPositionVectorLTM(cam->ltm), sizeof(VECTOR));
+    memcpy(pipeline_temp, m, 4 * sizeof(qword_t));
+    pipeline_temp += 11;
+    memcpy(pipeline_temp, *GetPositionVectorLTM(cam->ltm), sizeof(VECTOR));
     ret += 16;
 
     u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
@@ -873,24 +796,21 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
     qword_t *dma_vif1 = ret;
     ret++;
 
-
     u32 count = numVerts;
-    ret = ReadUnpackData(ret, 0,  count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+    ret = ReadUnpackData(ret, 0, count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     ret->sw[3] = count;
     ret++;
 
-    for (int i = 0; i<count; i++)
+    for (int i = 0; i < count; i++)
     {
         ret = VectorToQWord(ret, verts[i]);
     }
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, 8), 0, VIF_CMD_MSCAL, 0), 0);
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
-    
-    
-    
-    ret = ReadUnpackData(ret, 9,  3, 0, VIF_CMD_UNPACK(0, 3, 0));
+
+    ret = ReadUnpackData(ret, 9, 3, 0, VIF_CMD_UNPACK(0, 3, 0));
     pipeline_temp = ret;
     pipeline_temp->sw[0] = 0;
     pipeline_temp->sw[1] = 0;
@@ -905,22 +825,20 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
     pipeline_temp->sw[3] = 0x0;
 
     ret += 3;
- 
-   
 
     count = numVerts;
-    ret = ReadUnpackData(ret, 0,  count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
+    ret = ReadUnpackData(ret, 0, count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     ret->sw[3] = count;
     ret++;
 
-    for (int i = 0; i<count; i++)
+    for (int i = 0; i < count; i++)
     {
         ret = VectorToQWord(ret, verts[i]);
     }
 
     ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, 8), 0, VIF_CMD_MSCAL, 0), 0);
-    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0); 
+    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
 
     ret = CreateDMATag(ret, DMA_END, 4, 0, 0, 0);
 
@@ -940,7 +858,6 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
     SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
-
 Color *colors[5];
 static Color lcolors[5];
 Color highlight;
@@ -952,57 +869,55 @@ void TestObjects()
 {
     VECTOR temp;
     int ret = 1;
-    CreateVector(moveX * 1.25, moveY * 1.25, moveZ *1.25, 1.0f, temp);
+    CreateVector(moveX * 1.25, moveY * 1.25, moveZ * 1.25, 1.0f, temp);
 
     if (objectIndex == 0)
     {
         VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
         VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
         VectorAddXYZ(rayray2.origin, temp, rayray2.origin);
-       // ret = LineIntersectLine(&whatter, &mainLine, temp);
-       // ret = RayIntersectRay(&rayray, &rayray2);
-        //DumpVector(temp);
-      /* ret = RayIntersectPlane(&rayray, &plane2, temp);
-       float tmep;
-       DEBUGLOG("%d %d", RayIntersectSphere(&rayray, &lolSphere, temp),
-        RayIntersectBox(&rayray, box->vboContainer->vbo, temp, &tmep)); */
-       // VectorAddXYZ(*GetPositionVectorLTM(shotBox->ltm), temp, *GetPositionVectorLTM(shotBox->ltm));
-         MATRIX m;
+        // ret = LineIntersectLine(&whatter, &mainLine, temp);
+        // ret = RayIntersectRay(&rayray, &rayray2);
+        // DumpVector(temp);
+        /* ret = RayIntersectPlane(&rayray, &plane2, temp);
+         float tmep;
+         DEBUGLOG("%d %d", RayIntersectSphere(&rayray, &lolSphere, temp),
+          RayIntersectBox(&rayray, box->vboContainer->vbo, temp, &tmep)); */
+        // VectorAddXYZ(*GetPositionVectorLTM(shotBox->ltm), temp, *GetPositionVectorLTM(shotBox->ltm));
+        MATRIX m;
         CreateWorldMatrixLTM(shotBox->ltm, m);
         VECTOR v[4];
-        for(int i = 0; i<3; i++)
+        for (int i = 0; i < 3; i++)
         {
             MatrixVectorMultiply(v[i], m, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
         }
 
         ret = RayIntersectsTriangle(&rayray2, v[0], v[1], v[2], v[3]);
-
     }
     if (objectIndex == 1)
     {
-        BoundingBox *boxx = (BoundingBox*)box->vboContainer->vbo;
-        
-        MoveBox(boxx, temp); 
-        
-      //  ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
+        BoundingBox *boxx = (BoundingBox *)box->vboContainer->vbo;
 
-       // DEBUGLOG("%f", Sqrt(SqrDistFromAABB(lolSphere.center, boxx)));
+        MoveBox(boxx, temp);
 
-        //DEBUGLOG("wowowowo %d", PlaneAABBCollision(&planer, boxx));
+        //  ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
 
-      MATRIX m;
+        // DEBUGLOG("%f", Sqrt(SqrDistFromAABB(lolSphere.center, boxx)));
+
+        // DEBUGLOG("wowowowo %d", PlaneAABBCollision(&planer, boxx));
+
+        MATRIX m;
         CreateWorldMatrixLTM(shotBox->ltm, m);
         VECTOR v[4];
-        for(int i = 0; i<3; i++)
+        for (int i = 0; i < 3; i++)
         {
             MatrixVectorMultiply(v[i], m, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
         }
         float t = 0.f;
-        //ret = AABBIntersectTriangle(v[0], v[1], v[2], boxx);
-        
-        ret = RayIntersectBox(&rayray2, boxx, v[3], &t);
+        // ret = AABBIntersectTriangle(v[0], v[1], v[2], boxx);
 
-    } 
+        ret = RayIntersectBox(&rayray2, boxx, v[3], &t);
+    }
     else if (objectIndex == 3)
     {
 
@@ -1013,7 +928,7 @@ void TestObjects()
         ret = LineSegmentIntersectSphere(&mainLine, sph, temp);
 
         BoundingBox boxx;
-        BoundingBox *boxx2 = (BoundingBox*)bodyCollision->vboContainer->vbo;
+        BoundingBox *boxx2 = (BoundingBox *)bodyCollision->vboContainer->vbo;
         MATRIX world;
         VECTOR center, half;
         CreateWorldMatrixLTM(bodyCollision->ltm, world);
@@ -1025,10 +940,7 @@ void TestObjects()
         DumpVector(lolSphere.center);
 
         DEBUGLOG("dist from line %f", DistanceFromLineSegment(&mainLine, lolSphere.center, temp));
-
-       
-         
-    } 
+    }
     else if (objectIndex == 4)
     {
         ret = LineSegmentIntersectPlane(&mainLine, planer.planeEquation, planer.pointInPlane);
@@ -1050,16 +962,15 @@ int Render()
     CREATE_RGBAQ_STRUCT(boxhigh, 255, 128, 128, 128, 0);
     CREATE_RGBAQ_STRUCT(normal, 128, 255, 128, 128, 0);
 
-    for (int i = 0; i<3; i++)
+    for (int i = 0; i < 3; i++)
     {
         CREATE_RGBAQ_STRUCT(shotBoxColor[i], 128, 255, 255, 128, 0);
     }
 
-    for (int i = 3; i<36; i++)
+    for (int i = 3; i < 36; i++)
     {
         CREATE_RGBAQ_STRUCT(shotBoxColor[i], 128, 255, 128, 128, 0);
     }
-
 
     colors[0] = &highlight;
     held = &lcolors[0];
@@ -1088,59 +999,14 @@ int Render()
 
         DrawWorld(world);
 
-        /*
-
-        RenderLine(&mainLine, *colors[0]);
-
-        MATRIX m;
-
-        MatrixIdentity(m);
-
-        RenderAABBBoxLine(box->vboContainer->vbo, *colors[1], m);
-
-        CreateWorldMatrixLTM(bodyCollision->ltm, m);
-
-        RenderAABBBoxLine(bodyCollision->vboContainer->vbo, *colors[2], m);
-
         RenderSphereLine(&lolSphere, *colors[3], 40);
-
-        RenderSphereLine(&lol2Sphere, *colors[4], 40);
-
-        RenderPlaneLine(&planer, *colors[4], 20);
-
-        RenderPlaneLine(&plane2, *colors[1], 20);
-
-        CreateWorldMatrixLTM(shotBox->ltm, m);
-
-       // LineSegmentIntersectForAllTriangles(&mainLine,
-        // shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices,
-        //  shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount,
-        // m, ShotBoxIntersectCB);
-
-        
-
-        RenderRay(&rayray, *colors[0], 50.0);
-
-        RenderLine(&whatter, *colors[0]);
-
-        RenderRay(&rayray2, *colors[1], 50.0);
-
-       // RenderVertices(drawVECS, drawCnt, *colors[0]);
-
-       //for(int i = 0; i<drawCnt; i++)
-       {
-      //  DumpVector(drawVECS[i]);
-       } */
-    DumpVector(&cam->ltm[12]);
-    RenderSphereLine(&lolSphere, *colors[3], 40);
         RenderGameObject(shotBox, shotBoxColor);
 
-       DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0);
+        DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0);
 
-       RenderShadowVertices(adjs, count, *colors[1], m);
+        RenderShadowVertices(adjs, count, *colors[1], m);
 
-
-    DrawShadowQuad(480, 640, 0, 0, 1,0xFF000000, 0);
+        DrawShadowQuad(480, 640, 0, 0, 1, 0xFF000000, 0);
 
         RenderPlaneLine(&plane2, *colors[1], 20);
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
@@ -1195,7 +1061,7 @@ static void SetupVU1Programs()
     prog = CreateVU1Program(&VU1_GenericBonesAnimStage1_CodeStart, &VU1_GenericBonesAnimStage1_CodeEnd, 0); // 7
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
-    
+
     prog = CreateVU1Program(&VU1_ShadowExtrusion_CodeStart, &VU1_ShadowExtrusion_CodeEnd, 0); // 8
 
     AddProgramToManager(g_Manager.vu1Manager, prog);

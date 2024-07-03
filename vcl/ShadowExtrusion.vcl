@@ -39,19 +39,21 @@ begin:
 
     vertexLoop:
 
-        lq.xyz neighbors, 0(vertexData)
+        ilw.w triNeighbors, 0(vertexData)
 
-        add.xyz neighbors, neighbors, vf00
+        iaddiu comp, vi00, 0x0F
 
-        ilw.w  disp, 0(vertexData)
+        iand disp, triNeighbors, comp
 
-        iaddiu  comp, vi00, 0x00e0
+        iaddiu comp, vi00, 0xe0
 
-        fmand triNeighbors, comp
+        iand triNeighbors, comp, triNeighbors
 
-        iaddiu vertexData,     vertexData,     1
+        isw.x triNeighbors, 0(iBase)
+        isw.y disp, 0(iBase)
 
         lq vertex, 0(vertexData)
+        lq.w vertex, 1(vertexData)
         lq vertex1, 1(vertexData)
         lq vertex2, 2(vertexData)
 
@@ -90,7 +92,7 @@ adjTest:
 
         iand    comp, triNeighbors, comp
 
-        ibeq  comp, vi00, distAB
+        ibne  comp, vi00, distAB
 
         move  writeVer1, vertex
 
@@ -112,7 +114,7 @@ check2Face:
 
         iand    comp, triNeighbors, comp
 
-        ibeq  comp, vi00, distBC
+        ibne  comp, vi00, distBC
 
         move  writeVer1, vertex1
 
@@ -137,7 +139,7 @@ check3Face:
 
         iand    comp, triNeighbors, comp
 
-        ibeq  comp, vi00, distCA
+        ibne  comp, vi00, distCA
 
         move  writeVer1, vertex2
 
@@ -211,7 +213,7 @@ Data:
 
         iadd          vertexData,     vertexData,     disp
 
-        iaddi   vertexCounter,  vertexCounter,  -1
+
         isub    vertexCounter,  vertexCounter, disp 
         ibne    vertexCounter,  iBase,   vertexLoop
 

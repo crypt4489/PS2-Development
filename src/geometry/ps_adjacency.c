@@ -148,7 +148,7 @@ static u32 GetOppositeIndex(WingedTriangle *tri, u32 idx1, u32 idx2)
 VECTOR *CreateAdjacencyVertices(FaceVertexTable table, VECTOR *verts, u32 numVerts, u32 *numAdjVerts)
 {
     u32 faceCount = numVerts / 3;
-    *numAdjVerts = (faceCount * 6) + faceCount;
+    *numAdjVerts = (faceCount * 6);
     VECTOR *adjVerts = (VECTOR*)malloc(sizeof(VECTOR) * *numAdjVerts);
     VECTOR *out = adjVerts;
     for (int i = 0; i<faceCount; i++)
@@ -156,25 +156,26 @@ VECTOR *CreateAdjacencyVertices(FaceVertexTable table, VECTOR *verts, u32 numVer
         WingedTriangle *tri = table+i;
         u32 *vidx = &tri->v1;
         s32 *tidx = &tri->t1;
-        VECTOR *faceBools = out++;
+        VECTOR *faceBools = out;
         VECTOR *mainTriangle = out;
         VECTOR *oppo = out+3;
         u32 outCount = 6;
+        u32 neighbors = 0;
         for (int j = 0; j<3; j++)
         {
+            neighbors <<= 1;
             if (tidx[j] == -1)
             {
-                faceBools[0][j] = -1.0f;
                 outCount -= 1;
                 *numAdjVerts -= 1;
                 VectorCopy(mainTriangle[0], verts[vidx[j]]);
-                mainTriangle++;
-                continue;
+                mainTriangle++;  
+                continue;               
             }
-            else
-            {
-                faceBools[0][j] = 1.0f;
-            }    
+            
+
+            neighbors |= (1<<5);
+                
             u32 v1 = vidx[j], v2 = vidx[(j+1)%3];
             u32 v3 = GetOppositeIndex(&table[tidx[j]], v1, v2);
             if (v3 == INT_MAX)
@@ -188,12 +189,10 @@ VECTOR *CreateAdjacencyVertices(FaceVertexTable table, VECTOR *verts, u32 numVer
             VectorCopy(oppo[0], verts[v3]);
             oppo++;
         }
-        *((u32*)&(faceBools[0][3])) = outCount; 
+        *((u32*)&(faceBools[0][3])) = (neighbors | outCount); 
         out += outCount;
-       // u32 what = (*(u32*)&faceBools[0][3]);
-       // DEBUGLOG("%d %d", what, outCount);
+       
     }
-
-
+    adjVerts = (VECTOR*)realloc(adjVerts, sizeof(VECTOR) * *numAdjVerts);
     return adjVerts;
 }
