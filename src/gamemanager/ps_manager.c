@@ -134,7 +134,7 @@ void EndFrame(u32 useVsync)
     if (useVsync)
         graph_wait_vsync();
 
-    if (g_Manager.enableDoubleBuffer != 0)
+    if (g_Manager.enableDoubleBuffer)
         SwapManagerDrawBuffers();
 
     SwapManagerDMABuffers();
@@ -166,7 +166,7 @@ Texture *GetTexByName(TexManager *manager, const char *name)
     while (iter != NULL)
     {
         Texture *comp = (Texture *)iter->data;
-        if (strncmp(comp->name, name, strLength) == 0)
+        if (!strncmp(comp->name, name, strLength))
         {
             return comp;
         }

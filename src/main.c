@@ -554,7 +554,7 @@ static void SetupShootBoxBox()
 
     shotBox = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &shotBox->vertexBuffer);
-    SetupGameObjectPrimRegs(shotBox, color, RENDERCOLORED);
+    SetupGameObjectPrimRegs(shotBox, color, DRAWING_OPTION | COLOR_ENABLE | ZSTATE(1));
 
     u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
 
@@ -580,6 +580,29 @@ static void SetupShootBoxBox()
 
     adjs = CreateAdjacencyVertices(table, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices,
                                    shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount, &count);
+}
+
+GameObject *shotBoxBig = NULL;
+
+static void SetupShootBigBoxBox()
+{
+    Color color;
+
+    CREATE_RGBAQ_STRUCT(color, 0x80, 0x80, 0x80, 0x80, 1.0f);
+
+    shotBoxBig = InitializeGameObject();
+    ReadModelFile("MODELS\\BOX.BIN", &shotBoxBig->vertexBuffer);
+    SetupGameObjectPrimRegs(shotBoxBig, color, (DRAWING_OPTION | ZSTATE(1)));
+
+    VECTOR pos = {-50.0f, 0.0f, 0.0f, 1.0f};
+
+    VECTOR scales = {.75f, .75f, .75f, 1.0f};
+
+    SetupLTM(pos, up, right, forward,
+             scales,
+             1.0f, shotBoxBig->ltm);
+
+    shotBoxBig->update_object = NULL;
 }
 
 static void SetupOBBBody()
@@ -625,6 +648,7 @@ static void SetupGameObjects()
     // SetupAABBBox();
     // SetupOBBBody();
     SetupShootBoxBox();
+    SetupShootBigBoxBox();
     // SetupMultiSphere();
     //  SetupShadowViewer();
 
@@ -642,21 +666,12 @@ static void CleanUpGame()
     ClearManagerStruct(&g_Manager);
 }
 
-void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha)
+void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
     qword_t *ret = InitializeDMAObject();
 
-    // u64 reglist = ((u64)DRAW_UV_REGLIST) << 8 | DRAW_UV_REGLIST;
-
     qword_t *dcode_tag_vif1 = ret;
     ret++;
-
-    blend_t blender;
-
-    u8 red, green, blue;
-
-    red = green = blue = 0x00;
-    ;
 
     u32 count = 2;
 
@@ -719,9 +734,9 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x0000000, g_Manager.gs_context);
     ret = SetZBufferMask(ret, g_Manager.targetBack->z, 0, g_Manager.gs_context);
 
-    CreateDMATag(dmatag, DMA_CNT, ret - dmatag - 1 - 5, 0, 0, 0);
+    CreateDMATag(dmatag, DMA_CNT, ret - dmatag - 6, 0, 0, 0);
 
-    CreateDirectTag(direct, ret - direct - 1 - 5, 0);
+    CreateDirectTag(direct, ret - direct - 6, 0);
 
     u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
 
@@ -950,6 +965,11 @@ void TestObjects()
         DEBUGLOG("%d hits the line", objectIndex);
 }
 
+static u8 glowR = 255;
+static u8 glowG = 128;
+static u8 glowB = 128;
+
+
 int Render()
 {
     CREATE_RGBAQ_STRUCT(highlight, 255, 0, 0, 128, 0);
@@ -995,20 +1015,20 @@ int Render()
 
         float time1 = getTicks(g_Manager.timer);
 
-        ClearScreen(g_Manager.targetBack, g_Manager.gs_context, g_Manager.bgkc.r, g_Manager.bgkc.g, g_Manager.bgkc.b, 0x80);
+        ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
         DrawWorld(world);
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
         RenderGameObject(shotBox, shotBoxColor);
+        RenderPlaneLine(&plane2, *colors[1], 20);
 
-        DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0);
+        DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 
         RenderShadowVertices(adjs, count, *colors[1], m);
 
-        DrawShadowQuad(480, 640, 0, 0, 1, 0xFF000000, 0);
-
-        RenderPlaneLine(&plane2, *colors[1], 20);
+        DrawShadowQuad(480, 640, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
+        
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
         PrintText(myFont, print_out, -310, -220);

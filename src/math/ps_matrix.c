@@ -334,21 +334,25 @@ void MatrixInverse(MATRIX src, MATRIX out)
 void MatrixTranspose(MATRIX src)
 {
     MATRIX out;
+    out[0] = src[0];
     out[1] = src[4];
     out[2] = src[8];
     out[3] = src[12];
 
     out[4] = src[1];
+    out[5] = src[5];
     out[6] = src[9];
     out[7] = src[13];
 
     out[8] = src[2];
     out[9] = src[6];
+    out[10] = out[10];
     out[11] = src[14];
 
     out[12] = src[3];
     out[13] = src[7];
     out[14] = src[11];
+    out[15] = src[15];
   
     MatrixCopy(src, out);
 }
