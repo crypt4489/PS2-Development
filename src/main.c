@@ -51,6 +51,7 @@
 #include "physics/ps_primtest.h"
 #include "graphics/ps_renderdirect.h"
 #include "geometry/ps_adjacency.h"
+#include "graphics/ps_drawing.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -747,8 +748,10 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     SubmitDMABuffersAsPipeline(ret, NULL);
 }
 
-static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRIX m)
+
+static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
 {
+    static VECTOR scale = {2048.0f, 2048.0f, ((float)0xFFFFFF) / 32.0f, 0.0f };
     PollVU1DoneProcessing(&g_Manager);
     MATRIX vp;
 
@@ -756,121 +759,46 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, Color color, MATRI
 
     MatrixMultiply(vp, vp, g_DrawCamera->view);
     MatrixMultiply(vp, vp, g_DrawCamera->proj);
-
-    qword_t *ret = InitializeDMAObject();
-
-    qword_t *dcode_tag_vif1 = ret;
-    ret++;
-
-    ret = InitDoubleBufferingQWord(ret, 16, GetDoubleBufferOffset(16));
-
-    ret = CreateDMATag(ret, DMA_CNT, 5, 0, 0, 0);
-
-    ret = CreateDirectTag(ret, 4, 0);
-
-    ret = CreateGSSetTag(ret, 3, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
-
-    ret = SetupZTestGS(ret, 3, 1, 0xFF, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
-
-    ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x00FFFFFF, g_Manager.gs_context);
-
-    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 1, g_Manager.gs_context);
-
-    ret = CreateDMATag(ret, DMA_END, 16, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, 16, VIF_CMD_UNPACK(0, 3, 0), 1), 0);
-
-    qword_t *pipeline_temp = ret;
-
-    pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
-
-    pipeline_temp = VIFSetupScaleVector(pipeline_temp);
-
-    pipeline_temp->sw[0] = 0;
-    pipeline_temp->sw[1] = 0;
-    pipeline_temp->sw[2] = 0;
-    pipeline_temp->sw[3] = 0x80;
-    pipeline_temp++;
-
-    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
-    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
-    pipeline_temp += 1;
-    memcpy(pipeline_temp, volLightPos, sizeof(VECTOR));
-    pipeline_temp->sw[3] = 0x3;
-
-    pipeline_temp = ret;
-
-    memcpy(pipeline_temp, vp, 4 * sizeof(qword_t));
-    pipeline_temp += 4;
-    memcpy(pipeline_temp, m, 4 * sizeof(qword_t));
-    pipeline_temp += 11;
-    memcpy(pipeline_temp, *GetPositionVectorLTM(cam->ltm), sizeof(VECTOR));
-    ret += 16;
-
-    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
-
-    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfPipeline);
-    qword_t *dma_vif1 = ret;
-    ret++;
-
-    u32 count = numVerts;
-    ret = ReadUnpackData(ret, 0, count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
-
-    ret->sw[3] = count;
-    ret++;
-
+    BeginCommand();
+    ShaderHeaderLocation(16);
+    ShaderProgram(8);
+    DepthTest(1, 3);
+    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
+    FrameBufferMask(0xFF, 0xFF, 0xFF, 0x00);
+    DepthBufferMask(1);
+    
+    AllocateShaderSpace(16, 0);
+    PushMatrix(vp, 0, sizeof(MATRIX));
+    PushMatrix(m, 4, sizeof(MATRIX));
+    PushMatrix(scale, 8, sizeof(VECTOR));
+    PushColor(0, 0, 0, 0x80, 9);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
+     DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
+    PushMatrix(volLightPos, 11, 12);
+    PushInteger(0x3, 11, 3);
+    PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(VECTOR));
+    DrawCount(count);
     for (int i = 0; i < count; i++)
     {
-        ret = VectorToQWord(ret, verts[i]);
+        DrawVector(verts[i]);
     }
-
-    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, 8), 0, VIF_CMD_MSCAL, 0), 0);
-    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
-
-    ret = ReadUnpackData(ret, 9, 3, 0, VIF_CMD_UNPACK(0, 3, 0));
-    pipeline_temp = ret;
-    pipeline_temp->sw[0] = 0;
-    pipeline_temp->sw[1] = 0;
-    pipeline_temp->sw[2] = 0;
-    pipeline_temp->sw[3] = 0x0;
-    pipeline_temp++;
-
-    pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2);
-    pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
-    pipeline_temp += 1;
-    memcpy(pipeline_temp, volLightPos, sizeof(VECTOR));
-    pipeline_temp->sw[3] = 0x0;
-
-    ret += 3;
-
-    count = numVerts;
-    ret = ReadUnpackData(ret, 0, count + 1, 1, VIF_CMD_UNPACK(0, 3, 0));
-
-    ret->sw[3] = count;
-    ret++;
-
+    DrawVertices();
+    AllocateShaderSpace(3, 9);
+    PushColor(0, 0, 0, 0, 0);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
+     DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 1);
+    PushMatrix(volLightPos, 2, 12);
+    PushInteger(0x0, 2, 3);
+    DrawCount(count);
     for (int i = 0; i < count; i++)
     {
-        ret = VectorToQWord(ret, verts[i]);
+        DrawVector(verts[i]);
     }
+    DrawVertices();
+    FrameBufferMask(0x0, 0x0, 0x0, 0x00);
+    DepthBufferMask(0);
 
-    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, 8), 0, VIF_CMD_MSCAL, 0), 0);
-    ret = CreateDMATag(ret, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
-
-    ret = CreateDMATag(ret, DMA_END, 4, 0, 0, 0);
-
-    ret = CreateDirectTag(ret, 3, 1);
-
-    ret = CreateGSSetTag(ret, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
-
-    ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x00000000, g_Manager.gs_context);
-
-    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 0, g_Manager.gs_context);
-
-    u32 meshPipe = ret - dma_vif1 - 1;
-
-    CreateDCODEDmaTransferTag(dma_vif1, DMA_CHANNEL_VIF1, 1, 1, meshPipe);
-    CreateDCODETag(ret, DMA_DCODE_END);
-
-    SubmitDMABuffersAsPipeline(ret, NULL);
+    EndCommand();
 }
 
 Color *colors[5];
@@ -1025,7 +953,9 @@ int Render()
 
         DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 
-        RenderShadowVertices(adjs, count, *colors[1], m);
+        RenderShadowVertices(adjs, count, m);
+
+       // ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
 
         DrawShadowQuad(480, 640, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
         

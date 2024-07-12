@@ -19,6 +19,7 @@ void SetGraph(GameManager *manager, framebuffer_t *frame);
 void CreateTexBuf(Texture *texture, int width, int psm);
 
 qword_t* CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr);
+qword_t *AddSizeToGSSetTag(qword_t *q, u32 count);
 qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context);
 qword_t *SetZBufferMask(qword_t *q, zbuffer_t *z, u32 mask, u32 context);
 void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish);

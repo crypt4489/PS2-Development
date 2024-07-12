@@ -81,7 +81,7 @@ void ParsePipelineDMA(void *data, qword_t *pipelineData)
             tte = decode.tte;
             type = decode.type;
             q++;
-            //  ERRORLOG("%d %d %d", channel, qwc, tte);
+             // ERRORLOG("%d %d %d", channel, qwc, tte);
             //  dump_packet(pipe->q);
             // while(1);
 

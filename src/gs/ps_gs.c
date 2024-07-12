@@ -121,6 +121,13 @@ qword_t *CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 
 	return q;
 }
 
+qword_t *AddSizeToGSSetTag(qword_t *q, u32 count)
+{
+	q->sw[0] &= 0xFFFF8000;
+	q->sw[0] |= (count & 0x00007fff);
+	return q;
+}
+
 void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish)
 {
 
