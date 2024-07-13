@@ -47,4 +47,8 @@ void ShaderHeaderLocation(int location);
 
 void PushPairU64(u64 a, u64 b, u32 memoffset);
 
+void FrameBufferMaskWord(u32 mask);
+
+void WritePairU64(u64 a, u64 b);
+
 #endif

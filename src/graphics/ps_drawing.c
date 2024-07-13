@@ -19,12 +19,15 @@ static int sg_PrimitiveType;
 static int sg_reservedVU1Space;
 static int sg_DrawCount;
 static int sg_ShaderInUse;
+static int sg_TTEUse;
 
 static void DMAOpenCheck();
 
 static void CloseDMATag();
 
 static void GSSetTagOpen();
+
+static void CloseGSSetTag();
 
 static void ResetState()
 {
@@ -38,24 +41,53 @@ void ShaderProgram(int shader)
 
 void BeginCommand()
 {
+    sg_TTEUse = 0;
     sg_DrawBufferPtr = InitializeDMAObject();
     sg_DCODEOpen = sg_DrawBufferPtr++;
 }
 
 void BeginCommandSet(qword_t *drawBuffer)
 {
+    sg_TTEUse = 0;
     sg_DrawBufferPtr = drawBuffer;
     sg_DCODEOpen = sg_DrawBufferPtr++;
 }
+
+static inline u32 GetDMACode(qword_t *q)
+{
+    u64 ret = (q->dw[0] & (7<<28)) >> 28;
+    return ret;
+}
+
+static inline void SetDMACode(qword_t *q, u32 code)
+{
+    q->dw[0] &= ~(7<<28);
+    q->dw[0] |= (7<<28);
+}
+
 #include "math/ps_misc.h"
 qword_t* EndCommand()
 {
     if (sg_VIFHeaderUpload)
         return NULL;
 
+    if (sg_OpenDMATag)
+    {
+       u32 code = GetDMACode(sg_OpenDMATag);
+       if (code != DMA_END)
+       { 
+            if (!sg_OpenDirectTag)
+            {
+                sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+            } else {
+                SetDMACode(sg_OpenDMATag, DMA_END);
+                CreateDirectTag(sg_OpenDirectTag, 0, 1);
+            }
+       }
+    }
+
     CloseDMATag();
-    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
-    CreateDCODEDmaTransferTag(sg_DCODEOpen, DMA_CHANNEL_VIF1, 1, 1, sg_DrawBufferPtr-sg_DCODEOpen-1);
+    CreateDCODEDmaTransferTag(sg_DCODEOpen, DMA_CHANNEL_VIF1, sg_TTEUse, 1, sg_DrawBufferPtr-sg_DCODEOpen-1);
     
     CreateDCODETag(sg_DrawBufferPtr, DMA_DCODE_END);
     SubmitDMABuffersAsPipeline(sg_DrawBufferPtr, NULL);
@@ -78,8 +110,10 @@ static void DMAOpenCheck()
 
 static void CloseDMATag()
 {
-    if (!sg_OpenDMATag)
+    if (!sg_OpenDMATag || !sg_OpenDirectTag)
+    {
         return;
+    }
     AddSizeToDMATag(sg_OpenDMATag, sg_DrawBufferPtr-sg_OpenDMATag-1);
     AddSizeToDirectTag(sg_OpenDirectTag, sg_DrawBufferPtr-sg_OpenDirectTag-1);
     sg_OpenDirectTag = sg_OpenDMATag = NULL;
@@ -88,6 +122,11 @@ static void CloseDMATag()
         sg_OpenTestReg = NULL;
     }
 
+   CloseGSSetTag();
+}
+
+static void CloseGSSetTag()
+{
     if (sg_OpenGIFTag)
     {
         AddSizeToGSSetTag(sg_OpenGIFTag, sg_DrawBufferPtr-sg_OpenGIFTag-1);
@@ -114,11 +153,11 @@ void DepthTest(int enable, int method)
         sg_OpenTestReg = sg_DrawBufferPtr++;
         SetupZTestGS(sg_OpenTestReg, method, enable,
                                        0, 0, 0, 0, 0, g_Manager.gs_context);
+        return;                               
     } 
-    else 
-    {
-        sg_OpenTestReg->dw[0] |= GS_SET_TEST(DRAW_ENABLE, 0, 0, 0, 0, 0, enable, method);
-    }
+   
+    sg_OpenTestReg->dw[0] |= GS_SET_TEST(DRAW_ENABLE, 0, 0, 0, 0, 0, enable, method);
+    
 
 }
 
@@ -133,11 +172,11 @@ void DestinationAlphaTest(int enable, int method)
         sg_OpenTestReg = sg_DrawBufferPtr++;
         SetupZTestGS(sg_OpenTestReg, 0, 0,
                                        0, 0, 0, enable, method, g_Manager.gs_context);
+        return;                               
     } 
-    else 
-    {
-        sg_OpenTestReg->dw[0] |= GS_SET_TEST(DRAW_ENABLE, 0, 0, 0, enable, method, 0, 0);
-    }
+    
+    sg_OpenTestReg->dw[0] |= GS_SET_TEST(DRAW_ENABLE, 0, 0, 0, enable, method, 0, 0);
+    
 }
 
 void SourceAlphaTest(int framebuffer, int method, int reference)
@@ -150,11 +189,11 @@ void SourceAlphaTest(int framebuffer, int method, int reference)
         sg_OpenTestReg = sg_DrawBufferPtr++;
         SetupZTestGS(sg_OpenTestReg, 0, 0,
                                        reference, method, framebuffer, 0, 0, g_Manager.gs_context);
+        return;
     } 
-    else 
-    {
-        sg_OpenTestReg->dw[0] |= GS_SET_TEST(DRAW_ENABLE, method, reference, framebuffer, 0, 0, 0, 0);
-    }
+    
+    sg_OpenTestReg->dw[0] |= GS_SET_TEST(DRAW_ENABLE, method, reference, framebuffer, 0, 0, 0, 0);
+    
 }
 
 void PrimitiveType(int primitive)
@@ -165,6 +204,13 @@ void PrimitiveType(int primitive)
 void VertexType(int vertextype)
 {
 
+}
+
+void FrameBufferMaskWord(u32 mask)
+{
+    DMAOpenCheck();
+    GSSetTagOpen();
+    sg_DrawBufferPtr = SetFrameBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->render, mask, g_Manager.gs_context);
 }
 
 void FrameBufferMask(int red, int green, int blue, int alpha)
@@ -179,7 +225,7 @@ void DepthBufferMask(int enable)
 {
     DMAOpenCheck();
     GSSetTagOpen();
-    sg_DrawBufferPtr = SetZBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->z, 1, g_Manager.gs_context);
+    sg_DrawBufferPtr = SetZBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->z, enable, g_Manager.gs_context);
 }
 
 void PushQWord(void *q, int offset)
@@ -216,6 +262,14 @@ void PushColor(int r, int g, int b, int a, int memoffset)
 void PushPairU64(u64 a, u64 b, u32 memoffset)
 {
     qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
+
+    temp->dw[0] = a;
+    temp->dw[1] = b;
+}
+
+void WritePairU64(u64 a, u64 b)
+{
+    qword_t *temp = sg_DrawBufferPtr++;
     temp->dw[0] = a;
     temp->dw[1] = b;
 }
@@ -228,10 +282,31 @@ void DrawCount(int num)
     }  
 
     sg_DrawCount = num;
-    sg_VIFHeaderUpload = NULL;
-    sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, num+1, 1, VIF_CMD_UNPACK(0, 3, 0));
-    sg_DrawBufferPtr->sw[3] = num;
-    sg_DrawBufferPtr++;
+
+    if (sg_VIFHeaderUpload)
+    {
+        sg_VIFHeaderUpload = NULL;
+        sg_VIFProgramUpload = sg_DrawBufferPtr;
+        sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, num+1, 1, VIF_CMD_UNPACK(0, 3, 0));
+        sg_DrawBufferPtr->sw[3] = num;
+        sg_DrawBufferPtr++;
+    } else {
+        CloseDMATag();
+        DMAOpenCheck();
+        
+        PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
+        sg_DrawBufferPtr++;
+
+        PACK_GIFTAG(sg_DrawBufferPtr, GS_SET_PRIM(sg_PrimitiveType, PRIM_SHADE_FLAT, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), GS_REG_PRIM);
+        sg_DrawBufferPtr++;
+    
+        u32 regCount = 2;
+
+        u64 regFlag = DRAW_RGBAQ_REGLIST;
+
+        PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(num, 1, 0, 0, GIF_FLG_REGLIST, regCount), regFlag);
+        sg_DrawBufferPtr++;
+    }
 }
 
 void DrawVector(VECTOR v)
@@ -241,8 +316,14 @@ void DrawVector(VECTOR v)
 
 void DrawVertices()
 {
-    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, sg_ShaderInUse), 0, VIF_CMD_MSCAL, 0), 0);
-    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
+    if (sg_VIFProgramUpload)
+    {
+        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, sg_ShaderInUse), 0, VIF_CMD_MSCAL, 0), 0);
+        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
+        sg_VIFProgramUpload = NULL;
+    } else {
+        CloseDMATag();
+    }
 }
 
 void ShaderHeaderLocation(int location)
@@ -253,6 +334,7 @@ void ShaderHeaderLocation(int location)
 void AllocateShaderSpace(int size, int offset)
 {
     CloseDMATag();
+    sg_TTEUse = 1;
     sg_reservedVU1Space = size;
     if (!sg_VIFHeaderUpload)
     {

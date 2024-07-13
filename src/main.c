@@ -667,87 +667,32 @@ static void CleanUpGame()
     ClearManagerStruct(&g_Manager);
 }
 
+
 void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
-    qword_t *ret = InitializeDMAObject();
-
-    qword_t *dcode_tag_vif1 = ret;
-    ret++;
-
-    u32 count = 2;
-
-    if (setFrameMask)
-        count++;
-
-    ret = CreateDMATag(ret, DMA_CNT, count + 2, 0, 0, 0);
-
-    ret = CreateDirectTag(ret, count + 1, 0);
-
-    ret = CreateGSSetTag(ret, count, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
-
     u32 destTestEnable = 0;
-
-    if (setFrameMask)
-    {
-        ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, setFrameMask, g_Manager.gs_context);
-    }
-
     if (destTest)
     {
         destTestEnable = 1;
     }
-
-    ret = SetupZTestGS(ret, 1, 1, 0xFF, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, destTestEnable, destTest, g_Manager.gs_context);
-    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 1, g_Manager.gs_context);
-    qword_t *dmatag = ret;
-    ret++;
-    qword_t *direct = ret;
-
-    ret++;
-    PACK_GIFTAG(ret, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-    ret++;
-
-    PACK_GIFTAG(ret, GS_SET_PRIM(PRIM_TRIANGLE_STRIP, PRIM_SHADE_FLAT, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), GS_REG_PRIM);
-    ret++;
-
-    u32 regCount = 2;
-
-    u64 regFlag = DRAW_RGBAQ_REGLIST;
-
-    PACK_GIFTAG(ret, GIF_SET_TAG(4, 1, 0, 0, GIF_FLG_REGLIST, regCount), regFlag);
-    ret++;
-
-    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
-    ret++;
-    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
-    ret++;
-    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
-    ret++;
-    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
-    ret++;
-
-    ret = CreateDMATag(ret, DMA_END, 4, 0, 0, 0);
-
-    ret = CreateDirectTag(ret, 3, 1);
-
-    ret = CreateGSSetTag(ret, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
-
-    ret = SetFrameBufferMask(ret, g_Manager.targetBack->render, 0x0000000, g_Manager.gs_context);
-    ret = SetZBufferMask(ret, g_Manager.targetBack->z, 0, g_Manager.gs_context);
-
-    CreateDMATag(dmatag, DMA_CNT, ret - dmatag - 6, 0, 0, 0);
-
-    CreateDirectTag(direct, ret - direct - 6, 0);
-
-    u32 sizeOfPipeline = ret - dcode_tag_vif1 - 1;
-
-    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 0, 1, sizeOfPipeline);
-
-    CreateDCODETag(ret, DMA_DCODE_END);
-
-    SubmitDMABuffersAsPipeline(ret, NULL);
+    BeginCommand();
+    DepthTest(1, 1);
+    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
+    DestinationAlphaTest(destTestEnable, destTest);
+    FrameBufferMaskWord(setFrameMask);
+    DepthBufferMask(1);
+    PrimitiveType(PRIM_TRIANGLE_STRIP);
+    DrawCount(4);
+    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
+    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
+    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+    DrawVertices();
+    FrameBufferMask(0, 0, 0, 0);
+    DepthBufferMask(0);
+    
+    EndCommand();            
 }
-
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
 {
