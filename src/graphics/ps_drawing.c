@@ -20,6 +20,7 @@ static int sg_reservedVU1Space;
 static int sg_DrawCount;
 static int sg_ShaderInUse;
 static int sg_TTEUse;
+static int sg_VertexType;
 
 static void DMAOpenCheck();
 
@@ -76,11 +77,9 @@ qword_t* EndCommand()
        u32 code = GetDMACode(sg_OpenDMATag);
        if (code != DMA_END)
        { 
-            if (!sg_OpenDirectTag)
+            SetDMACode(sg_OpenDMATag, DMA_END);
+            if (sg_OpenDirectTag)
             {
-                sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
-            } else {
-                SetDMACode(sg_OpenDMATag, DMA_END);
                 CreateDirectTag(sg_OpenDirectTag, 0, 1);
             }
        }
@@ -103,6 +102,10 @@ static void DMAOpenCheck()
     {
         sg_OpenDMATag = sg_DrawBufferPtr++;
         CreateDMATag(sg_OpenDMATag, DMA_CNT, 0, 0, 0, 0);
+    }
+
+    if (!sg_OpenDirectTag)
+    {
         sg_OpenDirectTag = sg_DrawBufferPtr++;
         CreateDirectTag(sg_OpenDirectTag, 0, 0);
     }
@@ -110,19 +113,18 @@ static void DMAOpenCheck()
 
 static void CloseDMATag()
 {
-    if (!sg_OpenDMATag || !sg_OpenDirectTag)
-    {
+    if (!sg_OpenDMATag)
         return;
-    }
-    AddSizeToDMATag(sg_OpenDMATag, sg_DrawBufferPtr-sg_OpenDMATag-1);
-    AddSizeToDirectTag(sg_OpenDirectTag, sg_DrawBufferPtr-sg_OpenDirectTag-1);
-    sg_OpenDirectTag = sg_OpenDMATag = NULL;
-    if (sg_OpenTestReg)
-    { 
-        sg_OpenTestReg = NULL;
-    }
 
-   CloseGSSetTag();
+    AddSizeToDMATag(sg_OpenDMATag, sg_DrawBufferPtr-sg_OpenDMATag-1);
+
+    if (sg_OpenDirectTag)
+        AddSizeToDirectTag(sg_OpenDirectTag, sg_DrawBufferPtr-sg_OpenDirectTag-1);
+
+    sg_OpenDirectTag = sg_OpenDMATag = sg_OpenTestReg = NULL;
+    
+
+    CloseGSSetTag();
 }
 
 static void CloseGSSetTag()
@@ -228,6 +230,13 @@ void DepthBufferMask(int enable)
     sg_DrawBufferPtr = SetZBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->z, enable, g_Manager.gs_context);
 }
 
+void PushScaleVector()
+{
+    if (!sg_VIFHeaderUpload)
+        return;
+    VIFSetupScaleVector(sg_VIFHeaderUpload + 1 + VU1_LOCATION_SCALE_VECTOR);
+}
+
 void PushQWord(void *q, int offset)
 {
     memcpy(sg_VIFHeaderUpload + 1 + offset, q, sizeof(qword_t));
@@ -267,6 +276,15 @@ void PushPairU64(u64 a, u64 b, u32 memoffset)
     temp->dw[1] = b;
 }
 
+void DrawVectorFloat(float x, float y, float z, float w)
+{
+    qword_t *temp = sg_DrawBufferPtr++;
+    ((float *)temp->sw)[0] = x;
+    ((float *)temp->sw)[1] = y;
+    ((float *)temp->sw)[2] = z;
+    ((float *)temp->sw)[3] = w;
+}
+
 void WritePairU64(u64 a, u64 b)
 {
     qword_t *temp = sg_DrawBufferPtr++;
@@ -274,7 +292,7 @@ void WritePairU64(u64 a, u64 b)
     temp->dw[1] = b;
 }
 
-void DrawCount(int num)
+void DrawCount(int num, int vertexMemberCount)
 {
     if (sg_OpenTestReg)
     {
@@ -287,7 +305,7 @@ void DrawCount(int num)
     {
         sg_VIFHeaderUpload = NULL;
         sg_VIFProgramUpload = sg_DrawBufferPtr;
-        sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, num+1, 1, VIF_CMD_UNPACK(0, 3, 0));
+        sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, (vertexMemberCount*num)+1, 1, VIF_CMD_UNPACK(0, 3, 0));
         sg_DrawBufferPtr->sw[3] = num;
         sg_DrawBufferPtr++;
     } else {
@@ -314,12 +332,22 @@ void DrawVector(VECTOR v)
     sg_DrawBufferPtr = VectorToQWord(sg_DrawBufferPtr, v);
 }
 
+void DrawColor(Color c)
+{
+    sg_DrawBufferPtr->sw[0] = c.r;
+    sg_DrawBufferPtr->sw[1] = c.g;
+    sg_DrawBufferPtr->sw[2] = c.b;
+    sg_DrawBufferPtr->sw[3] = c.a;
+    sg_DrawBufferPtr++;
+}
+
 void DrawVertices()
 {
     if (sg_VIFProgramUpload)
     {
         sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, sg_ShaderInUse), 0, VIF_CMD_MSCAL, 0), 0);
-        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0);
+        sg_OpenDMATag = sg_DrawBufferPtr;
+        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
         sg_VIFProgramUpload = NULL;
     } else {
         CloseDMATag();

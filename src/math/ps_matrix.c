@@ -346,7 +346,7 @@ void MatrixTranspose(MATRIX src)
 
     out[8] = src[2];
     out[9] = src[6];
-    out[10] = out[10];
+    out[10] = src[10];
     out[11] = src[14];
 
     out[12] = src[3];

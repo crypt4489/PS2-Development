@@ -33,9 +33,11 @@ void PushInteger(int num, int vuoffset, int vecoffset);
 
 void PushFloat(float num, int vuoffset, int vecoffset);
 
-void DrawCount(int num);
+void DrawCount(int num, int vertexMemberCount);
 
 void DrawVector(VECTOR v);
+
+void DrawColor(Color c);
 
 void DrawVertices();
 
@@ -50,5 +52,9 @@ void PushPairU64(u64 a, u64 b, u32 memoffset);
 void FrameBufferMaskWord(u32 mask);
 
 void WritePairU64(u64 a, u64 b);
+
+void PushScaleVector();
+
+void DrawVectorFloat(float x, float y, float z, float w);
 
 #endif

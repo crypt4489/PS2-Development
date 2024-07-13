@@ -682,7 +682,7 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     FrameBufferMaskWord(setFrameMask);
     DepthBufferMask(1);
     PrimitiveType(PRIM_TRIANGLE_STRIP);
-    DrawCount(4);
+    DrawCount(4, 1);
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
@@ -690,7 +690,6 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     DrawVertices();
     FrameBufferMask(0, 0, 0, 0);
     DepthBufferMask(0);
-    
     EndCommand();            
 }
 
@@ -715,14 +714,14 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     AllocateShaderSpace(16, 0);
     PushMatrix(vp, 0, sizeof(MATRIX));
     PushMatrix(m, 4, sizeof(MATRIX));
-    PushMatrix(scale, 8, sizeof(VECTOR));
+    PushScaleVector();
     PushColor(0, 0, 0, 0x80, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
      DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushMatrix(volLightPos, 11, 12);
     PushInteger(0x3, 11, 3);
     PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(VECTOR));
-    DrawCount(count);
+    DrawCount(count, 1);
     for (int i = 0; i < count; i++)
     {
         DrawVector(verts[i]);
@@ -734,7 +733,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
      DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 1);
     PushMatrix(volLightPos, 2, 12);
     PushInteger(0x0, 2, 3);
-    DrawCount(count);
+    DrawCount(count, 1);
     for (int i = 0; i < count; i++)
     {
         DrawVector(verts[i]);
@@ -742,7 +741,6 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     DrawVertices();
     FrameBufferMask(0x0, 0x0, 0x0, 0x00);
     DepthBufferMask(0);
-
     EndCommand();
 }
 
@@ -891,10 +889,15 @@ int Render()
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
         DrawWorld(world);
+        MATRIX ident;
+        MatrixIdentity(ident);
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
         RenderGameObject(shotBox, shotBoxColor);
         RenderPlaneLine(&plane2, *colors[1], 20);
+        RenderRay(&rayray2, *colors[2], 25);
+        RenderLine(&mainLine, *colors[3]);
+        RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
 
         DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 

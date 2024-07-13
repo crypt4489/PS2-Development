@@ -474,15 +474,10 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
 
     u32 offset = 0;
 
-    asm __volatile__(
-        "lqc2 $vf1, 0x00(%0)\n"
-        "lqc2 $vf2, 0x00(%1)\n"
-        :
-        : "r"(bounds->top), "r"(bounds->bottom)
-        : "memory");
-
     if (obj->vboContainer->type == VBO_FIT)
     {
+        offset = 1;
+        vertexCount--;
         asm __volatile__(
             "lqc2 $vf4, 0x00(%0)\n"
             "lqc2 $vf5, 0x10(%0)\n"
@@ -491,6 +486,19 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
             :
             : "r"(world)
             : "memory");
+
+    asm __volatile__(
+        "lqc2 $vf3, 0x00(%0)\n"
+        "vmulax.xyzw $ACC, $vf4, $vf3\n"
+        "vmadday.xyzw $ACC, $vf5, $vf3\n"
+        "vmaddaz.xyzw $ACC, $vf6, $vf3\n"
+        "vmaddw.xyzw $vf3, $vf7, $vf3\n"
+        "vmove $vf1, $vf3\n"
+        "vmove $vf2, $vf3\n"
+        :
+        : "r"(verts[0])
+        : "memory");
+        
 
         while (vertexCount-- > 0)
         {
@@ -509,6 +517,14 @@ void FindAABBMaxAndMinVerticesVU0(GameObject *obj)
     } else {
         while (vertexCount-- > 0)
         {
+            asm __volatile__(
+        "vmove.w $vf1, $vf0\n"
+        "vmove.w $vf2, $vf0\n"
+        "sqc2 $vf1, 0x00(%0) \n"
+        "sqc2 $vf2, 0x00(%1) \n"
+        :
+        : "r"(bounds->top), "r"(bounds->bottom)
+        : "memory");
             asm __volatile__(
                 "lqc2 $vf3, 0x00(%0)\n"
                 "vmax.xyz $vf1, $vf1, $vf3\n"
