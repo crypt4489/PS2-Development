@@ -12,20 +12,13 @@
 #include "math/ps_misc.h"
 #include "io/ps_file_io.h"
 #include "dma/ps_dma.h"
+#include "graphics/ps_drawing.h"
 
 #define MAX_DISPLAY_TEXT 100
 
 void PrintText(Font *fontStruct, const char *text, int x, int y)
 {
-
     UploadTextureViaManagerToVRAM(fontStruct->fontTex);
-
-    qword_t *q = InitializeDMAObject();
-
-    u32 sizeOfPipeline;
-
-    qword_t *dcode_tag_vif1 = q;
-    q++;
 
     blend_t blender;
     blender.color1 = BLEND_COLOR_SOURCE;
@@ -34,25 +27,15 @@ void PrintText(Font *fontStruct, const char *text, int x, int y)
     blender.alpha = BLEND_ALPHA_DEST;
     blender.fixed_alpha = 0x80;
 
-    q = CreateDMATag(q, DMA_CNT, 4, 0, 0, 0);
-
-    q = CreateDirectTag(q, 3, 1);
-
-    q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
-
-    q = SetupZTestGS(q, 1, 1, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
-
-    q = SetupAlphaGS(q, &blender, g_Manager.gs_context);
-
-    q = RenderL(q, fontStruct, x, y, text, g_Manager.gs_context);
-
-    sizeOfPipeline = q - dcode_tag_vif1 - 1;
-
-    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 0, 1, sizeOfPipeline);
-
-    CreateDCODETag(q, DMA_DCODE_END);
-
-    SubmitDMABuffersAsPipeline(q, fontStruct);
+    BeginCommand();
+    DepthTest(1, 1);
+    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0);
+    BlendingEquation(&blender);
+    if (RenderL(fontStruct, x, y, text))
+    {
+        return;
+    }
+    EndCommand();
 }
 
 unsigned char *RewriteAlphaTexBuffer(unsigned char *buffer, int dimX, int dimY)
@@ -74,8 +57,8 @@ unsigned char *RewriteAlphaTexBuffer(unsigned char *buffer, int dimX, int dimY)
     return buffer;
 }
 
-Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic, 
-                                 u8 *fontData, int read_type, 
+Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic,
+                                 u8 *fontData, int read_type,
                                  u32 picSize, u32 dataSize)
 {
     prim_t prim;
@@ -102,9 +85,9 @@ Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic,
     font->color = color;
     font->prim = prim;
 
-    myFontTex = AddAndCreateTextureFromBuffer(fontPic, picSize, 
-                                              fontName, read_type, 
-                                              1, 0x80, 
+    myFontTex = AddAndCreateTextureFromBuffer(fontPic, picSize,
+                                              fontName, read_type,
+                                              1, 0x80,
                                               TEX_ADDRESS_CLAMP, 1);
 
     if (myFontTex->psm == GS_PSM_8)
@@ -149,8 +132,8 @@ Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type
     prim.colorfix = PRIM_UNFIXED;
 
     color.r = 0xFF;
-    color.g = 0xFF;
-    color.b = 0xFF;
+    color.g = 0x00;
+    color.b = 0x00;
     color.a = 0x80;
     color.q = 1.0f;
 
@@ -201,12 +184,10 @@ void CleanFontStruct(Font *font)
     }
 }
 
-void CreateFontWidthsFromFile(void* object, void* params, u8 *buffer, u32 bufferLen)
+void CreateFontWidthsFromFile(void *object, void *params, u8 *buffer, u32 bufferLen)
 {
 
-    Font *font_struct = (Font*)object;
-
-    u8 *ptr = buffer;
+    Font *font_struct = (Font *)object;
 
     u32 temp = *((u32 *)buffer);
 
@@ -238,11 +219,11 @@ void CreateFontWidthsFromFile(void* object, void* params, u8 *buffer, u32 buffer
 
     u32 charSize = (font_struct->picWidth / font_struct->cellWidth) * (font_struct->picHeight / font_struct->cellHeight);
 
-   //  DEBUGLOG(" %d %d %d %d %d %d", charSize, font_struct->startingChar, font_struct->picHeight, font_struct->picWidth, font_struct->cellHeight, font_struct->cellWidth);
+    //  DEBUGLOG(" %d %d %d %d %d %d", charSize, font_struct->startingChar, font_struct->picHeight, font_struct->picWidth, font_struct->cellHeight, font_struct->cellWidth);
 
     char *fontWidths = (char *)malloc(charSize);
     // DEBUGLOG("size %d", size);
-    memcpy(fontWidths, buffer+start, charSize);
+    memcpy(fontWidths, buffer + start, charSize);
     font_struct->widthSize = charSize;
     font_struct->fontWidths = fontWidths;
 }
@@ -301,46 +282,41 @@ unsigned char *RewriteAlphaClutBuffer(unsigned char *buffer)
 
 #define reglist ((u64)DRAW_UV_REGLIST) << 8 | DRAW_UV_REGLIST
 
-qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, int context)
+int RenderL(Font *font_struct, int x, int y, const char *text)
 {
+
     size_t textlen = strnlen(text, MAX_DISPLAY_TEXT);
 
     if (textlen == 0)
-        return q;
-
-    qword_t *ret = q;
-
-    u32 qwSize = (textlen * 6) + 6;
+    {
+        ERRORLOG("Text length of zero for render left");
+        return -1;
+    }
 
     u8 red = font_struct->color.r;
     u8 green = font_struct->color.g;
     u8 blue = font_struct->color.b;
     u8 alpha = font_struct->color.a;
 
-    qword_t *dmatag = ret;
-    ret++;
+    PrimitiveColor(font_struct->color);
+    WritePairU64(GS_SET_TEX1(font_struct->fontTex->lod.calculation,
+                             font_struct->fontTex->lod.max_level, font_struct->fontTex->lod.mag_filter,
+                             font_struct->fontTex->lod.min_filter, font_struct->fontTex->lod.mipmap_select,
+                             font_struct->fontTex->lod.l, (int)(font_struct->fontTex->lod.k * 16.0f)),
+                 GS_REG_TEX1 + g_Manager.gs_context);
+    WritePairU64(GS_SET_TEX0(font_struct->fontTex->texbuf.address >> 6,
+                             font_struct->fontTex->texbuf.width >> 6, font_struct->fontTex->texbuf.psm,
+                             font_struct->fontTex->texbuf.info.width, font_struct->fontTex->texbuf.info.height,
+                             font_struct->fontTex->texbuf.info.components, font_struct->fontTex->texbuf.info.function,
+                             font_struct->fontTex->clut.address >> 6, font_struct->fontTex->clut.psm,
+                             font_struct->fontTex->clut.storage_mode, font_struct->fontTex->clut.start,
+                             font_struct->fontTex->clut.load_method),
+                 GS_REG_TEX0 + g_Manager.gs_context);
 
-    ret = CreateDirectTag(ret, qwSize, 1);
+    PrimitiveTypeStruct(font_struct->prim);
 
-    ret = CreateGSSetTag(ret, 4, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
-
-    PACK_GIFTAG(ret, GS_SET_PRIM(font_struct->prim.type, font_struct->prim.shading, font_struct->prim.mapping, font_struct->prim.fogging, font_struct->prim.blending, font_struct->prim.antialiasing, font_struct->prim.mapping_type, context, font_struct->prim.colorfix), GS_REG_PRIM);
-    ret++;
-
-    PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_REG_RGBAQ);
-    ret++;
-
-    PACK_GIFTAG(ret, GS_SET_TEX1(font_struct->fontTex->lod.calculation, font_struct->fontTex->lod.max_level, font_struct->fontTex->lod.mag_filter, font_struct->fontTex->lod.min_filter, font_struct->fontTex->lod.mipmap_select, font_struct->fontTex->lod.l, (int)(font_struct->fontTex->lod.k * 16.0f)), (context == 0) ? GS_REG_TEX1 : GS_REG_TEX1_2);
-    ret++;
-
-    PACK_GIFTAG(ret, GS_SET_TEX0(font_struct->fontTex->texbuf.address >> 6, font_struct->fontTex->texbuf.width >> 6, font_struct->fontTex->texbuf.psm, font_struct->fontTex->texbuf.info.width, font_struct->fontTex->texbuf.info.height, font_struct->fontTex->texbuf.info.components, font_struct->fontTex->texbuf.info.function, font_struct->fontTex->clut.address >> 6, font_struct->fontTex->clut.psm, font_struct->fontTex->clut.storage_mode, font_struct->fontTex->clut.start, font_struct->fontTex->clut.load_method), (context == 0) ? GS_REG_TEX0 : GS_REG_TEX0_2);
-    ret++;
-
-    u32 regCount = 3;
-
-    u64 regFlag = regCount == 3 ? DRAW_RGBAQ_UV_REGLIST : ((u64)DRAW_UV_REGLIST) << 8 | DRAW_UV_REGLIST;
-
-    ret = CreateGSSetTag(ret, textlen * 4, 1, GIF_FLG_REGLIST, regCount, regFlag);
+    SetRegSizeAndType(3, DRAW_RGBAQ_UV_REGLIST);
+    DrawCount(textlen * 4, 1);
 
     u32 lastx = x;
     u32 line = 0;
@@ -371,7 +347,7 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
 
         int letterwidth = font_struct->fontWidths[cLetter];
 
-       // DEBUGLOG("%d %d %d %d", letterwidth, cLetter, text[letter], start);
+        // DEBUGLOG("%d %d %d %d", letterwidth, cLetter, text[letter], start);
 
         int tx = (cLetter % LETTERSPERROW);
         int ty = (cLetter / LETTERSPERROW);
@@ -389,29 +365,22 @@ qword_t *RenderL(qword_t *q, Font *font_struct, int x, int y, const char *text, 
         int top = y + (line * lineHeight);
         int bottom = y + (line * lineHeight) + lineHeight;
 
-        PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u0, v0));
-        ret++;
+        WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u0, v0));
 
-        PACK_GIFTAG(ret, GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
-        ret++;
-        PACK_GIFTAG(ret, GIF_SET_UV(u0, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
-        ret++;
-        PACK_GIFTAG(ret, GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u1, v0));
+        WritePairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
 
-        ret++;
-        PACK_GIFTAG(ret, GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
-        ret++;
+        WritePairU64(GIF_SET_UV(u0, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
 
-        PACK_GIFTAG(ret, GIF_SET_UV(u1, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
+        WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u1, v0));
 
-        ret++;
+        WritePairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
+
+        WritePairU64(GIF_SET_UV(u1, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
 
         lastx += (letterwidth);
     }
 
-    //   DEBUGLOG("---------------------------");
+    DrawVertices();
 
-    CreateDMATag(dmatag, DMA_END, ret - dmatag - 1, 0, 0, 0);
-
-    return ret;
+    return 0;
 }

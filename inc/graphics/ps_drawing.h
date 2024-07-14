@@ -17,13 +17,19 @@ void DestinationAlphaTest(int enable, int method);
 
 void SourceAlphaTest(int framebuffer, int method, int reference);
 
-void PrimitiveType(int primitive);
+void PrimitiveType(u64 primitive);
+
+void PrimitiveTypeStruct(prim_t prim);
 
 void VertexType(int vertextype);
 
 void FrameBufferMask(int red, int green, int blue, int alpha);
 
 void DepthBufferMask(int enable);
+
+void BlendingEquation(blend_t *blend);
+
+void PrimitiveColor(Color c);
 
 void PushQWord(void *q, int offset);
 
@@ -56,5 +62,7 @@ void WritePairU64(u64 a, u64 b);
 void PushScaleVector();
 
 void DrawVectorFloat(float x, float y, float z, float w);
+
+void SetRegSizeAndType(u64 size, u64 type);
 
 #endif

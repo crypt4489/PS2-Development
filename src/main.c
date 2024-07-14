@@ -670,6 +670,7 @@ static void CleanUpGame()
 
 void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
+    
     u32 destTestEnable = 0;
     if (destTest)
     {
@@ -681,7 +682,8 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     DestinationAlphaTest(destTestEnable, destTest);
     FrameBufferMaskWord(setFrameMask);
     DepthBufferMask(1);
-    PrimitiveType(PRIM_TRIANGLE_STRIP);
+    SetRegSizeAndType(2, DRAW_RGBAQ_REGLIST);
+    PrimitiveType(GS_SET_PRIM(PRIM_TRIANGLE_STRIP, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED));
     DrawCount(4, 1);
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));

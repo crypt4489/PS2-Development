@@ -109,20 +109,6 @@ FaceVertexTable ComputeFaceToVertexTable(VECTOR *vertices, u32 numVertices)
 
     }
 
-    
-/*
-    WingedTriangle *tri = faces;
-    WingedTriangle *tri3;
-    DEBUGLOG("%d %d %d", tri->v1, tri->v2, tri->v3);
-    DEBUGLOG("%d %d %d", tri->t1, tri->t2, tri->t3);
-    s32 *tri2 = &tri->t1;
-    for (int i = 0; i<3; i++)
-    {
-        tri3 = &faces[*tri2];
-        DEBUGLOG("%d %d %d", tri3->v1, tri3->v2, tri3->v3);
-        tri2++;
-    } 
-*/
     free(reverse);
 
     free(unique);

@@ -15,14 +15,16 @@ static qword_t *sg_VIFProgramUpload = NULL;
 static qword_t *sg_VIFHeaderUpload = NULL;
 static qword_t *sg_DCODEOpen = NULL;
 static qword_t *sg_OpenGIFTag = NULL;
-static int sg_PrimitiveType;
 static int sg_reservedVU1Space;
 static int sg_DrawCount;
 static int sg_ShaderInUse;
 static int sg_TTEUse;
 static int sg_VertexType;
+static int sg_RegisterCount;
+static int sg_RegisterType;
+static u64 sg_PrimitiveType;
 
-static void DMAOpenCheck();
+static void OpenDMATag();
 
 static void CloseDMATag();
 
@@ -50,6 +52,9 @@ void BeginCommand()
 void BeginCommandSet(qword_t *drawBuffer)
 {
     sg_TTEUse = 0;
+    sg_PrimitiveType = -1;
+    sg_RegisterCount = -1;
+    sg_RegisterType = -1;
     sg_DrawBufferPtr = drawBuffer;
     sg_DCODEOpen = sg_DrawBufferPtr++;
 }
@@ -96,7 +101,7 @@ qword_t* EndCommand()
     return ret;
 }
 
-static void DMAOpenCheck()
+static void OpenDMATag()
 {
     if (!sg_OpenDMATag)
     {
@@ -147,7 +152,7 @@ static void GSSetTagOpen()
 
 void DepthTest(int enable, int method)
 {
-    DMAOpenCheck();
+    OpenDMATag();
     GSSetTagOpen();
     
     if (!sg_OpenTestReg)
@@ -166,7 +171,7 @@ void DepthTest(int enable, int method)
 void DestinationAlphaTest(int enable, int method)
 {
 
-    DMAOpenCheck();
+    OpenDMATag();
     GSSetTagOpen();
 
     if (!sg_OpenTestReg)
@@ -183,7 +188,7 @@ void DestinationAlphaTest(int enable, int method)
 
 void SourceAlphaTest(int framebuffer, int method, int reference)
 {
-    DMAOpenCheck();
+    OpenDMATag();
     GSSetTagOpen();
 
     if (!sg_OpenTestReg)
@@ -198,9 +203,15 @@ void SourceAlphaTest(int framebuffer, int method, int reference)
     
 }
 
-void PrimitiveType(int primitive)
+void PrimitiveType(u64 primitive)
 {
     sg_PrimitiveType = primitive;
+}
+void PrimitiveTypeStruct(prim_t prim)
+{
+    sg_PrimitiveType = GS_SET_PRIM(prim.type, 
+    prim.shading, prim.mapping, prim.fogging, 
+    prim.blending, prim.antialiasing, prim.mapping_type, g_Manager.gs_context, prim.colorfix);
 }
 
 void VertexType(int vertextype)
@@ -210,14 +221,14 @@ void VertexType(int vertextype)
 
 void FrameBufferMaskWord(u32 mask)
 {
-    DMAOpenCheck();
+    OpenDMATag();
     GSSetTagOpen();
     sg_DrawBufferPtr = SetFrameBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->render, mask, g_Manager.gs_context);
 }
 
 void FrameBufferMask(int red, int green, int blue, int alpha)
 {
-    DMAOpenCheck();
+    OpenDMATag();
     GSSetTagOpen();
     int mask = ((alpha << 24) | (blue << 16) | (green << 8) | red); 
     sg_DrawBufferPtr = SetFrameBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->render, mask, g_Manager.gs_context);
@@ -225,7 +236,7 @@ void FrameBufferMask(int red, int green, int blue, int alpha)
 
 void DepthBufferMask(int enable)
 {
-    DMAOpenCheck();
+    OpenDMATag();
     GSSetTagOpen();
     sg_DrawBufferPtr = SetZBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->z, enable, g_Manager.gs_context);
 }
@@ -292,13 +303,27 @@ void WritePairU64(u64 a, u64 b)
     temp->dw[1] = b;
 }
 
+void BlendingEquation(blend_t *blend)
+{
+    PACK_GIFTAG(sg_DrawBufferPtr, GS_SET_ALPHA(blend->color1, blend->color2, blend->alpha, blend->color3, blend->fixed_alpha), GS_REG_ALPHA + g_Manager.gs_context);
+	sg_DrawBufferPtr++;
+}
+
+void PrimitiveColor(Color c)
+{
+    PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_RGBAQ(c.r, c.g, c.b, c.a, (int)c.q), GIF_REG_RGBAQ);
+    sg_DrawBufferPtr++;
+}
+
+void SetRegSizeAndType(u64 size, u64 type)
+{
+    sg_RegisterCount = size;
+    sg_RegisterType = type;
+}
+
 void DrawCount(int num, int vertexMemberCount)
 {
-    if (sg_OpenTestReg)
-    {
-        sg_OpenTestReg = NULL;
-    }  
-
+    sg_OpenTestReg = NULL;
     sg_DrawCount = num;
 
     if (sg_VIFHeaderUpload)
@@ -309,20 +334,15 @@ void DrawCount(int num, int vertexMemberCount)
         sg_DrawBufferPtr->sw[3] = num;
         sg_DrawBufferPtr++;
     } else {
-        CloseDMATag();
-        DMAOpenCheck();
-        
-        PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-        sg_DrawBufferPtr++;
-
-        PACK_GIFTAG(sg_DrawBufferPtr, GS_SET_PRIM(sg_PrimitiveType, PRIM_SHADE_FLAT, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), GS_REG_PRIM);
-        sg_DrawBufferPtr++;
     
-        u32 regCount = 2;
 
-        u64 regFlag = DRAW_RGBAQ_REGLIST;
+        PACK_GIFTAG(sg_DrawBufferPtr, sg_PrimitiveType, GS_REG_PRIM);
+        sg_DrawBufferPtr++;
 
-        PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(num, 1, 0, 0, GIF_FLG_REGLIST, regCount), regFlag);
+        CloseGSSetTag();
+
+
+        PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(num, 1, 1, 0, GIF_FLG_REGLIST, sg_RegisterCount), sg_RegisterType);
         sg_DrawBufferPtr++;
     }
 }
@@ -349,8 +369,6 @@ void DrawVertices()
         sg_OpenDMATag = sg_DrawBufferPtr;
         sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
         sg_VIFProgramUpload = NULL;
-    } else {
-        CloseDMATag();
     }
 }
 

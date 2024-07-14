@@ -29,7 +29,6 @@ void RenderRay(Ray *ray, Color color, float t)
     MatrixMultiply(vp, vp, g_DrawCamera->proj);
 
     VectorCopy(v[0], ray->origin);
-    //VectorCopy(v[1], line->p2);
     VectorScaleXYZ(v[1], ray->direction, t);
     VectorAddXYZ(v[1], ray->origin, v[1]);
 
