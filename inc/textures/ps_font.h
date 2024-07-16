@@ -5,7 +5,11 @@
 
 #include "ps_global.h"
 
-
+typedef enum  {
+    LEFT,
+    RIGHT,
+    CENTER
+} TextAlign;
 
 
 
@@ -14,7 +18,7 @@ int WidthOfString(Font *font_struct, const char *text);
 int RenderL(Font *font_struct, int x, int y, const char *text);
 unsigned char * RewriteAlphaClutBuffer(unsigned char *buffer);
 
-void PrintText(Font *fontStruct, const char *text, int x, int y);
+void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign alignment);
 
 Font *CreateFontStruct(const char* fontName, const char *fontData, int read_type);
 Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic, 

@@ -911,7 +911,7 @@ int Render()
         
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
-        PrintText(myFont, print_out, -310, -220);
+        PrintText(myFont, print_out, -310, -220, LEFT);
 
         EndRendering(cam);
 

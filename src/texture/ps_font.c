@@ -16,7 +16,7 @@
 
 #define MAX_DISPLAY_TEXT 100
 
-void PrintText(Font *fontStruct, const char *text, int x, int y)
+void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign alignment)
 {
     UploadTextureViaManagerToVRAM(fontStruct->fontTex);
 
@@ -31,10 +31,21 @@ void PrintText(Font *fontStruct, const char *text, int x, int y)
     DepthTest(1, 1);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0);
     BlendingEquation(&blender);
-    if (RenderL(fontStruct, x, y, text))
+    int ret = -1;
+    
+    switch (alignment)
     {
+    case LEFT:
+        ret = RenderL(fontStruct, x, y, text);
+        break;
+    
+    default:
+        ERRORLOG("Invalid Text Alignment used");
         return;
     }
+
+    if (ret) return;
+
     EndCommand();
 }
 

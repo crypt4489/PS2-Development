@@ -16,6 +16,7 @@
 #include "system/ps_vif.h"
 #include "log/ps_log.h"
 #include "util/ps_linkedlist.h"
+#include "graphics/ps_drawing.h"
 
 static inline u32 UploadSize(u32 loop, u32 count)
 {
@@ -435,6 +436,129 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
 }
+/*
+void CreateGraphicsPipeline2(GameObject *obj, const char *name)
+{
+    u32 totalHeader, sizeOfDCode, headerSize, cbsNums, sizeOfPipeline, drawSize, pipeCode = VU1Stage4;
+    u16 drawCode = DRAW_VERTICES;
+    totalHeader = sizeOfDCode = headerSize = cbsNums = sizeOfPipeline = drawSize = 0;
+
+    u32 msize = obj->vertexBuffer.matCount;
+
+    if (msize == 0)
+    {
+        ERRORLOG("no materials. must be at least 1");
+        return;
+    }
+
+    u32 renderPasses = 1;
+
+    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+
+ 
+
+    CreatePipelineSizes(pipeCode, &cbsNums, &headerSize); //
+    totalHeader = headerSize;
+    if (obj->vertexBuffer.meshAnimationData != NULL && ((drawCode & DRAW_SKINNED) != 0))
+    {
+        u32 boneCount = obj->vertexBuffer.meshAnimationData->jointsCount * 3;
+        totalHeader += boneCount;
+        cbsNums += 1;
+    }
+
+    u32 upload = CreateDrawSizeandUploadCount(drawCode, pipeCode, &drawSize);
+
+    // DEBUGLOG("cbs and vu1headers %d %d ", cbsNums, headerSize);
+
+    // DEBUGLOG("uppie and drawie %d %d ", upload, drawSize);
+
+    u32 uploadLoop = CreateUpload(obj->vertexBuffer.materials, drawSize, msize);
+
+    sizeOfPipeline = 1 + MaterialSizeDMACount(msize) + UploadSize(uploadLoop, upload) + cbsNums + totalHeader + 8 + RenderPassesForAnim(renderPasses, pipeCode);
+
+    // DEBUGLOG("size of pipe : %d", sizeOfPipeline);
+
+    qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * sizeOfPipeline);
+
+    VU1Pipeline *pipeline = CreateVU1Pipeline(name, cbsNums, renderPasses);
+
+    qword_t *vu1_addr = &pipeline->passes[0]->programs;
+    vu1_addr->sw[0] = vu1_addr->sw[1] = vu1_addr->sw[2] = vu1_addr->sw[3] = MAX_VU1_CODE_ADDRESS;
+
+    pipeline->passes[0]->target = &obj->vertexBuffer;
+
+    BeginCommandSet(pipeline_dma);
+    qword_t *dcode_callback_tags = GetCommandPosition();
+    AdvanceDMATape(cbsNums);
+    ShaderHeaderLocation(totalHeader);
+    AllocateShaderSpace(totalHeader, 0);
+  
+
+    qword_t *q = pipeline_dma;
+
+    qword_t *dcode_callback_tags = q;
+
+    q += cbsNums;
+
+    qword_t *dcode_tag_vif1 = q;
+
+    q++;
+
+    q = InitDoubleBufferingQWord(q, totalHeader, GetDoubleBufferOffset(headerSize)); // 2
+
+    qword_t *per_obj_tag = q;
+
+    q = CreateDMATag(per_obj_tag, DMA_CNT, 4, 0, 0, 0);
+
+    qword_t *direct_tag = q;
+
+    q = CreateDirectTag(direct_tag, 3, 0);
+
+    q = CreateGSSetTag(q, 2, 1, GIF_FLG_PACKED, 1, GIF_REG_AD);
+
+    PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawRegisters, q, NULL, DEFAULT_GS_REG_PCB);
+
+    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags, q);
+
+    q += 2; //(obj-> tex == NULL ? 4 : 14); //7
+
+    q = CreateDMATag(q, DMA_END, totalHeader, VIF_CODE(0x0101, 0, VIF_CMD_STCYCL, 0), VIF_CODE(0, totalHeader, VIF_CMD_UNPACK(0, 3, 0), 1), 0); // 8
+
+    dcode_callback_tags = CreateVU1Callbacks(dcode_callback_tags, q, pipeline, headerSize, pipeCode, drawCode);
+
+    q += totalHeader;
+
+    sizeOfDCode = q - dcode_tag_vif1 - 1;
+
+    // DEBUGLOG("%d", sizeOfDCode);
+
+    CreateDCODEDmaTransferTag(dcode_tag_vif1, DMA_CHANNEL_VIF1, 1, 1, sizeOfDCode);
+
+    CreateVU1ProgramsList(vu1_addr, pipeCode, drawCode);
+
+    // vu1upload =  headerSize + 8
+
+    // matQword = matCount * 3 + (((vertexCount / drawSize) + 1) * (uploadCount + 2)
+
+    // total qwords cbsNums + vu1upload + matQword
+    if ((pipeCode & VU1Stage1) != 0)
+    {
+        if ((drawCode & DRAW_MORPH) != 0)
+            q = CreateMorphInterpolatorDMAUpload(q, q + 1, pipeline, obj->interpolator->currInterpNode, obj->vertexBuffer.matCount);
+    }
+
+    q = CreateMeshDMAUpload(q, obj, drawSize, drawCode, obj->vertexBuffer.matCount, vu1_addr);
+
+    CreateDCODETag(q, DMA_DCODE_END);
+
+    pipeline->q = pipeline_dma;
+
+    // dump_packet(pipeline->q, 3000, 0);
+
+    // while(1);
+    AddVU1Pipeline(obj, pipeline);
+    SetActivePipeline(obj, pipeline);
+} */
 
 
 

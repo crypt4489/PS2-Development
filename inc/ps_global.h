@@ -197,6 +197,7 @@ typedef struct
     unsigned char *pixels;
     unsigned char *clut_buffer;
     qword_t *upload;
+    u16 uploadSize;
     u32 width;
     u32 height;
     u32 psm;
