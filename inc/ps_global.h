@@ -1,6 +1,8 @@
 #ifndef PS_GLOBAL_H
 #define PS_GLOBAL_H
 
+#include <stdbool.h>
+
 #include <packet.h>
 #include <draw_blending.h>
 #include <draw_buffers.h>
@@ -601,13 +603,34 @@ typedef struct RenderTarget
     zbuffer_t *z;
 } RenderTarget;
 
+typedef struct avltree_t
+{
+    u32 node, height;
+    struct avltree_t *left, *right;
+    void *data;
+} AVLTree;
+
+typedef u32 (*HashFunction) (const char *, int);
+typedef struct hashmap_t
+{
+    int cap;
+    HashFunction func;
+    AVLTree* trees;
+} HashMap;
+
+typedef struct hashentry_t
+{
+    const char *key;
+    int sizeKey;
+    void *data;
+} HashEntry;
+
 typedef struct
 {
-    u32 globalIndex;  // unique identifier
     u32 count;        // global tex count
     int currIndex;    // current texture loaded into memory
-    LinkedList *list; // list of textures;
-} TexManager;
+    HashMap *textureMap;
+} TextureManager;
 
 struct dma_buffers_t;
 typedef struct dma_buffers_t DMABuffers;
@@ -632,7 +655,7 @@ typedef struct
 {
     RenderTarget *targetBack;
     RenderTarget *targetDisplay;
-    TexManager *texManager;
+    TextureManager *texManager;
     VU1Manager *vu1Manager;
     Texture *textureInVram;
     Camera *mainCam;

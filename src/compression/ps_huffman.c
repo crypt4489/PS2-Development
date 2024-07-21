@@ -94,11 +94,13 @@ static HuffmanNode *readDecoder()
 	current = root;
 	readBoolean();
 	int count = 0;
-	while(count < MAX_ITERS)
+	while(count++ < MAX_ITERS)
 	{
 		if (current->right != NULL && current->left != NULL)
 		{
 			current = current->parent;
+			if (current == root && current->right != NULL)
+				break;
 		}
 		else
 		{
@@ -114,11 +116,6 @@ static HuffmanNode *readDecoder()
 			else
 				current = node;
 		}
-
-		if (current == root && current->right != NULL)
-			break;
-
-		count++;
 	}
 
 	//DEBUGLOG("ITERS IN HUFFMAN %d", count);

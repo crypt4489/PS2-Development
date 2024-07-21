@@ -11,6 +11,7 @@
 #include "animation/ps_animation.h"
 #include "gamemanager/ps_manager.h"
 #include "util/ps_linkedlist.h"
+#include "textures/ps_texturemanager.h"
 #include "system/ps_timer.h"
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
@@ -102,7 +103,7 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
 
     u32 sectors = readSize * divisor;
 
-    u32 remaining = readSize & SECTOR_SIZE-1;
+    u32 remaining = readSize & (SECTOR_SIZE-1);
 
     if (remaining)
     {
@@ -152,7 +153,7 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
     u32 starting_sec = loc_file_struct->lsn;
     u32 sectors = loc_file_struct->size / SECTOR_SIZE;
 
-    u32 remaining = loc_file_struct->size & SECTOR_SIZE-1;
+    u32 remaining = loc_file_struct->size & (SECTOR_SIZE-1);
 
     u32 bufferSize = loc_file_struct->size;
 
@@ -272,7 +273,7 @@ static u32 LoadMaterial(u32 *ptr, MeshBuffers *buff, u32 *start, u32 *end)
 
     name[sizeOfName] = 0;
 
-    u32 id = GetTextureIDByName(name, g_Manager.texManager);
+    u32 id = GetTextureIDByName(g_Manager.texManager, name);
 
     buff = CreateMaterial(buff, _start, _end, id);
 

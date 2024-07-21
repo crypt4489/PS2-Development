@@ -36,10 +36,8 @@ Texture *AddAndCreateTextureFromBuffer(u8 *fileData, u32 size,
                                        const char *nameOfTex, u32 readType, 
                                        u8 useAlpha, u8 alpha, 
                                        u32 mode, u8 texFiltering);
-//void UploadTextureViaManagerToVRAM(Texture *tex);
 
-u32 GetTextureIDByName(const char *name, TexManager *TexManager);
-Texture *GetTextureByID(u32 id, TexManager *texManager);
+
 void AddMipMapTexture(Texture *tex, Texture *toAdd);
 Texture *RemoveMipLevelFromTexture(Texture *tex, Texture *toRemove);
 void SetupTexLODStruct(Texture *tex, float _k, char _l, int max, int filter_min, int filter_mag);

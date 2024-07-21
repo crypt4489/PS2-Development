@@ -52,6 +52,7 @@
 #include "graphics/ps_renderdirect.h"
 #include "geometry/ps_adjacency.h"
 #include "graphics/ps_drawing.h"
+#include "textures/ps_texturemanager.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -449,7 +450,7 @@ static void SetupGrid()
     w = 1000;
     h = 1000;
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
-    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
+    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -493,7 +494,7 @@ static void SetupBody()
              scales,
              1.0f, body->ltm);
 
-    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(worldName, g_Manager.texManager));
+    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(g_Manager.texManager, worldName));
 
     body->update_object = NULL;
 
@@ -520,7 +521,7 @@ static void SetupAABBBox()
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
     SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CLIPPING);
 
-    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
+    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -557,7 +558,7 @@ static void SetupShootBoxBox()
     ReadModelFile("MODELS\\BOX.BIN", &shotBox->vertexBuffer);
     SetupGameObjectPrimRegs(shotBox, color, DRAWING_OPTION | COLOR_ENABLE | ZSTATE(1));
 
-    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
+    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&shotBox->vertexBuffer, 0, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -616,7 +617,7 @@ static void SetupOBBBody()
     ReadModelFile("MODELS\\BODY.BIN", &bodyCollision->vertexBuffer);
     SetupGameObjectPrimRegs(bodyCollision, color, RENDERTEXTUREMAPPED | CLIPPING);
 
-    u32 id = GetTextureIDByName(worldName, g_Manager.texManager);
+    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&bodyCollision->vertexBuffer, 0, bodyCollision->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -646,7 +647,7 @@ static void SetupGameObjects()
 
     SetupGrid();
     // SetupBody();
-    // SetupAABBBox();
+    SetupAABBBox();
     // SetupOBBBody();
     SetupShootBoxBox();
     SetupShootBigBoxBox();
@@ -663,7 +664,7 @@ static void CleanUpGame()
     CleanCameraObject(cam);
     DestoryRenderWorld(world);
     DestoryRenderWorld(roomWorld);
-    ClearManagerTexList(&g_Manager);
+    ClearTextureManagerList(g_Manager.texManager);
     ClearManagerStruct(&g_Manager);
 }
 

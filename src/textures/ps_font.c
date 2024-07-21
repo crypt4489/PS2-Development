@@ -114,13 +114,8 @@ Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic,
     font->fontWidths = NULL;
 
     CreateFontWidthsFromFile(font, NULL, fontData, dataSize);
-
-    CreateTexStructs(myFontTex, myFontTex->width, myFontTex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 1);
-
-    CreateClutStructs(myFontTex, GS_PSM_32);
-
-    myFontTex->texbuf.address = g_Manager.textureInVram->texbuf.address;
-    myFontTex->clut.address = g_Manager.textureInVram->clut.address;
+    myFontTex->lod.mag_filter = LOD_MAG_LINEAR;
+	myFontTex->lod.min_filter = LOD_MIN_LINEAR;
 
     return font;
 }
@@ -167,12 +162,11 @@ Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type
 
     LoadFontWidths(font, fontData);
 
-    CreateTexStructs(myFontTex, myFontTex->width, myFontTex->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 1);
 
-    CreateClutStructs(myFontTex, GS_PSM_32);
+   
+	myFontTex->lod.mag_filter = LOD_MAG_LINEAR;
+	myFontTex->lod.min_filter = LOD_MIN_LINEAR;
 
-    myFontTex->texbuf.address = g_Manager.textureInVram->texbuf.address;
-    myFontTex->clut.address = g_Manager.textureInVram->clut.address;
 
     return font;
 }

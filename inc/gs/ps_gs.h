@@ -33,7 +33,7 @@ void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 func
 void SetupRenderTarget(RenderTarget *target, int context, int wait);
 RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, int psm);
 Texture *CreateTextureFromRenderTarget(RenderTarget *target, u32 filter, u32 function);
-RenderTarget *AllocRenderTarget();
+RenderTarget *AllocRenderTarget(u32 useZBuffer);
 void DestroyRenderTarget(RenderTarget *target);
 
 

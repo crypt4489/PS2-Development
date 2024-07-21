@@ -17,6 +17,7 @@
 #include "log/ps_log.h"
 #include "system/ps_timer.h"
 #include "util/ps_linkedlist.h"
+#include "textures/ps_texturemanager.h"
 
 GameManager g_Manager;
 
@@ -65,7 +66,7 @@ void CreateManagerRenderTargets(u32 useZBuffer, u32 psm)
 
 void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize) 
 {
-     g_Manager.ScreenHeight = height;
+    g_Manager.ScreenHeight = height;
     g_Manager.ScreenWidth = width;
     g_Manager.ScreenHHalf = height >> 1;
     g_Manager.ScreenWHalf = width >> 1;
@@ -77,10 +78,7 @@ void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize
     g_Manager.textureInVram->psm = GS_PSM_32;
     g_Manager.textureInVram->id = 0;
 
-    g_Manager.texManager = (TexManager *)malloc(sizeof(TexManager));
-    g_Manager.texManager->count = 0;
-    g_Manager.texManager->globalIndex = 0;
-    g_Manager.texManager->currIndex = -1;
+    g_Manager.texManager = CreateTextureManager();
 
     g_Manager.vu1DoneProcessing = 1;
     g_Manager.enableDoubleBuffer = doubleBuffer;
@@ -99,7 +97,6 @@ void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize
 
 void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize, u32 useZBuffer, u32 psm)
 {
-
     CreateManagerStruct(width, height, doubleBuffer, bufferSize, programSize);
 
     CreateManagerRenderTargets(useZBuffer, psm);
@@ -117,8 +114,6 @@ void SetupManagerTexture()
     CreateTexBuf(g_Manager.textureInVram, 256, GS_PSM_32);
 
     CreateTexStructs(g_Manager.textureInVram, g_Manager.textureInVram->width, g_Manager.textureInVram->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 0);
-
-    //CreateClutBuf(&g_Manager.textureInVram->clut, 16, GS_PSM_32);
 
     g_Manager.textureInVram->clut.start = 0;
     g_Manager.textureInVram->clut.load_method = CLUT_LOAD;
@@ -159,24 +154,6 @@ void EndFrame(u32 useVsync)
     frameCounter++;
 }
 
-Texture *GetTexByName(TexManager *manager, const char *name)
-{
-    LinkedList *iter = manager->list;
-    int strLength = strnlen(name, MAX_CHAR_TEXTURE_NAME);
-    while (iter != NULL)
-    {
-        Texture *comp = (Texture *)iter->data;
-        if (!strncmp(comp->name, name, strLength))
-        {
-            return comp;
-        }
-        iter = iter->next;
-    }
-
-    return NULL;
-}
-
-
 
 int PollVU1DoneProcessing(GameManager *manager)
 {
@@ -194,29 +171,9 @@ void AddToManagerTexList(GameManager *manager, Texture *tex)
 {
     tex->clut.address = manager->textureInVram->clut.address;
     tex->texbuf.address = manager->textureInVram->texbuf.address;
-    manager->texManager->count++;
-    manager->texManager->globalIndex++;
-    tex->id = manager->texManager->globalIndex;
-    LinkedList *newTex = CreateLinkedListItem(tex);
-    manager->texManager->list = AddToLinkedList(manager->texManager->list, newTex);
+    AddToTextureManager(manager->texManager, tex);
 }
 
-void ClearManagerTexList(GameManager *manager)
-{
-    LinkedList *iter = manager->texManager->list;
-
-    while (iter != NULL)
-    {
-        LinkedList *cleanLL = iter;
-        iter = iter->next;
-        CleanTextureStruct((Texture *)cleanLL->data);
-        CleanLinkedListNode(cleanLL);
-    }
-
-    manager->texManager->list = NULL;
-    manager->texManager->count = 0;
-    manager->texManager->globalIndex = 0;
-}
 
 void ClearManagerStruct(GameManager *manager)
 {
@@ -236,6 +193,7 @@ void ClearManagerStruct(GameManager *manager)
 
 Texture *GetTexObjFromTexList(GameManager *manager, int index)
 {
+    /*
     LinkedList *iter = manager->texManager->list;
     int curr = index;
 
@@ -246,6 +204,8 @@ Texture *GetTexObjFromTexList(GameManager *manager, int index)
     }
 
     return (Texture *)iter->data;
+    */
+   return NULL;
 }
 
 void SwapManagerDMABuffers()

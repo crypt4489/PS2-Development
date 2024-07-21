@@ -47,28 +47,6 @@ static void StripFilePath(const char *filepath, char *texname)
     texname[i] = 0;
 }
 
-u32 GetTextureIDByName(const char *name, TexManager *texManager)
-{
-    Texture *tex = GetTexByName(texManager, name);
-    if (tex == NULL)
-        return 0;
-    return tex->id;
-}
-
-Texture *GetTextureByID(u32 id, TexManager *texManager)
-{
-    LinkedList *node = texManager->list;
-    Texture *tex = NULL;
-    while (node != NULL)
-    {
-        tex = (Texture *)node->data;
-        if (tex->id == id)
-            return tex;
-        node = node->next;
-    }
-    return NULL;
-}
-
 void AddStringNameToTexture(Texture *tex, const char *buffer)
 {
     memcpy(tex->name, buffer, strnlen(buffer, MAX_CHAR_TEXTURE_NAME));
@@ -157,7 +135,7 @@ Texture *RemoveMipLevelFromTexture(Texture *tex, Texture *toRemove)
     if (iter == NULL)
         return tex;
 
-    INFOLOG("found");
+    //INFOLOG("found");
     tex->mipMaps = RemoveNodeFromList(tex->mipMaps, iter);
     tex->mipLevels -= 1;
     return tex;
@@ -481,7 +459,7 @@ void UploadTextureToVRAM(Texture *tex)
 
 void UploadTextureViaManagerToVRAM(Texture *tex)
 {
-    TexManager *texManager = g_Manager.texManager;
+    TextureManager *texManager = g_Manager.texManager;
 
     if ((tex->id != texManager->currIndex && tex->type == PS_TEX_MEMORY))
     {

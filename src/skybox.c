@@ -10,6 +10,7 @@
 #include "world/ps_renderworld.h"
 #include "io/ps_file_io.h"
 #include "textures/ps_texture.h"
+#include "textures/ps_texturemanager.h"
 #include "math/ps_matrix.h"
 #include "math/ps_misc.h"
 
@@ -52,17 +53,17 @@ void InitSkybox()
     u32 beg = 0;
     u32 end = 95;
 
-    CreateMaterial(&skybox->vertexBuffer, beg, end, GetTextureIDByName(face1Name, g_Manager.texManager));
+    CreateMaterial(&skybox->vertexBuffer, beg, end, GetTextureIDByName(g_Manager.texManager, face1Name));
 
-    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(face2Name, g_Manager.texManager));
+    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(g_Manager.texManager, face2Name));
 
-    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(face3Name, g_Manager.texManager));
+    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(g_Manager.texManager, face3Name));
 
-    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(face4Name, g_Manager.texManager));
+    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(g_Manager.texManager, face4Name));
 
-    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(face5Name, g_Manager.texManager));
+    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(g_Manager.texManager, face5Name));
 
-    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(face6Name, g_Manager.texManager));
+    CreateMaterial(&skybox->vertexBuffer, beg += 96, end += 96, GetTextureIDByName(g_Manager.texManager, face6Name));
 
     skybox->update_object = UpdateSkybox;
 

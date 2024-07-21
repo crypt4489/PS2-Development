@@ -11,6 +11,8 @@
 #include "textures/ps_texture.h"
 #include "log/ps_log.h"
 
+#include "textures/ps_texturemanager.h"
+
 u32 GetDoubleBufferOffset(u32 base)
 {
     u32 half = (1024 - base) >> 1;
@@ -63,7 +65,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             Material *mat = (Material *)q->sw[1];
             u32 id = mat->materialId;
             // INFOLOG("texhere! %d", id);
-            Texture *tex = GetTextureByID(id, g_Manager.texManager);
+            Texture *tex = GetTextureByID(g_Manager.texManager, id);
             q++;
             if (tex != NULL)
             {
@@ -80,7 +82,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
 
             u32 id = q->sw[1];
             // INFOLOG("texhere! %d", id);
-            Texture *tex = GetTextureByID(id, g_Manager.texManager);
+            Texture *tex = GetTextureByID(g_Manager.texManager, id);
             q++;
             if (tex != NULL)
             {
