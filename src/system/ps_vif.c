@@ -21,7 +21,7 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
 {
     //packet_t *pack = packet_init(packetSize+1, PACKET_NORMAL);
     //qword_t pack[packetSize];
-    qword_t *start = InitializeDMAObject();
+    qword_t *start = GetDMABasePointer();
     qword_t *q;
     u32 count = (cEnd - cStart) / 2;
     if (count & 1)

@@ -304,20 +304,6 @@ int RenderL(Font *font_struct, int x, int y, const char *text)
     u8 alpha = font_struct->color.a;
 
     PrimitiveColor(font_struct->color);
-    WritePairU64(GS_SET_TEX1(font_struct->fontTex->lod.calculation,
-                             font_struct->fontTex->lod.max_level, font_struct->fontTex->lod.mag_filter,
-                             font_struct->fontTex->lod.min_filter, font_struct->fontTex->lod.mipmap_select,
-                             font_struct->fontTex->lod.l, (int)(font_struct->fontTex->lod.k * 16.0f)),
-                 GS_REG_TEX1 + g_Manager.gs_context);
-    WritePairU64(GS_SET_TEX0(font_struct->fontTex->texbuf.address >> 6,
-                             font_struct->fontTex->texbuf.width >> 6, font_struct->fontTex->texbuf.psm,
-                             font_struct->fontTex->texbuf.info.width, font_struct->fontTex->texbuf.info.height,
-                             font_struct->fontTex->texbuf.info.components, font_struct->fontTex->texbuf.info.function,
-                             font_struct->fontTex->clut.address >> 6, font_struct->fontTex->clut.psm,
-                             font_struct->fontTex->clut.storage_mode, font_struct->fontTex->clut.start,
-                             font_struct->fontTex->clut.load_method),
-                 GS_REG_TEX0 + g_Manager.gs_context);
-
     PrimitiveTypeStruct(font_struct->prim);
 
     SetRegSizeAndType(3, DRAW_RGBAQ_UV_REGLIST);

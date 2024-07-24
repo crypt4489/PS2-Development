@@ -57,6 +57,7 @@ static AVLTree* LeftRotate(AVLTree *tree)
 AVLTree *CreateAVLNode(void *data, int val)
 {
     AVLTree *node = (AVLTree*)malloc(sizeof(AVLTree));
+    if (!node) return NULL;
     node->node = val;
     node->left = node->right = NULL;
     node->data = data;
@@ -217,3 +218,15 @@ AVLTree *DeleteAVLNode(AVLTree *tree, int val)
 }
 
 AVLTree *GetNode(AVLTree *tree, int val);
+
+void CleanAVLTree(AVLTree *tree, bool freeData)
+{
+    if (tree)
+    {
+        if (freeData)
+            free(tree->data);
+        CleanAVLTree(tree->left, freeData);
+        CleanAVLTree(tree->right, freeData);
+        free(tree);
+    }
+}

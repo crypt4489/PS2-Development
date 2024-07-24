@@ -45,7 +45,7 @@ void ShaderProgram(int shader)
 void BeginCommand()
 {
     sg_TTEUse = 0;
-    sg_DrawBufferPtr = InitializeDMAObject();
+    sg_DrawBufferPtr = GetDMABasePointer();
     sg_DCODEOpen = sg_DrawBufferPtr++;
 }
 

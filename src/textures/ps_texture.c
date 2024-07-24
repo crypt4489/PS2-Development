@@ -23,27 +23,33 @@ static void SamplePaletteImpl(Texture *tex, Color *rgba, int x, int y);
 static void SampleNonPaletteImpl(Texture *tex, Color *rgba, int x, int y, int stride);
 static inline void PackColor(Color *rgba, u8* buffer, int stride);
 
+#define GS_SET_MIPTBP(TBA1, TBW1, TBA2, TBW2, TBA3, TBW3)                     \
+    (u64)((TBA1) & 0x00003FFF) << 0 | (u64)((TBW1) & 0x0000003F) << 14 |      \
+        (u64)((TBA2) & 0x00003FFF) << 20 | (u64)((TBW2) & 0x0000003F) << 34 | \
+        (u64)((TBA3) & 0x00003FFF) << 40 | (u64)((TBW3) & 0x0000003F) << 54
+
+
+qword_t* MipMapRegisters(qword_t *q, u32 *texAddresses, u32 *widths)
+{
+    PACK_GIFTAG(q, GS_SET_MIPTBP(texAddresses[0] >> 6, widths[0] >> 6, texAddresses[1] >> 6, widths[1] >> 6, texAddresses[2] >> 6, widths[2] >> 6), GS_REG_MIPTBP1 + g_Manager.gs_context);
+    q++;
+
+    PACK_GIFTAG(q, GS_SET_MIPTBP(texAddresses[3] >> 6, widths[3] >> 6, texAddresses[4] >> 6, widths[4] >> 6, texAddresses[5] >> 6, widths[5] >> 6), GS_REG_MIPTBP2 + g_Manager.gs_context);
+    q++;
+    return q;
+}
+
 static void StripFilePath(const char *filepath, char *texname)
 {
     const char *temp = strrchr(filepath, 92);
 
-    if (temp == NULL)
-    {
+    if (!temp)
         temp = filepath;
-    }
     else
-    {
         temp++;
-    }
 
     int i = 0;
-    while (*temp != 0)
-    {
-        texname[i] = *temp;
-        temp++;
-        i++;
-    }
-
+    while (*temp) texname[i++] = *temp++;
     texname[i] = 0;
 }
 
@@ -69,6 +75,14 @@ void CleanTextureStruct(Texture *tex)
         if (tex->upload != NULL)
         {
             free(tex->upload);
+        }
+
+        LinkedList *item = tex->mipMaps;
+        for (int i = 0; i<tex->mipLevels; i++)
+        {
+            Texture *data = (Texture*)item->data;
+            CleanTextureStruct(data);
+            item = CleanLinkedListNode(item);
         }
 
         free(tex);
@@ -103,13 +117,9 @@ Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode)
     {
         // DEBUGLOG("%x %x %x %x", alpha->pixels[i], alpha->pixels[i+1], alpha->pixels[i+2], alpha->pixels[i+3]);
         if (pixels[i] < 0x80)
-        {
             pixels[i + 3] = 0;
-        }
         else
-        {
             pixels[i + 3] = 0xFF;
-        }
     }
 
     return alphaMap;
@@ -126,7 +136,7 @@ Texture *RemoveMipLevelFromTexture(Texture *tex, Texture *toRemove)
 {
     LinkedList *iter = tex->mipMaps;
     Texture *comp = (Texture *)iter->data;
-    while (comp != toRemove && iter != NULL)
+    while (comp != toRemove && iter)
     {
         iter = iter->next;
         comp = (Texture *)iter->data;
@@ -171,7 +181,7 @@ void InitTextureResources(Texture *tex, u32 mode)
 
         CreateTexStructs(tex, tex->width, tex->psm, components, TEXTURE_FUNCTION_MODULATE, 0);
 
-        tex->upload = (qword_t *)malloc(sizeof(qword_t) * 50);
+        //tex->upload = (qword_t *)malloc(sizeof(qword_t) * 50);
     }
 }
 
@@ -257,7 +267,7 @@ qword_t *gif_setup_tex(qword_t *b, Texture *tex, u32 context)
     q->dw[1] = GS_REG_TEX1 + context;
     q++;
     q->dw[0] = GS_SET_TEX0(
-        tex->texbuf.address >> 6,
+        g_Manager.vramManager.currentTextureBasePtr >> 6,
         tex->texbuf.width >> 6,
         tex->texbuf.psm,
         tex->texbuf.info.width,
@@ -275,129 +285,259 @@ qword_t *gif_setup_tex(qword_t *b, Texture *tex, u32 context)
     return q;
 }
 
-qword_t *CreateTexChain(qword_t *input, Texture *tex)
+qword_t *FlushTextureCache(qword_t *q, bool end, bool direct, int size)
 {
+    int directacct = (int)direct;
+    if (end) q = CreateDMATag(q, DMA_END, 2+size+directacct, 0, 0, 0);
+    else q = CreateDMATag(q, DMA_CNT, 2+size+directacct, 0, 0, 0);
+    if (direct) q = CreateDirectTag(q, 2+size, end);
+	PACK_GIFTAG(q,GIF_SET_TAG(1+size,1,0,0,GIF_FLG_PACKED,1),GIF_REG_AD);
+	q++;
+	PACK_GIFTAG(q,1,GS_REG_TEXFLUSH);
+	q++;
 
-    qword_t *q = input;
-    u32 sizeOfPipeline = 0;
+	return q;
+}
+
+static int UploadSize(int height, int width, int psm, int *remaining)
+{
+    int i;
+	int qwords = 0;
+
+	switch (psm)
+	{
+		case GS_PSM_8:
+		{
+			qwords = (width*height)>>4;
+			break;
+		}
+
+		case GS_PSM_32:
+		case GS_PSM_24:
+		{
+			qwords = (width*height)>>2;
+			break;
+		}
+
+		case GS_PSM_4:
+		{
+			qwords = (width*height)>>5;
+			break;
+		}
+
+		case GS_PSM_16:
+		case GS_PSM_16S:
+		{
+			qwords = (width*height)>>3;
+			break;
+		}
+
+		default:
+		{
+			switch (psm)
+			{
+				case GS_PSM_8H:
+				{
+					qwords = (width*height)>>4;
+					break;
+				}
+
+				case GS_PSMZ_32:
+				case GS_PSMZ_24:
+				{
+					qwords = (width*height)>>2;
+					break;
+				}
+
+				case GS_PSMZ_16:
+				case GS_PSMZ_16S:
+				{
+					qwords = (width*height)>>3;
+					break;
+				}
+
+				case GS_PSM_4HL:
+				case GS_PSM_4HH:
+				{
+					qwords = (width*height)>>5;
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+    i = qwords / GIF_BLOCK_SIZE;
+
+	*remaining  = qwords % GIF_BLOCK_SIZE;
+
+    return i;
+}
+#if 0
+static u16 QWordSizeTexChain(Texture *tex, bool flush)
+{
+    u16 size = 0;
+    int remaining = 0;
+    int iterations;
 
     if (tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4)
     {
-        qword_t *dcode_tag_gif_clut = q;
-
-        q++;
         int width = (tex-> psm  == GS_PSM_8) ? 16 : 8;
         int height = (tex-> psm  == GS_PSM_8) ? 16 : 2;
-        q = draw_texture_transfer(q, tex->clut_buffer, width, height, tex->clut.psm, tex->clut.address, 16);
-        q = draw_texture_flush(q);
-
-        sizeOfPipeline = q - dcode_tag_gif_clut - 1;
-
-        CreateDCODEDmaTransferTag(dcode_tag_gif_clut, DMA_CHANNEL_GIF, 0, 1, sizeOfPipeline);
+        iterations = UploadSize(height, width, GS_PSM_32, &remaining);
+        size += (6 + (iterations * 3)) + 3;
+        if (remaining)
+        {
+            size += 3;
+        }
     }
 
-    qword_t *dcode_tag_gif_pixels = q;
+    iterations = UploadSize(tex->height, tex->width, tex->psm, &remaining);
+    size += (6 + (iterations * 3));
+
+    if (remaining) size += 3;
+    if (flush)     size += 3;
+    
+
+    return size;
+}
+#endif
+
+qword_t *TextureTransfer(qword_t *q, void *src, int width, int height, 
+                         int psm, int dest, int dest_width, bool usevif)
+{
+    int directacct = (int)usevif;
+    int remaining = 0;
+    int i = UploadSize(height, width, psm, &remaining);
+    q = CreateDMATag(q, DMA_CNT, 5+directacct, 0, 0, 0);
+    if (usevif)
+        q = CreateDirectTag(q, 5, 0);
+    q = CreateGSSetTag(q, 4, 0, GIF_FLG_PACKED, 1, GIF_REG_AD);    
+    PACK_GIFTAG(q,GS_SET_BITBLTBUF(0,0,0,dest>>6,dest_width>>6,psm),GS_REG_BITBLTBUF);
+	q++;
+	PACK_GIFTAG(q,GS_SET_TRXPOS(0,0,0,0,0),GS_REG_TRXPOS);
+	q++;
+	PACK_GIFTAG(q,GS_SET_TRXREG(width,height),GS_REG_TRXREG);
+	q++;
+	PACK_GIFTAG(q,GS_SET_TRXDIR(0),GS_REG_TRXDIR);
     q++;
 
-    q = draw_texture_transfer(q, tex->pixels, tex->width, tex->height, tex->psm, tex->texbuf.address, tex->texbuf.width);
-    q = draw_texture_flush(q);
-
-    sizeOfPipeline = q - dcode_tag_gif_pixels - 1;
-
-    CreateDCODEDmaTransferTag(dcode_tag_gif_pixels, DMA_CHANNEL_GIF, 0, 1, sizeOfPipeline);
-    CreateDCODETag(q, DMA_DCODE_END);
-    return q;
-}
-
-static qword_t *CreateTexChainMipLevels(qword_t *input, Texture *tex, u32 texBuffer, u32 clutBuffer)
-{
-
-    qword_t *q = input;
-    u32 sizeOfPipeline = 0;
-
-    if (tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4)
+    while (i-- > 0)
     {
-        qword_t *dcode_tag_gif_clut = q;
+        q= CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0);
 
-        q++;
+        if (usevif)
+            q = CreateDirectTag(q, GIF_BLOCK_SIZE+1, 0);
 
-        q = draw_texture_transfer(q, tex->clut_buffer, 16, 16, tex->clut.psm, clutBuffer, 16);
-        q = draw_texture_flush(q);
+        q = CreateGSSetTag(q, GIF_BLOCK_SIZE, 0, GIF_FLG_IMAGE, 0, 0);
 
-        sizeOfPipeline = q - dcode_tag_gif_clut - 1;
-
-        CreateDCODEDmaTransferTag(dcode_tag_gif_clut, DMA_CHANNEL_GIF, 0, 1, sizeOfPipeline);
+        q = CreateDMATag(q, DMA_REF, GIF_BLOCK_SIZE, 0, 0, 0, (u32)src);
+        src = (void *)((u8 *)src + (GIF_BLOCK_SIZE*16));
     }
 
-    qword_t *dcode_tag_gif_pixels = q;
-    q++;
+    if (remaining)
+    {
+        q = CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0);
 
-    q = draw_texture_transfer(q, tex->pixels, tex->width, tex->height, tex->psm, texBuffer, tex->texbuf.width);
-    q = draw_texture_flush(q);
+        if (usevif)
+            q = CreateDirectTag(q, remaining+1, 0);
 
-    sizeOfPipeline = q - dcode_tag_gif_pixels - 1;
+        q = CreateGSSetTag(q, remaining, 0, GIF_FLG_IMAGE, 0, 0);
 
-    CreateDCODEDmaTransferTag(dcode_tag_gif_pixels, DMA_CHANNEL_GIF, 0, 1, sizeOfPipeline);
-    CreateDCODETag(q, DMA_DCODE_END);
+        q = CreateDMATag(q, DMA_REF, remaining, 0, 0, 0, (u32)src);
+    }
+
     return q;
 }
 
-qword_t *CreateTexChainWOTAGS(qword_t *input, Texture *tex)
+static qword_t *TextureUploadGS(qword_t *q, Texture *tex, u32 texAddress, u32 clutAddress, bool usevif)
 {
-
-    qword_t *q = input;
-
-    if (tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4)
+    if ((tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4))
     {
         int width = (tex-> psm  == GS_PSM_8) ? 16 : 8;
         int height = (tex-> psm  == GS_PSM_8) ? 16 : 2;
-        q = draw_texture_transfer(q, tex->clut_buffer, 16, 16, tex->clut.psm, g_Manager.textureInVram->clut.address, 16);
-        q = draw_texture_flush(q);
+        q = TextureTransfer(q, tex->clut_buffer, width, height, tex->clut.psm, clutAddress, 16, usevif);
+        q = FlushTextureCache(q, false, usevif, 0);
     }
 
-    q = draw_texture_transfer(q, tex->pixels, tex->width, tex->height, tex->psm, g_Manager.textureInVram->texbuf.address, tex->texbuf.width);
-    q = draw_texture_flush(q);
+    q = TextureTransfer(q, tex->pixels, tex->width, tex->height, tex->psm, texAddress, tex->texbuf.width, usevif);
+    
+    return q;
+}
+
+static void BaseTextureAddresses(u32 *texAddress, u32 *clutAddress, u16 mipSize, u32 height, u32 width, u32 bpp)
+{
+    bool clut = false;
+    int cw = 0, ch = 0;
+    if (bpp == GS_PSM_4 || bpp == GS_PSM_8) 
+    {
+        cw = (bpp  == GS_PSM_8) ? 16 : 8;
+        ch = (bpp  == GS_PSM_8) ? 16 : 2;
+        clut = true;
+    }
+
+    int base = g_Manager.vramManager.currentTextureBasePtr;
+   
+    for (int i = 0; i<mipSize+1; i++, height>>=1, width>>=1)
+    {
+        texAddress[i] = base;
+        base += graph_vram_size(width, height, bpp, GRAPH_ALIGN_BLOCK);
+        if (!i && clut)
+        {
+            *clutAddress = base;
+            base += graph_vram_size(cw, ch, GS_PSM_32, GRAPH_ALIGN_BLOCK);
+        }
+    }
+
+}
+
+qword_t *SetupTextureGSState(qword_t *q, Texture *tex, int size, u32 *texaddresses, u32 clutAddress, u32 *widths)
+{
+    
+    q = SetTextureWrap(q, tex->mode);
+    q = SetTextureRegisters(q, &tex->lod, &tex->texbuf, &tex->clut, texaddresses[0], clutAddress); 
+
+    if (size>3)
+    {
+        q = MipMapRegisters(q, texaddresses+1, widths);
+    }
 
     return q;
 }
 
-void ParseTextureUpload(qword_t *in)
+qword_t *CreateTextureUploadChain(Texture *tex, qword_t *q, bool direct)
 {
-    DMA_DCODE_STRUCT decode;
-    int loop = 1;
-    int channel, qwc, tte, type;
-    qword_t *q = in;
-    while (loop)
-    {
-        decode.code = q->sw[0];
-        if (decode.code == DMA_DCODE_END)
-        {
-            break;
-        }
-        else
-        {
-            channel = decode.chann;
-            qwc = decode.qwc;
-            tte = decode.tte;
-            type = decode.type;
-            if (channel != 0)
-            {
-                q++;
-                SubmitToDMAController(q, channel, type, qwc, tte);
-            }
-            else
-            {
-                ERRORLOG("WE MADE IT HERE!");
-                dump_packet(in, 256, 0);
-                while (1)
-                    ;
-                loop = 0;
-            }
-
-            q += qwc;
-        }
+    int size = 3;
+    u32 texaddrs[7], clutaddrs = 0, widths[6];
+    u16 mipSize = tex->mipLevels;
+    BaseTextureAddresses(texaddrs, &clutaddrs, mipSize, tex->height, tex->width, tex->psm);    
+    LinkedList *iter = tex->mipMaps;
+    q = TextureUploadGS(q, tex, texaddrs[0], clutaddrs, direct);
+    if (mipSize > 0) {
+        q = FlushTextureCache(q, false, direct, 0);
+        size += 2;
     }
+
+    iter = tex->mipMaps;
+    for (int i = 0; i<mipSize; i++)
+    {
+        Texture *mip = (Texture*)iter->data;
+        widths[i] = mip->texbuf.width;
+         q = TextureTransfer(q, mip->pixels, mip->width, mip->height, mip->psm, 
+            texaddrs[i+1], mip->texbuf.width, direct);
+        if (i<(mipSize-1))
+            q = FlushTextureCache(q, false, direct, 0);
+        iter = iter->next;
+    }      
+
+    q = FlushTextureCache(q, true, direct, size);
+
+    q = SetupTextureGSState(q, tex, size, texaddrs, clutaddrs, widths);
+
+    return q;
+
 }
+
 
 void SetupTexLODStruct(Texture *tex, float _k, char _l, int max, int filter_min, int filter_mag)
 {
@@ -414,7 +554,7 @@ void SetupTexLODStruct(Texture *tex, float _k, char _l, int max, int filter_min,
 static void SetupTexRegistersGIF(Texture *tex)
 {
 
-    qword_t *q = InitializeDMAObject();
+    qword_t *q = GetDMABasePointer();
 
     q = set_tex_address_mode_gif(q, tex->mode, g_Manager.gs_context);
     q = gif_setup_tex(q, tex, g_Manager.gs_context);
@@ -426,15 +566,12 @@ static void SetupTexRegistersGIF(Texture *tex)
     SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
-#define GS_SET_MIPTBP(TBA1, TBW1, TBA2, TBW2, TBA3, TBW3)                     \
-    (u64)((TBA1) & 0x00003FFF) << 0 | (u64)((TBW1) & 0x0000003F) << 14 |      \
-        (u64)((TBA2) & 0x00003FFF) << 20 | (u64)((TBW2) & 0x0000003F) << 34 | \
-        (u64)((TBA3) & 0x00003FFF) << 40 | (u64)((TBW3) & 0x0000003F) << 54
+
 
 static void SetupMipMapRegistersGIF(u32 *tex_addresses, u32 *widths)
 {
 
-    qword_t *q = InitializeDMAObject();
+    qword_t *q = GetDMABasePointer();
     DMATAG_CNT(q, 3, 0, 0, 0);
     q++;
     PACK_GIFTAG(q, GIF_SET_TAG(2, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
@@ -450,10 +587,13 @@ static void SetupMipMapRegistersGIF(u32 *tex_addresses, u32 *widths)
 
 void UploadTextureToVRAM(Texture *tex)
 {
-    qword_t *q = tex->upload;
-    q = CreateTexChain(q, tex);
-    ParseTextureUpload(tex->upload);
-    SetupTexRegistersGIF(tex);
+    qword_t *q = GetDMABasePointer();
+    qword_t *dcodetag = q++;
+    q = CreateTextureUploadChain(tex, q, false); 
+    u32 size = q - dcodetag -1;
+    CreateDCODEDmaTransferTag(dcodetag, DMA_CHANNEL_GIF, 0, 1, size);  
+    CreateDCODETag(q, DMA_DCODE_END);
+    SubmitDMABuffersAsPipeline(q, NULL);
     g_Manager.texManager->currIndex = tex->id;
 }
 
@@ -461,47 +601,16 @@ void UploadTextureViaManagerToVRAM(Texture *tex)
 {
     TextureManager *texManager = g_Manager.texManager;
 
-    if ((tex->id != texManager->currIndex && tex->type == PS_TEX_MEMORY))
+    if (tex->id != texManager->currIndex && tex->type == PS_TEX_MEMORY)
     {
-        qword_t *q = tex->upload;
-        q = CreateTexChain(q, tex);
-        ParseTextureUpload(tex->upload);
-
+        qword_t *q = GetDMABasePointer();
+        qword_t *dcodetag = q++;
+        q = CreateTextureUploadChain(tex, q, false); 
+        u32 size = q - dcodetag -1;
+        CreateDCODEDmaTransferTag(dcodetag, DMA_CHANNEL_GIF, 0, 1, size);  
+        CreateDCODETag(q, DMA_DCODE_END);
+        SubmitDMABuffersAsPipeline(q, NULL);
         texManager->currIndex = tex->id;
-
-        if (tex->mipLevels >= 1)
-        {
-            LinkedList *list = tex->mipMaps;
-            u32 currMap = 1;
-            u32 addrs[6], widths[6];
-            Texture *mipTex = tex;
-            Texture *prev = tex;
-            u32 lowestAddress = prev->texbuf.address;
-            while (tex->mipLevels >= currMap)
-            {
-                u32 newAddress;
-                if ((GRAPH_VRAM_MAX_WORDS < (newAddress = lowestAddress + graph_vram_size(prev->width,
-                                                                                          prev->height, prev->psm, GRAPH_ALIGN_BLOCK)) ||
-                     list == NULL))
-                {
-                    ERRORLOG("Too many mipmaps added to memory");
-                    break;
-                }
-
-                addrs[currMap - 1] = newAddress;
-                mipTex = (Texture *)list->data;
-                qword_t *mipQ = mipTex->upload;
-                widths[currMap - 1] = mipTex->texbuf.width;
-                mipQ = CreateTexChainMipLevels(mipQ, mipTex, addrs[currMap - 1], 0);
-                ParseTextureUpload(mipTex->upload);
-                prev = mipTex;
-                lowestAddress = addrs[currMap - 1];
-                list = list->next;
-                currMap++;
-            }
-            SetupMipMapRegistersGIF(addrs, widths);
-        }
-        SetupTexRegistersGIF(tex);
     }
     else
     {

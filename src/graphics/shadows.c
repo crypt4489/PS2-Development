@@ -18,7 +18,7 @@
 void DrawQuad(int height, int width, int xOffset, int yOffset, u8 blend, Texture *shadowTex)
 {
     UploadTextureViaManagerToVRAM(shadowTex);
-    qword_t *ret = InitializeDMAObject();
+    qword_t *ret = GetDMABasePointer();
 
     // u64 reglist = ((u64)DRAW_UV_REGLIST) << 8 | DRAW_UV_REGLIST;
 

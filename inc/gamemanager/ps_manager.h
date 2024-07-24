@@ -11,8 +11,7 @@ Texture* GetTexObjFromTexList(GameManager *manager, int index);
 int PollVU1DoneProcessing(GameManager *manager);
 void ClearManagerStruct(GameManager *manager);
 void SwapManagerDMABuffers();
-void UpdateCurrentTexNameInGS(GameManager *manager, const char *name);
-void EndFrame(u32 useVsync);
+void EndFrame(bool useVsync);
 void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize) ;
 
 inline void SetGlobalManagerCam(Camera *cam)

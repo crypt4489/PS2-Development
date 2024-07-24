@@ -7,7 +7,7 @@
 #include "system/ps_timer.h"
 void sendPacketSPR(void *data, u32 qwc)
 {
-	qword_t *q = InitializeDMAObject();
+	qword_t *q = GetDMABasePointer();
 	DMATAG_REF(q, qwc, (u32)data, 0, 0, 0);
 	dma_channel_send_chain(DMA_CHANNEL_toSPR, q, 1, 0, 1);
 }

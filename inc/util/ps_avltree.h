@@ -7,6 +7,7 @@ AVLTree *CreateAVLNode(void *data, int val);
 AVLTree *InsertAVLNode(AVLTree *tree, AVLTree *node);
 AVLTree *DeleteAVLNode(AVLTree *tree, int val);
 AVLTree *GetAVLNode(AVLTree *tree, int val);
+void CleanAVLTree(AVLTree *tree, bool freeData);
 
 
 #endif

@@ -18,6 +18,7 @@
 #include "system/ps_timer.h"
 #include "util/ps_linkedlist.h"
 #include "textures/ps_texturemanager.h"
+#include "graphics/ps_rendertarget.h"
 
 GameManager g_Manager;
 
@@ -43,8 +44,8 @@ void InitializeSystem(u32 useZBuffer, u32 width, u32 height, u32 psm)
 
 void CreateManagerRenderTargets(u32 useZBuffer, u32 psm)
 {
-    g_Manager.targetBack = AllocRenderTarget(1);
-    g_Manager.targetDisplay = AllocRenderTarget(0);
+    g_Manager.targetBack = AllocRenderTarget(true);
+    g_Manager.targetDisplay = AllocRenderTarget(false);
 
     if (g_Manager.targetBack == NULL || g_Manager.targetDisplay == NULL)
     {
@@ -53,9 +54,7 @@ void CreateManagerRenderTargets(u32 useZBuffer, u32 psm)
 
     g_Manager.targetBack->z->enable = useZBuffer;
 
-    InitGS(&g_Manager, g_Manager.targetBack->render, g_Manager.targetBack->z, 0, psm);
-
-    InitFramebuffer(g_Manager.targetDisplay->render, g_Manager.targetBack->render->width, g_Manager.targetBack->render->height, g_Manager.targetBack->render->psm);
+    InitGS(&g_Manager, g_Manager.targetBack->render, g_Manager.targetDisplay->render, g_Manager.targetBack->z, psm);
 
     g_Manager.targetDisplay->z = g_Manager.targetBack->z;
 
@@ -72,15 +71,13 @@ void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize
     g_Manager.ScreenWHalf = width >> 1;
     g_Manager.gs_context = 0;
 
-    g_Manager.textureInVram = (Texture *)malloc(sizeof(Texture));
-    g_Manager.textureInVram->width = 256;
-    g_Manager.textureInVram->height = 256;
-    g_Manager.textureInVram->psm = GS_PSM_32;
-    g_Manager.textureInVram->id = 0;
-
     g_Manager.texManager = CreateTextureManager();
 
-    g_Manager.vu1DoneProcessing = 1;
+    g_Manager.vramManager.vramSize = GRAPH_VRAM_MAX_WORDS;
+    g_Manager.vramManager.systemVRAMUsed = 0;
+    g_Manager.vramManager.userVRAMUsed = 0;
+
+    g_Manager.vu1DoneProcessing = true;
     g_Manager.enableDoubleBuffer = doubleBuffer;
     g_Manager.targetBack = NULL;
     g_Manager.targetDisplay = NULL;
@@ -100,29 +97,10 @@ void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, 
     CreateManagerStruct(width, height, doubleBuffer, bufferSize, programSize);
 
     CreateManagerRenderTargets(useZBuffer, psm);
-
-    SetupManagerTexture();
 }
 
-void UpdateCurrentTexNameInGS(GameManager *manager, const char *name)
-{
-    memcpy(manager->textureInVram->name, name, strnlen(name, MAX_CHAR_TEXTURE_NAME));
-}
 
-void SetupManagerTexture()
-{
-    CreateTexBuf(g_Manager.textureInVram, 256, GS_PSM_32);
-
-    CreateTexStructs(g_Manager.textureInVram, g_Manager.textureInVram->width, g_Manager.textureInVram->psm, TEXTURE_COMPONENTS_RGBA, TEXTURE_FUNCTION_MODULATE, 0);
-
-    g_Manager.textureInVram->clut.start = 0;
-    g_Manager.textureInVram->clut.load_method = CLUT_LOAD;
-    g_Manager.textureInVram->clut.psm = GS_PSM_32;
-    g_Manager.textureInVram->clut.storage_mode = CLUT_STORAGE_MODE1;
-    g_Manager.textureInVram->clut.address = g_Manager.textureInVram->texbuf.address + graph_vram_size(256, 256, GS_PSM_8, GRAPH_ALIGN_BLOCK );
-}
-
-void EndFrame(u32 useVsync)
+void EndFrame(bool useVsync)
 {
     static u32 frameCounter = 0;
     static u8 init = 0;
@@ -141,7 +119,7 @@ void EndFrame(u32 useVsync)
         if (g_Manager.currentTime > (g_Manager.lastTime + 1000.0f))
         {
             g_Manager.FPS = frameCounter;
-            DEBUGLOG("frames per second %d", g_Manager.FPS);
+            //DEBUGLOG("frames per second %d", g_Manager.FPS);
             g_Manager.lastTime = g_Manager.currentTime;
             frameCounter = 0;
         }
@@ -158,9 +136,9 @@ void EndFrame(u32 useVsync)
 int PollVU1DoneProcessing(GameManager *manager)
 {
     DisableIntc(5);
-    int cached = manager->vu1DoneProcessing;
+    bool cached = manager->vu1DoneProcessing;
     EnableIntc(5);
-    if (!(cached))
+    if (!cached)
     {
         return -1;
     }
@@ -169,8 +147,6 @@ int PollVU1DoneProcessing(GameManager *manager)
 
 void AddToManagerTexList(GameManager *manager, Texture *tex)
 {
-    tex->clut.address = manager->textureInVram->clut.address;
-    tex->texbuf.address = manager->textureInVram->texbuf.address;
     AddToTextureManager(manager->texManager, tex);
 }
 
@@ -179,8 +155,6 @@ void ClearManagerStruct(GameManager *manager)
 {
     if (manager->texManager != NULL)
         free(manager->texManager);
-    if (manager->textureInVram != NULL)
-        free(manager->textureInVram);
     if (manager->dmabuffers->dma_chains[0] != NULL)
         packet_free(manager->dmabuffers->dma_chains[0]);
     if (manager->dmabuffers->dma_chains[1] != NULL)
@@ -189,23 +163,6 @@ void ClearManagerStruct(GameManager *manager)
         free(manager->dmabuffers);
     if (manager->timer != NULL)
         TimerZeroDisable(g_Manager.timer);
-}
-
-Texture *GetTexObjFromTexList(GameManager *manager, int index)
-{
-    /*
-    LinkedList *iter = manager->texManager->list;
-    int curr = index;
-
-    while (curr > 0)
-    {
-        iter = iter->next;
-        curr--;
-    }
-
-    return (Texture *)iter->data;
-    */
-   return NULL;
 }
 
 void SwapManagerDMABuffers()

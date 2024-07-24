@@ -33,7 +33,7 @@ qword_t *CreateDMATag(qword_t *q, u32 code, u32 size, u32 w2, u32 w3, u32 spr, .
         addr = va_arg(tag_args, u32);
     }
 
-    q->dw[0] = DMATAG(size, 0, code, 0, addr, 0);
+    q->dw[0] = DMATAG(size, 0, code, 0, addr, spr);
     q->sw[2] = w2;
     q->sw[3] = w3;
     q++;
@@ -91,7 +91,7 @@ void ParsePipelineDMA(void *data, qword_t *pipelineData)
     }
 }
 
-qword_t *InitializeDMAObject()
+qword_t *GetDMABasePointer()
 {
     return g_Manager.dmabuffers->currPointer;
 }
@@ -146,7 +146,7 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, int tte)
     }
     else if (channel == DMA_CHANNEL_VIF1)
     {
-        g_Manager.vu1DoneProcessing = 0;
+        g_Manager.vu1DoneProcessing = false;
         dma_channel_wait(DMA_CHANNEL_VIF1, -1);
         FlushCache(0);
     }

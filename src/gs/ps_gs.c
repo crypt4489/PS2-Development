@@ -9,47 +9,37 @@
 #include "gamemanager/ps_manager.h"
 #include "dma/ps_dma.h"
 #include "system/ps_vif.h"
+#include "util/ps_linkedlist.h"
+#include "gs/ps_vrammanager.h"
 
 
-static int renderTargetVRAM = 0;
-
-void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int context, u32 psm)
+void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, zbuffer_t *z, u32 psm)
 {
-	frame->width = manager->ScreenWidth;
-	frame->height = manager->ScreenHeight;
-	frame->mask = 0;
-	frame->psm = psm;
-	frame->address = graph_vram_allocate(frame->width, frame->height, frame->psm, GRAPH_ALIGN_PAGE);
+	InitFramebuffer(frame1, manager->ScreenWidth, manager->ScreenHeight, psm, true);
 
-	if (z->enable == DRAW_ENABLE) {
-		// Enable the zbuffer.
-		z->mask = 0;
-		z->method = ZTEST_METHOD_GREATER_EQUAL;
-		z->zsm = GS_ZBUF_24;
-		z->address = graph_vram_allocate(frame->width, frame->height, z->zsm, GRAPH_ALIGN_PAGE);
-	} else {
-		z->mask = 0;
-		z->method = 0;
-		z->zsm = 0;
-		z->address = 0;
+	if (z->enable) {
+		InitZBuffer(z, manager->ScreenWidth, manager->ScreenHeight, GS_ZBUF_24, ZTEST_METHOD_GREATER_EQUAL, true);
 	}
 
+	if (frame2) {
+		InitFramebuffer(frame2, manager->ScreenWidth, manager->ScreenHeight, psm, true);
+	}
 	manager->bgkc.r = 0x80;
 	manager->bgkc.g = 0x70;
 	manager->bgkc.b = 0x05;
 	manager->bgkc.a = 0x00;
 	manager->bgkc.q = 0.0f;
 
-	SetGraph(manager, frame);
+	SetGraph(manager);
 }
 
-void SetGraph(GameManager *manager, framebuffer_t *frame)
+void SetGraph(GameManager *manager)
 {
 	// Set a default interlaced video mode with flicker filter.
 	graph_set_mode(GRAPH_MODE_INTERLACED, graph_get_region(), GRAPH_MODE_FIELD, GRAPH_ENABLE);
 
 	// Set the screen up
-	graph_set_screen(0, 0, frame->width, frame->height);
+	graph_set_screen(0, 0, manager->ScreenWidth, manager->ScreenHeight);
 
 	// Set black background
 	graph_set_bgcolor(manager->bgkc.r, manager->bgkc.g, manager->bgkc.b);
@@ -59,45 +49,32 @@ void SetGraph(GameManager *manager, framebuffer_t *frame)
 	graph_enable_output();
 }
 
-void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm)
+void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm, bool systemMemory)
 {
 	frame->width = width;
 	frame->height = height;
 	frame->mask = 0;
 	frame->psm = psm;
-	frame->address = graph_vram_allocate(frame->width, frame->height, frame->psm, GRAPH_ALIGN_PAGE);
+	frame->address = AllocateVRAM(&g_Manager.vramManager, width, height, psm, systemMemory);
 }
 
-void CreateTexBuf(Texture *texture, int width, int psm)
+void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method, bool systemMemory)
 {
-	// Allocate some vram for the texture buffer
-	texture->texbuf.width = width;
-	texture->texbuf.psm = psm;
-	texture->texbuf.address = graph_vram_allocate(texture->texbuf.width, texture->texbuf.width, texture->texbuf.psm, GRAPH_ALIGN_BLOCK);
-}
-
-void CreateClutBuf(clutbuffer_t *clut, int width, int psm)
-{
-	clut->start = 0;
-	clut->load_method = CLUT_LOAD;
-	clut->psm = psm;
-	clut->storage_mode = CLUT_STORAGE_MODE1;
-	clut->address = graph_vram_allocate(width, width, psm, GRAPH_ALIGN_BLOCK);
+	z->enable = DRAW_ENABLE;
+	z->mask = 0;
+	z->method = method;
+	z->zsm = zsm;
+	z->address = AllocateVRAM(&g_Manager.vramManager, width, height, zsm, systemMemory);
 }
 
 void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm)
 {
-
-	packet_t *packet = packet_init(50, PACKET_NORMAL);
-
-	qword_t *q = packet->data;
+	qword_t *q = GetDMABasePointer();
 
 	q = draw_texture_transfer(q, pixels, width, height, psm, frame->address, frame->width);
 	q = draw_texture_flush(q);
 
-	dma_channel_send_chain(DMA_CHANNEL_GIF, packet->data, q - packet->data, 0, 0);
-
-	packet_free(packet);
+	SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
 qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context)
@@ -131,26 +108,17 @@ qword_t *AddSizeToGSSetTag(qword_t *q, u32 count)
 void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish)
 {
 
-	qword_t *q = InitializeDMAObject();
+	qword_t *q = GetDMABasePointer();
 
 	qword_t *dmatag = q;
 
 	q = CreateDMATag(q, DMA_CNT, 0, 0, 0, 0);
 
-	// This will setup a default drawing environment.
-
 	q = draw_setup_environment(q, context, frame, z);
 
-	// PACK_GIFTAG(q,GS_SET_COLCLAMP(GS_DISABLE),GS_REG_COLCLAMP);
-	// q++;
-
-	// Now reset the primitive origin to 2048-width/2,2048-height/2.
 	q = draw_primitive_xyoffset(q, context, (2048 - hwidth), (2048 - hheight));
 
-	// Finish setting up the environment.
 	q = draw_finish(q);
-
-	// Now send the packet, no need to wait since it's the first.
 
 	AddSizeToDMATag(dmatag, q - dmatag - 1);
 
@@ -278,32 +246,27 @@ void CreateClutStructs(Texture *tex, int psm)
 	tex->clut.load_method = CLUT_LOAD;
 	tex->clut.psm = psm;
 	tex->clut.storage_mode = CLUT_STORAGE_MODE1;
-	tex->clut.address = g_Manager.textureInVram->clut.address;
+	//tex->clut.address = g_Manager.textureInVram->clut.address;
 }
 
 void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter)
 {
 
-	if (texfilter == 0)
-	{
-		tex->lod.mag_filter = LOD_MAG_NEAREST;
-		tex->lod.min_filter = LOD_MIN_NEAREST;
-
-		tex->lod.l = 0;
-		tex->lod.k = 0;
-		tex->lod.calculation = LOD_USE_K;
-		tex->lod.max_level = 0;
-	}
-	else
+	if (texfilter)
 	{
 		tex->lod.mag_filter = LOD_MAG_LINEAR;
 		tex->lod.min_filter = LOD_MIN_LINEAR;
-
-		tex->lod.l = 0;
-		tex->lod.k = 0.0f;
-		tex->lod.calculation = LOD_USE_K;
-		tex->lod.max_level = 0;
 	}
+	else
+	{
+		tex->lod.mag_filter = LOD_MAG_NEAREST;
+		tex->lod.min_filter = LOD_MIN_NEAREST;	
+	}
+
+	tex->lod.l = 0;
+	tex->lod.k = 0;
+	tex->lod.calculation = LOD_USE_K;
+	tex->lod.max_level = 0;
 
 	tex->texbuf.info.width = draw_log2(width);
 	tex->texbuf.info.height = draw_log2(width);
@@ -313,95 +276,69 @@ void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 func
 	tex->texbuf.width = width;
 	tex->texbuf.psm = psm;
 
-	tex->texbuf.address = g_Manager.textureInVram->texbuf.address;
+	//tex->texbuf.address = g_Manager.textureInVram->texbuf.address;
 }
 
-void SetupRenderTarget(RenderTarget *target, int context, int wait)
+
+qword_t *SetTextureWrap(qword_t *b, u16 mode)
 {
-	int hHeight, hWidth;
-	hHeight = target->render->height / 2.0;
-	hWidth = target->render->width / 2.0;
+    texwrap_t wrap;
+    wrap.horizontal = WRAP_CLAMP;
+    wrap.vertical = WRAP_CLAMP;
 
-	while (PollVU1DoneProcessing(&g_Manager) < 0);
+    if (mode == TEX_ADDRESS_WRAP)
+    {
+        wrap.horizontal = WRAP_REPEAT;
+        wrap.vertical = WRAP_REPEAT;
+    }
 
-	InitDrawingEnvironment(target->render, target->z, hHeight, hWidth, context, wait);
+    wrap.minu = wrap.maxu = 0;
+    wrap.minv = wrap.maxv = 0;
+
+    PACK_GIFTAG(b, GS_SET_CLAMP(wrap.horizontal, wrap.vertical, wrap.minu, wrap.maxu, wrap.minv, wrap.maxv), GS_REG_CLAMP + g_Manager.gs_context);
+    b++;
+
+    return b;
 }
 
-RenderTarget *AllocRenderTarget(u32 useZBuffer)
+qword_t *SetTextureRegisters(qword_t *q, lod_t *lod, texbuffer_t *texbuf, clutbuffer_t *clut, 
+							u32 texAddress, u32 clutAddress)
 {
-	RenderTarget *target = (RenderTarget *)malloc(sizeof(RenderTarget));
-	target->render = (framebuffer_t *)malloc(sizeof(framebuffer_t));
-	if (useZBuffer) {
-		target->z = (zbuffer_t *)malloc(sizeof(zbuffer_t));
-	}
-	return target;
-}
+    int context = g_Manager.gs_context;
+    q->dw[0] = GS_SET_TEX1(lod->calculation, 
+						   lod->max_level, 
+						   lod->mag_filter, 
+						   lod->min_filter, 
+						   lod->mipmap_select, 
+						   lod->l, 
+						   (int)(lod->k * 16.0f));
 
-void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method)
-{
-	z->enable = DRAW_ENABLE;
-	z->mask = 0;
-	z->method = method;
-	z->zsm = zsm;
-	z->address = graph_vram_allocate(width, height, z->zsm, GRAPH_ALIGN_PAGE);
-}
+    q->dw[1] = GS_REG_TEX1 + context;
+    q++;
 
-RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, int psm)
-{
-	RenderTarget *target = AllocRenderTarget(1);
-	target->render->width = width;
-	target->render->height = height;
+    q->dw[0] = GS_SET_TEX0(
+        texAddress >> 6,
+        texbuf->width >> 6,
+        texbuf->psm,
+        texbuf->info.width,
+        texbuf->info.height,
+        texbuf->info.components,
+        texbuf->info.function,
+        clutAddress >> 6,
+        clut->psm,
+        clut->storage_mode,
+        clut->start,
+        clut->load_method);
 
-	if (renderTargetVRAM == 0)
-	{
-		target->render->address = g_Manager.textureInVram->texbuf.address;
-		renderTargetVRAM = g_Manager.textureInVram->texbuf.address;
-	}
-	else
-	{
-		target->render->address = renderTargetVRAM;
-	}
-
-	target->render->psm = psm;
-	target->render->mask = 0;
-
-	int zAddress = target->render->address + graph_vram_size(width, height, psm, GRAPH_ALIGN_PAGE);
-
-	target->z->address = zAddress;
-	target->z->enable = DRAW_ENABLE;
-	target->z->method = zmethod;
-	target->z->zsm = zsm;
-	target->z->mask = 0;
-
-	renderTargetVRAM = zAddress + graph_vram_size(width, height, zsm, GRAPH_ALIGN_PAGE);
-
-	return target;
-}
-
-void DestroyRenderTarget(RenderTarget *target)
-{
-	free(target->render);
-	free(target->z);
-	free(target);
-}
-
-Texture *CreateTextureFromRenderTarget(RenderTarget *target, u32 filter, u32 function)
-{
-	Texture *tex = (Texture *)malloc(sizeof(Texture));
-	tex->psm = GS_PSM_32;
-	tex->width = target->render->width;
-	tex->height = target->render->height;
-	tex->texbuf.address = target->render->address;
-	tex->mode = TEX_ADDRESS_WRAP;
-	tex->type = PS_TEX_VRAM;
-	CreateTexStructs(tex, tex->width, tex->psm, TEXTURE_COMPONENTS_RGBA, function, filter);
-	return tex;
+    q->dw[1] = GS_REG_TEX0 + context;
+    q++;
+    return q;
 }
 
 void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a)
 {
 
-	qword_t *q = InitializeDMAObject();
+	qword_t *q = GetDMABasePointer();
 
 	qword_t *dmatag = q;
 

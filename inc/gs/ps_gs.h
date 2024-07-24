@@ -11,12 +11,10 @@
 
 #define CreateGSScreenCoordinates(input, operand)   ((2048 operand input) << 4)
 
-
-void InitGS(GameManager *manager, framebuffer_t *frame, zbuffer_t *z, int context, u32 psm);
-void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm);
+void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, zbuffer_t *z, u32 psm);
+void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm, bool systemMemory);
 void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm);
-void SetGraph(GameManager *manager, framebuffer_t *frame);
-void CreateTexBuf(Texture *texture, int width, int psm);
+void SetGraph(GameManager *manager);
 
 qword_t* CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 regaddr);
 qword_t *AddSizeToGSSetTag(qword_t *q, u32 count);
@@ -26,16 +24,13 @@ void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int
 void CopyVRAMToVRAM(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm);
 void CopyVRAMToMemory(int address, int width, int height, int x, int y, int psm, u32* buffer);
 
-void CreateClutBuf(clutbuffer_t *clut, int width, int psm);
-void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method);
+void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method, bool systemMemory);
 void CreateClutStructs(Texture *tex, int psm);
 void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter);
-void SetupRenderTarget(RenderTarget *target, int context, int wait);
-RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, int psm);
-Texture *CreateTextureFromRenderTarget(RenderTarget *target, u32 filter, u32 function);
-RenderTarget *AllocRenderTarget(u32 useZBuffer);
-void DestroyRenderTarget(RenderTarget *target);
 
+qword_t *SetTextureWrap(qword_t *b, u16 mode);
+qword_t *SetTextureRegisters(qword_t *q, lod_t *lod, texbuffer_t *texbuf, clutbuffer_t *clut, 
+							u32 texAddress, u32 clutAddress);
 
 void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a);
 

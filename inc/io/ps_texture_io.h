@@ -31,7 +31,7 @@ typedef struct __attribute__((packed)) BitmapInfoHeader
 
 typedef struct create_tex_params_t
 {
-	char* name;
+	const char* name;
 	u32 readType;
 	u32 alpha;
 	u32 useAlpha;

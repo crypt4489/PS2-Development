@@ -19,9 +19,11 @@ u32 TextureManagerHashFunction(const char* key, int size)
     return hashval;
 }
 
-void ClearManagerTexList(TextureManager *texManager)
+void ClearManagerTexList(TextureManager *manager)
 {
-    texManager->count = 0;
+    ClearHashMap(manager->textureMap->trees, true, manager->textureMap->cap);
+    manager->count = 0;
+    manager->currIndex = -1;
 }
 
 Texture *GetTexByName(TextureManager *manager, const char *name)
@@ -50,11 +52,14 @@ void AddToTextureManager(TextureManager *manager, Texture *tex)
     InsertHashMap(manager->textureMap, tex->name, nameLength, tex);
 }
 
-u32 GetTextureIDByName(TextureManager *texManager, const char *name)
+u32 GetTextureIDByName(TextureManager *manager, const char *name)
 {
-    Texture *tex = GetTexByName(texManager, name);
+    Texture *tex = GetTexByName(manager, name);
     if (tex == NULL)
+    {
         ERRORLOG("Missed Texture for Texture ID by Name");
+        return 0;
+    }
     return tex->id;
 }
 
@@ -63,6 +68,8 @@ Texture *GetTextureByID(TextureManager *manager, u32 id)
     HashEntry *entry = GetFromHashMapByCode(manager->textureMap, id);
     if (entry)
         return entry->data;
+    
+    ERRORLOG("Missed Texture for Texture By ID");
     return NULL;
 }
 

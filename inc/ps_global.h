@@ -601,6 +601,7 @@ typedef struct RenderTarget
 {
     framebuffer_t *render;
     zbuffer_t *z;
+    u32 memInVRAM;
 } RenderTarget;
 
 typedef struct avltree_t
@@ -651,16 +652,25 @@ struct timer_struct_t
     s32 id;
 };
 
+typedef struct vram_manager_t
+{
+    int vramSize;
+    int systemVRAMUsed;
+    int userVRAMUsed;
+    int currentTextureBasePtr;
+    LinkedList *renderTargets;
+} VRAMManager;
+
 typedef struct
 {
     RenderTarget *targetBack;
     RenderTarget *targetDisplay;
     TextureManager *texManager;
     VU1Manager *vu1Manager;
-    Texture *textureInVram;
     Camera *mainCam;
     DMABuffers *dmabuffers;
-    u32 vu1DoneProcessing;
+    VRAMManager vramManager;
+    bool vu1DoneProcessing;
     u16 gs_context;
     u16 enableDoubleBuffer;
     Color bgkc;

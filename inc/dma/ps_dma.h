@@ -11,7 +11,7 @@ qword_t *ResetBufferPointer(packet_t *pack);
 void DestroyDMABuffers(DMABuffers *buff);
 void SubmitToDMAController(qword_t* q, int channel, int type, int qwc, int tte);
 void SubmitDMABuffersToController(qword_t *q, u32 channel, u32 type, u32 tte);
-qword_t *InitializeDMAObject();
+qword_t *GetDMABasePointer();
 void ParsePipelineDMA(void *data, qword_t *pipelineData);
 void SubmitDMABuffersAsPipeline(qword_t *q, void* data);
 void InitializeDMAChannels();

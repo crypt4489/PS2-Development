@@ -5,17 +5,28 @@
 
 HashMap* CreateHashMap(int capacity, HashFunction func)
 {
+    if (capacity <= 0 || func == NULL) return NULL;
+
     HashMap *mapContainer = (HashMap*)malloc(sizeof(HashMap));
+    if (!mapContainer) return NULL;
+
     mapContainer->cap = capacity;
     mapContainer->func = func;
     mapContainer->trees = (AVLTree*)calloc(capacity, sizeof(AVLTree));
+    if (!mapContainer->trees)
+    {
+        free(mapContainer);
+        return NULL;
+    }
+
     return mapContainer;
 }
 
 
-static HashEntry *CreateHashEntry(const char *fKey, int size, void *fData)
+static HashEntry *CreateHashEntry(const void *fKey, int size, void *fData)
 {
     HashEntry *entry = (HashEntry*)malloc(sizeof(HashEntry));
+    if (!entry) return NULL;
     entry->key = fKey;
     entry->data = fData;
     entry->sizeKey = size;
@@ -29,13 +40,11 @@ static int DescendHashIndex(AVLTree *root, HashEntry *entry, u32 code)
         return 0;
     
     HashEntry *current = (HashEntry*)root->data;
-    if (current->sizeKey == entry->sizeKey)
+    if (current->sizeKey == entry->sizeKey && !memcmp(current->key, entry->key, current->sizeKey))
     {
-        if (!memcmp(current->key, entry->key, current->sizeKey))
-        {
-            return -1;
-        }
+        return -1;
     }
+    
 
     AVLTree *next = root->left;
 
@@ -49,19 +58,21 @@ static int DescendHashIndex(AVLTree *root, HashEntry *entry, u32 code)
 
 void InsertHashMap(HashMap *hashmap, const void *key, int lenKey, void *data)
 {
+    if (!hashmap || !key || lenKey <= 0 || !data) return;
     u32 hashCode = hashmap->func(key, lenKey);
     int index = hashCode % hashmap->cap;
 
     AVLTree *tree = &hashmap->trees[index];
     HashEntry *entry = CreateHashEntry(key, lenKey, data);
+    if (!entry) return;
     if (!tree->height)
     {
-        
         tree->height = 1;
         tree->node = hashCode;
         tree->data = entry;
         return;
     } 
+
     int ret = DescendHashIndex(tree, entry, hashCode);
     if (ret < 0)
     {
@@ -74,6 +85,24 @@ void InsertHashMap(HashMap *hashmap, const void *key, int lenKey, void *data)
     return;
 }
 
+static HashEntry *FindHashEntry(AVLTree *tree, const void *key, int lenKey, int hashCode)
+{
+    while(tree)
+    {
+        int code = tree->node;
+        HashEntry *found = tree->data;
+        
+        if (hashCode == code && (!key || (lenKey == found->sizeKey && !memcmp(found->key, key, lenKey))))
+                return found;           
+    
+        if (hashCode > code)
+            tree = tree->right;
+        else 
+            tree = tree->left;  
+    }
+    return NULL;
+}
+
 HashEntry* GetFromHashMap(HashMap *hashmap, const void *key, int lenKey)
 {
     u32 hashCode = hashmap->func(key, lenKey);
@@ -81,52 +110,53 @@ HashEntry* GetFromHashMap(HashMap *hashmap, const void *key, int lenKey)
     int index = hashCode % hashmap->cap;
 
     AVLTree *tree = &hashmap->trees[index];
-    while(tree)
-    {
-        int code = tree->node;
-        
-        if (hashCode == code)
-        {   
-            HashEntry *found = tree->data;
-            if (!memcmp(found->key, key, lenKey))
-            {
-                return found;
-            }
-        }
-    
-        if (hashCode > code)
-        {
-            tree = tree->right;
-        } else {
-            tree = tree->left;
-        }
-    }
 
-    return NULL;
+    return FindHashEntry(tree, key, lenKey, hashCode);
 }
 
 HashEntry* GetFromHashMapByCode(HashMap *hashmap, u32 hashCode)
 {
-    
     int index = hashCode % hashmap->cap;
 
     AVLTree *tree = &hashmap->trees[index];
-    while(tree)
-    {
-        int code = tree->node;
-        
-        if (hashCode == code)
-        {   
-            return tree->data;
-        }
     
-        if (hashCode > code)
+    return FindHashEntry(tree, NULL, 0, hashCode);
+
+}
+
+static void CleanHashEntries(AVLTree *tree, bool root, bool freeData)
+{
+    if (tree && tree->data)
+    {
+        if (freeData)
         {
-            tree = tree->right;
-        } else {
-            tree = tree->left;
+            HashEntry *entry = (HashEntry*)tree->data;
+            free(entry->data);
         }
+       
+        free(tree->data);
+        CleanHashEntries(tree->left, false, freeData);
+        CleanHashEntries(tree->right, false, freeData);
+        if (!root)
+            free(tree);
+    }
+}
+
+void ClearHashMap(AVLTree *trees, bool freeData, int cap)
+{
+    if (!trees) return;
+    for (int i = 0; i < cap; i++)
+    {
+        CleanHashEntries(&trees[i], true, freeData);
     }
 
-    return NULL;
+}
+
+void CleanHashMap(HashMap *hashmap, bool freeData)
+{
+    if (!hashmap) return;
+    ClearHashMap(hashmap->trees, freeData, hashmap->cap);
+
+    free(hashmap->trees);
+    free(hashmap);
 }
