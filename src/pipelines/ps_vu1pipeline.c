@@ -67,7 +67,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             // INFOLOG("texhere! %d", id);
             Texture *tex = GetTextureByID(g_Manager.texManager, id);
             q++;
-            if (tex != NULL)
+            if (tex)
             {
                 UploadTextureViaManagerToVRAM(tex);
             }
@@ -84,7 +84,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             // INFOLOG("texhere! %d", id);
             Texture *tex = GetTextureByID(g_Manager.texManager, id);
             q++;
-            if (tex != NULL)
+            if (tex)
             {
                 UploadTextureViaManagerToVRAM(tex);
             }
@@ -222,12 +222,13 @@ void AddVU1Pipeline(GameObject *obj, VU1Pipeline *pipeline)
 {
     VU1Pipeline *iter = obj->pipelines;
 
-    if (iter == NULL)
+    if (!iter)
     {
         obj->pipelines = pipeline;
         return;
     }
-    while (iter->next != NULL)
+
+    while (iter->next)
     {
         iter = iter->next;
     }

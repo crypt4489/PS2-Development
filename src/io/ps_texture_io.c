@@ -57,7 +57,7 @@ static inline void CopyColorMap(u8 *colormap, u8 *copyTo, u32 size, u32 clutStri
     }
 }
 
-void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char alpha)
+void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
 {
     BitmapFileHeader bmfh;
     BitmapInfoHeader bmih;
@@ -159,7 +159,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char 
     }
 }
 
-void LoadPng(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal)
+void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 {
     u8 colormap[1024];
     png_image image;
@@ -267,7 +267,7 @@ void CreateTextureFromFile(void *object, void *arg, u8 *buffer, u32 bufferLen)
     }
 }
 
-Texture *ReadTexFile(const char *fileName, char *nameOfTex, u32 readType, u8 alpha, u8 useAlpha)
+Texture *ReadTexFile(const char *fileName, char *nameOfTex, u32 readType, u8 alpha, bool useAlpha)
 {
     u32 size;
 

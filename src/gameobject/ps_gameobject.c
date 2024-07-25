@@ -64,7 +64,6 @@ MeshBuffers *CreateMaterial(MeshBuffers *buff, u32 start, u32 end, u32 id)
 
 LinkedList *AddMaterial(LinkedList *list, Material *mat)
 {
-
   LinkedList *node = CreateLinkedListItem(mat);
   list = AddToLinkedList(list, node);
   return list;
@@ -75,57 +74,57 @@ void CleanGameObject(GameObject *obj)
   // free(obj->pipeline_dma);
   VU1Pipeline *pipes = obj->pipelines;
   VU1Pipeline *freepipe;
-  if (obj != NULL)
+  if (obj)
   {
 
-    while (pipes != NULL)
+    while (pipes)
     {
       freepipe = pipes;
       pipes = pipes->next;
       DeletePipeline(freepipe);
     }
 
-    if (obj->vboContainer != NULL)
+    if (obj->vboContainer)
     {
       DestroyVBO(obj->vboContainer);
     }
 
-    if (obj->vertexBuffer.indices != NULL)
+    if (obj->vertexBuffer.indices)
     {
       free(obj->vertexBuffer.indices);
     }
     for (int i = 0; i < 2; i++)
     {
-      if  (obj->vertexBuffer.meshData[i] != NULL)
+      if  (obj->vertexBuffer.meshData[i])
       {
         continue;
       }
-      if (obj->vertexBuffer.meshData[i]->vertices != NULL)
+      if (obj->vertexBuffer.meshData[i]->vertices)
       {
         free(obj->vertexBuffer.meshData[i]->vertices);
       }
 
-      if (obj->vertexBuffer.meshData[i]->normals != NULL)
+      if (obj->vertexBuffer.meshData[i]->normals)
       {
         free(obj->vertexBuffer.meshData[i]->normals);
       }
 
-      if (obj->vertexBuffer.meshData[i]->texCoords != NULL)
+      if (obj->vertexBuffer.meshData[i]->texCoords)
       {
         free(obj->vertexBuffer.meshData[i]->texCoords);
       }
 
-      if (obj->vertexBuffer.meshData[i]->bones != NULL)
+      if (obj->vertexBuffer.meshData[i]->bones)
       {
         free(obj->vertexBuffer.meshData[i]->bones);
       }
 
-      if (obj->vertexBuffer.meshData[i]->weights != NULL)
+      if (obj->vertexBuffer.meshData[i]->weights)
       {
         free(obj->vertexBuffer.meshData[i]->weights);
       }
 
-      if (obj->vertexBuffer.meshData[i]->colors != NULL)
+      if (obj->vertexBuffer.meshData[i]->colors)
       {
         free(obj->vertexBuffer.meshData[i]->colors);
       }

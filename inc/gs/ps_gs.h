@@ -20,13 +20,13 @@ qword_t* CreateGSSetTag(qword_t *q, u32 count, u32 eop, u32 type, u32 nreg, u32 
 qword_t *AddSizeToGSSetTag(qword_t *q, u32 count);
 qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context);
 qword_t *SetZBufferMask(qword_t *q, zbuffer_t *z, u32 mask, u32 context);
-void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish);
+void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context);
 void CopyVRAMToVRAM(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm);
 void CopyVRAMToMemory(int address, int width, int height, int x, int y, int psm, u32* buffer);
 
 void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method, bool systemMemory);
 void CreateClutStructs(Texture *tex, int psm);
-void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter);
+void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, bool texfilter);
 
 qword_t *SetTextureWrap(qword_t *b, u16 mode);
 qword_t *SetTextureRegisters(qword_t *q, lod_t *lod, texbuffer_t *texbuf, clutbuffer_t *clut, 
@@ -42,4 +42,4 @@ qword_t *SetupZTestGS(qword_t* q, int z_test_method, int z_test_enable, char alp
 qword_t* SetupRGBAQGS(qword_t *b, Color color);
 qword_t* SetupAlphaGS(qword_t *q, blend_t *blend, int context);
 #endif
-//
+

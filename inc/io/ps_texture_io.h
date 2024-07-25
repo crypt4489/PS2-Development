@@ -34,15 +34,15 @@ typedef struct create_tex_params_t
 	const char* name;
 	u32 readType;
 	u32 alpha;
-	u32 useAlpha;
+	bool useAlpha;
 } CreateTextureParams;
 
-void LoadBitmap(u8 *buffer, Texture *tex, unsigned char useAlpha, unsigned char alpha);
+void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, u8 alpha);
 
-void LoadPng(u8 *data, Texture *tex, u32 size, u8 useAlpha, u8 alphaVal);
+void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal);
 
 void CreateTextureFromFile(void* object, void* arg, u8 *buffer, u32 bufferLen);
 
-Texture *ReadTexFile(const char *fileName, char *name, u32 readType, u8 alpha, u8 useAlpha);
+Texture *ReadTexFile(const char *fileName, char *name, u32 readType, u8 alpha, bool useAlpha);
 
 #endif

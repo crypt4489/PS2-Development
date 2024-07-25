@@ -343,7 +343,7 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
 
     CreatePipelineSizes(pipeCode, &cbsNums, &headerSize); //
     totalHeader = headerSize;
-    if (obj->vertexBuffer.meshAnimationData != NULL && ((drawCode & DRAW_SKINNED) != 0))
+    if (obj->vertexBuffer.meshAnimationData && ((drawCode & DRAW_SKINNED) != 0))
     {
         u32 boneCount = obj->vertexBuffer.meshAnimationData->jointsCount * 3;
         totalHeader += boneCount;
@@ -459,7 +459,7 @@ void CreateGraphicsPipeline2(GameObject *obj, const char *name)
 
     CreatePipelineSizes(pipeCode, &cbsNums, &headerSize); //
     totalHeader = headerSize;
-    if (obj->vertexBuffer.meshAnimationData != NULL && ((drawCode & DRAW_SKINNED) != 0))
+    if (obj->vertexBuffer.meshAnimationData && ((drawCode & DRAW_SKINNED) != 0))
     {
         u32 boneCount = obj->vertexBuffer.meshAnimationData->jointsCount * 3;
         totalHeader += boneCount;
@@ -851,7 +851,7 @@ void CreateAlphaMapPipeline(GameObject *obj, const char *name)
     CreatePipelineSizes(pipeCode, &cbsNums, &headerSize); //
     cbsNums += 4;
     totalHeader = headerSize;
-    if (obj->vertexBuffer.meshAnimationData != NULL && ((drawCode & DRAW_SKINNED) != 0))
+    if (obj->vertexBuffer.meshAnimationData && ((drawCode & DRAW_SKINNED) != 0))
     {
         u32 boneCount = obj->vertexBuffer.meshAnimationData->jointsCount * 3;
         totalHeader += boneCount;

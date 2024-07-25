@@ -11,7 +11,7 @@ u32 GetProgramAddress(int index);
 u32 SizeOfProgramInstructions(u32 *codeStart, u32 *codeEnd);
 u32 SizeOfProgramPacket(u32 *codeStart, u32 *codeEnd);
 u32 GetCurrBasePointer();
-void ReadFromVU(volatile u32* start, int printOutSize, u32 usefloatornot);
+void ReadFromVU(volatile u32* start, int printOutSize, bool usefloatornot);
 void SetupVU1INTEHandler();
 
 /* VU1Manager Functions */

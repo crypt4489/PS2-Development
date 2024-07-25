@@ -150,7 +150,7 @@ static void GSSetTagOpen()
     }
 }
 
-void DepthTest(int enable, int method)
+void DepthTest(bool enable, int method)
 {
     OpenDMATag();
     GSSetTagOpen();
@@ -168,7 +168,7 @@ void DepthTest(int enable, int method)
 
 }
 
-void DestinationAlphaTest(int enable, int method)
+void DestinationAlphaTest(bool enable, int method)
 {
 
     OpenDMATag();
@@ -234,7 +234,7 @@ void FrameBufferMask(int red, int green, int blue, int alpha)
     sg_DrawBufferPtr = SetFrameBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->render, mask, g_Manager.gs_context);
 }
 
-void DepthBufferMask(int enable)
+void DepthBufferMask(bool enable)
 {
     OpenDMATag();
     GSSetTagOpen();

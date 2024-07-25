@@ -15,5 +15,5 @@ void SwapManagerDrawBuffers()
     g_Manager.targetBack = g_Manager.targetDisplay;
     g_Manager.targetDisplay = tempTarget;
 
-    g_Manager.gs_context = (g_Manager.gs_context) ? 0 : 1;
+    g_Manager.gs_context = g_Manager.gs_context ^ 0x01;
 }

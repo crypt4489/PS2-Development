@@ -35,7 +35,7 @@ LinkedList *CleanWorldLightsList(RenderWorld *world)
 {
     LinkedList *iter = world->lights;
 
-    while (iter != NULL)
+    while (iter)
     {
         LinkedList *clean = iter;
         iter = iter->next;
@@ -57,7 +57,7 @@ LinkedList *CleanWorldObjList(RenderWorld *world)
 {
     LinkedList *iter = world->objList;
 
-    while (iter != NULL)
+    while (iter)
     {
         LinkedList *clean = iter;
         iter = iter->next;
@@ -100,7 +100,7 @@ RenderWorld *RemoveObjectFromRenderWorld(RenderWorld *world, GameObject *obj)
 {
     LinkedList *iter = world->objList;
     GameObject *comp = (GameObject *)iter->data;
-    while (comp != obj && iter != NULL)
+    while (comp != obj && iter)
     {
         iter = iter->next;
         comp = (GameObject *)iter->data;
@@ -123,16 +123,16 @@ void DrawWorld(RenderWorld *world)
 
     g_DrawWorld = world;
 
-    while (node != NULL)
+    while (node)
     {
 
         GameObject *obj = (GameObject *)node->data;
-        if (obj->interpolator != NULL)
+        if (obj->interpolator)
         {
             ExecuteMorphTargetCBFuncs(obj->interpolator);
         }
 
-        if (obj->update_object != NULL)
+        if (obj->update_object)
         {
             obj->update_object(obj);
         }

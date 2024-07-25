@@ -63,7 +63,7 @@ void LoadSample(unsigned char *wav, int size);
 
 int WaitAudio(int buflen);
 
-u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, u32 loopFlag);
+u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, bool loopFlag);
 
 s16 *Convert16PCMToShortSamples(u8 *buffer, u32 size);
 

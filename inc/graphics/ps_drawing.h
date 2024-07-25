@@ -11,9 +11,9 @@ void BeginCommandSet(qword_t *drawBuffer);
 qword_t* EndCommand();
 
 
-void DepthTest(int enable, int method);
+void DepthTest(bool enable, int method);
 
-void DestinationAlphaTest(int enable, int method);
+void DestinationAlphaTest(bool enable, int method);
 
 void SourceAlphaTest(int framebuffer, int method, int reference);
 
@@ -25,7 +25,7 @@ void VertexType(int vertextype);
 
 void FrameBufferMask(int red, int green, int blue, int alpha);
 
-void DepthBufferMask(int enable);
+void DepthBufferMask(bool enable);
 
 void BlendingEquation(blend_t *blend);
 

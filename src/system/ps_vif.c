@@ -69,7 +69,7 @@ u32 UploadFlushTag(u32 inte)
     return VIF_CODE(0, 0, VIF_CMD_FLUSH, inte);
 }
 
-qword_t *add_unpack_data(qword_t *q, u32 dest_address, void *data, u32 qwSize, u8 use_top, u32 vif_pack)
+qword_t *add_unpack_data(qword_t *q, u32 dest_address, void *data, u32 qwSize, bool use_top, u32 vif_pack)
 {
     if (qwSize > 256)
     {
@@ -84,7 +84,7 @@ qword_t *add_unpack_data(qword_t *q, u32 dest_address, void *data, u32 qwSize, u
 }
 
 
-qword_t *ReadUnpackData(qword_t *q, u32 dest_address, u32 qwSize, u8 use_top, u32 vif_pack)
+qword_t *ReadUnpackData(qword_t *q, u32 dest_address, u32 qwSize, bool use_top, u32 vif_pack)
 {
     u32 pack_size = qwSize;
     if (qwSize > 256)
@@ -121,65 +121,7 @@ qword_t *VIFSetupScaleVector(qword_t *b)
     return q;
 }
 
-qword_t *set_tex_address_mode(qword_t *q, u32 mode, u32 context)
-{
-    qword_t *b = q;
-    DMATAG_CNT(b, 3, 0, 0, 0);
-    b++;
 
-    b->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    b->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    b->sw[2] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    b->sw[3] = VIF_CODE(2, 0, VIF_CMD_DIRECT, 0);
-    b++;
-
-    PACK_GIFTAG(b, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-    b++;
-
-    texwrap_t wrap;
-    wrap.horizontal = WRAP_CLAMP;
-    wrap.vertical = WRAP_CLAMP;
-    wrap.minu = wrap.maxu = 0;
-    wrap.minv = wrap.maxv = 0;
-
-    if (mode == TEX_ADDRESS_WRAP)
-    {
-        wrap.horizontal = WRAP_REPEAT;
-        wrap.vertical = WRAP_REPEAT;
-    }
-
-    PACK_GIFTAG(b, GS_SET_CLAMP(wrap.horizontal, wrap.vertical, wrap.minu, wrap.maxu, wrap.minv, wrap.maxv), GS_REG_CLAMP + context);
-
-    b++;
-
-    return b;
-}
-
-qword_t *set_alpha_registers(qword_t *q, blend_t *blend, int context)
-{
-    qword_t *b = q;
-    DMATAG_CNT(b, 4, 0, 0, 0);
-    b++;
-
-    b->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    b->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    b->sw[2] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    b->sw[3] = VIF_CODE(3, 0, VIF_CMD_DIRECT, 0);
-    b++;
-
-    PACK_GIFTAG(b, GIF_SET_TAG(2, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-    b++;
-
-    PACK_GIFTAG(b, GS_SET_ALPHA(blend->color1, blend->color2, blend->alpha, blend->color3, blend->fixed_alpha), (context == 0) ? GS_REG_ALPHA : GS_REG_ALPHA_2);
-    b++;
-
-    PACK_GIFTAG(b, GS_SET_PABE(DRAW_ENABLE), GS_REG_PABE);
-    b++;
-
-    /* PACK_GIFTAG(b,GS_SET_COLCLAMP(GS_DISABLE),GS_REG_COLCLAMP);
-     b++; */
-    return b;
-}
 
 #define step 128
 
@@ -280,170 +222,3 @@ void LoadFrameBufferVIF(unsigned char *pixels, framebuffer_t *frame, int width, 
     packet_free(packet);
 }
 
-qword_t *load_texture_vif(qword_t *q, Texture *tex, void *pixels, unsigned char *clut_buffer)
-{
-    u32 dataSize, totalQwordBlocks, i, qwSize;
-
-    // i = totalQwordBlocks / qwSize;
-
-    unsigned char *buf_ptr;
-
-    // DMATAG_CNT(q, 0, 0, 0, 0);
-    // q->sw[3] = VIF_CODE(0, 0, VIF_CMD_FLUSH, 0);
-    // q++;
-
-    if (clut_buffer)
-    {
-        u32 clut_size = 16 * 16 * 4; // total number of bytes 1024
-
-        totalQwordBlocks = clut_size >> 4; // 64 total number of q words
-
-        qwSize = 8; // number of q words per read
-
-        i = totalQwordBlocks / qwSize; // number of iteration
-
-        dataSize = qwSize * 16;
-
-        buf_ptr = tex->clut_buffer;
-
-        DMATAG_CNT(q, 6, 0, 0, 0);
-        q++;
-
-        q->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[2] = VIF_CODE(0, 0, 0, 0);
-        q->sw[3] = VIF_CODE(5, 0, VIF_CMD_DIRECT, 0);
-        q++;
-
-        PACK_GIFTAG(q, GIF_SET_TAG(4, 0, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-        q++;
-        PACK_GIFTAG(q, GS_SET_BITBLTBUF(0, 0, 0, tex->clut.address >> 6, 1, tex->clut.psm), GS_REG_BITBLTBUF);
-        q++;
-        PACK_GIFTAG(q, GS_SET_TRXPOS(0, 0, 0, 0, 0), GS_REG_TRXPOS);
-        q++;
-        PACK_GIFTAG(q, GS_SET_TRXREG(16, 16), GS_REG_TRXREG);
-        q++;
-        PACK_GIFTAG(q, GS_SET_TRXDIR(0), GS_REG_TRXDIR);
-        q++;
-
-        while (i-- > 0)
-        {
-            DMATAG_CNT(q, 2, 0, 0, 0);
-            q++;
-
-            q->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-            q->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-            q->sw[2] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-            q->sw[3] = VIF_CODE(qwSize + 1, 0, VIF_CMD_DIRECT, 0);
-            q++;
-
-            PACK_GIFTAG(q, GIF_SET_TAG(qwSize, 0, 0, 0, GIF_FLG_IMAGE, 0), 0);
-            q++;
-
-            DMATAG_REF(q, qwSize, (u32)buf_ptr, 0, 0, 0);
-            q++;
-
-            buf_ptr += dataSize;
-        }
-
-        DMATAG_CNT(q, 3, 0, 0, 0);
-        q++;
-
-        q->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[2] = 0; // VIF_CODE(0, 0, VIF_CMD_FLUSH, 0);
-        q->sw[3] = VIF_CODE(2, 0, VIF_CMD_DIRECT, 0);
-        q++;
-
-        PACK_GIFTAG(q, GIF_SET_TAG(1, 0, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-        q++;
-        PACK_GIFTAG(q, 1, GS_REG_TEXFLUSH);
-        q++;
-    }
-
-    if (pixels)
-    {
-        u32 psm = 1;
-
-        u32 image_size = tex->width * tex->height * psm;
-
-        totalQwordBlocks = image_size >> 4; // total number of qwords
-
-        qwSize = totalQwordBlocks; // total qwords sent per iteration
-
-        DMATAG_CNT(q, 6, 0, 0, 0);
-        q++;
-
-        q->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[2] = VIF_CODE(0, 0, 0, 0);
-        q->sw[3] = VIF_CODE(5, 0, VIF_CMD_DIRECT, 0);
-        q++;
-
-        PACK_GIFTAG(q, GIF_SET_TAG(4, 0, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-        q++;
-        PACK_GIFTAG(q, GS_SET_BITBLTBUF(0, 0, 0, tex->texbuf.address >> 6, 256 >> 6, 0x13), GS_REG_BITBLTBUF);
-        q++;
-        PACK_GIFTAG(q, GS_SET_TRXPOS(0, 0, 0, 0, 0), GS_REG_TRXPOS);
-        q++;
-        PACK_GIFTAG(q, GS_SET_TRXREG(256, 256), GS_REG_TRXREG);
-        q++;
-        PACK_GIFTAG(q, GS_SET_TRXDIR(0), GS_REG_TRXDIR);
-        q++;
-
-        // qwSize = (image_size >> 4) + 3;
-
-        // DMATAG_CALL(q, qwSize, (u32)pixels, 0, 0, 0);
-        // q++;
-
-        DMATAG_CNT(q, 2, 0, 0, 0);
-        q++;
-
-        q->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[2] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[3] = VIF_CODE(qwSize + 1, 0, VIF_CMD_DIRECT, 0);
-        q++;
-
-        PACK_GIFTAG(q, GIF_SET_TAG(qwSize, 0, 0, 0, GIF_FLG_IMAGE, 0), 0);
-        q++;
-        DMATAG_REF(q, qwSize, (u32)pixels, 0, 0, 0);
-        q++;
-
-        DMATAG_CNT(q, 3, 0, 0, 0);
-        q++;
-
-        q->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-        q->sw[2] = 0; // VIF_CODE(0, 0, VIF_CMD_FLUSH, 0);
-        q->sw[3] = VIF_CODE(2, 0, VIF_CMD_DIRECT, 0);
-        q++;
-
-        PACK_GIFTAG(q, GIF_SET_TAG(1, 0, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-        q++;
-        PACK_GIFTAG(q, 1, GS_REG_TEXFLUSH);
-        q++;
-    }
-
-    return q;
-}
-
-qword_t *vif_setup_rgbaq(qword_t *b, Color color)
-{
-    qword_t *q = b;
-    DMATAG_CNT(q, 3, 0, 0, 0);
-    q++;
-
-    q->sw[0] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    q->sw[1] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    q->sw[2] = VIF_CODE(0, 0, VIF_CMD_NOP, 0);
-    q->sw[3] = VIF_CODE(2, 0, VIF_CMD_DIRECT, 0);
-    q++;
-
-    PACK_GIFTAG(q, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
-    q++;
-
-    PACK_GIFTAG(q, GIF_SET_RGBAQ(color.r, color.g, color.b, color.a, 1), GIF_REG_RGBAQ);
-    q++;
-    return q;
-}

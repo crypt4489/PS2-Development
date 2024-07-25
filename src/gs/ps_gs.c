@@ -17,13 +17,10 @@ void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, 
 {
 	InitFramebuffer(frame1, manager->ScreenWidth, manager->ScreenHeight, psm, true);
 
-	if (z->enable) {
-		InitZBuffer(z, manager->ScreenWidth, manager->ScreenHeight, GS_ZBUF_24, ZTEST_METHOD_GREATER_EQUAL, true);
-	}
+	if (z->enable) InitZBuffer(z, manager->ScreenWidth, manager->ScreenHeight, GS_ZBUF_24, ZTEST_METHOD_GREATER_EQUAL, true);
 
-	if (frame2) {
-		InitFramebuffer(frame2, manager->ScreenWidth, manager->ScreenHeight, psm, true);
-	}
+	if (frame2) InitFramebuffer(frame2, manager->ScreenWidth, manager->ScreenHeight, psm, true);
+	
 	manager->bgkc.r = 0x80;
 	manager->bgkc.g = 0x70;
 	manager->bgkc.b = 0x05;
@@ -55,7 +52,7 @@ void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm, bool 
 	frame->height = height;
 	frame->mask = 0;
 	frame->psm = psm;
-	frame->address = AllocateVRAM(&g_Manager.vramManager, width, height, psm, systemMemory);
+	frame->address = AllocateVRAM(g_Manager.vramManager, width, height, psm, systemMemory);
 }
 
 void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method, bool systemMemory)
@@ -64,7 +61,7 @@ void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method, bool 
 	z->mask = 0;
 	z->method = method;
 	z->zsm = zsm;
-	z->address = AllocateVRAM(&g_Manager.vramManager, width, height, zsm, systemMemory);
+	z->address = AllocateVRAM(g_Manager.vramManager, width, height, zsm, systemMemory);
 }
 
 void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm)
@@ -105,7 +102,7 @@ qword_t *AddSizeToGSSetTag(qword_t *q, u32 count)
 	return q;
 }
 
-void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context, int waitFinish)
+void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context)
 {
 
 	qword_t *q = GetDMABasePointer();
@@ -249,7 +246,7 @@ void CreateClutStructs(Texture *tex, int psm)
 	//tex->clut.address = g_Manager.textureInVram->clut.address;
 }
 
-void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, u32 texfilter)
+void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, bool texfilter)
 {
 
 	if (texfilter)

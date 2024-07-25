@@ -96,10 +96,10 @@ static HuffmanNode *readDecoder()
 	int count = 0;
 	while(count++ < MAX_ITERS)
 	{
-		if (current->right != NULL && current->left != NULL)
+		if (current->right && current->left)
 		{
 			current = current->parent;
-			if (current == root && current->right != NULL)
+			if (current == root && current->right)
 				break;
 		}
 		else

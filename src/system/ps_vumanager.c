@@ -53,7 +53,7 @@ u32 SizeOfProgramPacket(u32 *codeStart, u32 *codeEnd)
     return (count / 128) + 1;
 }
 
-void ReadFromVU(volatile u32 *start, int printOutSize, u32 usefloatornot)
+void ReadFromVU(volatile u32 *start, int printOutSize, bool usefloatornot)
 {
     int qWordCount = 0;
     volatile u32 *ptr = start;

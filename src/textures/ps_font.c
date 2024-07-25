@@ -99,7 +99,7 @@ Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic,
     myFontTex = AddAndCreateTextureFromBuffer(fontPic, picSize,
                                               fontName, read_type,
                                               1, 0x80,
-                                              TEX_ADDRESS_CLAMP, 1);
+                                              TEX_ADDRESS_CLAMP);
 
     if (myFontTex->psm == GS_PSM_8)
     {
@@ -146,7 +146,7 @@ Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type
     font->color = color;
     font->prim = prim;
 
-    myFontTex = AddAndCreateTexture(fontName, read_type, 1, 0x80, TEX_ADDRESS_CLAMP, 1);
+    myFontTex = AddAndCreateTexture(fontName, read_type, 1, 0x80, TEX_ADDRESS_CLAMP);
 
     if (myFontTex->psm == GS_PSM_8)
     {

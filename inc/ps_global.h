@@ -198,12 +198,10 @@ typedef struct
     lod_t lod;
     unsigned char *pixels;
     unsigned char *clut_buffer;
-    qword_t *upload;
-    u16 uploadSize;
     u32 width;
     u32 height;
     u32 psm;
-    u32 id;
+    u64 id;
     u16 mode;
     u16 type;
     u16 mipLevels;
@@ -378,7 +376,7 @@ struct material_node_t
 {
     u32 start;
     u32 end;
-    u32 materialId;
+    u64 materialId;
 };
 
 enum AnimationStates
@@ -611,7 +609,7 @@ typedef struct avltree_t
     void *data;
 } AVLTree;
 
-typedef u32 (*HashFunction) (const char *, int);
+typedef u64 (*HashFunction) (const char *, int);
 typedef struct hashmap_t
 {
     int cap;
@@ -669,10 +667,10 @@ typedef struct
     VU1Manager *vu1Manager;
     Camera *mainCam;
     DMABuffers *dmabuffers;
-    VRAMManager vramManager;
+    VRAMManager *vramManager;
     bool vu1DoneProcessing;
     u16 gs_context;
-    u16 enableDoubleBuffer;
+    bool enableDoubleBuffer;
     Color bgkc;
     u32 ScreenWidth, ScreenHeight;
     u32 ScreenWHalf, ScreenHHalf;

@@ -151,7 +151,7 @@ static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
     AnimStackNode *parent = current;
     AnimStackNode *clear;
     u32 count = 0;
-    while (current != NULL && count < 256)
+    while (current && count < 256)
     {
 
         MATRIX globalTrans;
@@ -160,7 +160,7 @@ static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
 
         MatrixIdentity(globalTrans);
 
-        if (joint != NULL)
+        if (joint)
         {
             UpdateJoint(data, joint->id, nodeTrans, animationTime);
 
@@ -239,7 +239,7 @@ Joint *FindJointByName(Joint **joints, u32 total, const char *name)
 void UpdateAnimator(Animator *animator, float animationTime)
 {
     animator->deltaTime = animationTime;
-    if (animator->animation != NULL)
+    if (animator->animation)
     {
         animator->currentTime += animator->animation->ticksPerSecond * animationTime;
         animator->currentTime = Mod(animator->currentTime, animator->animation->duration);

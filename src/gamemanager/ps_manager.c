@@ -19,6 +19,7 @@
 #include "util/ps_linkedlist.h"
 #include "textures/ps_texturemanager.h"
 #include "graphics/ps_rendertarget.h"
+#include "gs/ps_vrammanager.h"
 
 GameManager g_Manager;
 
@@ -27,7 +28,7 @@ GameManager g_Manager;
 char padBuf[256] __attribute__((aligned(64)));
 u32 port = 0;
 u32 slot = 0;
-void InitializeSystem(u32 useZBuffer, u32 width, u32 height, u32 psm)
+void InitializeSystem(bool useZBuffer, u32 width, u32 height, u32 psm)
 {
     InitializeDMAChannels();
 
@@ -37,12 +38,12 @@ void InitializeSystem(u32 useZBuffer, u32 width, u32 height, u32 psm)
 
     InitPad(port, slot, padBuf);
 
-    InitializeManager(width, height, 1, 1000, 10, useZBuffer, psm);
+    InitializeManager(width, height, true, 1000, 10, useZBuffer, psm);
 
     SetupVU1INTEHandler();
 }
 
-void CreateManagerRenderTargets(u32 useZBuffer, u32 psm)
+void CreateManagerRenderTargets(bool useZBuffer, u32 psm)
 {
     g_Manager.targetBack = AllocRenderTarget(true);
     g_Manager.targetDisplay = AllocRenderTarget(false);
@@ -58,12 +59,12 @@ void CreateManagerRenderTargets(u32 useZBuffer, u32 psm)
 
     g_Manager.targetDisplay->z = g_Manager.targetBack->z;
 
-    SetupRenderTarget(g_Manager.targetDisplay, 1, 0);
+    SetupRenderTarget(g_Manager.targetDisplay, 1, false);
 
-    SetupRenderTarget(g_Manager.targetBack, 0, 0);
+    SetupRenderTarget(g_Manager.targetBack, 0, false);
 }
 
-void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize) 
+void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize) 
 {
     g_Manager.ScreenHeight = height;
     g_Manager.ScreenWidth = width;
@@ -73,9 +74,7 @@ void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize
 
     g_Manager.texManager = CreateTextureManager();
 
-    g_Manager.vramManager.vramSize = GRAPH_VRAM_MAX_WORDS;
-    g_Manager.vramManager.systemVRAMUsed = 0;
-    g_Manager.vramManager.userVRAMUsed = 0;
+    g_Manager.vramManager = CreateVRAMManager();
 
     g_Manager.vu1DoneProcessing = true;
     g_Manager.enableDoubleBuffer = doubleBuffer;
@@ -92,7 +91,7 @@ void CreateManagerStruct(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize
     g_Manager.currentTime = g_Manager.lastTime = getTicks(g_Manager.timer);
 }
 
-void InitializeManager(u32 width, u32 height, u32 doubleBuffer, u32 bufferSize, u32 programSize, u32 useZBuffer, u32 psm)
+void InitializeManager(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize, u32 useZBuffer, u32 psm)
 {
     CreateManagerStruct(width, height, doubleBuffer, bufferSize, programSize);
 
@@ -153,15 +152,17 @@ void AddToManagerTexList(GameManager *manager, Texture *tex)
 
 void ClearManagerStruct(GameManager *manager)
 {
-    if (manager->texManager != NULL)
+    if (manager->vramManager)
+        free(manager->vramManager);
+    if (manager->texManager)
         free(manager->texManager);
-    if (manager->dmabuffers->dma_chains[0] != NULL)
+    if (manager->dmabuffers->dma_chains[0])
         packet_free(manager->dmabuffers->dma_chains[0]);
-    if (manager->dmabuffers->dma_chains[1] != NULL)
+    if (manager->dmabuffers->dma_chains[1])
         packet_free(manager->dmabuffers->dma_chains[1]);
-    if (manager->dmabuffers != NULL)
+    if (manager->dmabuffers)
         free(manager->dmabuffers);
-    if (manager->timer != NULL)
+    if (manager->timer)
         TimerZeroDisable(g_Manager.timer);
 }
 

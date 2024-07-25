@@ -20,7 +20,7 @@ LinkedList *AddToLinkedList(LinkedList *head, LinkedList *node)
     }
 
     LinkedList *iter = head;
-    while (iter->next != NULL)
+    while (iter->next)
     {
         iter = iter->next;
     }

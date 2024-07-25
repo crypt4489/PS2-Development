@@ -17,7 +17,7 @@ typedef struct io_file_info_t
 typedef struct io_queue_item_t
 {
     u32 done;
-    u32 compressed;
+    bool compressed;
     sceCdlFILE *fileStruct;
     FileInfo *info;
     handle_file_loaded loaderCB;
@@ -107,7 +107,7 @@ static FileInfo *CreateFileInfo(u32 totalSize, u32 totalSectors)
 static IOQueueItem *CreateIOQueueItem(sceCdlFILE *file,
                                       handle_file_loaded cb1,
                                       finish_async_callback finish,
-                                      u32 compressed,
+                                      bool compressed,
                                       FileInfo *info,
                                       u8 *buffer,
                                       void *params,
@@ -143,15 +143,15 @@ static void AddIOQueueItem(IOQueueItem *item)
 
 static void DeleteQueueItem(IOQueueItem *item)
 {
-    if (item != NULL)
+    if (item)
     {
-        if (item->fileStruct != NULL)
+        if (item->fileStruct)
             free(item->fileStruct);
-        if (item->info != NULL)
+        if (item->info)
             free(item->info);
-        if (item->buffer != NULL)
+        if (item->buffer)
             free(item->buffer);
-        if (item->params != NULL)
+        if (item->params)
             free(item->params);
         free(item);
     }
@@ -280,9 +280,9 @@ void HandleASyncIO()
             // ERRORLOG("ASYNCIO : Popped done queue without object");
             return;
         }
-        if (item->loaderCB != NULL)
+        if (item->loaderCB)
             item->loaderCB(item->object, item->params, item->buffer, item->info->totalSize);
-        if (item->finish != NULL)
+        if (item->finish)
             item->finish(item->object);
         DeleteQueueItem(item);
     }

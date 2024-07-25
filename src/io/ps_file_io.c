@@ -20,16 +20,16 @@ sceCdRMode sStreamMode;
 
 extern GameManager g_Manager;
 
-int IsFileCompressed(const char *filename)
+bool IsFileCompressed(const char *filename)
 {
     int len = strnlen(filename, MAX_FILE_NAME);
     //  DEBUGLOG("Print isCompressed %c %c %c %c", filename[len-6], filename[len-5], filename[len-4], filename[len-3]);
     if (filename[len - 6] == 0x43 && filename[len - 5] == 0x42 && filename[len - 4] == 0x49 && filename[len - 3] == 0x4E)
     {
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 void InitDVDDrive()
@@ -39,7 +39,7 @@ void InitDVDDrive()
 
 u8 *ReadSector(u32 sector, u32 numOfSecs, u8 *buffer)
 {
-    while (1)
+    while (true)
     {
         if (sceCdRead(sector, numOfSecs, buffer, &sStreamMode) == 0)
         {
@@ -59,7 +59,7 @@ u8 *ReadSector(u32 sector, u32 numOfSecs, u8 *buffer)
     return buffer;
 }
 
-int FileExist(const char *filename) {
+bool FileExist(const char *filename) {
 
     sceCdlFILE file_struct;
      
@@ -67,10 +67,10 @@ int FileExist(const char *filename) {
     {
         ERRORLOG("FINDEXISTS: Not found %s", filename);
         
-        return 0;
+        return false;
     }
 
-    return 1;
+    return true;
 }
 
 sceCdlFILE *FindFileByName(const char *filename)
@@ -139,17 +139,14 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
 
 u8 *ReadFileInFull(const char *filename, u32 *outSize)
 {
-    int compressed = IsFileCompressed(filename);
+    bool compressed = IsFileCompressed(filename);
 
     // DEBUGLOG("Compressed file ? %d", compressed);
 
     sceCdlFILE *loc_file_struct = FindFileByName(filename);
 
-    if (loc_file_struct == NULL)
-    {
-        return NULL;
-    }
-
+    if (!loc_file_struct) return NULL;
+    
     u32 starting_sec = loc_file_struct->lsn;
     u32 sectors = loc_file_struct->size / SECTOR_SIZE;
 
@@ -157,10 +154,7 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
     u32 bufferSize = loc_file_struct->size;
 
-    if (remaining)
-    {
-        sectors++;
-    }
+    if (remaining)  sectors++;
 
     u32 bytesLeft = bufferSize;
 
@@ -196,10 +190,10 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
     if (compressed)
     {
         u8 *old = buffer;
-        float time1 = getTicks(g_Manager.timer);
+        //float time1 = getTicks(g_Manager.timer);
         buffer = decompress(buffer, bufferSize, &bufferSize);
-        float time2 = getTicks(g_Manager.timer);
-        DEBUGLOG("DECOMPRESSION TIME %f", time2 - time1);
+       // float time2 = getTicks(g_Manager.timer);
+       // DEBUGLOG("DECOMPRESSION TIME %f", time2 - time1);
         free(old);
     }
 
@@ -853,18 +847,13 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
     Pathify(filename, _file);
     u32 fSize;
     u8 *buffer = ReadFileInFull(_file, &fSize);
-    if (buffer == NULL)
+    if (!buffer)
     {
         ERRORLOG("File Buffer for mesh %s was empty", filename);
         return;
     }
-    //  float time1  = getTicks(g_Manager.timer);
 
     CreateMeshBuffersFromFile(buffers, NULL, buffer, fSize);
 
-    // float time2 = getTicks(g_Manager.timer);
-
-    // DEBUGLOG("Time for Create : %f", time2-time1);
     free(buffer);
-    // free(copy);
 }

@@ -117,7 +117,7 @@ int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTO
     MATRIX checkWorld, collideWorld;
     CreateWorldMatrixLTM(currObj->ltm, checkWorld);
     CreateWorldMatrixLTM(currCollidePoly->ltm, collideWorld);
-    while(currCollidePoly != NULL)
+    while(currCollidePoly)
     {
         int polyCollideIndyCount = currCollidePoly->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
         VECTOR x1, y1, z1, plane_n, plane, tempBottom, tempTop;

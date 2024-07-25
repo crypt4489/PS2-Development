@@ -6,9 +6,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-u32 TextureManagerHashFunction(const char* key, int size)
+u64 TextureManagerHashFunction(const char* key, int size)
 {
-    u32 hashval = 0;
+    u64 hashval = 0;
     for(int i = 0; i<size; i++)
     {
         hashval = (hashval << 4) + key[i];

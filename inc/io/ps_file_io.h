@@ -15,7 +15,7 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize);
 
 void InitDVDDrive();
 
-int IsFileCompressed(const char *filename);
+bool IsFileCompressed(const char *filename);
 
 u8* ReadSector(u32 sector, u32 numOfSecs, u8* buffer);
 
@@ -23,6 +23,6 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers);
 
 void CreateMeshBuffersFromFile(void *object, void *, u8 *buffer, u32 bufferLen);
 
-int FileExist(const char *filename);
+bool FileExist(const char *filename);
 
 #endif

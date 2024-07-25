@@ -11,7 +11,7 @@ void DestroyRenderTarget(RenderTarget *target, bool system)
 	if (target)
 	{
         if (!system)
-		    RemoveRenderTargetVRAMManager(&g_Manager.vramManager, target);
+		    RemoveRenderTargetVRAMManager(g_Manager.vramManager, target);
 		if (target->render)
 			free(target->render);
 		if (target->z)
@@ -33,9 +33,9 @@ Texture *CreateTextureFromRenderTarget(RenderTarget *target, u32 filter, u32 fun
 	return tex;
 }
 
-void SetupRenderTarget(RenderTarget *target, int context, int wait)
+void SetupRenderTarget(RenderTarget *target, int context, bool wait)
 {
-	CalculateTextureBasePointer(&g_Manager.vramManager, target);
+	CalculateTextureBasePointer(g_Manager.vramManager, target);
 
 	int hHeight, hWidth;
 	hHeight = target->render->height >> 1;
@@ -43,16 +43,14 @@ void SetupRenderTarget(RenderTarget *target, int context, int wait)
 
 	PollVU1DoneProcessing(&g_Manager);
 
-	InitDrawingEnvironment(target->render, target->z, hHeight, hWidth, context, wait);
+	InitDrawingEnvironment(target->render, target->z, hHeight, hWidth, context);
 }
 
 RenderTarget *AllocRenderTarget(bool useZBuffer)
 {
 	RenderTarget *target = (RenderTarget *)malloc(sizeof(RenderTarget));
 	target->render = (framebuffer_t *)malloc(sizeof(framebuffer_t));
-	if (useZBuffer) {
-		target->z = (zbuffer_t *)malloc(sizeof(zbuffer_t));
-	}
+	if (useZBuffer) target->z = (zbuffer_t *)malloc(sizeof(zbuffer_t));
 	return target;
 }
 
@@ -67,7 +65,7 @@ RenderTarget *CreateRenderTarget(int height, int width, int zsm, int zmethod, in
 	target->memInVRAM = (graph_vram_size(width, height, psm, GRAPH_ALIGN_PAGE) 
 									   +  graph_vram_size(width, height, zsm, GRAPH_ALIGN_PAGE));
 
-	AddRenderTargetVRAMManager(&g_Manager.vramManager, target);
+	AddRenderTargetVRAMManager(g_Manager.vramManager, target);
 
 	return target;
 }

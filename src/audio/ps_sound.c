@@ -397,7 +397,7 @@ s16* Convert8PCMToShortSamples(u8 *buffer, u32 size)
 }
 
 
-u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, u32 loopFlag)
+u8* CreateVagSamples(s16* samples, u32 len, u32* outSize, u32 loopStart, u32 loopEnd, bool loopFlag)
 {
 	float _hist_1 = 0.0, _hist_2 = 0.0;
 	float hist_1 = 0.0, hist_2 = 0.0;

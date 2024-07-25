@@ -317,7 +317,7 @@ void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t
   VECTOR camProps;
 
   Camera *cam = NULL;
-  if (g_DrawWorld != NULL)
+  if (g_DrawWorld)
   {
     cam = g_DrawWorld->cam;
   }
@@ -364,7 +364,7 @@ void SetupPerObjLightBuffer(VU1Pipeline *pipe, GameObject *obj, void *arg, qword
 
   qword_t *q = pipeline_loc + VU1_LOCATION_LIGHTS_BUFFER;
 
-  if (g_DrawWorld != NULL)
+  if (g_DrawWorld)
   {
     int count = g_DrawWorld->lightCount;
     q = InitVU1LightHeader(q, count);

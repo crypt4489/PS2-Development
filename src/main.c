@@ -450,9 +450,9 @@ static void SetupGrid()
     w = 1000;
     h = 1000;
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
-   // u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
-    //CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
     VECTOR pos = {-50.0f, -15.0f, 0.0f, 1.0f};
 
@@ -647,7 +647,7 @@ static void SetupGameObjects()
 
     SetupGrid();
     // SetupBody();
-   // SetupAABBBox();
+    SetupAABBBox();
     // SetupOBBBody();
     SetupShootBoxBox();
     //SetupShootBigBoxBox();
@@ -891,7 +891,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-       // DrawWorld(world);
+        DrawWorld(world);
         MATRIX ident;
         MatrixIdentity(ident);
 
@@ -916,9 +916,7 @@ int Render()
 
         EndRendering(cam);
 
-        EndFrame(1);
-
-        UpdateLight();
+        EndFrame(true);
 
         FrameCounter++;
     }
@@ -1008,7 +1006,7 @@ static void LoadInTextures()
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
-    Texture *tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_CLAMP, 0);
+    Texture *tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_CLAMP);
 
     SetFilters(tex, PS_FILTER_BILINEAR);
 }

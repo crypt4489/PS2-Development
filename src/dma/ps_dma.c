@@ -137,7 +137,7 @@ void DestroyDMABuffers(DMABuffers *buff)
     free(buff);
 }
 
-void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, int tte)
+void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
 {
     while (PollVU1DoneProcessing(&g_Manager) < 0);
     if (channel == DMA_CHANNEL_GIF)
@@ -175,12 +175,11 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, int tte)
     }
 }
 
-void SubmitDMABuffersToController(qword_t *q, u32 channel, u32 type, u32 tte)
+void SubmitDMABuffersToController(qword_t *q, u32 channel, u32 type, bool tte)
 {
 
     u32 size = q - g_Manager.dmabuffers->currPointer;
     SubmitToDMAController(g_Manager.dmabuffers->currPointer, channel, type, size, tte);
-
     g_Manager.dmabuffers->currPointer = q;
 }
 
