@@ -90,10 +90,10 @@ VU1Manager *CreateVU1Manager(u32 size)
 {
     VU1Manager *manager = (VU1Manager *)malloc(sizeof(VU1Manager));
 
-    if (manager == NULL)
+    if (!manager)
     {
         ERRORLOG("VU1Manager failed to allocate!");
-        return NULL;
+        return manager;
     }
 
     manager->basePointer = 0;
@@ -102,7 +102,7 @@ VU1Manager *CreateVU1Manager(u32 size)
     manager->programsInVU1 = 0;
     manager->programs = malloc(sizeof(VU1Program *) * size);
 
-    if (manager->programs == NULL)
+    if (!manager->programs)
     {
         ERRORLOG("VU1Manager programs array failed to allocate!");
         free(manager);
@@ -144,7 +144,7 @@ void AddProgramToManager(VU1Manager *manager, VU1Program *program)
     {
         u32 size = manager->numPrograms + PROGRAM_STEP;
         manager->programs = realloc(manager->programs, sizeof(VU1Program *) * size);
-        if (manager->programs == NULL)
+        if (!manager->programs)
         {
             ERRORLOG("VU1Manager programs array failed to reallocate when adding!");
             return;

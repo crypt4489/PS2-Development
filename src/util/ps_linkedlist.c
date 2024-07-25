@@ -13,7 +13,7 @@ LinkedList *CreateLinkedListItem(void *data)
 
 LinkedList *AddToLinkedList(LinkedList *head, LinkedList *node)
 {
-    if (head == NULL)
+    if (!head)
     {
         head = node;
         return head;
@@ -37,7 +37,7 @@ LinkedList *RemoveNodeFromList(LinkedList *head, LinkedList *node)
     while (*iter != node)
     {
         iter = &(*iter)->next;
-        if (*iter == NULL)
+        if (!(*iter))
         {
             ERRORLOG("Cannot find node in list to remove");
             return head;

@@ -18,14 +18,14 @@ void CreateMorphTargetBuffersFromFile(const char *targetFile, MeshBuffers *buffe
 MorphTargetBuffer *CreateMorphTargetBuffer(u32 bufferSize)
 {
     MorphTargetBuffer *buffer = (MorphTargetBuffer *)malloc(sizeof(MorphTargetBuffer));
-    if (buffer == NULL)
+    if (!buffer)
     {
         ERRORLOG("failed to allocate target buffer");
-        return NULL;
+        return buffer;
     }
 
     buffer->morph_targets = malloc(sizeof(MeshBuffers *) * bufferSize);
-    if (buffer->morph_targets == NULL)
+    if (!buffer->morph_targets)
     {
         ERRORLOG("failed to allocate target buffer");
         free(buffer);
@@ -42,7 +42,7 @@ MorphTargetBuffer *CreateMorphTargetBuffer(u32 bufferSize)
 GameObject *CreateObjectMorphBuffer(GameObject *obj, u32 bufferSize)
 {
     obj->interpolator = CreateMorphTargetBuffer(bufferSize);
-    if (obj->interpolator == NULL)
+    if (!obj->interpolator)
     {
         ERRORLOG("object interpolator failed to allocate");
         return obj;
@@ -59,7 +59,7 @@ GameObject *CreateObjectMorphBuffer(GameObject *obj, u32 bufferSize)
 MorphTargetBuffer *CreateInterpolatorNodes(MorphTargetBuffer *buffer, u32 interpolatorSize)
 {
     buffer->interpolators = malloc(sizeof(Interpolator *) * interpolatorSize);
-    if (buffer->interpolators == NULL)
+    if (!buffer->interpolators)
     {
         ERRORLOG("failed to create interpolators array");
         return buffer;
@@ -96,7 +96,7 @@ void AddInterpolatorNode(MorphTargetBuffer *buffer, u16 _start, u16 _end, float 
     }
 
     Interpolator *node = (Interpolator *)malloc(sizeof(Interpolator));
-    if (node == NULL)
+    if (!node)
     {
         ERRORLOG("cannot create interpolator node");
         return;
@@ -165,7 +165,7 @@ void SetMorphTargetCallback(MorphTargetBuffer *buffer, morph_target_callback cb)
 
 void ExecuteMorphTargetCBFuncs(MorphTargetBuffer *buffer)
 {
-    if (buffer == NULL)
+    if (!buffer)
         return;
 
     Interpolator *node = GetCurrentInterpolatorNode(buffer);

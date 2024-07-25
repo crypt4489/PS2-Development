@@ -103,7 +103,7 @@ Texture *AddAndCreateAlphaMap(const char *filePath, u32 readType, u32 mode)
         pixels = alphaMap->pixels;
     }
 
-    if (pixels == NULL || size == 0)
+    if (!pixels || !size)
     {
         ERRORLOG("Something went wrong with the alpha map");
         return alphaMap;

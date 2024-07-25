@@ -106,7 +106,7 @@ RenderWorld *RemoveObjectFromRenderWorld(RenderWorld *world, GameObject *obj)
         comp = (GameObject *)iter->data;
     }
 
-    if (iter == NULL)
+    if (!iter)
         return world;
 
     INFOLOG("found");

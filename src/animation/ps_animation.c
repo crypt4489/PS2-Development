@@ -258,10 +258,10 @@ void UpdateVU1BoneMatrices(qword_t *q, Animator *animator, Joint **joints, u32 n
 Animator *CreateAnimator(AnimationData *data)
 {
     Animator *animator = (Animator *)malloc(sizeof(Animator));
-    if (animator == NULL)
+    if (!animator)
     {
         ERRORLOG("We cannot create animator!");
-        return NULL;
+        return animator;
     }
     animator->animation = data;
     animator->currentTime = animator->deltaTime = 0.0f;

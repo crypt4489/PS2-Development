@@ -34,10 +34,10 @@ static HuffmanNode* CreateHuffmanNode(HuffmanNode *left, HuffmanNode *right,
 {
 	HuffmanNode* node = (HuffmanNode*)malloc(sizeof(HuffmanNode));
 
-	if (node == NULL)
+	if (!node)
 	{
 		printf("Cannot create huffman node\n");
-		return NULL;
+		return node;
 	}
 
 	node->parent = parent;
@@ -106,9 +106,9 @@ static HuffmanNode *readDecoder()
 		{
 			HuffmanNode* node = CreateHuffmanNode(NULL, NULL, current, '\0');
 
-			if (current->left == NULL)
+			if (!current->left)
 				current->left = node;
-			else if (current->right == NULL)
+			else if (!current->right)
 				current->right = node;
 
 			if (readBoolean())
@@ -163,7 +163,7 @@ static unsigned int readInt()
 
 static int isLeaf(HuffmanNode *node)
 {
-	if (node->left == NULL && node->right == NULL)
+	if (!node->left && !node->right)
 	{
 		return 1;
 	}
@@ -204,11 +204,11 @@ u8 *decompress(u8 *input, u32 compressSize, u32 *bufferSize)
 
 	u8 *bufferFile = (u8 *)malloc(length);
 
-	if (bufferFile == NULL)
+	if (!bufferFile)
 	{
 		ERRORLOG("Cannot allocate buffer for decompressed file");
 		cleanupTree(root);
-		return NULL;
+		return  bufferFile;
 	}
 
 	// INFOLOG("decompressed length %d", length);

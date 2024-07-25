@@ -107,7 +107,7 @@ int plane_collide_with_light_vector(VECTOR pointOnPoly, VECTOR lightPos, VECTOR 
 int check_shadow_collides_with_plane(GameObject *currObj, VECTOR lightPos, VECTOR outPlane, VECTOR top, VECTOR bottom, int index)
 {
     GameObject *currCollidePoly = NULL;
-    if (currCollidePoly == NULL)
+    if (!currCollidePoly )
     {
         return -1;
     }

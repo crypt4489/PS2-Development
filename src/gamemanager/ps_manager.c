@@ -48,7 +48,7 @@ void CreateManagerRenderTargets(bool useZBuffer, u32 psm)
     g_Manager.targetBack = AllocRenderTarget(true);
     g_Manager.targetDisplay = AllocRenderTarget(false);
 
-    if (g_Manager.targetBack == NULL || g_Manager.targetDisplay == NULL)
+    if (!g_Manager.targetBack || !g_Manager.targetDisplay)
     {
         ERRORLOG("failed to allocate the rendertargets manager");
     }

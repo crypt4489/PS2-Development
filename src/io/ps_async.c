@@ -92,10 +92,10 @@ static FileInfo *CreateFileInfo(u32 totalSize, u32 totalSectors)
 {
     FileInfo *info = (FileInfo *)malloc(sizeof(FileInfo));
 
-    if (info == NULL)
+    if (!info)
     {
         ERRORLOG("FileInfo failed to create!\n");
-        return NULL;
+        return info;
     }
 
     info->currentSector = info->totalRead = 0;
@@ -115,10 +115,10 @@ static IOQueueItem *CreateIOQueueItem(sceCdlFILE *file,
 {
     IOQueueItem *item = (IOQueueItem *)malloc(sizeof(IOQueueItem));
 
-    if (item == NULL)
+    if (!item)
     {
         ERRORLOG("IOQueueItem failed to create!\n");
-        return NULL;
+        return item;
     }
 
     item->compressed = compressed;
@@ -171,7 +171,7 @@ void LoadASync(const char *name,
 
     sceCdlFILE *loc_file_struct = FindFileByName(_file);
 
-    if (loc_file_struct == NULL)
+    if (!loc_file_struct)
     {
         ERRORLOG("Cannot find file %s in async loader", name);
         return;
@@ -217,7 +217,7 @@ void InitASyncIO(int queueCount, float time)
 
     asyncQueueWaiting = CreateQueue(queueCount, FIFO);
 
-    if (asyncQueueWaiting == NULL)
+    if (!asyncQueueWaiting)
     {
         ERRORLOG("Cannot create IO Queue");
         return;
@@ -225,7 +225,7 @@ void InitASyncIO(int queueCount, float time)
 
     asyncQueueDone = CreateQueue(queueCount, FIFO);
 
-    if (asyncQueueDone == NULL)
+    if (!asyncQueueDone)
     {
         ERRORLOG("Cannot create IO Queue");
         return;
@@ -275,7 +275,7 @@ void HandleASyncIO()
     if (asyncQueueDone->count > 0)
     {
         IOQueueItem *item = (IOQueueItem *)PopQueue(asyncQueueDone);
-        if (item == NULL)
+        if (!item)
         {
             // ERRORLOG("ASYNCIO : Popped done queue without object");
             return;

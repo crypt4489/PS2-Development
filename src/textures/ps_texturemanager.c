@@ -55,7 +55,7 @@ void AddToTextureManager(TextureManager *manager, Texture *tex)
 u32 GetTextureIDByName(TextureManager *manager, const char *name)
 {
     Texture *tex = GetTexByName(manager, name);
-    if (tex == NULL)
+    if (!tex)
     {
         ERRORLOG("Missed Texture for Texture ID by Name");
         return 0;

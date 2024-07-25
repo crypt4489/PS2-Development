@@ -11,7 +11,7 @@ void initialize_rpc_client(void)
     rpc_sema = CreateMutex(IOP_MUTEX_UNLOCKED);
 
     client.server = NULL;
-    while (sceSifBindRpc(&client, PROC_TEXTURE_IRX, 0) < 0 || client.server == NULL)
+    while (sceSifBindRpc(&client, PROC_TEXTURE_IRX, 0) < 0 || !client.server)
         DelayThread(500);
 }
 

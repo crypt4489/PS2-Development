@@ -273,7 +273,7 @@ Texture *ReadTexFile(const char *fileName, char *nameOfTex, u32 readType, u8 alp
 
     u8 *buffer = ReadFileInFull(fileName, &size);
 
-    if (buffer == NULL)
+    if (!buffer)
     {
         ERRORLOG("Texture file returned empty %s", fileName);
         return NULL;

@@ -698,7 +698,7 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 vertSize, u
     }
 
     u8 *binaryBuffer = (u8 *)malloc(sizeOfBuffer);
-    if (binaryBuffer == NULL)
+    if (!binaryBuffer)
     {
         ERRORLOG("ERROR creating binaryBuffer");
         return;

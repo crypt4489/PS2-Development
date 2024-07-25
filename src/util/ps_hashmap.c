@@ -5,7 +5,7 @@
 
 HashMap* CreateHashMap(int capacity, HashFunction func)
 {
-    if (capacity <= 0 || func == NULL) return NULL;
+    if (capacity <= 0 || !func) return NULL;
 
     HashMap *mapContainer = (HashMap*)malloc(sizeof(HashMap));
     if (!mapContainer) return NULL;

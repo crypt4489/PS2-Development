@@ -32,7 +32,7 @@ void* PeekQueue(Queue *queue)
 void* PopQueue(Queue *queue)
 {
     void *ret = NULL;
-    if (queue->top == NULL)
+    if (!queue->top)
         return ret;
     if (queue->type == FIFO)
     {
@@ -60,7 +60,7 @@ void* PopQueue(Queue *queue)
 
 void AddQueueElement(Queue *queue, void* element)
 {
-    if (element == NULL)
+    if (!element)
     {
         ERRORLOG("PAssed a null element to AddQueueElement");
         return;
@@ -78,7 +78,7 @@ void AddQueueElement(Queue *queue, void* element)
 Queue* CreateQueue(u32 maxCount, u32 type)
 {
     Queue *q = (Queue*)malloc(sizeof(Queue));
-    if (q == NULL)
+    if (!q)
     {
         ERRORLOG("Cannot create queue!");
         return NULL;

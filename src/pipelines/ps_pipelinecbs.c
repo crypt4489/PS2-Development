@@ -77,7 +77,7 @@ void SetupStage2MATVU1(VU1Pipeline *pipe, GameObject *obj, void *mat, qword_t *p
   // printf("here!");
   qword_t *q = pipeline_loc + 16;
 
-  if (mat == NULL)
+  if (!mat)
   {
     ERRORLOG("MATRIX for Stage 2 is NULL");
     return;
@@ -147,7 +147,7 @@ void UpdateInterpolatorDrawVU1(VU1Pipeline *pipe, GameObject *obj, void *arg, qw
 qword_t *CreateMorphInterpolatorDMAUpload(qword_t *tag, qword_t *q, VU1Pipeline *pipeline, u32 _index, u32 _matCount)
 {
   InterpolatorCallbackData *data = (InterpolatorCallbackData *)malloc(sizeof(InterpolatorCallbackData));
-  if (data == NULL)
+  if (!data)
   {
     ERRORLOG("cannot create morph pipeline callbacks");
     return tag;
@@ -326,7 +326,7 @@ void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t
     cam = g_DrawCamera;
   }
 
-  if (cam == NULL)
+  if (!cam)
   {
     ERRORLOG("something went wrong with camera");
   }

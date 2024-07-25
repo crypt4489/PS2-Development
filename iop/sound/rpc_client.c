@@ -12,7 +12,7 @@ void initialize_rpc_client(void)
 
     client.server = NULL;
 
-    while (sceSifBindRpc(&client, SOUND_IRX, 0) < 0 || client.server == NULL)
+    while (sceSifBindRpc(&client, SOUND_IRX, 0) < 0 || !client.server)
         DelayThread(500);
 
     LOGGER("Created RPC Client");

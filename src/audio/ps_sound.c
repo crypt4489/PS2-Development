@@ -71,7 +71,7 @@ void LoadSample(unsigned char *wav, int size)
 
 	iop_addr = AllocIopSpace(size);
 
-	if (iop_addr == NULL)
+	if (!iop_addr)
 	{
 		ERRORLOG("Cannot allocate sample buffer on IOP");
 		return;
@@ -198,7 +198,7 @@ WavFile *LoadWavFile(const char *name)
 
 	u8 *bufferLoad = ReadFileInFull(path, &fileSize);
 
-	if (bufferLoad == NULL)
+	if (!bufferLoad)
 	{
 		ERRORLOG("Cannot open wav file");
 		return NULL;
@@ -206,11 +206,11 @@ WavFile *LoadWavFile(const char *name)
 
 	WavFile *wavFile = (WavFile *)malloc(sizeof(WavFile));
 
-	if (wavFile == NULL)
+	if (!wavFile)
 	{
 		ERRORLOG("Cannot create wav file holder");
 		free(bufferLoad);
-		return NULL;
+		return wavFile;
 	}
 
 	u8 *buffer = bufferLoad;
@@ -273,7 +273,7 @@ WavFile *LoadWavFile(const char *name)
 
 	wavFile->samples = (u8 *)malloc(dataSize);
 
-	if (wavFile->samples == NULL)
+	if (!wavFile->samples)
 	{
 		ERRORLOG("Failed to allocate samples buffer");
 		free(wavFile);
@@ -298,7 +298,7 @@ VagFile *LoadVagFile(const char *name)
 
 	u8 *bufferLoad = ReadFileInFull(path, &fileSize);
 
-	if (bufferLoad == NULL)
+	if (!bufferLoad)
 	{
 		ERRORLOG("Cannot open Vag file");
 		return NULL;
@@ -306,11 +306,11 @@ VagFile *LoadVagFile(const char *name)
 
 	VagFile *vagFile = (VagFile *)malloc(sizeof(VagFile));
 
-	if (vagFile == NULL)
+	if (!vagFile)
 	{
 		ERRORLOG("Cannot create vag file holder");
 		free(bufferLoad);
-		return NULL;
+		return vagFile;
 	}
 
 	u8 *buffer = bufferLoad;
@@ -329,7 +329,7 @@ VagFile *LoadVagFile(const char *name)
 
 	vagFile->samples = (u8 *)malloc(dataSize + 16);
 
-	if (vagFile->samples == NULL)
+	if (!vagFile->samples)
 	{
 		ERRORLOG("Failed to allocate samples buffer");
 		free(vagFile);
@@ -362,10 +362,10 @@ s16* Convert16PCMToShortSamples(u8 *buffer, u32 size)
 {
 	s16 *samples = (s16*)malloc(sizeof(s16) * (size));
 
-	if (samples == NULL)
+	if (!samples)
 	{
 		ERRORLOG("Failed to allocate samples");
-		return NULL;
+		return samples;
 	}
 
 	for (u32 i = 0; i<size; i++)
@@ -382,10 +382,10 @@ s16* Convert8PCMToShortSamples(u8 *buffer, u32 size)
 {
 	s16 *samples = (s16*)malloc(sizeof(s16) * (size));
 
-	if (samples == NULL)
+	if (!samples)
 	{
 		ERRORLOG("Failed to allocate samples");
-		return NULL;
+		return samples;
 	}
 
 	for (u32 i = 0; i<size; i++)
@@ -575,10 +575,10 @@ VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels, 
 {
 	VagFile *vagFile = (VagFile *)malloc(sizeof(VagFile));
 
-	if (vagFile == NULL)
+	if (!vagFile)
 	{
 		ERRORLOG("Cannot create vag file holder");
-		return NULL;
+		return vagFile;
 	}
 	
 	s16 *pcmSamples = NULL;
@@ -598,7 +598,7 @@ VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels, 
 			break;
 	}
 
-	if (pcmSamples == NULL)
+	if (!pcmSamples)
 	{
 		free(vagFile);
 		ERRORLOG("PCM sample creation failed");

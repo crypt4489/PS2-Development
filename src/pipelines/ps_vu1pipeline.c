@@ -175,7 +175,7 @@ void SetActivePipelineByName(GameObject *obj, const char *name)
     while (strncmp(name, iter->name, len) != 0)
     {
         iter = iter->next;
-        if (iter == NULL)
+        if (!iter)
         {
             ERRORLOG("pipeline not found");
             return;
@@ -192,7 +192,7 @@ VU1Pipeline *GetPipelineByName(const char *name, GameObject *obj)
     while (strncmp(name, iter->name, len) != 0)
     {
         iter = iter->next;
-        if (iter == NULL)
+        if (!iter)
         {
             ERRORLOG("pipeline not found");
             return NULL;
@@ -283,7 +283,7 @@ qword_t *AddPipelineCallbackNodeQword(VU1Pipeline *pipeline, PipelineCallback *n
 
     for (int i = 0; i <= size; i++)
     {
-        if (pipeline->cbs[i] == NULL)
+        if (!pipeline->cbs[i])
         {
             pipeline->numberCBS++;
             pipeline->cbs[i] = node;

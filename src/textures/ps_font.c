@@ -240,7 +240,7 @@ void LoadFontWidths(Font *font_struct, const char *filePath)
     Pathify(filePath, _file);
     u8 *buffer = ReadFileInFull(_file, &size);
 
-    if (buffer == NULL)
+    if (!buffer)
     {
         ERRORLOG("Cannot open font widths file %s", filePath);
         return;
