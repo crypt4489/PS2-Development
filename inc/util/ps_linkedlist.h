@@ -5,7 +5,7 @@
 #define LINKEDLIST_END(head, ret) do {\
     ret = head;\
     head = head->next;\
-} while(head != NULL)
+} while(head)
 
 LinkedList* CreateLinkedListItem(void *data);
 LinkedList* AddToLinkedList(LinkedList *head, LinkedList *node);

@@ -884,7 +884,7 @@ int Render()
 
         UpdatePad();
 
-        if (body != NULL)
+        if (body)
             UpdateAnimator(body->objAnimator, delta);
 
         float time1 = getTicks(g_Manager.timer);
