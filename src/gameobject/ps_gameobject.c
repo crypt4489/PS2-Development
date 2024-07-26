@@ -51,7 +51,7 @@ void SetupGameObjectPrimRegs(GameObject *obj, Color color, u32 renderState)
   obj->renderState.prim.colorfix = PRIM_UNFIXED;
 }
 
-MeshBuffers *CreateMaterial(MeshBuffers *buff, u32 start, u32 end, u32 id)
+MeshBuffers *CreateMaterial(MeshBuffers *buff, u32 start, u32 end, u64 id)
 {
   Material *mat = (Material *)malloc(sizeof(Material));
   mat->start = start;

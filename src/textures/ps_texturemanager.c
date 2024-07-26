@@ -52,7 +52,7 @@ void AddToTextureManager(TextureManager *manager, Texture *tex)
     InsertHashMap(manager->textureMap, tex->name, nameLength, tex);
 }
 
-u32 GetTextureIDByName(TextureManager *manager, const char *name)
+u64 GetTextureIDByName(TextureManager *manager, const char *name)
 {
     Texture *tex = GetTexByName(manager, name);
     if (!tex)
@@ -63,7 +63,7 @@ u32 GetTextureIDByName(TextureManager *manager, const char *name)
     return tex->id;
 }
 
-Texture *GetTextureByID(TextureManager *manager, u32 id)
+Texture *GetTextureByID(TextureManager *manager, u64 id)
 {
     HashEntry *entry = GetFromHashMapByCode(manager->textureMap, id);
     if (entry)

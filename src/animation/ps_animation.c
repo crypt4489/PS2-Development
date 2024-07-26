@@ -228,7 +228,7 @@ Joint *FindJointByName(Joint **joints, u32 total, const char *name)
             continue;
         }
 
-        if (strncmp(ret->name, name, strLength) == 0)
+        if (!strncmp(ret->name, name, strLength))
         {
             return ret;
         }

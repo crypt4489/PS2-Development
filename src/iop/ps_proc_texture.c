@@ -133,7 +133,7 @@ void *allocIopSpace(int bytes)
 {
 	void *addr = SifAllocIopHeap(bytes);
 
-	if (addr == 0)
+	if (!addr)
 	{
 		return NULL;
 	}

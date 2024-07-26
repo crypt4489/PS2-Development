@@ -120,6 +120,7 @@ const char *alphaMap = "ALPHA_MAP.PNG";
 const char *digitZero = "DIGIT.PNG";
 const char *digitOne = "DIGITM1.PNG";
 const char *digitTwo = "DIGITM2.PNG";
+const char *wowwer = "WOW2.PNG";
 
 GameObject *grid = NULL;
 GameObject *body = NULL;
@@ -450,7 +451,7 @@ static void SetupGrid()
     w = 1000;
     h = 1000;
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
-    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -521,7 +522,7 @@ static void SetupAABBBox()
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
     SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CLIPPING);
 
-    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -558,7 +559,7 @@ static void SetupShootBoxBox()
     ReadModelFile("MODELS\\BOX.BIN", &shotBox->vertexBuffer);
     SetupGameObjectPrimRegs(shotBox, color, DRAWING_OPTION | COLOR_ENABLE | ZSTATE(1));
 
-    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&shotBox->vertexBuffer, 0, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -617,7 +618,7 @@ static void SetupOBBBody()
     ReadModelFile("MODELS\\BODY.BIN", &bodyCollision->vertexBuffer);
     SetupGameObjectPrimRegs(bodyCollision, color, RENDERTEXTUREMAPPED | CLIPPING);
 
-    u32 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
     CreateMaterial(&bodyCollision->vertexBuffer, 0, bodyCollision->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -669,6 +670,52 @@ static void CleanUpGame()
 }
 
 
+
+void DrawTexturedObject(GameObject *obj)
+{
+    MATRIX vp;
+     MATRIX world = {1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                -15.0f, 50.0f, 0.0f, 1.0f};
+                 Texture *tex = GetTexByName(g_Manager.texManager, wowwer);
+   
+    MatrixIdentity(vp);
+    MatrixMultiply(vp, vp, world);
+    MatrixMultiply(vp, vp, g_DrawCamera->view);
+    MatrixMultiply(vp, vp, g_DrawCamera->proj);
+    BeginCommand();
+    DepthTest(1, 3);
+    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
+     BindTexture(tex);
+    ShaderHeaderLocation(16);
+    ShaderProgram(0);
+    AllocateShaderSpace(16, 0);
+    
+    PushMatrix(vp, 0, sizeof(MATRIX));
+
+    PushScaleVector();
+    PushColor(0x80, 0x80, 0x80, 0x80, 9);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
+     DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, g_Manager.gs_context, PRIM_UNFIXED), 0, 3), DRAW_STQ2_REGLIST, 10);
+    PushInteger(RENDERTEXTUREMAPPED, 12, 3);
+
+    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount, 2);
+    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+    {
+        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
+    }
+
+    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+    {
+        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
+    }
+
+    DrawVertices();
+    EndCommand();            
+}
+
+
 void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
     
@@ -698,7 +745,6 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
 {
-    static VECTOR scale = {2048.0f, 2048.0f, ((float)0xFFFFFF) / 32.0f, 0.0f };
     PollVU1DoneProcessing(&g_Manager);
     MATRIX vp;
 
@@ -909,6 +955,8 @@ int Render()
        // ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
 
         DrawShadowQuad(480, 640, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
+
+        DrawTexturedObject(shotBox);
         
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
@@ -1009,6 +1057,14 @@ static void LoadInTextures()
     Texture *tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_CLAMP);
 
     SetFilters(tex, PS_FILTER_BILINEAR);
+
+    AppendString(_folder, wowwer, _file, MAX_FILE_NAME);
+
+    tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+
+    DEBUGLOG("%d %llu", tex->psm, tex->id);
+
+    SetFilters(tex, PS_FILTER_BILINEAR);
 }
 
 int main(int argc, char **argv)
@@ -1040,6 +1096,8 @@ int main(int argc, char **argv)
 
     CreateLights();
 
+    SetupFont();
+
     startTime = getTicks(g_Manager.timer);
 
     SetupGameObjects();
@@ -1048,7 +1106,7 @@ int main(int argc, char **argv)
 
     DEBUGLOG("gos %f", endTime - startTime);
 
-    SetupFont();
+    
 
     endTime = getTicks(g_Manager.timer);
 

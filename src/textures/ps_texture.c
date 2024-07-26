@@ -55,7 +55,10 @@ static void StripFilePath(const char *filepath, char *texname)
 
 void AddStringNameToTexture(Texture *tex, const char *buffer)
 {
-    memcpy(tex->name, buffer, strnlen(buffer, MAX_CHAR_TEXTURE_NAME));
+    
+    int length = strnlen(buffer, MAX_CHAR_TEXTURE_NAME);
+    strncpy(tex->name, buffer, length);
+    tex->name[length] = 0;
 }
 
 void CleanTextureStruct(Texture *tex)
@@ -388,13 +391,13 @@ static void BaseTextureAddresses(u32 *texAddress, u32 *clutAddress, u16 mipSize,
    
     for (int i = 0; i<mipSize+1; i++, height>>=1, width>>=1)
     {
-        texAddress[i] = base;
-        base += graph_vram_size(width, height, bpp, GRAPH_ALIGN_BLOCK);
         if (!i && clut)
         {
             *clutAddress = base;
             base += graph_vram_size(cw, ch, GS_PSM_32, GRAPH_ALIGN_BLOCK);
         }
+        texAddress[i] = base;
+        base += graph_vram_size(width, height, bpp, GRAPH_ALIGN_BLOCK); 
     }
 
 }

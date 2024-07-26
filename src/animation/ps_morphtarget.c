@@ -48,7 +48,7 @@ GameObject *CreateObjectMorphBuffer(GameObject *obj, u32 bufferSize)
         return obj;
     }
 
-    if (AddMeshToTargetBuffer(obj->interpolator, &obj->vertexBuffer) == 0)
+    if (!AddMeshToTargetBuffer(obj->interpolator, &obj->vertexBuffer))
     {
         ERRORLOG("object interpolator failed to add base mesh");
     }

@@ -6,6 +6,7 @@
 #include "system/ps_vumanager.h"
 #include "pipelines/ps_vu1pipeline.h"
 #include "log/ps_log.h"
+#include "textures/ps_texture.h"
 #include <string.h>
 static qword_t *sg_DrawBufferPtr = NULL;
 static qword_t *sg_OpenDMATag = NULL;
@@ -98,6 +99,7 @@ qword_t* EndCommand()
     
     qword_t *ret = sg_DrawBufferPtr;
     sg_DrawBufferPtr = NULL;
+    sg_DCODEOpen = NULL;
     return ret;
 }
 
@@ -390,3 +392,16 @@ void AllocateShaderSpace(int size, int offset)
     } 
 }
 
+void BindTexture(Texture *tex)
+{
+    bool usevif = true;
+    if (!sg_DCODEOpen)
+    {
+        UploadTextureViaManagerToVRAM(tex);
+        return;
+    }
+
+    CloseDMATag();
+    
+    sg_DrawBufferPtr = CreateTextureUploadChain(tex, sg_DrawBufferPtr, true, false);
+}

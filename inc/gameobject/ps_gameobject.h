@@ -32,7 +32,7 @@ GameObject *InitializeGameObject();
 qword_t *CreateVU1VertexUpload(qword_t *q, MeshBuffers *buffer, u32 start, u32 end, u32 drawSize, u8 code, qword_t *vu1_addrs);
 qword_t *CreateVU1TargetUpload(qword_t *q, GameObject *obj, u32 start, u32 end, u32 drawSize, u8 code, qword_t *vu1_addrs);
 qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u32 offset, u8 code);
-MeshBuffers *CreateMaterial(MeshBuffers *buff, u32 start, u32 end, u32 id);
+MeshBuffers *CreateMaterial(MeshBuffers *buff, u32 start, u32 end, u64 id);
 LinkedList *AddMaterial(LinkedList *list, Material *mat);
 qword_t * CreateMeshDMAUpload(qword_t *q, GameObject *obj, u32 drawSize, u16 drawCode, u32 matCount, qword_t *vu1_addr);
 

@@ -110,7 +110,7 @@ DMABuffers *CreateDMABuffers(u32 size)
 
 DMABuffers *SwitchDMABuffers(DMABuffers *bufferstruct)
 {
-    if (bufferstruct->bufferId == 0)
+    if (!bufferstruct->bufferId)
     {
         bufferstruct->bufferId = 1;
         bufferstruct->currPointer = ResetBufferPointer(bufferstruct->dma_chains[1]);

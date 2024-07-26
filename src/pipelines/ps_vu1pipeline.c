@@ -63,9 +63,7 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
         else if (decode.code == DMA_DCODE_LOAD_MATERIAL)
         {
             Material *mat = (Material *)q->sw[1];
-            u32 id = mat->materialId;
-            // INFOLOG("texhere! %d", id);
-            Texture *tex = GetTextureByID(g_Manager.texManager, id);
+            Texture *tex = GetTextureByID(g_Manager.texManager, mat->materialId);
             q++;
             if (tex)
             {
@@ -74,13 +72,14 @@ void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
             else
             {
                 ERRORLOG("texture is null");
+                while(1);
             }
         }
 
         else if (decode.code == DMA_DCODE_LOAD_ID_TEXTURE)
         {
 
-            u32 id = q->sw[1];
+            u64 id = q->dw[1];
             // INFOLOG("texhere! %d", id);
             Texture *tex = GetTextureByID(g_Manager.texManager, id);
             q++;

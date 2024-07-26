@@ -10,7 +10,6 @@ void BeginCommandSet(qword_t *drawBuffer);
 
 qword_t* EndCommand();
 
-
 void DepthTest(bool enable, int method);
 
 void DestinationAlphaTest(bool enable, int method);
@@ -64,5 +63,7 @@ void PushScaleVector();
 void DrawVectorFloat(float x, float y, float z, float w);
 
 void SetRegSizeAndType(u64 size, u64 type);
+
+void BindTexture(Texture *tex);
 
 #endif

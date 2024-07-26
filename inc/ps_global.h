@@ -604,7 +604,8 @@ typedef struct RenderTarget
 
 typedef struct avltree_t
 {
-    u32 node, height;
+    u64 node; 
+    u32 height;
     struct avltree_t *left, *right;
     void *data;
 } AVLTree;
@@ -627,7 +628,7 @@ typedef struct hashentry_t
 typedef struct
 {
     u32 count;        // global tex count
-    int currIndex;    // current texture loaded into memory
+    u64 currIndex;    // current texture loaded into memory
     HashMap *textureMap;
 } TextureManager;
 

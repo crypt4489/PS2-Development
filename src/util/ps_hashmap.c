@@ -1,4 +1,5 @@
 #include "util/ps_hashmap.h"
+#include "log/ps_log.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +35,7 @@ static HashEntry *CreateHashEntry(const void *fKey, int size, void *fData)
 }
 
 
-static int DescendHashIndex(AVLTree *root, HashEntry *entry, u32 code)
+static int DescendHashIndex(AVLTree *root, HashEntry *entry, u64 code)
 {
     if (!root)
         return 0;
@@ -59,7 +60,7 @@ static int DescendHashIndex(AVLTree *root, HashEntry *entry, u32 code)
 void InsertHashMap(HashMap *hashmap, const void *key, int lenKey, void *data)
 {
     if (!hashmap || !key || lenKey <= 0 || !data) return;
-    u32 hashCode = hashmap->func(key, lenKey);
+    u64 hashCode = hashmap->func(key, lenKey);
     int index = hashCode % hashmap->cap;
 
     AVLTree *tree = &hashmap->trees[index];
@@ -85,11 +86,11 @@ void InsertHashMap(HashMap *hashmap, const void *key, int lenKey, void *data)
     return;
 }
 
-static HashEntry *FindHashEntry(AVLTree *tree, const void *key, int lenKey, int hashCode)
+static HashEntry *FindHashEntry(AVLTree *tree, const void *key, int lenKey, u64 hashCode)
 {
     while(tree)
     {
-        int code = tree->node;
+        u64 code = tree->node;
         HashEntry *found = tree->data;
         
         if (hashCode == code && (!key || (lenKey == found->sizeKey && !memcmp(found->key, key, lenKey))))
@@ -105,7 +106,7 @@ static HashEntry *FindHashEntry(AVLTree *tree, const void *key, int lenKey, int 
 
 HashEntry* GetFromHashMap(HashMap *hashmap, const void *key, int lenKey)
 {
-    u32 hashCode = hashmap->func(key, lenKey);
+    u64 hashCode = hashmap->func(key, lenKey);
     
     int index = hashCode % hashmap->cap;
 
@@ -114,7 +115,7 @@ HashEntry* GetFromHashMap(HashMap *hashmap, const void *key, int lenKey)
     return FindHashEntry(tree, key, lenKey, hashCode);
 }
 
-HashEntry* GetFromHashMapByCode(HashMap *hashmap, u32 hashCode)
+HashEntry* GetFromHashMapByCode(HashMap *hashmap, u64 hashCode)
 {
     int index = hashCode % hashmap->cap;
 

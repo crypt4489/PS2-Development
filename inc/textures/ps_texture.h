@@ -35,7 +35,7 @@ Texture *AddAndCreateTextureFromBuffer(u8 *fileData, u32 size,
                                        bool useAlpha, u8 alpha, 
                                        u32 mode);
 
-
+qword_t *CreateTextureUploadChain(Texture *tex, qword_t *q, bool direct, bool end);
 void AddMipMapTexture(Texture *tex, Texture *toAdd);
 Texture *RemoveMipLevelFromTexture(Texture *tex, Texture *toRemove);
 void SetupTexLODStruct(Texture *tex, float _k, char _l, int max, int filter_min, int filter_mag);

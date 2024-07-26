@@ -58,7 +58,7 @@ static int readBoolean()
 {
 	n--;
 	int ret = ((buffer >> n) & 1);
-	if (n == 0)
+	if (!n)
 		fillBuffer();
 	return ret;
 }

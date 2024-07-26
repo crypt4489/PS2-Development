@@ -24,7 +24,7 @@ static inline void BGR2RGB(u8 *buffer, u32 stride, u32 size)
 }
 
 static inline void Swizzle(int *out, int *clut,
-                    u8 useAlpha, u8 alpha)
+                    bool useAlpha, u8 alpha)
 {
     for (int i = 0; i < 256; i++)
     {
@@ -228,9 +228,9 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 
     if (tex->psm == GS_PSM_8)
     {
-        u8 clut[256 * 4];
+        u8 clut[1024];
 
-        CopyColorMap(clut, colormap, image.colormap_entries * clutStride, clutStride);
+        CopyColorMap(colormap, clut, image.colormap_entries * clutStride, clutStride);
 
         Swizzle((int *)tex->clut_buffer, (int *)clut, useAlpha, alphaVal);
     }

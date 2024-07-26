@@ -5,6 +5,6 @@ void ClearTextureManagerList(TextureManager *manager);
 Texture *GetTexByName(TextureManager *manager, const char *name);
 TextureManager *CreateTextureManager();
 void AddToTextureManager(TextureManager *manager, Texture *tex);
-u32 GetTextureIDByName(TextureManager *manager, const char *name);
-Texture *GetTextureByID(TextureManager *manager, u32 id);
+u64 GetTextureIDByName(TextureManager *manager, const char *name);
+Texture *GetTextureByID(TextureManager *manager, u64 id);
 #endif

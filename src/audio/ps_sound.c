@@ -51,7 +51,7 @@ static void *AllocIopSpace(int bytes)
 {
 	void *addr = SifAllocIopHeap(bytes);
 
-	if (addr == 0)
+	if (!addr)
 	{
 		return NULL;
 	}
@@ -85,7 +85,7 @@ void LoadSample(unsigned char *wav, int size)
 	sifdma.size = size;
 	sifdma.attr = 0;
 
-	while ((id = SifSetDma(&sifdma, 1)) == 0)
+	while (!(id = SifSetDma(&sifdma, 1)))
 		;
 	while (SifDmaStat(id) >= 0)
 		;
@@ -247,7 +247,7 @@ WavFile *LoadWavFile(const char *name)
 
 	memcpy(&list, buffer, 4);
 
-	if (strncmp("data", list, 4) == 0)
+	if (!strncmp("data", list, 4))
 	{
 		memcpy(&wavFile->header.data_tag, list, 4);
 	}

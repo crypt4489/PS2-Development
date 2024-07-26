@@ -41,12 +41,11 @@ inline qword_t *CreateMaterialDCODETag(qword_t *q, u32 addr)
     return q;
 };
 
-inline qword_t *CreateLoadByIdDCODETag(qword_t *q, u32 id)
+inline qword_t *CreateLoadByIdDCODETag(qword_t *q, u64 id)
 {
     q->sw[0] = DMA_DCODE_LOAD_ID_TEXTURE;
-    q->sw[1] = id;
-    q->sw[2] = DMA_DCODE_LOAD_ID_TEXTURE;
-    q->sw[3] = DMA_DCODE_LOAD_ID_TEXTURE;
+    q->dw[1] = id;
+    
     q++;
     return q;
 };
