@@ -38,7 +38,7 @@ void PushInteger(int num, int vuoffset, int vecoffset);
 
 void PushFloat(float num, int vuoffset, int vecoffset);
 
-void DrawCount(int num, int vertexMemberCount);
+void DrawCount(int num, int vertexMemberCount, bool toVU);
 
 void DrawVector(VECTOR v);
 

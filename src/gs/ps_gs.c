@@ -17,7 +17,7 @@ void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, 
 {
 	InitFramebuffer(frame1, manager->ScreenWidth, manager->ScreenHeight, psm, true);
 
-	if (z->enable) InitZBuffer(z, manager->ScreenWidth, manager->ScreenHeight, GS_ZBUF_24, ZTEST_METHOD_GREATER_EQUAL, true);
+	if (z) InitZBuffer(z, manager->ScreenWidth, manager->ScreenHeight, GS_ZBUF_24, ZTEST_METHOD_GREATER_EQUAL, true);
 
 	if (frame2) InitFramebuffer(frame2, manager->ScreenWidth, manager->ScreenHeight, psm, true);
 	

@@ -18,7 +18,7 @@
 
 void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign alignment)
 {
-    UploadTextureViaManagerToVRAM(fontStruct->fontTex);
+    BindTexture(fontStruct->fontTex);
 
     blend_t blender;
     blender.color1 = BLEND_COLOR_SOURCE;
@@ -28,7 +28,7 @@ void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign align
     blender.fixed_alpha = 0x80;
 
     BeginCommand();
-    DepthTest(1, 1);
+    DepthTest(true, 1);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0);
     BlendingEquation(&blender);
     int ret = -1;
@@ -253,7 +253,7 @@ void LoadFontWidths(Font *font_struct, const char *filePath)
 
 int WidthOfString(Font *font_struct, const char *text)
 {
-    size_t textlen = strnlen(text, MAX_DISPLAY_TEXT);
+    int textlen = strnlen(text, MAX_DISPLAY_TEXT);
     int size = 0;
 
     for (u32 letter = 0; letter < textlen; letter++)
@@ -272,7 +272,7 @@ unsigned char *RewriteAlphaClutBuffer(unsigned char *buffer)
     for (int i = 0; i < 1024; i += 4)
     {
         char temp = buffer[i];
-        if (temp == 0)
+        if (!temp)
         {
             buffer[i] = buffer[i + 1] = buffer[i + 2] = 0xFF;
             buffer[i + 3] = 0;
@@ -285,14 +285,13 @@ unsigned char *RewriteAlphaClutBuffer(unsigned char *buffer)
     return buffer;
 }
 
-#define reglist ((u64)DRAW_UV_REGLIST) << 8 | DRAW_UV_REGLIST
 
 int RenderL(Font *font_struct, int x, int y, const char *text)
 {
 
     size_t textlen = strnlen(text, MAX_DISPLAY_TEXT);
 
-    if (textlen == 0)
+    if (!textlen)
     {
         ERRORLOG("Text length of zero for render left");
         return -1;
@@ -307,7 +306,7 @@ int RenderL(Font *font_struct, int x, int y, const char *text)
     PrimitiveTypeStruct(font_struct->prim);
 
     SetRegSizeAndType(3, DRAW_RGBAQ_UV_REGLIST);
-    DrawCount(textlen * 4, 1);
+    DrawCount(textlen * 4, 1, false);
 
     u32 lastx = x;
     u32 line = 0;
@@ -370,8 +369,6 @@ int RenderL(Font *font_struct, int x, int y, const char *text)
 
         lastx += (letterwidth);
     }
-
-    DrawVertices();
 
     return 0;
 }

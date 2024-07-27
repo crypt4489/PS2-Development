@@ -13,10 +13,7 @@ void ClearManagerStruct(GameManager *manager);
 void SwapManagerDMABuffers();
 void EndFrame(bool useVsync);
 void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize) ;
+void StartFrame();
 
-inline void SetGlobalManagerCam(Camera *cam)
-{
-    g_Manager.mainCam = cam;
-};
 
 #endif

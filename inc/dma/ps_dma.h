@@ -18,6 +18,7 @@ void InitializeDMAChannels();
 
 qword_t *CreateDMATag(qword_t *q, u32 code, u32 size, u32 w2, u32 w3, u32 spr, ...);
 qword_t *CreateDirectTag(qword_t *q, u32 size, u32 inte);
+qword_t *CreateDirectHLTag(qword_t *q, u32 size, u32 inte);
 qword_t *AddSizeToDMATag(qword_t *q, u32 size);
 qword_t *AddSizeToDirectTag(qword_t *q, u32 size);
 

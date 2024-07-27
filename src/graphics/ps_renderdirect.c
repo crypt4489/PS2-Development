@@ -20,13 +20,7 @@ extern VECTOR up;
 void RenderRay(Ray *ray, Color color, float t)
 {
     PollVU1DoneProcessing(&g_Manager);
-    MATRIX vp;
     VECTOR v[2];
-
-    MatrixIdentity(vp);
-
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
 
     VectorCopy(v[0], ray->origin);
     VectorScaleXYZ(v[1], ray->direction, t);
@@ -35,14 +29,14 @@ void RenderRay(Ray *ray, Color color, float t)
     BeginCommand();
     ShaderHeaderLocation(16);
     ShaderProgram(0);
-     DepthTest(1, 3);
+    DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(vp, 0, sizeof(MATRIX));
+    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushScaleVector();
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    DrawCount(2, 1);
+    DrawCount(2, 1, true);
     DrawVectorFloat(v[0][0], v[0][1], v[0][2], 1.0f);
     DrawVectorFloat(v[1][0], v[1][1], v[1][2], 1.0f);
     DrawVertices();
@@ -52,24 +46,17 @@ void RenderRay(Ray *ray, Color color, float t)
 void RenderLine(Line *line, Color color)
 {
     PollVU1DoneProcessing(&g_Manager);
-    MATRIX vp;
-
-    MatrixIdentity(vp);
-
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
-
     BeginCommand();
     ShaderHeaderLocation(16);
     ShaderProgram(0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(vp, 0, sizeof(MATRIX));
+    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushScaleVector();
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    DrawCount(2, 1);
+    DrawCount(2, 1, true);
     DrawVector(line->p1);
     DrawVector(line->p2);
     DrawVertices();
@@ -79,24 +66,17 @@ void RenderLine(Line *line, Color color)
 void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
 {
     PollVU1DoneProcessing(&g_Manager);
-    MATRIX vp;
-
-    MatrixIdentity(vp);
-
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
-
     BeginCommand();
     ShaderHeaderLocation(16);
     ShaderProgram(0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(vp, 0, sizeof(MATRIX));
+    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushScaleVector();
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    DrawCount(numVerts, 1);
+    DrawCount(numVerts, 1, true);
     for (int i = 0; i<numVerts; i++)
     {
         DrawVector(verts[i]);
@@ -117,9 +97,7 @@ void RenderGameObject(GameObject *obj, Color *colors)
     CreateWorldMatrixLTM(obj->ltm, m);
 
     MatrixMultiply(vp, vp, m);
-
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
+    MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
 
     BeginCommand();
     ShaderHeaderLocation(16);
@@ -140,7 +118,7 @@ void RenderGameObject(GameObject *obj, Color *colors)
     PushInteger(obj->renderState.state.render_state.state, 12, 3);
 
     u32 count = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
-    DrawCount(count, 2);
+    DrawCount(count, 2, true);
     VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
     for (int i = 0; i<count; i++)
     {
@@ -181,8 +159,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     MatrixIdentity(vp);
 
     MatrixMultiply(vp, vp, m);
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
+    MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
 
     BeginCommand();
     ShaderHeaderLocation(16);
@@ -194,7 +171,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     PushScaleVector();
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    DrawCount(10, 1);
+    DrawCount(10, 1, true);
 
     DrawVector(v[0]);
     DrawVector(v[1]);
@@ -227,23 +204,18 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     float step = TWOPI / size;
     float ang = 0;
 
-    MatrixIdentity(vp);
-
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
-
     BeginCommand();
     ShaderHeaderLocation(16);
     ShaderProgram(0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(vp, 0, sizeof(MATRIX));
+    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushScaleVector();
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT,
      DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    DrawCount(size*2, 1);
+    DrawCount(size*2, 1, true);
     for (int i = 0; i < size - 1; i++)
     {
         DrawVectorFloat(r * Cos(ang) + center[0], r * Sin(ang) + center[1], center[2], 1.0f);
@@ -268,8 +240,7 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
 
     MatrixMultiply(vp, vp, world);
 
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
+    MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
 
     VectorCopy(v[0], boxx->top);
     VectorCopy(v[7], boxx->bottom);
@@ -292,7 +263,7 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     PushScaleVector();
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    DrawCount(24, 1);
+    DrawCount(24, 1, true);
 
     DrawVector(v[0]);
     DrawVector(v[1]);

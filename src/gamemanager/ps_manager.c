@@ -20,6 +20,11 @@
 #include "textures/ps_texturemanager.h"
 #include "graphics/ps_rendertarget.h"
 #include "gs/ps_vrammanager.h"
+#include "gameobject/ps_ltm.h"
+#include "math/ps_matrix.h"
+#include "math/ps_plane.h"
+#include "math/ps_vector.h"
+#include "camera/ps_camera.h"
 
 GameManager g_Manager;
 
@@ -38,22 +43,20 @@ void InitializeSystem(bool useZBuffer, u32 width, u32 height, u32 psm)
 
     InitPad(port, slot, padBuf);
 
-    InitializeManager(width, height, true, 1000, 10, useZBuffer, psm);
+    InitializeManager(width, height, true, 2000, 10, useZBuffer, psm);
 
     SetupVU1INTEHandler();
 }
 
 void CreateManagerRenderTargets(bool useZBuffer, u32 psm)
 {
-    g_Manager.targetBack = AllocRenderTarget(true);
+    g_Manager.targetBack = AllocRenderTarget(useZBuffer);
     g_Manager.targetDisplay = AllocRenderTarget(false);
 
     if (!g_Manager.targetBack || !g_Manager.targetDisplay)
     {
         ERRORLOG("failed to allocate the rendertargets manager");
     }
-
-    g_Manager.targetBack->z->enable = useZBuffer;
 
     InitGS(&g_Manager, g_Manager.targetBack->render, g_Manager.targetDisplay->render, g_Manager.targetBack->z, psm);
 
@@ -81,7 +84,6 @@ void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSiz
     g_Manager.targetBack = NULL;
     g_Manager.targetDisplay = NULL;
     g_Manager.dmabuffers = NULL;
-    g_Manager.mainCam = NULL;
     g_Manager.vu1Manager = NULL;
 
     g_Manager.dmabuffers = CreateDMABuffers(bufferSize);
@@ -96,6 +98,29 @@ void InitializeManager(u32 width, u32 height, bool doubleBuffer, u32 bufferSize,
     CreateManagerStruct(width, height, doubleBuffer, bufferSize, programSize);
 
     CreateManagerRenderTargets(useZBuffer, psm);
+}
+
+void StartFrame()
+{
+    if (GetDirtyLTM(g_DrawCamera->ltm))
+    {
+        CreateCameraWorldMatrix(g_DrawCamera, g_DrawCamera->world);
+        MatrixIdentity(g_DrawCamera->viewProj);
+        MatrixMultiply(g_DrawCamera->viewProj, g_DrawCamera->viewProj, g_DrawCamera->view);
+        MatrixMultiply(g_DrawCamera->viewProj, g_DrawCamera->viewProj, g_DrawCamera->proj);
+        for (int i = 0; i < 6; i++)
+        {
+            VECTOR normal;
+            Matrix3VectorMultiply(normal, g_DrawCamera->world, g_DrawCamera->frus[0]->sides[i].planeEquation);
+            MatrixVectorMultiply(g_DrawCamera->frus[1]->sides[i].pointInPlane, g_DrawCamera->world, g_DrawCamera->frus[0]->sides[i].pointInPlane);
+
+            Normalize(normal, normal);
+
+            ComputePlane(g_DrawCamera->frus[1]->sides[i].pointInPlane, 
+                        normal, 
+                        g_DrawCamera->frus[1]->sides[i].planeEquation);
+        }
+    }
 }
 
 

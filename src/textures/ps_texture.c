@@ -338,7 +338,7 @@ qword_t *TextureTransfer(qword_t *q, void *src, int width, int height,
         q= CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0);
 
         if (usevif)
-            q = CreateDirectTag(q, GIF_BLOCK_SIZE+1, 0);
+            q = CreateDirectHLTag(q, GIF_BLOCK_SIZE+1, 0);
 
         q = CreateGSSetTag(q, GIF_BLOCK_SIZE, 0, GIF_FLG_IMAGE, 0, 0);
 
@@ -351,11 +351,11 @@ qword_t *TextureTransfer(qword_t *q, void *src, int width, int height,
         q = CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0);
 
         if (usevif)
-            q = CreateDirectTag(q, remaining+1, 0);
+            q = CreateDirectHLTag(q, remaining+1, 0);
 
         q = CreateGSSetTag(q, remaining, 0, GIF_FLG_IMAGE, 0, 0);
 
-        q = CreateDMATag(q, DMA_REF, remaining, 0, 0, 0, (u32)src);
+        q = CreateDMATag(q, DMA_REFS, remaining, 0, 0, 0, (u32)src);
     }
 
     return q;

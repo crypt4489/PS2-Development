@@ -120,7 +120,7 @@ const char *alphaMap = "ALPHA_MAP.PNG";
 const char *digitZero = "DIGIT.PNG";
 const char *digitOne = "DIGITM1.PNG";
 const char *digitTwo = "DIGITM2.PNG";
-const char *wowwer = "WOW2.PNG";
+const char *wowwer = "WOW.PNG";
 
 GameObject *grid = NULL;
 GameObject *body = NULL;
@@ -361,8 +361,6 @@ static void SetupWorldObjects()
 
     CreateCameraFrustum(cam);
 
-    SetGlobalManagerCam(cam);
-
     SetLastAndDirtyLTM(cam->ltm, 1.0f);
 
     world = CreateRenderWorld();
@@ -520,7 +518,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CLIPPING);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
@@ -674,20 +672,20 @@ static void CleanUpGame()
 void DrawTexturedObject(GameObject *obj)
 {
     MATRIX vp;
-     MATRIX world = {1.0f, 0.0f, 0.0f, 0.0f,
+    MATRIX world = {1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, 1.0f, 0.0, 0.0f,
                 0.0f, 0.0f, 1.0f, 0.0f,
                 -15.0f, 50.0f, 0.0f, 1.0f};
-                 Texture *tex = GetTexByName(g_Manager.texManager, wowwer);
+
+    BindTexture(GetTexByName(g_Manager.texManager, wowwer));
    
     MatrixIdentity(vp);
     MatrixMultiply(vp, vp, world);
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
+    MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
     BeginCommand();
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
-     BindTexture(tex);
+     
     ShaderHeaderLocation(16);
     ShaderProgram(0);
     AllocateShaderSpace(16, 0);
@@ -700,19 +698,35 @@ void DrawTexturedObject(GameObject *obj)
      DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, g_Manager.gs_context, PRIM_UNFIXED), 0, 3), DRAW_STQ2_REGLIST, 10);
     PushInteger(RENDERTEXTUREMAPPED, 12, 3);
 
-    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount, 2);
-    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount/2, 2, true);
+    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount/2; i++)
     {
         DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
     }
 
-    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount/2; i++)
     {
         DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
     }
 
     DrawVertices();
-    EndCommand();            
+    EndCommand();  
+    BindTexture(GetTexByName(g_Manager.texManager, worldName));
+    BeginCommand();
+    
+    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount/2, 2, true);
+    for (int i = obj->vertexBuffer.meshData[1]->vertexCount/2; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+    {
+        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
+    }
+
+    for (int i = obj->vertexBuffer.meshData[1]->vertexCount/2; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+    {
+        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
+    }
+
+    DrawVertices();
+    EndCommand(); 
 }
 
 
@@ -729,10 +743,10 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     DestinationAlphaTest(destTestEnable, destTest);
     FrameBufferMaskWord(setFrameMask);
-    DepthBufferMask(1);
+    DepthBufferMask(true);
     SetRegSizeAndType(2, DRAW_RGBAQ_REGLIST);
     PrimitiveType(GS_SET_PRIM(PRIM_TRIANGLE_STRIP, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED));
-    DrawCount(4, 1);
+    DrawCount(4, 1, false);
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
@@ -746,22 +760,17 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
 {
     PollVU1DoneProcessing(&g_Manager);
-    MATRIX vp;
 
-    MatrixIdentity(vp);
-
-    MatrixMultiply(vp, vp, g_DrawCamera->view);
-    MatrixMultiply(vp, vp, g_DrawCamera->proj);
     BeginCommand();
     ShaderHeaderLocation(16);
     ShaderProgram(8);
-    DepthTest(1, 3);
+    DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     FrameBufferMask(0xFF, 0xFF, 0xFF, 0x00);
-    DepthBufferMask(1);
+    DepthBufferMask(true);
     
     AllocateShaderSpace(16, 0);
-    PushMatrix(vp, 0, sizeof(MATRIX));
+    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushMatrix(m, 4, sizeof(MATRIX));
     PushScaleVector();
     PushColor(0, 0, 0, 0x80, 9);
@@ -770,7 +779,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     PushMatrix(volLightPos, 11, 12);
     PushInteger(0x3, 11, 3);
     PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(VECTOR));
-    DrawCount(count, 1);
+    DrawCount(count, 1, true);
     for (int i = 0; i < count; i++)
     {
         DrawVector(verts[i]);
@@ -782,14 +791,14 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
      DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 1);
     PushMatrix(volLightPos, 2, 12);
     PushInteger(0x0, 2, 3);
-    DrawCount(count, 1);
+    DrawCount(count, 1, true);
     for (int i = 0; i < count; i++)
     {
         DrawVector(verts[i]);
     }
     DrawVertices();
-    FrameBufferMask(0x0, 0x0, 0x0, 0x00);
-    DepthBufferMask(0);
+    FrameBufferMask(0x0, 0x0, 0x0, 0x0);
+    DepthBufferMask(false);
     EndCommand();
 }
 
@@ -934,6 +943,8 @@ int Render()
             UpdateAnimator(body->objAnimator, delta);
 
         float time1 = getTicks(g_Manager.timer);
+
+        StartFrame();
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 

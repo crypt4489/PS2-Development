@@ -48,6 +48,14 @@ qword_t *CreateDirectTag(qword_t *q, u32 size, u32 inte)
     return q;
 }
 
+qword_t *CreateDirectHLTag(qword_t *q, u32 size, u32 inte)
+{
+    q->sw[0] = q->sw[1] = q->sw[2] = 0;
+    q->sw[3] = VIF_CODE(size, 0, VIF_CMD_DIRECTHL, inte);
+    q++;
+    return q;
+}
+
 qword_t *AddSizeToDMATag(qword_t *q, u32 size)
 {
     q->sw[0] = (q->sw[0] | (size & 0x0000FFFF));

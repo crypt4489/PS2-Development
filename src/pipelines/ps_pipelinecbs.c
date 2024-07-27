@@ -335,14 +335,13 @@ void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t
 
   memcpy(pipeline_temp + 4, m, 4 * sizeof(qword_t));
 
-  MatrixMultiply(screen, screen, cam->view);
-  MatrixMultiply(screen, screen, cam->proj);
+  MatrixMultiply(screen, screen, cam->viewProj);
 
   memcpy(pipeline_temp, screen, 4 * sizeof(qword_t));
 
   camProps[0] = cam->near;
-  camProps[1] = cam->frus->nwidth;
-  camProps[2] = cam->frus->nheight;
+  camProps[1] = cam->frus[0]->nwidth;
+  camProps[2] = cam->frus[0]->nheight;
   memcpy(pipeline_temp + 13, camProps, sizeof(float) * 4);
   if (GetDirtyLTM(cam->ltm))
   {

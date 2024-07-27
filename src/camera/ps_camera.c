@@ -88,9 +88,14 @@ void CleanCameraObject(Camera *cam)
             free(cam->vboContainer);
         }
 
-        if (cam->frus)
+        if (cam->frus[0])
         {
-            free(cam->frus);
+            free(cam->frus[0]);
+        }
+
+        if (cam->frus[1])
+        {
+            free(cam->frus[1]);
         }
 
         free(cam);
@@ -150,6 +155,7 @@ int HandleCamMovement(Camera *cam, u32 type)
 void CreateCameraWorldMatrix(Camera *cam, MATRIX output)
 {
     MATRIX temp_out;
+    MatrixIdentity(temp_out);
 
     temp_out[0] = cam->ltm[0];
     temp_out[1] = cam->ltm[1];
@@ -158,10 +164,12 @@ void CreateCameraWorldMatrix(Camera *cam, MATRIX output)
     temp_out[4] = cam->ltm[4];
     temp_out[5] = cam->ltm[5];
     temp_out[6] = cam->ltm[6];
+    
 
     temp_out[8] = cam->ltm[8];
     temp_out[9] = cam->ltm[9];
     temp_out[10] = cam->ltm[10];
+
 
     temp_out[12] = cam->ltm[12];
     temp_out[13] = cam->ltm[13];
@@ -259,7 +267,12 @@ void CreateCameraFrustum(Camera *cam)
 
     SetupPlane(tempNormal, tempOut, &frus->sides[5]);
 
-    cam->frus = frus;
+    cam->frus[0] = frus;
+    cam->frus[1] = (Frustum *)malloc(sizeof(Frustum));
+    cam->frus[1]->nwidth = nw;
+    cam->frus[1]->nheight = nh;
+
+
 
     /*
 
@@ -310,7 +323,7 @@ Camera *InitCamera(int width, int height, float near, float far, float aspect, f
     cam->width = width;
     cam->height = height;
     cam->angle = angle;
-    cam->frus = NULL;
+    cam->frus[0] = cam->frus[1] = NULL;
     return cam;
 }
 
@@ -342,11 +355,9 @@ void FindPosAndNegVertexvbo(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal
 
 int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 {
-    MATRIX camMatrix, worldMatrix;
+    MATRIX worldMatrix;
 
     int ret = 1;
-
-    
 
     if (obj->vboContainer->type == VBO_FIXED || obj->vboContainer->type == VBO_FIT)
     {
@@ -367,32 +378,30 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
            VectorCopy(botExtWorld, box->bottom);
         }
 
-        CreateVector(Min(topExtWorld[0], botExtWorld[0]), Min(topExtWorld[1], botExtWorld[1]), Min(topExtWorld[2], botExtWorld[2]), 0.0f, minExtent);
-        CreateVector(Max(topExtWorld[0], botExtWorld[0]), Max(topExtWorld[1], botExtWorld[1]), Max(topExtWorld[2], botExtWorld[2]), 0.0f, maxExtent);
-
-        CreateCameraWorldMatrix(cam, camMatrix);
-        // DumpCameraFrustum(cam);
+        asm __volatile__(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
+        "vmax.xyz $vf3, $vf1, $vf2\n"
+        "vmini.xyz $vf4, $vf1, $vf2\n"
+        "sqc2 $vf3, 0x00(%2)\n"
+        "sqc2 $vf4, 0x00(%3)\n"
+        :
+        : "r"(topExtWorld), "r"(botExtWorld), "r"(maxExtent), "r"(minExtent)
+        : "memory");
+        
         for (int i = 0; i < 6; i++)
         {
-            VECTOR pVert, nVert, tempPlane, tempNormal, tempPoint;
-
-            Matrix3VectorMultiply(tempNormal, camMatrix, cam->frus->sides[i].planeEquation);
-            MatrixVectorMultiply(tempPoint, camMatrix, cam->frus->sides[i].pointInPlane);
-
-            Normalize(tempNormal, tempNormal);
-
-            ComputePlane(tempPoint, tempNormal, tempPlane);
-
-            // DumpVector(tempPlane);
-            FindPosAndNegVertexvbo(maxExtent, minExtent, tempNormal, pVert, nVert);
-
-            if (DistanceFromPlane(tempPlane, pVert) < 0)
+            VECTOR pVert, nVert;
+       
+            FindPosAndNegVertexvbo(maxExtent, minExtent, cam->frus[1]->sides[i].planeEquation, pVert, nVert);
+            
+            if (DistanceFromPlane(cam->frus[1]->sides[i].planeEquation, pVert) < 0)
             {
                 DEBUGLOG("%d", i+1);
                 return 0;
             }
 
-            if (DistanceFromPlane(tempPlane, nVert) < 0)
+            if (DistanceFromPlane(cam->frus[1]->sides[i].planeEquation, nVert) < 0)
             {
                 ret = 2;
             }
@@ -408,7 +417,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 void DumpCameraFrustum(Camera *cam)
 {
     MATRIX m;
-    Frustum *frum = cam->frus;
+    Frustum *frum = cam->frus[0];
     CreateCameraWorldMatrix(cam, m);
     VECTOR temp, temp1;
     Matrix3VectorMultiply(temp, m, frum->sides[0].planeEquation);

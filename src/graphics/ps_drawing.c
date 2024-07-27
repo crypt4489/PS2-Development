@@ -4,6 +4,7 @@
 #include "system/ps_vif.h"
 #include "math/ps_vector.h"
 #include "system/ps_vumanager.h"
+#include "gamemanager/ps_manager.h"
 #include "pipelines/ps_vu1pipeline.h"
 #include "log/ps_log.h"
 #include "textures/ps_texture.h"
@@ -19,7 +20,7 @@ static qword_t *sg_OpenGIFTag = NULL;
 static int sg_reservedVU1Space;
 static int sg_DrawCount;
 static int sg_ShaderInUse;
-static int sg_TTEUse;
+static bool sg_TTEUse;
 static int sg_VertexType;
 static int sg_RegisterCount;
 static int sg_RegisterType;
@@ -45,6 +46,7 @@ void ShaderProgram(int shader)
 
 void BeginCommand()
 {
+    while(PollVU1DoneProcessing(&g_Manager));
     sg_TTEUse = 0;
     sg_DrawBufferPtr = GetDMABasePointer();
     sg_DCODEOpen = sg_DrawBufferPtr++;
@@ -94,7 +96,7 @@ qword_t* EndCommand()
     CloseDMATag();
     CreateDCODEDmaTransferTag(sg_DCODEOpen, DMA_CHANNEL_VIF1, sg_TTEUse, 1, sg_DrawBufferPtr-sg_DCODEOpen-1);
     
-    CreateDCODETag(sg_DrawBufferPtr, DMA_DCODE_END);
+    sg_DrawBufferPtr = CreateDCODETag(sg_DrawBufferPtr, DMA_DCODE_END);
     SubmitDMABuffersAsPipeline(sg_DrawBufferPtr, NULL);
     
     qword_t *ret = sg_DrawBufferPtr;
@@ -323,28 +325,24 @@ void SetRegSizeAndType(u64 size, u64 type)
     sg_RegisterType = type;
 }
 
-void DrawCount(int num, int vertexMemberCount)
+void DrawCount(int num, int vertexMemberCount, bool toVU)
 {
     sg_OpenTestReg = NULL;
     sg_DrawCount = num;
 
-    if (sg_VIFHeaderUpload)
+    if (toVU)
     {
         sg_VIFHeaderUpload = NULL;
         sg_VIFProgramUpload = sg_DrawBufferPtr;
         sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, (vertexMemberCount*num)+1, 1, VIF_CMD_UNPACK(0, 3, 0));
         sg_DrawBufferPtr->sw[3] = num;
         sg_DrawBufferPtr++;
+        sg_TTEUse = true;
     } else {
-    
-
         PACK_GIFTAG(sg_DrawBufferPtr, sg_PrimitiveType, GS_REG_PRIM);
         sg_DrawBufferPtr++;
-
         CloseGSSetTag();
-
-
-        PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(num, 1, 1, 0, GIF_FLG_REGLIST, sg_RegisterCount), sg_RegisterType);
+        PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(num, 1, 0, 0, GIF_FLG_REGLIST, sg_RegisterCount), sg_RegisterType);
         sg_DrawBufferPtr++;
     }
 }

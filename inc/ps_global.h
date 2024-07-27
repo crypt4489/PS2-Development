@@ -479,11 +479,13 @@ typedef struct camera_t
     float angle;
     u32 height;
     u32 width;
-    Frustum *frus;
+    Frustum *frus[2];
     MATRIX view;
     MATRIX proj;
     ObjectBounds *vboContainer;
     MATRIX ltm;
+    MATRIX world;
+    MATRIX viewProj;
 } Camera;
 
 enum DrawTags
@@ -584,6 +586,7 @@ struct render_world_t
 struct gameobject_t
 {
     MATRIX ltm;
+    MATRIX world;
     MeshBuffers vertexBuffer;
     void (*update_object)(struct gameobject_t *);
     void *objData;
@@ -666,7 +669,7 @@ typedef struct
     RenderTarget *targetDisplay;
     TextureManager *texManager;
     VU1Manager *vu1Manager;
-    Camera *mainCam;
+
     DMABuffers *dmabuffers;
     VRAMManager *vramManager;
     bool vu1DoneProcessing;
