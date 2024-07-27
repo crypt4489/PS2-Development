@@ -19,11 +19,28 @@ u64 TextureManagerHashFunction(const char* key, int size)
     return hashval;
 }
 
-void ClearManagerTexList(TextureManager *manager)
+static void DeleteTextureNode(AVLTree *node)
 {
-    ClearHashMap(manager->textureMap->trees, true, manager->textureMap->cap);
+    if (node)
+    {
+        CleanTextureStruct(node->data);
+        DeleteTextureNode(node->left);
+        DeleteTextureNode(node->right);
+        free(node);
+    }
+}
+
+void CleanTextureManager(TextureManager *manager)
+{
+    for (int i = 0; i<manager->textureMap->cap; i++)
+    {
+        DeleteTextureNode(manager->textureMap->trees[i].left);
+        DeleteTextureNode(manager->textureMap->trees[i].right);
+    }
+    free(manager->textureMap->trees);
     manager->count = 0;
     manager->currIndex = -1;
+    free(manager);
 }
 
 Texture *GetTexByName(TextureManager *manager, const char *name)

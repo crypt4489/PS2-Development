@@ -181,7 +181,6 @@ void InitTextureResources(Texture *tex, u32 mode)
 
         CreateTexStructs(tex, tex->width, tex->psm, components, TEXTURE_FUNCTION_MODULATE, 0);
 
-        //tex->upload = (qword_t *)malloc(sizeof(qword_t) * 50);
     }
 }
 

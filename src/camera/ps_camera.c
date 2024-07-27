@@ -1,6 +1,5 @@
 #include "camera/ps_camera.h"
 
-#include <malloc.h>
 #include <stdlib.h>
 
 #include "math/ps_vector.h"

@@ -3,8 +3,8 @@
 #include <png.h>
 
 #include <string.h>
-#include <malloc.h>
 #include <stdlib.h>
+#include <malloc.h>
 
 #include "io/ps_file_io.h"
 #include "textures/ps_texture.h"

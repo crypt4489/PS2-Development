@@ -857,3 +857,91 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
 
     free(buffer);
 }
+
+static void DeleteAnimationNode(AnimationNode *root)
+{
+    if (root)
+    {
+        for (int i = 0; i<root->childrenCount; i++)
+        {
+            DeleteAnimationNode(root->children[i]);
+        }
+
+        free(root);
+    }
+}
+
+static void DeleteAnimationData(AnimationData *data)
+{
+    if (data)
+    {
+        int i;
+        for (i = 0; i<data->numPositionKeys; i++)
+        {
+            AnimationKeyHolder *key = data->keyPositions[i];
+            for (int j = 0; j<key->count; j++)
+            {
+                free(key->keys[j]);
+            }
+            free(key->keys);
+            free(key);
+        }
+
+        free(data->keyPositions);
+
+        for (i = 0; i<data->numRotationKeys; i++)
+        {
+            AnimationKeyHolder *key = data->keyRotations[i];
+            for (int j = 0; j<key->count; j++)
+            {
+                free(key->keys[j]);
+            }
+            free(key->keys);
+            free(key);
+        }
+
+        free(data->keyRotations);
+
+        for (i = 0; i<data->numRotationKeys; i++)
+        {
+            AnimationKeyHolder *key = data->keyScalings[i];
+            for (int j = 0; j<key->count; j++)
+            {
+                free(key->keys[j]);
+            }
+            free(key->keys);
+            free(key);
+        }
+
+        free(data->keyScalings);
+
+        DeleteAnimationNode(data->root);
+
+        free(data);
+    }
+}
+
+void DestroyAnimationMesh(AnimationMesh *meshAnimationData)
+{
+    if (meshAnimationData)
+    {
+        for (int i = 0; i<meshAnimationData->jointsCount; i++)
+        {
+            free(meshAnimationData->joints[i]);
+        }
+
+        free(meshAnimationData->joints);
+
+        if (meshAnimationData->animations)
+        {
+            LinkedList *list = meshAnimationData->animations;
+            while(list)
+            {
+                DeleteAnimationData(list->data);
+                list = CleanLinkedListNode(list);
+            }
+        }
+        
+        free(meshAnimationData);
+    }
+}

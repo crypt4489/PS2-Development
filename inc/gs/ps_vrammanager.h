@@ -3,6 +3,7 @@
 #include "ps_global.h"
 
 VRAMManager *CreateVRAMManager();
+void DeleteVRAMManager(VRAMManager *manager);
 int AllocateVRAM(VRAMManager *manager, int width, int height, int bpp, bool systemMemory);
 void CalculateTextureBasePointer(VRAMManager *manager, RenderTarget *target);
 void AddRenderTargetVRAMManager(VRAMManager *manager, RenderTarget *target);

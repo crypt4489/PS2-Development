@@ -2,7 +2,6 @@
 
 
 #include <kernel.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -32,16 +31,11 @@ void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, 
 
 void SetGraph(GameManager *manager)
 {
-	// Set a default interlaced video mode with flicker filter.
 	graph_set_mode(GRAPH_MODE_INTERLACED, graph_get_region(), GRAPH_MODE_FIELD, GRAPH_ENABLE);
 
-	// Set the screen up
 	graph_set_screen(0, 0, manager->ScreenWidth, manager->ScreenHeight);
 
-	// Set black background
 	graph_set_bgcolor(manager->bgkc.r, manager->bgkc.g, manager->bgkc.b);
-
-	// graph_set_framebuffer_filtered(frame->address, frame->width, frame->psm, 0, 0);
 
 	graph_enable_output();
 }
@@ -272,8 +266,6 @@ void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 func
 
 	tex->texbuf.width = width;
 	tex->texbuf.psm = psm;
-
-	//tex->texbuf.address = g_Manager.textureInVram->texbuf.address;
 }
 
 

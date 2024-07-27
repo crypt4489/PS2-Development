@@ -15,6 +15,66 @@ void CreateMorphTargetBuffersFromFile(const char *targetFile, MeshBuffers *buffe
     ReadModelFile(targetFile, buffer);
 }
 
+void DestroyMorphTarget(MorphTargetBuffer *buffer)
+{
+    if (buffer)
+    {
+        for (int i = 0; i<buffer->meshCount; i++)
+        {
+            if (buffer->morph_targets[i])
+            {
+                for (int j = 0; j<2; j++) 
+                {
+                    if (buffer->morph_targets[i]->meshData[j]->vertices)
+                    {
+                        free(buffer->morph_targets[i]->meshData[j]->vertices);
+                    }
+
+                    if (buffer->morph_targets[i]->meshData[j]->normals)
+                    {
+                        free(buffer->morph_targets[i]->meshData[j]->normals);
+                    }
+
+                    if (buffer->morph_targets[i]->meshData[j]->texCoords)
+                    {
+                        free(buffer->morph_targets[i]->meshData[j]->texCoords);
+                    }
+
+                    if (buffer->morph_targets[i]->meshData[j]->bones)
+                    {
+                        free(buffer->morph_targets[i]->meshData[j]->bones);
+                    }
+
+                    if (buffer->morph_targets[i]->meshData[j]->weights)
+                    {
+                        free(buffer->morph_targets[i]->meshData[j]->weights);
+                    }
+
+                    if (buffer->morph_targets[i]->meshData[j]->colors)
+                    {
+                        free(buffer->morph_targets[i]->meshData[j]->colors);
+                    }
+                }
+            }
+            free(buffer->morph_targets[i]);
+        }
+
+        free(buffer->morph_targets);
+        
+        for(int i = 0; i<buffer->interpCount; i++)
+        {
+            if (buffer->interpolators[i])
+            {
+                free(buffer->interpolators[i]);
+            }
+        }
+
+        free(buffer->interpolators);
+
+        free(buffer);
+    }
+}
+
 MorphTargetBuffer *CreateMorphTargetBuffer(u32 bufferSize)
 {
     MorphTargetBuffer *buffer = (MorphTargetBuffer *)malloc(sizeof(MorphTargetBuffer));

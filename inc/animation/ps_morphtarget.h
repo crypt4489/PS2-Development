@@ -32,5 +32,5 @@ void SetMorphTargetCallback(MorphTargetBuffer *buffer, morph_target_callback cb)
 void ExecuteMorphTargetCBFuncs(MorphTargetBuffer *buffer);
 u32 GenericUpdateInterpolatorNode(Interpolator *node);
 void GenericUpdateMorphBuffer(MorphTargetBuffer *buffer);
-
+void DestroyMorphTarget(MorphTargetBuffer *buffer);
 #endif

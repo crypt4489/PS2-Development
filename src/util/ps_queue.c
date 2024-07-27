@@ -89,3 +89,13 @@ Queue* CreateQueue(u32 maxCount, u32 type)
     q->type = type;
     return q;
 }
+
+void DeleteQueue(Queue *queue)
+{
+    LinkedList *iter = queue->top;
+    while(iter)
+    {
+        iter = CleanLinkedListNode(iter);
+    }
+    free(queue);
+}

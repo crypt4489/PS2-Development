@@ -177,18 +177,26 @@ void AddToManagerTexList(GameManager *manager, Texture *tex)
 
 void ClearManagerStruct(GameManager *manager)
 {
+    if (manager->targetBack)
+        DestroyRenderTarget(manager->targetBack, true);
+    if (manager->targetDisplay)
+        DestroyRenderTarget(manager->targetDisplay, true);
     if (manager->vramManager)
-        free(manager->vramManager);
+        DeleteVRAMManager(manager->vramManager);
     if (manager->texManager)
-        free(manager->texManager);
+        CleanTextureManager(manager->texManager);
     if (manager->dmabuffers->dma_chains[0])
         packet_free(manager->dmabuffers->dma_chains[0]);
     if (manager->dmabuffers->dma_chains[1])
         packet_free(manager->dmabuffers->dma_chains[1]);
     if (manager->dmabuffers)
         free(manager->dmabuffers);
+    if (manager->vu1Manager)
+        DestroyVU1Manager(manager->vu1Manager);
     if (manager->timer)
         TimerZeroDisable(g_Manager.timer);
+
+    graph_vram_clear();
 }
 
 void SwapManagerDMABuffers()

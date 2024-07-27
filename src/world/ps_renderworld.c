@@ -37,15 +37,12 @@ LinkedList *CleanWorldLightsList(RenderWorld *world)
 
     while (iter)
     {
-        LinkedList *clean = iter;
-        iter = iter->next;
-
-        if (clean->data)
+        if (iter->data)
         {
-            free(clean->data);
+            free(iter->data);
         }
 
-        CleanLinkedListNode(clean);
+        iter = CleanLinkedListNode(iter);
     }
 
     world->lights = NULL;
@@ -59,10 +56,8 @@ LinkedList *CleanWorldObjList(RenderWorld *world)
 
     while (iter)
     {
-        LinkedList *clean = iter;
-        iter = iter->next;
-        CleanGameObject(clean->data);
-        CleanLinkedListNode(clean);
+        CleanGameObject(iter->data);
+        iter = CleanLinkedListNode(iter);
     }
 
     world->objList = NULL;
@@ -87,12 +82,17 @@ void AddObjectToRenderWorld(RenderWorld *world, GameObject *obj)
 RenderWorld *RemoveLightFromRenderWorld(RenderWorld *world, LightStruct *light)
 {
     LinkedList *iter = world->lights;
-    while ((LightStruct *)iter->data != light)
+    while (iter)
     {
+        if ((LightStruct *)iter->data == light)
+            break;
         iter = iter->next;
     }
-    world->lights = RemoveNodeFromList(world->lights, iter);
-    world->lightCount -= 1;
+
+    if (iter) {
+        world->lights = RemoveNodeFromList(world->lights, iter);
+        world->lightCount -= 1;
+    }
     return world;
 }
 
@@ -106,12 +106,10 @@ RenderWorld *RemoveObjectFromRenderWorld(RenderWorld *world, GameObject *obj)
         comp = (GameObject *)iter->data;
     }
 
-    if (!iter)
-        return world;
-
-    INFOLOG("found");
-    world->objList = RemoveNodeFromList(world->objList, iter);
-    world->objectCount -= 1;
+    if (iter) {
+        world->objList = RemoveNodeFromList(world->objList, iter);
+        world->objectCount -= 1;
+    }
     return world;
 }
 

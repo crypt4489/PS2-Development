@@ -1,6 +1,5 @@
 #include "dma/ps_dma.h"
 
-#include <malloc.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <vif_codes.h>

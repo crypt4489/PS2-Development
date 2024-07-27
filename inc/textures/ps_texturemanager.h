@@ -1,7 +1,7 @@
 #ifndef PS_TEXTUREMANAGER_H
 #define PS_TEXTUREMANAGER_H
 #include "ps_global.h"
-void ClearTextureManagerList(TextureManager *manager);
+void CleanTextureManager(TextureManager *manager);
 Texture *GetTexByName(TextureManager *manager, const char *name);
 TextureManager *CreateTextureManager();
 void AddToTextureManager(TextureManager *manager, Texture *tex);

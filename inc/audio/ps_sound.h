@@ -73,4 +73,8 @@ void CreateVagSamplesBuffer(VagFile *vagFile, u8 *buffer);
 
 VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels, u32 bitDepth);
 
+void DestroyWAVFile(WavFile *file);
+
+void DestroyVAGFile(VagFile *file);
+
 #endif

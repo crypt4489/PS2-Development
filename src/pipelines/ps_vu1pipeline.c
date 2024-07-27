@@ -211,7 +211,14 @@ void DeletePipeline(VU1Pipeline *pipe)
     int size = pipe->numberCBS;
     for (int i = 0; i < size; i++)
     {
+        if (pipe->cbs[i]->args)
+            free(pipe->cbs[i]->args);
         free(pipe->cbs[i]);
+    }
+    size = pipe->renderPasses;
+    for (int i = 0; i < size; i++)
+    {
+        free(pipe->passes[i]);
     }
     free(pipe->cbs);
     free(pipe->q);

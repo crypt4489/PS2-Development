@@ -1,7 +1,6 @@
 #include "graphics/shadows.h"
 
 #include <stdlib.h>
-#include <malloc.h>
 #include <draw2d.h>
 #include <draw3d.h>
 

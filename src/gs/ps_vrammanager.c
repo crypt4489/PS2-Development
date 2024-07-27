@@ -16,6 +16,16 @@ VRAMManager *CreateVRAMManager()
     return manager;
 }
 
+void DeleteVRAMManager(VRAMManager *manager)
+{
+    LinkedList *iter = manager->renderTargets;
+    while(iter)
+    {
+        iter = CleanLinkedListNode(iter);
+    }
+    free(manager);
+}
+
 int AllocateVRAM(VRAMManager *manager, int width, int height, int bpp, bool systemMemory)
 {
     int size = graph_vram_size(width, height, bpp, GRAPH_ALIGN_PAGE);
@@ -34,6 +44,21 @@ int AllocateVRAM(VRAMManager *manager, int width, int height, int bpp, bool syst
 
     return allocated;
 
+}
+
+void DeallocateVRAM(VRAMManager *manager, int address, int width, int height, int bpp, bool systemMemory)
+{
+    int size = graph_vram_size(width, height, bpp, GRAPH_ALIGN_PAGE);
+    
+    if (systemMemory)
+    {
+        graph_vram_free(address);
+        manager->systemVRAMUsed -= size;
+    } 
+    else
+    {
+        manager->userVRAMUsed -= size;
+    }
 }
 
 void CalculateTextureBasePointer(VRAMManager *manager, RenderTarget *target)

@@ -1,7 +1,6 @@
 #include "gameobject/ps_gameobject.h"
 
 #include <string.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <draw2d.h>
 #include <draw3d.h>
@@ -16,6 +15,7 @@
 #include "animation/ps_morphtarget.h"
 #include "log/ps_log.h"
 #include "util/ps_linkedlist.h"
+#include "io/ps_file_io.h"
 
 void SetupGameObjectPrimRegs(GameObject *obj, Color color, u32 renderState)
 {
@@ -71,17 +71,26 @@ LinkedList *AddMaterial(LinkedList *list, Material *mat)
 
 void CleanGameObject(GameObject *obj)
 {
-  // free(obj->pipeline_dma);
-  VU1Pipeline *pipes = obj->pipelines;
-  VU1Pipeline *freepipe;
+  
   if (obj)
   {
-
+    VU1Pipeline *pipes = obj->pipelines;
+    VU1Pipeline *freepipe;
     while (pipes)
     {
       freepipe = pipes;
       pipes = pipes->next;
       DeletePipeline(freepipe);
+    }
+
+    if (obj->vertexBuffer.materials)
+    {
+      LinkedList *list = obj->vertexBuffer.materials;
+      while(list)
+      {
+        free(list->data);
+        list = CleanLinkedListNode(list);
+      }
     }
 
     if (obj->vboContainer)
@@ -95,7 +104,7 @@ void CleanGameObject(GameObject *obj)
     }
     for (int i = 0; i < 2; i++)
     {
-      if  (obj->vertexBuffer.meshData[i])
+      if (!obj->vertexBuffer.meshData[i])
       {
         continue;
       }
@@ -128,6 +137,18 @@ void CleanGameObject(GameObject *obj)
       {
         free(obj->vertexBuffer.meshData[i]->colors);
       }
+
+      DestroyAnimationMesh(obj->vertexBuffer.meshAnimationData);
+    }
+
+    if (obj->objAnimator)
+    {
+      free(obj->objAnimator);
+    }
+
+    if (obj->interpolator)
+    {
+      DestroyMorphTarget(obj->interpolator);
     }
 
     free(obj);

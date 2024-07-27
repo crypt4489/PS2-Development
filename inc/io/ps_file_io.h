@@ -25,4 +25,6 @@ void CreateMeshBuffersFromFile(void *object, void *, u8 *buffer, u32 bufferLen);
 
 bool FileExist(const char *filename);
 
+void DestroyAnimationMesh(AnimationMesh *meshAnimationData);
+
 #endif

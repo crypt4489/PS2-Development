@@ -621,3 +621,22 @@ VagFile *ConvertRawPCMToVag(u8 *buffer, u32 size, u32 sampleRate, u32 channels, 
 
 	return vagFile;
 }
+
+
+void DestroyVAGFile(VagFile *file)
+{
+	if (file)
+	{
+		free(file->samples);
+		free(file);
+	}
+}
+
+void DestroyWAVFile(WavFile *file)
+{
+	if (file)
+	{
+		free(file->samples);
+		free(file);
+	}
+}

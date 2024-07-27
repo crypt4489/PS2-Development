@@ -9,7 +9,6 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -663,7 +662,6 @@ static void CleanUpGame()
     CleanCameraObject(cam);
     DestoryRenderWorld(world);
     DestoryRenderWorld(roomWorld);
-    ClearTextureManagerList(g_Manager.texManager);
     ClearManagerStruct(&g_Manager);
 }
 
@@ -683,7 +681,7 @@ void DrawTexturedObject(GameObject *obj)
     MatrixMultiply(vp, vp, world);
     MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
     BeginCommand();
-    DepthTest(1, 3);
+    DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
      
     ShaderHeaderLocation(16);
@@ -733,13 +731,13 @@ void DrawTexturedObject(GameObject *obj)
 void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
     
-    u32 destTestEnable = 0;
+    bool destTestEnable = false;
     if (destTest)
     {
-        destTestEnable = 1;
+        destTestEnable = true;
     }
     BeginCommand();
-    DepthTest(1, 1);
+    DepthTest(true, 1);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     DestinationAlphaTest(destTestEnable, destTest);
     FrameBufferMaskWord(setFrameMask);
@@ -1145,9 +1143,9 @@ int main(int argc, char **argv)
     int channel = audsrv_ch_play_adpcm(-1, &sample);
     audsrv_adpcm_set_volume(channel, MAX_VOLUME);
 
-    NormalizePlane(planer.planeEquation, planer.planeEquation);
-
     Render();
+
+    DestroyVAGFile(vag);
 
     CleanUpGame();
 
