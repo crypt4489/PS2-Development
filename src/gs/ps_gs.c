@@ -37,7 +37,12 @@ void SetGraph(GameManager *manager)
 
 	graph_set_bgcolor(manager->bgkc.r, manager->bgkc.g, manager->bgkc.b);
 
-	graph_enable_output();
+	int alphaVal = 0x70;
+
+	if (manager->fsaaEnable)
+		alphaVal = 0xF0;
+
+	graph_set_output(GRAPH_ENABLE,GRAPH_ENABLE,GRAPH_VALUE_ALPHA,GRAPH_RC1_ALPHA,GRAPH_BLEND_RC2,alphaVal);
 }
 
 void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm, bool systemMemory)
@@ -433,3 +438,4 @@ qword_t *SetupAlphaGS(qword_t *q, blend_t *blend, int context)
 
 	return q;
 }
+

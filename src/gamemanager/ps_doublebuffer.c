@@ -9,11 +9,19 @@ void SwapManagerDrawBuffers()
 {
     RenderTarget *tempTarget = g_Manager.targetBack;
 
-    graph_set_framebuffer_filtered(g_Manager.targetBack->render->address, g_Manager.targetBack->render->width, g_Manager.targetBack->render->psm, 0, 0);
+    if (g_Manager.fsaaEnable)
+    {
+        *GS_REG_DISPFB1 =  GS_SET_DISPFB(g_Manager.targetBack->render->address>>11,g_Manager.targetBack->render->width>>6,g_Manager.targetBack->render->psm,0,0);
 
+	    *GS_REG_DISPFB2 = GS_SET_DISPFB(g_Manager.targetDisplay->render->address>>11,g_Manager.targetDisplay->render->width>>6,g_Manager.targetDisplay->render->psm,0,1);
+    } else {
+        *GS_REG_DISPFB1 =  GS_SET_DISPFB(g_Manager.targetBack->render->address>>11,g_Manager.targetBack->render->width>>6,g_Manager.targetBack->render->psm,0,0);
+        
+        *GS_REG_DISPFB2 =  GS_SET_DISPFB(g_Manager.targetBack->render->address>>11,g_Manager.targetBack->render->width>>6,g_Manager.targetBack->render->psm,0,1);
+    }
     // swap render targets
     g_Manager.targetBack = g_Manager.targetDisplay;
     g_Manager.targetDisplay = tempTarget;
 
-    g_Manager.gs_context = g_Manager.gs_context ^ 0x01;
+    g_Manager.gs_context ^= 1;
 }

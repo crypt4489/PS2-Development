@@ -44,8 +44,7 @@ void InitializeSystem(ManagerInfo *info)
 
     InitPad(port, slot, padBuf);
 
-    InitializeManager(info->width, info->height, info->doublebuffered, 
-    info->drawBufferSize, info->vu1programsize, info->zenable, info->psm, info->zsm);
+    InitializeManager(info);
 
     SetupVU1INTEHandler();
 }
@@ -72,13 +71,14 @@ void CreateManagerRenderTargets(bool useZBuffer, u32 psm, u32 zsm)
     SetupRenderTarget(g_Manager.targetBack, 0, false);
 }
 
-void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize) 
+void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize, bool fsaa) 
 {
     g_Manager.ScreenHeight = height;
     g_Manager.ScreenWidth = width;
     g_Manager.ScreenHHalf = height >> 1;
     g_Manager.ScreenWHalf = width >> 1;
     g_Manager.gs_context = 0;
+    g_Manager.fsaaEnable = fsaa;
 
     g_Manager.texManager = CreateTextureManager();
 
@@ -98,13 +98,12 @@ void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSiz
     g_Manager.currentTime = g_Manager.lastTime = getTicks(g_Manager.timer);
 }
 
-void InitializeManager(u32 width, u32 height, 
-                       bool doubleBuffer, u32 bufferSize, 
-                       u32 programSize, bool useZBuffer, u32 psm, u32 zsm)
+void InitializeManager(ManagerInfo *info)
 {
-    CreateManagerStruct(width, height, doubleBuffer, bufferSize, programSize);
+    CreateManagerStruct(info->width, info->height, info->doublebuffered, 
+                        info->drawBufferSize, info->vu1programsize, info->fsaa);
 
-    CreateManagerRenderTargets(useZBuffer, psm, zsm);
+    CreateManagerRenderTargets(info->zenable, info->psm, info->zsm);
 }
 
 void StartFrame()

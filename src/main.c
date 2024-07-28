@@ -311,22 +311,7 @@ static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
 
 #endif
 
-static void UpdateGlossTransform()
-{
-    CreateRotationAndCopyMatFromObjAxes(lightTransform, *GetUpVectorLTM(direct->ltm), *GetForwardVectorLTM(direct->ltm), *GetRightVectorLTM(direct->ltm));
 
-    MatrixTranspose(lightTransform);
-
-    CreateNormalizedTextureCoordinateMatrix(lightTransform);
-}
-
-static void SetK()
-{
-
-    static int mag = LOD_MAG_LINEAR;
-
-    SetupTexLODStruct(zero, k, 0, 2, 5, mag);
-}
 
 static void update_cube(GameObject *cube)
 {
@@ -414,19 +399,6 @@ static void CreateLights()
     RotateYLTM(spotLight->ltm, 180.0f);
 
     //AddLightToRenderWorld(roomWorld, spotLight);
-}
-
-static void UpdateLight()
-{
-    // PitchLTM(direct->ltm, 1.5f);
-    // RotateYLTM(direct->ltm, 1.5f);
-
-    // DumpMatrix(direct->ltm);
-
-    // PitchLTM(secondLight->ltm, -1.5f);
-    // RotateYLTM(secondLight->ltm, -1.0f);
-
-    // DumpMatrix(secondLight->ltm);
 }
 
 static void SetupGrid()
@@ -1026,38 +998,6 @@ static void LoadInTextures()
 
     char _folder[9] = "TEXTURES\\";
 
-    /*  AppendString(_folder, face1Name, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
-
-      AppendString(_folder, face2Name, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
-
-      AppendString(_folder, face3Name, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
-
-      AppendString(_folder, face4Name, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
-
-      AppendString(_folder, face5Name, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
-
-      AppendString(_folder, face6Name, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
-
-      AppendString(_folder, NewYorkName, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0x80, TEX_ADDRESS_CLAMP, 0);
-
-      AppendString(_folder, glossName, _file, MAX_FILE_NAME);
-
-      AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP, 1); */
-
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
     Texture *tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_CLAMP);
@@ -1068,8 +1008,6 @@ static void LoadInTextures()
 
     tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
 
-    DEBUGLOG("%d %llu", tex->psm, tex->id);
-
     SetFilters(tex, PS_FILTER_BILINEAR);
 }
 
@@ -1078,7 +1016,7 @@ void StartUpSystem()
     ManagerInfo info;
     info.doublebuffered = true;
     info.drawBufferSize = 2000;
-    info.fsaa = false;
+    info.fsaa = true;
     info.zenable = true;
     info.height = 448;
     info.width = 640;

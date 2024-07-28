@@ -689,6 +689,7 @@ typedef struct
     bool vu1DoneProcessing;
     u16 gs_context;
     bool enableDoubleBuffer;
+    bool fsaaEnable;
     Color bgkc;
     u32 ScreenWidth, ScreenHeight;
     u32 ScreenWHalf, ScreenHHalf;
