@@ -11,7 +11,7 @@
 
 #define CreateGSScreenCoordinates(input, operand)   ((2048 operand input) << 4)
 
-void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, zbuffer_t *z, u32 psm);
+void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, zbuffer_t *z, u32 psm, u32 zsm);
 void InitFramebuffer(framebuffer_t *frame, int width, int height, int psm, bool systemMemory);
 void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm);
 void SetGraph(GameManager *manager);

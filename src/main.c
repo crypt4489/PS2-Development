@@ -348,7 +348,7 @@ static void SetupWorldObjects()
 
     VECTOR at = {+50.0f, 0.0f, +100.0f, 0.0f};
 
-    cam = InitCamera(640, 480, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
+    cam = InitCamera(g_Manager.ScreenWidth, g_Manager.ScreenHeight, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
 
     InitCameraVBOContainer(cam, 10.0f, 10.0f, 10.0f, VBO_FIT);
 
@@ -365,9 +365,6 @@ static void SetupWorldObjects()
     world = CreateRenderWorld();
     world->cam = cam;
 
-    roomWorld = CreateRenderWorld();
-    roomWorld->cam = cam;
-
     SetGlobalDrawingCamera(cam);
 }
 
@@ -378,7 +375,7 @@ static void CreateLights()
     SetLightColor(direct, mainDirLightColor);
     PitchLTM(direct->ltm, +25.0f);
     RotateYLTM(direct->ltm, +25.0f);
-    AddLightToRenderWorld(world, direct);
+    //AddLightToRenderWorld(world, direct);
 
     secondLight = CreateLightStruct(PS_DIRECTIONAL_LIGHT);
     SetLightColor(secondLight, secDirLightColor);
@@ -416,7 +413,7 @@ static void CreateLights()
 
     RotateYLTM(spotLight->ltm, 180.0f);
 
-    AddLightToRenderWorld(roomWorld, spotLight);
+    //AddLightToRenderWorld(roomWorld, spotLight);
 }
 
 static void UpdateLight()
@@ -957,13 +954,13 @@ int Render()
         RenderLine(&mainLine, *colors[3]);
         RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
 
-        DrawShadowQuad(480, 640, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
+        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 
         RenderShadowVertices(adjs, count, m);
 
        // ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
 
-        DrawShadowQuad(480, 640, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
+        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
         DrawTexturedObject(shotBox);
         
@@ -1076,14 +1073,28 @@ static void LoadInTextures()
     SetFilters(tex, PS_FILTER_BILINEAR);
 }
 
-int main(int argc, char **argv)
+void StartUpSystem()
 {
-
-    InitializeSystem(1, 640, 480, GS_PSM_32);
-
-    InitASyncIO(25, 5.0f);
+    ManagerInfo info;
+    info.doublebuffered = true;
+    info.drawBufferSize = 2000;
+    info.fsaa = false;
+    info.zenable = true;
+    info.height = 448;
+    info.width = 640;
+    info.psm = GS_PSM_32;
+    info.zsm = GS_PSMZ_24;
+    info.vu1programsize = 10;
+    InitializeSystem(&info);
 
     SetupWorldObjects();
+}
+
+int main(int argc, char **argv)
+{
+    StartUpSystem();
+
+    
 
     float totalTime;
 

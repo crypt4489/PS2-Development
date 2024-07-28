@@ -12,11 +12,11 @@
 #include "gs/ps_vrammanager.h"
 
 
-void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, zbuffer_t *z, u32 psm)
+void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, zbuffer_t *z, u32 psm, u32 zsm)
 {
 	InitFramebuffer(frame1, manager->ScreenWidth, manager->ScreenHeight, psm, true);
 
-	if (z) InitZBuffer(z, manager->ScreenWidth, manager->ScreenHeight, GS_ZBUF_24, ZTEST_METHOD_GREATER_EQUAL, true);
+	if (z) InitZBuffer(z, manager->ScreenWidth, manager->ScreenHeight, zsm, ZTEST_METHOD_GREATER_EQUAL, true);
 
 	if (frame2) InitFramebuffer(frame2, manager->ScreenWidth, manager->ScreenHeight, psm, true);
 	

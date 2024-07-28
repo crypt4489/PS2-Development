@@ -117,7 +117,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
 
     int image_size;
 
-    if (bmih.biSizeImage != 0)
+    if (bmih.biSizeImage)
     {
         image_size = bmih.biSizeImage;
     }

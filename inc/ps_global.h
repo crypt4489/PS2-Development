@@ -663,6 +663,20 @@ typedef struct vram_manager_t
     LinkedList *renderTargets;
 } VRAMManager;
 
+
+typedef struct manager_info_t
+{
+    u32 height;
+    u32 width;
+    u32 psm;
+    bool zenable;
+    bool doublebuffered;
+    u32 zsm;
+    u32 drawBufferSize;
+    bool fsaa;
+    u32 vu1programsize;
+} ManagerInfo;
+
 typedef struct
 {
     RenderTarget *targetBack;

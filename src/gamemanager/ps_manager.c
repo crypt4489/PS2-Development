@@ -33,7 +33,8 @@ GameManager g_Manager;
 char padBuf[256] __attribute__((aligned(64)));
 u32 port = 0;
 u32 slot = 0;
-void InitializeSystem(bool useZBuffer, u32 width, u32 height, u32 psm)
+
+void InitializeSystem(ManagerInfo *info)
 {
     InitializeDMAChannels();
 
@@ -43,12 +44,14 @@ void InitializeSystem(bool useZBuffer, u32 width, u32 height, u32 psm)
 
     InitPad(port, slot, padBuf);
 
-    InitializeManager(width, height, true, 2000, 10, useZBuffer, psm);
+    InitializeManager(info->width, info->height, info->doublebuffered, 
+    info->drawBufferSize, info->vu1programsize, info->zenable, info->psm, info->zsm);
 
     SetupVU1INTEHandler();
 }
 
-void CreateManagerRenderTargets(bool useZBuffer, u32 psm)
+
+void CreateManagerRenderTargets(bool useZBuffer, u32 psm, u32 zsm)
 {
     g_Manager.targetBack = AllocRenderTarget(useZBuffer);
     g_Manager.targetDisplay = AllocRenderTarget(false);
@@ -58,7 +61,9 @@ void CreateManagerRenderTargets(bool useZBuffer, u32 psm)
         ERRORLOG("failed to allocate the rendertargets manager");
     }
 
-    InitGS(&g_Manager, g_Manager.targetBack->render, g_Manager.targetDisplay->render, g_Manager.targetBack->z, psm);
+    InitGS(&g_Manager, g_Manager.targetBack->render, 
+            g_Manager.targetDisplay->render, 
+            g_Manager.targetBack->z, psm, zsm);
 
     g_Manager.targetDisplay->z = g_Manager.targetBack->z;
 
@@ -93,11 +98,13 @@ void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSiz
     g_Manager.currentTime = g_Manager.lastTime = getTicks(g_Manager.timer);
 }
 
-void InitializeManager(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize, u32 useZBuffer, u32 psm)
+void InitializeManager(u32 width, u32 height, 
+                       bool doubleBuffer, u32 bufferSize, 
+                       u32 programSize, bool useZBuffer, u32 psm, u32 zsm)
 {
     CreateManagerStruct(width, height, doubleBuffer, bufferSize, programSize);
 
-    CreateManagerRenderTargets(useZBuffer, psm);
+    CreateManagerRenderTargets(useZBuffer, psm, zsm);
 }
 
 void StartFrame()
