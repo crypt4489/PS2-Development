@@ -88,10 +88,9 @@ void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSiz
     g_Manager.enableDoubleBuffer = doubleBuffer;
     g_Manager.targetBack = NULL;
     g_Manager.targetDisplay = NULL;
-    g_Manager.dmabuffers = NULL;
     g_Manager.vu1Manager = NULL;
 
-    g_Manager.dmabuffers = CreateDMABuffers(bufferSize);
+    g_Manager.drawBuffers = CreateDrawBuffers(bufferSize);
     g_Manager.vu1Manager = CreateVU1Manager(programSize);
     g_Manager.FPS = 0;
     g_Manager.timer = TimerZeroEnable();
@@ -138,9 +137,9 @@ void EndFrame(bool useVsync)
         graph_wait_vsync();
 
     if (g_Manager.enableDoubleBuffer)
-        SwapManagerDrawBuffers();
+        SwapManagerFrameBuffers();
 
-    SwapManagerDMABuffers();
+    SwapManagerDrawBuffers();
 
     if (init)
     {
@@ -191,12 +190,8 @@ void ClearManagerStruct(GameManager *manager)
         DeleteVRAMManager(manager->vramManager);
     if (manager->texManager)
         CleanTextureManager(manager->texManager);
-    if (manager->dmabuffers->dma_chains[0])
-        packet_free(manager->dmabuffers->dma_chains[0]);
-    if (manager->dmabuffers->dma_chains[1])
-        packet_free(manager->dmabuffers->dma_chains[1]);
-    if (manager->dmabuffers)
-        free(manager->dmabuffers);
+    if (manager->drawBuffers)
+        DestroyDrawBuffers(manager->drawBuffers);
     if (manager->vu1Manager)
         DestroyVU1Manager(manager->vu1Manager);
     if (manager->timer)
@@ -205,7 +200,7 @@ void ClearManagerStruct(GameManager *manager)
     graph_vram_clear();
 }
 
-void SwapManagerDMABuffers()
+void SwapManagerDrawBuffers()
 {
-    g_Manager.dmabuffers = SwitchDMABuffers(g_Manager.dmabuffers);
+    SwitchDrawBuffers(g_Manager.drawBuffers);
 }

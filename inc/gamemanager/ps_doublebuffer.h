@@ -2,5 +2,5 @@
 #define PS_DOUBLEBUFFER_H
 #include "ps_global.h"
 
-void SwapManagerDrawBuffers();
+void SwapManagerFrameBuffers();
 #endif

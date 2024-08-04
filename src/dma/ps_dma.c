@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include <vif_codes.h>
 #include <kernel.h>
 
@@ -98,49 +99,37 @@ void ParsePipelineDMA(void *data, qword_t *pipelineData)
     }
 }
 
-qword_t *GetDMABasePointer()
+DrawBuffers *CreateDrawBuffers(u32 size)
 {
-    return g_Manager.dmabuffers->currPointer;
-}
-
-DMABuffers *CreateDMABuffers(u32 size)
-{
-    DMABuffers *buffer = (DMABuffers *)malloc(sizeof(DMABuffers));
-    buffer->bufferId = 0;
-    buffer->dma_chains[0] = packet_init(size, PACKET_NORMAL);
-    buffer->dma_chains[1] = packet_init(size, PACKET_NORMAL);
-    packet_reset(buffer->dma_chains[0]);
-    packet_reset(buffer->dma_chains[1]);
-    buffer->currPointer = buffer->dma_chains[0]->data;
+    DrawBuffers *buffer = (DrawBuffers *)malloc(sizeof(DrawBuffers));
+    buffer->context = 0;
+    buffer->size = size;
+    for (int i = 1; i>=0; i--)
+    {
+        buffer->gifupload[i] = (qword_t*)calloc(size,sizeof(qword_t));
+        buffer->vifupload[i] = (qword_t*)calloc(size, sizeof(qword_t));
+    }
+    
+    buffer->currentgif = buffer->gifupload[0];
+    buffer->currentvif = buffer->vifupload[0];
+    
     return buffer;
 }
 
-DMABuffers *SwitchDMABuffers(DMABuffers *bufferstruct)
+void SwitchDrawBuffers(DrawBuffers *bufferstruct)
 {
-    if (!bufferstruct->bufferId)
-    {
-        bufferstruct->bufferId = 1;
-        bufferstruct->currPointer = ResetBufferPointer(bufferstruct->dma_chains[1]);
-    }
-    else
-    {
-        bufferstruct->bufferId = 0;
-        bufferstruct->currPointer = ResetBufferPointer(bufferstruct->dma_chains[0]);
-    }
-
-    return bufferstruct;
+    u32 context = (bufferstruct->context ^= 1);
+    bufferstruct->currentvif = bufferstruct->vifupload[context];
+    bufferstruct->currentgif = bufferstruct->gifupload[context];
 }
 
-qword_t *ResetBufferPointer(packet_t *pack)
+void DestroyDrawBuffers(DrawBuffers *buff)
 {
-    packet_reset(pack);
-    return pack->data;
-}
-
-void DestroyDMABuffers(DMABuffers *buff)
-{
-    free(buff->dma_chains[0]);
-    free(buff->dma_chains[1]);
+    for (int i = 1; i>=0; i--)
+    {
+        free(buff->gifupload[i]);
+        free(buff->vifupload[i]);
+    }
     free(buff);
 }
 
@@ -178,20 +167,32 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
     }
     else
     {
+        dma_channel_wait(channel, -1);
         dma_channel_send_chain(channel, q, qwc, tte, 0);
     }
 }
 
-void SubmitDMABuffersToController(qword_t *q, u32 channel, u32 type, bool tte)
+void SubmitDrawBuffersToController(qword_t *q, u32 channel, u32 type, bool tte)
 {
-
-    u32 size = q - g_Manager.dmabuffers->currPointer;
-    SubmitToDMAController(g_Manager.dmabuffers->currPointer, channel, type, size, tte);
-    g_Manager.dmabuffers->currPointer = q;
+    qword_t *send;
+    switch(channel)
+    {
+        case DMA_CHANNEL_GIF:
+        send = g_Manager.drawBuffers->currentgif;
+        g_Manager.drawBuffers->currentgif = q;
+        break;
+        case DMA_CHANNEL_VIF1:
+        send = g_Manager.drawBuffers->currentvif;
+         g_Manager.drawBuffers->currentvif = q;
+        break;
+    }
+    
+    u32 size = q - send;
+    SubmitToDMAController(send, channel, type, size, tte);
 }
 
 void SubmitDMABuffersAsPipeline(qword_t *q, void *data)
 {
-    ParsePipelineDMA(data, g_Manager.dmabuffers->currPointer);
-    g_Manager.dmabuffers->currPointer = q;
+    //ParsePipelineDMA(data, g_Manager.dmabuffers->currPointer);
+   // g_Manager.dmabuffers->currPointer = q;
 }

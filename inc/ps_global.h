@@ -677,14 +677,23 @@ typedef struct manager_info_t
     u32 vu1programsize;
 } ManagerInfo;
 
+typedef struct draw_buffers_t {
+    qword_t *vifupload[2];
+    qword_t *gifupload[2];
+    qword_t *currentvif;
+    qword_t *currentgif;
+    u32 size;
+    u32 context;
+} DrawBuffers;
+
+
 typedef struct
 {
     RenderTarget *targetBack;
     RenderTarget *targetDisplay;
     TextureManager *texManager;
     VU1Manager *vu1Manager;
-
-    DMABuffers *dmabuffers;
+    DrawBuffers *drawBuffers;
     VRAMManager *vramManager;
     bool vu1DoneProcessing;
     u16 gs_context;

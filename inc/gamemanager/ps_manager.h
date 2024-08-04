@@ -9,7 +9,7 @@ void AddToManagerTexList(GameManager *manager, Texture *tex);
 Texture* GetTexObjFromTexList(GameManager *manager, int index);
 int PollVU1DoneProcessing(GameManager *manager);
 void ClearManagerStruct(GameManager *manager);
-void SwapManagerDMABuffers();
+void SwapManagerDrawBuffers();
 void EndFrame(bool useVsync);
 void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize, bool fsaa);
 void StartFrame();

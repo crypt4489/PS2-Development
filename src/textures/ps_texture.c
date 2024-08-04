@@ -230,7 +230,7 @@ qword_t *FlushTextureCache(qword_t *q, bool end, bool direct, int size)
     if (end) q = CreateDMATag(q, DMA_END, 2+size+direct, 0, 0, 0);
     else q = CreateDMATag(q, DMA_CNT, 2+size+direct, 0, 0, 0);
     if (direct) q = CreateDirectTag(q, 2+size, end);
-	PACK_GIFTAG(q,GIF_SET_TAG(1+size,end,0,0,GIF_FLG_PACKED,1),GIF_REG_AD);
+	PACK_GIFTAG(q,GIF_SET_TAG(1+size,1,0,0,GIF_FLG_PACKED,1),GIF_REG_AD);
 	q++;
 	PACK_GIFTAG(q,1,GS_REG_TEXFLUSH);
 	q++;
@@ -367,7 +367,6 @@ static qword_t *TextureUploadGS(qword_t *q, Texture *tex, u32 texAddress, u32 cl
         int width = (tex-> psm  == GS_PSM_8) ? 16 : 8;
         int height = (tex-> psm  == GS_PSM_8) ? 16 : 2;
         q = TextureTransfer(q, tex->clut_buffer, width, height, tex->clut.psm, clutAddress, 16, usevif);
-        q = FlushTextureCache(q, false, usevif, 0);
     }
 
     q = TextureTransfer(q, tex->pixels, tex->width, tex->height, tex->psm, texAddress, tex->texbuf.width, usevif);
@@ -435,8 +434,8 @@ qword_t *CreateTextureUploadChain(Texture *tex, qword_t *q, bool direct, bool en
         widths[i] = mip->texbuf.width;
          q = TextureTransfer(q, mip->pixels, mip->width, mip->height, mip->psm, 
             texaddrs[i+1], mip->texbuf.width, direct);
-        if (i<(mipSize-1))
-            q = FlushTextureCache(q, false, direct, 0);
+        //if (i<(mipSize-1))
+            //q = FlushTextureCache(q, false, direct, 0);
         iter = iter->next;
     }      
 
@@ -466,43 +465,36 @@ static void SetupTexRegistersGIF(Texture *tex)
     u32 texaddrs[7], clutaddrs = 0, widths[6];
     u16 mipSize = tex->mipLevels;
     BaseTextureAddresses(texaddrs, &clutaddrs, mipSize, tex->height, tex->width, tex->psm);  
-    qword_t *q = GetDMABasePointer();
+    qword_t *q = g_Manager.drawBuffers->currentgif;
 
     q = FlushTextureCache(q, true, false, 3);
 
     q = SetupTextureGSState(q, tex, 3, texaddrs, clutaddrs, widths);
 
-    SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
+    SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
 
 
 void UploadTextureToVRAM(Texture *tex)
 {
-    qword_t *q = GetDMABasePointer();
-    qword_t *dcodetag = q++;
+    qword_t *q = g_Manager.drawBuffers->currentgif;
     q = CreateTextureUploadChain(tex, q, false, true); 
-    u32 size = q - dcodetag -1;
-    CreateDCODEDmaTransferTag(dcodetag, DMA_CHANNEL_GIF, 0, 1, size);  
-    CreateDCODETag(q, DMA_DCODE_END);
-    SubmitDMABuffersAsPipeline(q, NULL);
+    u32 size = q - g_Manager.drawBuffers->currentgif; 
+    SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, false);
     g_Manager.texManager->currIndex = tex->id;
 }
 
 void UploadTextureViaManagerToVRAM(Texture *tex)
 {
     TextureManager *texManager = g_Manager.texManager;
-
     if (tex->id != texManager->currIndex && tex->type == PS_TEX_MEMORY)
     {
-        qword_t *q = GetDMABasePointer();
-        qword_t *dcodetag = q++;
-        q = CreateTextureUploadChain(tex, q, true, true); 
-        u32 size = q - dcodetag -1;
-        CreateDCODEDmaTransferTag(dcodetag, DMA_CHANNEL_VIF1, 0, 1, size);  
-        CreateDCODETag(q, DMA_DCODE_END);
-        SubmitDMABuffersAsPipeline(q, NULL);
-        texManager->currIndex = tex->id;
+         qword_t *q = g_Manager.drawBuffers->currentgif;
+        q = CreateTextureUploadChain(tex, q, false, true); 
+        u32 size = q - g_Manager.drawBuffers->currentgif; 
+        SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, false);
+        g_Manager.texManager->currIndex = tex->id;
     }
     else
     {

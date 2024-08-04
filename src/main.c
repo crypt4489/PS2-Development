@@ -638,73 +638,72 @@ static void CleanUpGame()
 
 void DrawTexturedObject(GameObject *obj)
 {
+    PollVU1DoneProcessing(&g_Manager);
     MATRIX vp;
     MATRIX world = {1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, 1.0f, 0.0, 0.0f,
                 0.0f, 0.0f, 1.0f, 0.0f,
                 -15.0f, 50.0f, 0.0f, 1.0f};
-
-    BindTexture(GetTexByName(g_Manager.texManager, wowwer));
+    BeginCommand();
+    BindTexture(GetTexByName(g_Manager.texManager, wowwer), false);
    
     MatrixIdentity(vp);
     MatrixMultiply(vp, vp, world);
     MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
-    BeginCommand();
+    
+    ShaderHeaderLocation(16);
+    ShaderProgram(0);
     DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
      
-    ShaderHeaderLocation(16);
-    ShaderProgram(0);
+   
     AllocateShaderSpace(16, 0);
     
-    PushMatrix(vp, 0, sizeof(MATRIX));
-
+   PushMatrix(vp, 0, sizeof(MATRIX));
     PushScaleVector();
-    PushColor(0x80, 0x80, 0x80, 0x80, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
-     DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_ST, g_Manager.gs_context, PRIM_UNFIXED), 0, 3), DRAW_STQ2_REGLIST, 10);
+    PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading, 
+                true, obj->renderState.prim.fogging, 
+                obj->renderState.prim.blending, obj->renderState.prim.antialiasing, 
+                PRIM_MAP_ST, g_Manager.gs_context, PRIM_UNFIXED), 0, 3), DRAW_STQ2_REGLIST, 10);
     PushInteger(RENDERTEXTUREMAPPED, 12, 3);
 
-    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount/2, 2, true);
-    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount/2; i++)
+    DrawCount(18, 2, true);
+    for (int i = 0; i<18; i++)
     {
         DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
     }
 
-    for (int i = 0; i<obj->vertexBuffer.meshData[1]->vertexCount/2; i++)
+    for (int i = 0; i<18; i++)
     {
         DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
     }
 
-    DrawVertices();
-    EndCommand();  
-    BindTexture(GetTexByName(g_Manager.texManager, worldName));
-    BeginCommand();
+    StartVertexShader();
+    
+    BindTexture(GetTexByName(g_Manager.texManager, worldName), true);
     
     DrawCount(obj->vertexBuffer.meshData[1]->vertexCount/2, 2, true);
     for (int i = obj->vertexBuffer.meshData[1]->vertexCount/2; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
     {
-        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
+       DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
     }
 
     for (int i = obj->vertexBuffer.meshData[1]->vertexCount/2; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
     {
-        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
+       DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
     }
 
-    DrawVertices();
+    StartVertexShader();
     EndCommand(); 
 }
 
 
 void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
-    
-    bool destTestEnable = false;
-    if (destTest)
-    {
-        destTestEnable = true;
-    }
+    PollVU1DoneProcessing(&g_Manager);
+    bool destTestEnable = destTest;
     BeginCommand();
     DepthTest(true, 1);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
@@ -718,9 +717,8 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
-    DrawVertices();
     FrameBufferMask(0, 0, 0, 0);
-    DepthBufferMask(0);
+    DepthBufferMask(false);
     EndCommand();            
 }
 
@@ -751,7 +749,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     {
         DrawVector(verts[i]);
     }
-    DrawVertices();
+    StartVertexShader();
     AllocateShaderSpace(3, 9);
     PushColor(0, 0, 0, 0, 0);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
@@ -763,7 +761,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     {
         DrawVector(verts[i]);
     }
-    DrawVertices();
+    StartVertexShader();
     FrameBufferMask(0x0, 0x0, 0x0, 0x0);
     DepthBufferMask(false);
     EndCommand();
@@ -896,6 +894,7 @@ int Render()
     colors[4] = &lcolors[4];
     float lastTime = getTicks(g_Manager.timer);
 
+    *R_EE_GIF_MODE |= 0x04;
     for (;;)
     {
         float currentTime = getTicks(g_Manager.timer);
@@ -915,35 +914,58 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-        DrawWorld(world);
+         qword_t what[2];
+        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
+        CreateDMATag(what, DMA_END, 0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), 0, 0);
+        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
+       dma_channel_send_chain(DMA_CHANNEL_VIF1, what, 1, 1, 0);
+        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
+
+        //DrawWorld(world);
         MATRIX ident;
         MatrixIdentity(ident);
+
+        
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
         RenderGameObject(shotBox, shotBoxColor);
         RenderPlaneLine(&plane2, *colors[1], 20);
+
+        
+        
         RenderRay(&rayray2, *colors[2], 25);
         RenderLine(&mainLine, *colors[3]);
-        RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
+       RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
+
+       
 
         DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 
-        RenderShadowVertices(adjs, count, m);
+       RenderShadowVertices(adjs, count, m);
 
-       // ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
+        //ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
 
-        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
+     DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
+
 
         DrawTexturedObject(shotBox);
-        
+
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
-        PrintText(myFont, print_out, -310, -220, LEFT);
+       PrintText(myFont, print_out, -310, -220, LEFT);
+
+
+        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
+        CreateDMATag(what, DMA_END, 0, VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0, 0);
+        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
+        dma_channel_send_chain(DMA_CHANNEL_VIF1, what, 1, 1, 0);
+        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
+
 
         EndRendering(cam);
 
         EndFrame(true);
-
+       // while(true);
         FrameCounter++;
     }
 

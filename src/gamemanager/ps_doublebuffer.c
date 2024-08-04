@@ -5,7 +5,7 @@
 #include "gamemanager/ps_manager.h"
 #include "gs/ps_gs.h"
 
-void SwapManagerDrawBuffers()
+void SwapManagerFrameBuffers()
 {
     RenderTarget *tempTarget = g_Manager.targetBack;
 

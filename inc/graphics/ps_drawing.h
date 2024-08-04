@@ -8,6 +8,12 @@ void BeginCommand();
 
 void BeginCommandSet(qword_t *drawBuffer);
 
+void EnterCommand(qword_t *q);
+
+void SetVIFHeaderUpload(qword_t *q);
+
+qword_t *GetDrawPtr();
+
 qword_t* EndCommand();
 
 void DepthTest(bool enable, int method);
@@ -44,7 +50,7 @@ void DrawVector(VECTOR v);
 
 void DrawColor(Color c);
 
-void DrawVertices();
+void StartVertexShader();
 
 void AllocateShaderSpace(int size, int offset);
 
@@ -64,6 +70,10 @@ void DrawVectorFloat(float x, float y, float z, float w);
 
 void SetRegSizeAndType(u64 size, u64 type);
 
-void BindTexture(Texture *tex);
+void BindTexture(Texture *tex, bool end);
+
+void EndVifImmediate();
+
+void PrintOut();
 
 #endif

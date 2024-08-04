@@ -5,13 +5,12 @@
 #include <dma_tags.h>
 #include <dma.h>
 
-DMABuffers *CreateDMABuffers(u32 size);
-DMABuffers *SwitchDMABuffers(DMABuffers *bufferstruct);
+DrawBuffers *CreateDrawBuffers(u32 size);
+void SwitchDrawBuffers(DrawBuffers *bufferstruct);
 qword_t *ResetBufferPointer(packet_t *pack);
-void DestroyDMABuffers(DMABuffers *buff);
+void DestroyDrawBuffers(DrawBuffers *buff);
 void SubmitToDMAController(qword_t* q, int channel, int type, int qwc, bool tte);
-void SubmitDMABuffersToController(qword_t *q, u32 channel, u32 type, bool tte);
-qword_t *GetDMABasePointer();
+void SubmitDrawBuffersToController(qword_t *q, u32 channel, u32 type, bool tte);
 void ParsePipelineDMA(void *data, qword_t *pipelineData);
 void SubmitDMABuffersAsPipeline(qword_t *q, void* data);
 void InitializeDMAChannels();

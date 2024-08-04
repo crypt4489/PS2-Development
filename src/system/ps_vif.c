@@ -21,7 +21,7 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
 {
     //packet_t *pack = packet_init(packetSize+1, PACKET_NORMAL);
     //qword_t pack[packetSize];
-    qword_t *start = GetDMABasePointer();
+    qword_t *start = g_Manager.drawBuffers->currentvif;
     qword_t *q;
     u32 count = (cEnd - cStart) / 2;
     if (count & 1)
@@ -47,7 +47,7 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
         dest += currCount;
     }
     CreateDMATag(start, DMA_CNT, 0, 0, 0, 0);
-    SubmitDMABuffersToController(q, DMA_CHANNEL_VIF1, 1, 1);
+    SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, 1);
 }
 
 qword_t *UploadVectorsVU0(qword_t *q, void *vectors, u32 offset, u32 *dest, u32 size)

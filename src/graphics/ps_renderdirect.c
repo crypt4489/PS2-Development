@@ -39,7 +39,7 @@ void RenderRay(Ray *ray, Color color, float t)
     DrawCount(2, 1, true);
     DrawVectorFloat(v[0][0], v[0][1], v[0][2], 1.0f);
     DrawVectorFloat(v[1][0], v[1][1], v[1][2], 1.0f);
-    DrawVertices();
+    StartVertexShader();
     EndCommand();
 }
 
@@ -59,7 +59,7 @@ void RenderLine(Line *line, Color color)
     DrawCount(2, 1, true);
     DrawVector(line->p1);
     DrawVector(line->p2);
-    DrawVertices();
+    StartVertexShader();
     EndCommand();
 }
 
@@ -81,7 +81,7 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
     {
         DrawVector(verts[i]);
     }
-    DrawVertices();
+    StartVertexShader();
     EndCommand();
 }
 
@@ -130,7 +130,7 @@ void RenderGameObject(GameObject *obj, Color *colors)
         DrawColor(colors[i]); 
     }
 
-    DrawVertices();
+    StartVertexShader();
 
     EndCommand();
 }
@@ -188,7 +188,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     DrawVector(v[3]);
     DrawVector(v[0]);
 
-    DrawVertices();
+    StartVertexShader();
     EndCommand();
 }
 
@@ -226,7 +226,7 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     DrawVectorFloat(r + center[0], center[1], center[2], 1.0f);
    
 
-    DrawVertices();
+    StartVertexShader();
     EndCommand();
 }
 
@@ -291,6 +291,6 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     DrawVector(v[1]);
     DrawVector(v[3]);
     DrawVector(v[6]);
-    DrawVertices();
+    StartVertexShader();
     EndCommand();
 }

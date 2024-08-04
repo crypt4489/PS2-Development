@@ -18,7 +18,7 @@
 
 void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign alignment)
 {
-    BindTexture(fontStruct->fontTex);
+    
 
     blend_t blender;
     blender.color1 = BLEND_COLOR_SOURCE;
@@ -28,6 +28,7 @@ void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign align
     blender.fixed_alpha = 0x80;
 
     BeginCommand();
+    BindTexture(fontStruct->fontTex, true);
     DepthTest(true, 1);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0);
     BlendingEquation(&blender);
@@ -44,9 +45,12 @@ void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign align
         return;
     }
 
-    if (ret) return;
-
+    //if (ret) return;
+   
+   // 
+  // PrintOut();
     EndCommand();
+    
 }
 
 unsigned char *RewriteAlphaTexBuffer(unsigned char *buffer, int dimX, int dimY)
@@ -369,6 +373,8 @@ int RenderL(Font *font_struct, int x, int y, const char *text)
 
         lastx += (letterwidth);
     }
+
+   // EndVifImmediate();
 
     return 0;
 }

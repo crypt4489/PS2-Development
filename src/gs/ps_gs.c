@@ -65,12 +65,12 @@ void InitZBuffer(zbuffer_t *z, int width, int height, int zsm, int method, bool 
 
 void LoadFrameBuffer(framebuffer_t *frame, unsigned char *pixels, int width, int height, int psm)
 {
-	qword_t *q = GetDMABasePointer();
+	qword_t *q = g_Manager.drawBuffers->currentgif;
 
 	q = draw_texture_transfer(q, pixels, width, height, psm, frame->address, frame->width);
 	q = draw_texture_flush(q);
 
-	SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
+	SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
 qword_t *SetFrameBufferMask(qword_t *q, framebuffer_t *frame, u32 mask, u32 context)
@@ -104,7 +104,7 @@ qword_t *AddSizeToGSSetTag(qword_t *q, u32 count)
 void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context)
 {
 
-	qword_t *q = GetDMABasePointer();
+	qword_t *q = g_Manager.drawBuffers->currentgif;
 
 	qword_t *dmatag = q;
 
@@ -118,7 +118,7 @@ void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int
 
 	AddSizeToDMATag(dmatag, q - dmatag - 1);
 
-	SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
+	SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 }
 
 void CopyVRAMToVRAM(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm)
@@ -332,7 +332,7 @@ qword_t *SetTextureRegisters(qword_t *q, lod_t *lod, texbuffer_t *texbuf, clutbu
 void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a)
 {
 
-	qword_t *q = GetDMABasePointer();
+	qword_t *q = g_Manager.drawBuffers->currentgif;
 
 	qword_t *dmatag = q;
 
@@ -352,7 +352,7 @@ void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a)
 
 	DMATAG_END(dmatag, q - dmatag - 1, 0, 0, 0);
 
-	SubmitDMABuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
+	SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
 	draw_wait_finish();
 }
 
