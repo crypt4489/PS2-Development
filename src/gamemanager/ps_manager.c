@@ -28,6 +28,33 @@
 
 GameManager g_Manager;
 
+extern u32 VU1_LightStage3_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_LightStage3_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_GenericMorphTargetStage13D_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_GenericMorphTargetStage13D_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_EnvMapStage2_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_EnvMapStage2_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_AnimTexStage2_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_AnimTexStage2_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_SpecularLightStage3_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_SpecularLightStage3_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_ClippingStage_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_ClippingStage_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_ClipStage4_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_ShadowExtrusion_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_ShadowExtrusion_CodeEnd __attribute__((section(".vudata")));
+
 // pad;
 
 char padBuf[256] __attribute__((aligned(64)));
@@ -44,9 +71,18 @@ void InitializeSystem(ManagerInfo *info)
 
     InitPad(port, slot, padBuf);
 
-    InitializeManager(info);
-
     SetupVU1INTEHandler();
+
+    *R_EE_GIF_CTRL |= 1;
+
+    *R_EE_VIF1_FBRST |= 1;
+
+    *GS_REG_CSR |= 0x100;
+
+    *R_EE_GIF_MODE |= 0x04;
+    
+
+    InitializeManager(info);
 }
 
 
@@ -70,6 +106,49 @@ void CreateManagerRenderTargets(bool useZBuffer, u32 psm, u32 zsm)
 
     SetupRenderTarget(g_Manager.targetBack, 0, false);
 }
+
+static void SetupVU1Programs()
+{
+
+    VU1Program *prog;
+
+    prog = CreateVU1Program(&VU1_ClipStage4_CodeStart, &VU1_ClipStage4_CodeEnd, 0); // 0
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_LightStage3_CodeStart, &VU1_LightStage3_CodeEnd, 0); // 1
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_GenericMorphTargetStage13D_CodeStart, &VU1_GenericMorphTargetStage13D_CodeEnd, 0); // 2
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_EnvMapStage2_CodeStart, &VU1_EnvMapStage2_CodeEnd, 0); // 3
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_AnimTexStage2_CodeStart, &VU1_AnimTexStage2_CodeEnd, 0); // 4
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_SpecularLightStage3_CodeStart, &VU1_SpecularLightStage3_CodeEnd, 0); // 5
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_ClippingStage_CodeStart, &VU1_ClippingStage_CodeEnd, 0); // 6
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_GenericBonesAnimStage1_CodeStart, &VU1_GenericBonesAnimStage1_CodeEnd, 0); // 7
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+
+    prog = CreateVU1Program(&VU1_ShadowExtrusion_CodeStart, &VU1_ShadowExtrusion_CodeEnd, 0); // 8
+
+    AddProgramToManager(g_Manager.vu1Manager, prog);
+}
+
 
 void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSize, u32 programSize, bool fsaa) 
 {
@@ -95,6 +174,8 @@ void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSiz
     g_Manager.FPS = 0;
     g_Manager.timer = TimerZeroEnable();
     g_Manager.currentTime = g_Manager.lastTime = getTicks(g_Manager.timer);
+
+    SetupVU1Programs();
 }
 
 void InitializeManager(ManagerInfo *info)
@@ -131,6 +212,15 @@ void StartFrame()
 
 void EndFrame(bool useVsync)
 {
+
+    qword_t *q = g_Manager.drawBuffers->currentvif;
+    qword_t *direct = q;
+    q = CreateDirectTag(q, 0, 1);
+    q = draw_finish(q);
+    AddSizeToDirectTag(direct, q-direct-1);
+    SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 0, 0);
+    while(PollVU1DoneProcessing(&g_Manager) < 0);
+    draw_wait_finish();
     static u32 frameCounter = 0;
     static u8 init = 0;
     if (useVsync)

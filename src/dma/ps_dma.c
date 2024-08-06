@@ -11,8 +11,9 @@
 
 void InitializeDMAChannels()
 {
-    dma_channel_initialize(DMA_CHANNEL_GIF, NULL, 0);
     dma_channel_initialize(DMA_CHANNEL_VIF1, NULL, 0);
+    dma_channel_initialize(DMA_CHANNEL_GIF, NULL, 0);
+    
     dma_channel_initialize(DMA_CHANNEL_VIF0, NULL, 0);
     dma_channel_initialize(DMA_CHANNEL_toSPR, NULL, 0);
     dma_channel_initialize(DMA_CHANNEL_fromSPR, NULL, 0);
@@ -144,7 +145,6 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
     {
         g_Manager.vu1DoneProcessing = false;
         dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-        FlushCache(0);
     }
     else if (channel == DMA_CHANNEL_VIF0)
     {
@@ -158,16 +158,13 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
         {
         }
     }
-
+    FlushCache(0);
     if (type == 0)
     {
-        FlushCache(0);
         dma_channel_send_normal(channel, q, qwc, tte, 0);
-        INFOLOG(" in normal");
     }
     else
     {
-        dma_channel_wait(channel, -1);
         dma_channel_send_chain(channel, q, qwc, tte, 0);
     }
 }
@@ -185,6 +182,9 @@ void SubmitDrawBuffersToController(qword_t *q, u32 channel, u32 type, bool tte)
         send = g_Manager.drawBuffers->currentvif;
          g_Manager.drawBuffers->currentvif = q;
         break;
+        default:
+        ERRORLOG("Unsupposerted channel for submitting draw buffer");
+        return;
     }
     
     u32 size = q - send;

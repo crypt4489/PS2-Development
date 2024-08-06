@@ -22,7 +22,6 @@ volatile u32 *vif1_tops = (volatile u32 *)0x10003cc0;
 int VU1CompleteHandler(s32 cause, void *arg, void *addr)
 {
     GameManager *local_manager = (GameManager *)arg;
-
     local_manager->vu1DoneProcessing = true;
     *R_EE_VIF1_FBRST |= 1 << 3;
     return 0;

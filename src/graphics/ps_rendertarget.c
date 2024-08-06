@@ -41,8 +41,6 @@ void SetupRenderTarget(RenderTarget *target, int context, bool wait)
 	hHeight = target->render->height >> 1;
 	hWidth = target->render->width >> 1;
 
-	PollVU1DoneProcessing(&g_Manager);
-
 	InitDrawingEnvironment(target->render, target->z, hHeight, hWidth, context);
 }
 

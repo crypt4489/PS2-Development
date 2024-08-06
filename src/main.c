@@ -57,33 +57,6 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-extern u32 VU1_LightStage3_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_LightStage3_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_GenericMorphTargetStage13D_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_GenericMorphTargetStage13D_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_EnvMapStage2_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_EnvMapStage2_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_AnimTexStage2_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_AnimTexStage2_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_SpecularLightStage3_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_SpecularLightStage3_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_ClippingStage_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_ClippingStage_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_ClipStage4_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_GenericBonesAnimStage1_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata")));
-
-extern u32 VU1_ShadowExtrusion_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_ShadowExtrusion_CodeEnd __attribute__((section(".vudata")));
-
 TimerStruct *ts;
 
 char print_out[50];
@@ -205,7 +178,6 @@ static Ray rayray2 = {{-5.0f, 0.0f, -5.0f, 1.0f}, {-1.0f, 0.0f, 0.0f, 1.0f}};
 
 static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
 
-
 #if 0
 VECTOR drawVECS[250];
 u32 drawCnt;
@@ -311,8 +283,6 @@ static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
 
 #endif
 
-
-
 static void update_cube(GameObject *cube)
 {
     static float angle = 1.0f;
@@ -360,7 +330,7 @@ static void CreateLights()
     SetLightColor(direct, mainDirLightColor);
     PitchLTM(direct->ltm, +25.0f);
     RotateYLTM(direct->ltm, +25.0f);
-    //AddLightToRenderWorld(world, direct);
+    // AddLightToRenderWorld(world, direct);
 
     secondLight = CreateLightStruct(PS_DIRECTIONAL_LIGHT);
     SetLightColor(secondLight, secDirLightColor);
@@ -398,7 +368,7 @@ static void CreateLights()
 
     RotateYLTM(spotLight->ltm, 180.0f);
 
-    //AddLightToRenderWorld(roomWorld, spotLight);
+    // AddLightToRenderWorld(roomWorld, spotLight);
 }
 
 static void SetupGrid()
@@ -617,9 +587,9 @@ static void SetupGameObjects()
     SetupAABBBox();
     // SetupOBBBody();
     SetupShootBoxBox();
-    //SetupShootBigBoxBox();
-    // SetupMultiSphere();
-    //  SetupShadowViewer();
+    // SetupShootBigBoxBox();
+    //  SetupMultiSphere();
+    //   SetupShadowViewer();
 
     // SetupRoom();
 
@@ -634,71 +604,69 @@ static void CleanUpGame()
     ClearManagerStruct(&g_Manager);
 }
 
-
-
 void DrawTexturedObject(GameObject *obj)
 {
     PollVU1DoneProcessing(&g_Manager);
     MATRIX vp;
     MATRIX world = {1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-                -15.0f, 50.0f, 0.0f, 1.0f};
+                    0.0f, 1.0f, 0.0, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    -15.0f, 50.0f, 0.0f, 1.0f};
     BeginCommand();
     BindTexture(GetTexByName(g_Manager.texManager, wowwer), false);
-   
+
     MatrixIdentity(vp);
     MatrixMultiply(vp, vp, world);
     MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
-    
+
     ShaderHeaderLocation(16);
     ShaderProgram(0);
     DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
-     
-   
+
     AllocateShaderSpace(16, 0);
-    
-   PushMatrix(vp, 0, sizeof(MATRIX));
+
+    PushMatrix(vp, 0, sizeof(MATRIX));
     PushScaleVector();
     PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, 
-                GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading, 
-                true, obj->renderState.prim.fogging, 
-                obj->renderState.prim.blending, obj->renderState.prim.antialiasing, 
-                PRIM_MAP_ST, g_Manager.gs_context, PRIM_UNFIXED), 0, 3), DRAW_STQ2_REGLIST, 10);
+    PushPairU64(GIF_SET_TAG(0, 1, 1,
+                            GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading,
+                                        true, obj->renderState.prim.fogging,
+                                        obj->renderState.prim.blending, obj->renderState.prim.antialiasing,
+                                        PRIM_MAP_ST, g_Manager.gs_context, PRIM_UNFIXED),
+                            0, 3),
+                DRAW_STQ2_REGLIST, 10);
     PushInteger(RENDERTEXTUREMAPPED, 12, 3);
 
     DrawCount(18, 2, true);
-    for (int i = 0; i<18; i++)
+    for (int i = 0; i < 18; i++)
     {
         DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
     }
 
-    for (int i = 0; i<18; i++)
+    for (int i = 0; i < 18; i++)
     {
         DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
     }
 
     StartVertexShader();
-    
+
     BindTexture(GetTexByName(g_Manager.texManager, worldName), true);
-    
-    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount/2, 2, true);
-    for (int i = obj->vertexBuffer.meshData[1]->vertexCount/2; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+
+    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount / 2, 2, true);
+    for (int i = obj->vertexBuffer.meshData[1]->vertexCount / 2; i < obj->vertexBuffer.meshData[1]->vertexCount; i++)
     {
-       DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
+        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
     }
 
-    for (int i = obj->vertexBuffer.meshData[1]->vertexCount/2; i<obj->vertexBuffer.meshData[1]->vertexCount; i++)
+    for (int i = obj->vertexBuffer.meshData[1]->vertexCount / 2; i < obj->vertexBuffer.meshData[1]->vertexCount; i++)
     {
-       DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
+        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
     }
 
     StartVertexShader();
-    EndCommand(); 
+    EndCommand();
 }
-
 
 void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
@@ -719,7 +687,7 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     FrameBufferMask(0, 0, 0, 0);
     DepthBufferMask(false);
-    EndCommand();            
+    EndCommand();
 }
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
@@ -733,14 +701,13 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     FrameBufferMask(0xFF, 0xFF, 0xFF, 0x00);
     DepthBufferMask(true);
-    
+
     AllocateShaderSpace(16, 0);
     PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushMatrix(m, 4, sizeof(MATRIX));
     PushScaleVector();
     PushColor(0, 0, 0, 0x80, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
-     DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushMatrix(volLightPos, 11, 12);
     PushInteger(0x3, 11, 3);
     PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(VECTOR));
@@ -752,8 +719,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     StartVertexShader();
     AllocateShaderSpace(3, 9);
     PushColor(0, 0, 0, 0, 0);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT,
-     DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 1);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 1);
     PushMatrix(volLightPos, 2, 12);
     PushInteger(0x0, 2, 3);
     DrawCount(count, 1, true);
@@ -784,7 +750,7 @@ void TestObjects()
     {
         VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
         VectorAddXYZ(mainLine.p2, temp, mainLine.p2);
-        VectorAddXYZ(rayray2.origin, temp, rayray2.origin);
+        // VectorAddXYZ(rayray2.origin, temp, rayray2.origin);
         // ret = LineIntersectLine(&whatter, &mainLine, temp);
         // ret = RayIntersectRay(&rayray, &rayray2);
         // DumpVector(temp);
@@ -847,7 +813,6 @@ void TestObjects()
         FindCenterAndHalfAABB(&boxx, center, half);
 
         DumpVector(lolSphere.center);
-
         DEBUGLOG("dist from line %f", DistanceFromLineSegment(&mainLine, lolSphere.center, temp));
     }
     else if (objectIndex == 4)
@@ -862,7 +827,6 @@ void TestObjects()
 static u8 glowR = 255;
 static u8 glowG = 128;
 static u8 glowB = 128;
-
 
 int Render()
 {
@@ -894,7 +858,6 @@ int Render()
     colors[4] = &lcolors[4];
     float lastTime = getTicks(g_Manager.timer);
 
-    *R_EE_GIF_MODE |= 0x04;
     for (;;)
     {
         float currentTime = getTicks(g_Manager.timer);
@@ -914,104 +877,40 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-         qword_t what[2];
-        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-        CreateDMATag(what, DMA_END, 0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), 0, 0);
-        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-       dma_channel_send_chain(DMA_CHANNEL_VIF1, what, 1, 1, 0);
-        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-
-        //DrawWorld(world);
+        // DrawWorld(world);
         MATRIX ident;
         MatrixIdentity(ident);
-
-        
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
         RenderGameObject(shotBox, shotBoxColor);
         RenderPlaneLine(&plane2, *colors[1], 20);
 
-        
-        
         RenderRay(&rayray2, *colors[2], 25);
         RenderLine(&mainLine, *colors[3]);
-       RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
-
-       
+        RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
 
         DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 
-       RenderShadowVertices(adjs, count, m);
+        RenderShadowVertices(adjs, count, m);
 
-        //ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
+        // ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
 
-     DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
-
+        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
         DrawTexturedObject(shotBox);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
-       PrintText(myFont, print_out, -310, -220, LEFT);
-
-
-        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-        CreateDMATag(what, DMA_END, 0, VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0, 0);
-        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-        dma_channel_send_chain(DMA_CHANNEL_VIF1, what, 1, 1, 0);
-        dma_channel_wait(DMA_CHANNEL_VIF1, -1);
-
+        PrintText(myFont, print_out, -310, -220, LEFT);
 
         EndRendering(cam);
 
         EndFrame(true);
-       // while(true);
+        // while(true);
         FrameCounter++;
     }
 
     return 0;
-}
-
-static void SetupVU1Programs()
-{
-
-    VU1Program *prog;
-
-    prog = CreateVU1Program(&VU1_ClipStage4_CodeStart, &VU1_ClipStage4_CodeEnd, 0); // 0
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_LightStage3_CodeStart, &VU1_LightStage3_CodeEnd, 0); // 1
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_GenericMorphTargetStage13D_CodeStart, &VU1_GenericMorphTargetStage13D_CodeEnd, 0); // 2
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_EnvMapStage2_CodeStart, &VU1_EnvMapStage2_CodeEnd, 0); // 3
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_AnimTexStage2_CodeStart, &VU1_AnimTexStage2_CodeEnd, 0); // 4
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_SpecularLightStage3_CodeStart, &VU1_SpecularLightStage3_CodeEnd, 0); // 5
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_ClippingStage_CodeStart, &VU1_ClippingStage_CodeEnd, 0); // 6
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_GenericBonesAnimStage1_CodeStart, &VU1_GenericBonesAnimStage1_CodeEnd, 0); // 7
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
-
-    prog = CreateVU1Program(&VU1_ShadowExtrusion_CodeStart, &VU1_ShadowExtrusion_CodeEnd, 0); // 8
-
-    AddProgramToManager(g_Manager.vu1Manager, prog);
 }
 
 static void LoadInTextures()
@@ -1037,7 +936,7 @@ void StartUpSystem()
 {
     ManagerInfo info;
     info.doublebuffered = true;
-    info.drawBufferSize = 2000;
+    info.drawBufferSize = 3000;
     info.fsaa = true;
     info.zenable = true;
     info.height = 448;
@@ -1054,17 +953,11 @@ int main(int argc, char **argv)
 {
     StartUpSystem();
 
-    
-
     float totalTime;
 
     float startTime = totalTime = getTicks(g_Manager.timer);
 
-    SetupVU1Programs();
-
     float endTime = getTicks(g_Manager.timer);
-
-    DEBUGLOG("VU1 programs %f", endTime - startTime);
 
     startTime = getTicks(g_Manager.timer);
 
@@ -1085,8 +978,6 @@ int main(int argc, char **argv)
     endTime = getTicks(g_Manager.timer);
 
     DEBUGLOG("gos %f", endTime - startTime);
-
-    
 
     endTime = getTicks(g_Manager.timer);
 

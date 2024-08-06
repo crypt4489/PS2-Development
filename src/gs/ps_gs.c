@@ -10,6 +10,7 @@
 #include "system/ps_vif.h"
 #include "util/ps_linkedlist.h"
 #include "gs/ps_vrammanager.h"
+#include "log/ps_log.h"
 
 
 void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, zbuffer_t *z, u32 psm, u32 zsm)
@@ -103,12 +104,11 @@ qword_t *AddSizeToGSSetTag(qword_t *q, u32 count)
 
 void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int hwidth, int context)
 {
+	qword_t *q = g_Manager.drawBuffers->currentvif;
 
-	qword_t *q = g_Manager.drawBuffers->currentgif;
+	qword_t *direct = q;
 
-	qword_t *dmatag = q;
-
-	q = CreateDMATag(q, DMA_CNT, 0, 0, 0, 0);
+	q = CreateDirectTag(q, 0, 1);
 
 	q = draw_setup_environment(q, context, frame, z);
 
@@ -116,9 +116,11 @@ void InitDrawingEnvironment(framebuffer_t *frame, zbuffer_t *z, int hheight, int
 
 	q = draw_finish(q);
 
-	AddSizeToDMATag(dmatag, q - dmatag - 1);
+	AddSizeToDirectTag(direct, q-direct-1);
 
-	SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
+	SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 0, 0);
+
+	draw_wait_finish();
 }
 
 void CopyVRAMToVRAM(int srcAd, int srcH, int srcW, int dstAd, int dstH, int dstW, int psm)
@@ -248,17 +250,8 @@ void CreateClutStructs(Texture *tex, int psm)
 void CreateTexStructs(Texture *tex, int width, int psm, u32 components, u32 function, bool texfilter)
 {
 
-	if (texfilter)
-	{
-		tex->lod.mag_filter = LOD_MAG_LINEAR;
-		tex->lod.min_filter = LOD_MIN_LINEAR;
-	}
-	else
-	{
-		tex->lod.mag_filter = LOD_MAG_NEAREST;
-		tex->lod.min_filter = LOD_MIN_NEAREST;	
-	}
-
+	tex->lod.mag_filter = texfilter;
+	tex->lod.min_filter = texfilter;
 	tex->lod.l = 0;
 	tex->lod.k = 0;
 	tex->lod.calculation = LOD_USE_K;
@@ -332,28 +325,26 @@ qword_t *SetTextureRegisters(qword_t *q, lod_t *lod, texbuffer_t *texbuf, clutbu
 void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a)
 {
 
-	qword_t *q = g_Manager.drawBuffers->currentgif;
+	qword_t *q = g_Manager.drawBuffers->currentvif;
 
 	qword_t *dmatag = q;
 
 	int alpha = ATEST_METHOD_NOTEQUAL;
 
-	q++;
+	q+=2;
 
 	float xOff = 2048.0f - (target->render->width >> 1);
 	float yOff = 2048.0f - (target->render->height >> 1);
-	if (!a)
-		alpha = ATEST_METHOD_EQUAL;
+	if (!a) alpha = ATEST_METHOD_EQUAL;
 
 	q = draw_disable_tests_alpha(q, context, alpha);
 	q = draw_clear_alpha(q, context, xOff, yOff, target->render->width, target->render->height, r, g, b, a);
-	q = draw_enable_tests_alpha(q, context, a, target->z->method);
-	q = draw_finish(q);
 
 	DMATAG_END(dmatag, q - dmatag - 1, 0, 0, 0);
+	CreateDirectTag(dmatag+1, q- dmatag-2, 1);
 
-	SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, 0);
-	draw_wait_finish();
+
+	SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, 0);
 }
 
 qword_t *draw_clear_alpha(qword_t *q, int context, float x, float y, float width, float height, int r, int g, int b, int a)
@@ -398,7 +389,7 @@ qword_t *draw_clear_alpha(qword_t *q, int context, float x, float y, float width
 qword_t *draw_disable_tests_alpha(qword_t *q, int context, int alpha)
 {
 
-	PACK_GIFTAG(q, GIF_SET_TAG(1, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
+	PACK_GIFTAG(q, GIF_SET_TAG(1, 0, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_AD);
 	q++;
 
 	PACK_GIFTAG(q, GS_SET_TEST(DRAW_ENABLE, alpha, 0x00, ATEST_KEEP_FRAMEBUFFER, DRAW_DISABLE, DRAW_DISABLE, DRAW_ENABLE, ZTEST_METHOD_ALLPASS), GS_REG_TEST + context);

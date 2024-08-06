@@ -24,29 +24,29 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
     qword_t *start = g_Manager.drawBuffers->currentvif;
     qword_t *q;
     u32 count = (cEnd - cStart) / 2;
-    if (count & 1)
-    {
-        count++;
-    }
-
-    dma_channel_wait(DMA_CHANNEL_VIF1, -1);
+    if (count & 1) count++;
+    
 
     u32 *l_start = cStart;
     q = start;
 
-    q+=1;
     while (count > 0)
     {
         u16 currCount = count > 256 ? 256 : count;
         int currhalf = currCount / 2;
-        DMATAG_REF(q, currhalf, (u32)l_start, 0, VIF_CODE(0, 0, VIF_CMD_NOP, 0), VIF_CODE(dest, currCount & 0xFF, VIF_CMD_MPG, 1));
-        q++;
-        //DEBUGLOG("%d", count);
-        l_start += currCount * 2;
         count -= currCount;
+        u32 inte = 0;
+        u32 code = DMA_REF;
+        if (count <= 0) {
+            inte = 1;
+            code = DMA_REFE;
+        }
+        q = CreateDMATag(q, code, currhalf, VIF_CODE(0, 0, VIF_CMD_NOP, 0), VIF_CODE(dest, currCount, VIF_CMD_MPG, inte), 0, (u32)l_start);
+
+        l_start += currCount * 2;
+        
         dest += currCount;
     }
-    CreateDMATag(start, DMA_CNT, 0, 0, 0, 0);
     SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, 1);
 }
 
