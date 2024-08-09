@@ -9,6 +9,7 @@
 #include "log/ps_log.h"
 #include "textures/ps_texture.h"
 #include <string.h>
+
 static qword_t *sg_DrawBufferPtr = NULL;
 static qword_t *sg_OpenDMATag = NULL;
 static qword_t* sg_OpenDirectTag = NULL;
@@ -20,16 +21,19 @@ static qword_t *sg_VIFCodeUpload = NULL;
 static qword_t *sg_OpenTextureGap = NULL;
 static qword_t *sg_VU1ProgramEnd = NULL;
 static qword_t *sg_GifDrawPtr;
-static bool VU1Sync;
 static int sg_reservedVU1Space;
 static int sg_DrawCount;
-static int sg_ShaderInUse;
+static int sg_ShaderInUse[4];
 static bool sg_TTEUse;
 static int sg_VertexType;
 static int sg_RegisterCount;
 static int sg_RegisterType;
 static u64 sg_PrimitiveType;
 static int sg_VifCodeUploadCount;
+static int sg_GapCount;
+static int sg_VU1Offset;
+
+static void AddVIFCode(u32 a1, u32 a2);
 
 static void OpenDMATag();
 
@@ -38,6 +42,12 @@ static void CloseDMATag();
 static void GSSetTagOpen();
 
 static void CloseGSSetTag();
+
+static void FlushProgram(bool end);
+
+static qword_t* ChangeGapSize();
+
+
 
 void ResetState() {
     sg_DrawBufferPtr = NULL;
@@ -52,7 +62,7 @@ void ResetState() {
     sg_VU1ProgramEnd = NULL;
     sg_reservedVU1Space = 0;
     sg_DrawCount = 0;
-    sg_ShaderInUse = 0;
+    for(int i = 0; i<4; i++) sg_ShaderInUse[i] = 0;
     sg_TTEUse = false;
     sg_VertexType = 0;
     sg_RegisterCount = 0;
@@ -60,24 +70,22 @@ void ResetState() {
     sg_PrimitiveType = 0;
     sg_VifCodeUploadCount = 0;
     sg_GifDrawPtr = NULL;
-    VU1Sync = false; 
+    sg_GapCount = 0;
+    sg_VU1Offset = 0;
 }
 
-void ShaderProgram(int shader)
+void ShaderProgram(int shader, int slot)
 {
-    sg_ShaderInUse = shader;
+    sg_ShaderInUse[slot] = shader;
 }
 
 void BeginCommand()
 {
-    while(PollVU1DoneProcessing(&g_Manager));
-    sg_TTEUse = 0;
     sg_DrawBufferPtr = g_Manager.drawBuffers->currentvif;
 }
 
 void BeginCommandSet(qword_t *drawBuffer)
 {
-    sg_TTEUse = 0;
     sg_DrawBufferPtr = drawBuffer;
 }
 
@@ -93,7 +101,16 @@ static inline void SetDMACode(qword_t *q, u32 code)
     q->dw[0] |= (7<<28);
 }
 
-#include "math/ps_misc.h"
+static inline int GetOffsetIntoHeader(int offset)
+{
+    if (offset < sg_VU1Offset)
+    {
+        ERRORLOG("Pushing with too high offset %d %d", offset, sg_VU1Offset);
+        return -1;
+    }
+    return offset - sg_VU1Offset;
+}
+
 qword_t* EndCommand()
 {
     if (sg_VIFHeaderUpload)
@@ -109,31 +126,11 @@ qword_t* EndCommand()
             {
                 CreateDirectTag(sg_OpenDirectTag, 0, 1);
             }
-       } else if (VU1Sync) {
-        
-            //CloseDMATag();
-            //sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, 0, 0);
        }
     }
 
-    if (sg_VU1ProgramEnd)
-    {
-       
-      
-       if (VU1Sync)
-       {
-            sg_VU1ProgramEnd = CreateDMATag(sg_VU1ProgramEnd, DMA_END, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0);
-       } else {
-            u32 code = GetDMACode(sg_VU1ProgramEnd);
-            if (code != DMA_END)
-            { 
-                SetDMACode(sg_VU1ProgramEnd, DMA_END);
-            }
-            sg_VU1ProgramEnd->sw[2] = VIF_CODE(0, 0, VIF_CMD_FLUSHA, 1);
-       }
-        
-    }
-
+    
+    FlushProgram(true);
 
     CloseDMATag();
 
@@ -155,30 +152,27 @@ qword_t* EndCommand()
 
 void PrintOut()
 {
+    #include "math/ps_misc.h"
     qword_t *dump = g_Manager.drawBuffers->currentvif;
     dump_packet(dump, 250, 0);
 }
 
 static void OpenDMATag()
 {
+    FlushProgram(false);
     u32 arg1 = 0, arg2 = 0;
     if (!sg_OpenDMATag)
     {
-        sg_VU1ProgramEnd = NULL;
         sg_OpenDMATag = sg_DrawBufferPtr;
         if (sg_OpenTextureGap)
         {
-            VU1Sync = true;
-            arg1 = 0;
-            arg2 = VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0);
-            
+            arg1 = VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0);
+            arg2 = VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0);
+            sg_OpenTextureGap = NULL;
         }
        
         sg_DrawBufferPtr = CreateDMATag(sg_OpenDMATag, DMA_CNT, 0, arg1, arg2, 0);
-    }
 
-    if (!sg_OpenDirectTag)
-    {
         sg_OpenDirectTag = sg_DrawBufferPtr++;
         CreateDirectTag(sg_OpenDirectTag, 0, 0);
     }
@@ -308,38 +302,57 @@ void DepthBufferMask(bool enable)
     GSSetTagOpen();
     sg_DrawBufferPtr = SetZBufferMask(sg_DrawBufferPtr, g_Manager.targetBack->z, enable, g_Manager.gs_context);
 }
+#include "math/ps_matrix.h"
+void BindMatrix(MATRIX mat, int offset)
+{
+    qword_t *assign = NULL;
+    if (sg_OpenTextureGap)
+    {  
+        assign = ChangeGapSize(0);
+    } else {
+        CloseDMATag();
+        assign = sg_DrawBufferPtr++;
+    }
+    UnpackAddress(assign, offset, mat, 4, 0, VIF_CMD_UNPACK(0, 3, 0));
+}
 
 void PushScaleVector()
 {
     if (!sg_VIFHeaderUpload)
         return;
-    VIFSetupScaleVector(sg_VIFHeaderUpload + 1 + VU1_LOCATION_SCALE_VECTOR);
+    int diff = GetOffsetIntoHeader(VU1_LOCATION_SCALE_VECTOR);
+    VIFSetupScaleVector(sg_VIFHeaderUpload + 1 + diff);
 }
 
 void PushQWord(void *q, int offset)
 {
+    offset = GetOffsetIntoHeader(offset);
     memcpy(sg_VIFHeaderUpload + 1 + offset, q, sizeof(qword_t));
 }
 
 void PushMatrix(float *mat, int offset, int size)
 {
+    offset = GetOffsetIntoHeader(offset);
     memcpy(sg_VIFHeaderUpload + 1 + offset, mat, size);
 }
 
 void PushInteger(int num, int memoffset, int vecoffset)
 {
-    qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
+    int offset = GetOffsetIntoHeader(memoffset);
+    qword_t *temp = sg_VIFHeaderUpload + 1 + offset;
     temp->sw[vecoffset] = num;
 }
 
 void PushFloat(float num, int memoffset, int vecoffset)
 {
+    memoffset = GetOffsetIntoHeader(memoffset);
     qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
     ((float *)temp->sw)[vecoffset] = num;
 }
 
 void PushColor(int r, int g, int b, int a, int memoffset)
 {
+    memoffset = GetOffsetIntoHeader(memoffset);
     qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
     temp->sw[0] = r;
     temp->sw[1] = g;
@@ -349,8 +362,8 @@ void PushColor(int r, int g, int b, int a, int memoffset)
 
 void PushPairU64(u64 a, u64 b, u32 memoffset)
 {
+    memoffset = GetOffsetIntoHeader(memoffset);
     qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
-
     temp->dw[0] = a;
     temp->dw[1] = b;
 }
@@ -366,9 +379,9 @@ void DrawVectorFloat(float x, float y, float z, float w)
 
 void WritePairU64(u64 a, u64 b)
 {
-    qword_t *temp = sg_DrawBufferPtr++;
-    temp->dw[0] = a;
-    temp->dw[1] = b;
+    sg_DrawBufferPtr->dw[0] = a;
+    sg_DrawBufferPtr->dw[1] = b;
+    sg_DrawBufferPtr++;
 }
 
 void BlendingEquation(blend_t *blend)
@@ -393,19 +406,19 @@ void DrawCount(int num, int vertexMemberCount, bool toVU)
 {
     sg_DrawCount = num;
     
+    FlushProgram(false);
 
     if (toVU)
     {
-        
         if (!sg_OpenDMATag && sg_OpenTextureGap) {
-            sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), 0);
-            VU1Sync = true;
+            sg_OpenTextureGap = NULL;
+            sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0,
+             VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0),  VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0);
         } else 
             CloseDMATag();
     
         sg_VIFHeaderUpload = NULL;
         sg_VIFCodeUpload = NULL;
-        sg_OpenTextureGap = NULL;
         sg_VIFProgramUpload = sg_DrawBufferPtr;
         sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, (vertexMemberCount*num)+1, 1, VIF_CMD_UNPACK(0, 3, 0));
         sg_DrawBufferPtr->sw[3] = num;
@@ -414,7 +427,6 @@ void DrawCount(int num, int vertexMemberCount, bool toVU)
     } else {
         sg_VIFCodeUpload = NULL;
         sg_OpenTextureGap = NULL;
-        sg_OpenDMATag->sw[2] = VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0);
         PACK_GIFTAG(sg_DrawBufferPtr, sg_PrimitiveType, GS_REG_PRIM);
         sg_DrawBufferPtr++;
         CloseGSSetTag();
@@ -441,9 +453,8 @@ void StartVertexShader()
 {
     if (sg_VIFProgramUpload)
     {
-        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, sg_ShaderInUse), 0, VIF_CMD_MSCAL, 0), 0);        
-        sg_VU1ProgramEnd = sg_DrawBufferPtr;
-        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0, 0);    
+        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, sg_ShaderInUse[0]), 0, VIF_CMD_MSCAL, 0), 0);        
+        sg_VU1ProgramEnd = sg_DrawBufferPtr;    
         sg_VIFProgramUpload = NULL;
     }
 }
@@ -452,10 +463,7 @@ void ShaderHeaderLocation(int location)
 {   
     if (sg_VIFCodeUpload)
     {
-        sg_VIFCodeUpload->sw[2] = VIF_CODE(location, 0, VIF_CMD_BASE, 0);
-        sg_VIFCodeUpload->sw[3] = VIF_CODE(GetDoubleBufferOffset(location), 0, VIF_CMD_OFFSET, 0);
-        sg_VIFCodeUpload++;
-        sg_VifCodeUploadCount++;
+        AddVIFCode(VIF_CODE(location, 0, VIF_CMD_BASE, 0), VIF_CODE(GetDoubleBufferOffset(location), 0, VIF_CMD_OFFSET, 0));
         return;
     }
     sg_DrawBufferPtr = InitDoubleBufferingQWord(sg_DrawBufferPtr, location, GetDoubleBufferOffset(location));
@@ -463,28 +471,27 @@ void ShaderHeaderLocation(int location)
 
 void AllocateShaderSpace(int size, int offset)
 {
-    
+    if (sg_VIFHeaderUpload)
+        return;
+
     sg_TTEUse = true;
     sg_reservedVU1Space = size;
+    sg_VU1Offset = offset;
+    FlushProgram(false);
 
-    if (!sg_VIFHeaderUpload && sg_OpenTextureGap)
+    if (sg_OpenTextureGap)
     {   
-        int diff = 24-(size+1);
-        if (diff <= sg_VifCodeUploadCount)
-        {
-            ERRORLOG("too many vif code and too much geometry unpack");
-        }
-        CreateDMATag(sg_OpenTextureGap, DMA_CNT, diff, 0, VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0);
-        sg_VIFHeaderUpload = sg_OpenTextureGap + diff + 1;
+        sg_VIFHeaderUpload = ChangeGapSize(size);
         ReadUnpackData(sg_VIFHeaderUpload, offset, size, 0, VIF_CMD_UNPACK(0, 3, 0));
+        return;
     }
-    else if (!sg_VIFHeaderUpload)
-    {
-        CloseDMATag();
-        sg_VIFHeaderUpload = sg_DrawBufferPtr++;
-        ReadUnpackData(sg_VIFHeaderUpload, offset, size, 0, VIF_CMD_UNPACK(0, 3, 0));
-        sg_DrawBufferPtr += size;
-    } 
+    
+    CloseDMATag();
+    sg_VIFHeaderUpload = sg_DrawBufferPtr++;
+    ReadUnpackData(sg_VIFHeaderUpload, offset, size, 0, VIF_CMD_UNPACK(0, 3, 0));
+    memset(sg_DrawBufferPtr, 0, 16*size);
+    sg_DrawBufferPtr += size;
+    
 }
 
 void BindTexture(Texture *tex, bool end)
@@ -498,14 +505,51 @@ void BindTexture(Texture *tex, bool end)
 
     sg_TTEUse = true;
 
-    if (sg_VU1ProgramEnd) {
-        sg_DrawBufferPtr = sg_VU1ProgramEnd;
+    u32 arg1 = 0;
+    if (sg_VU1ProgramEnd)
+    {
+        arg1 = VIF_CODE(0, 0, VIF_CMD_FLUSH, 0);
         sg_VU1ProgramEnd = NULL;
     }
 
     sg_OpenTextureGap = sg_DrawBufferPtr;
-    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 24, 0, VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0);
+    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 24, arg1, VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0);
     sg_VIFCodeUpload = sg_DrawBufferPtr;
     memset(sg_DrawBufferPtr, 0, sizeof(qword_t)*24);
     sg_DrawBufferPtr += 24;
+    sg_GapCount = 24;
+}
+
+static void AddVIFCode(u32 a1, u32 a2)
+{
+    sg_VIFCodeUpload->sw[2] = a1;
+    sg_VIFCodeUpload->sw[3] = a2;
+    sg_VIFCodeUpload++;
+    sg_VifCodeUploadCount++;
+}
+
+static void FlushProgram(bool end)
+{
+    if (sg_VU1ProgramEnd)
+    {
+        //a branchless programming lol
+        u32 code = (6 * end) + 1;
+        sg_VU1ProgramEnd = CreateDMATag(sg_VU1ProgramEnd, code, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, end), 0, 0);  
+        sg_DrawBufferPtr++;
+    }
+
+    sg_VU1ProgramEnd = NULL;
+}
+
+static qword_t* ChangeGapSize(u32 size)
+{
+    sg_GapCount -= (size+1);
+
+    if (sg_GapCount <= sg_VifCodeUploadCount || sg_GapCount < 0)
+    {
+        ERRORLOG("too many vif code and too much geometry unpack");
+    }
+
+    CreateDMATag(sg_OpenTextureGap, DMA_CNT, sg_GapCount, 0, VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0);
+    return sg_OpenTextureGap + sg_GapCount + 1;
 }

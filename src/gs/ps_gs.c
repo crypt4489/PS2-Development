@@ -378,7 +378,7 @@ qword_t *draw_clear_alpha(qword_t *q, int context, float x, float y, float width
 
 	q = draw_rect_filled_strips(q, context, &rect);
 
-	PACK_GIFTAG(q, GIF_SET_TAG(1, 0, 0, 0, 0, 1), GIF_REG_AD);
+	PACK_GIFTAG(q, GIF_SET_TAG(1, 1, 0, 0, 0, 1), GIF_REG_AD);
 	q++;
 	PACK_GIFTAG(q, GS_SET_PRMODECONT(PRIM_OVERRIDE_DISABLE), GS_REG_PRMODECONT);
 	q++;

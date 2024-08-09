@@ -607,7 +607,7 @@ static void CleanUpGame()
 void DrawTexturedObject(GameObject *obj)
 {
     PollVU1DoneProcessing(&g_Manager);
-    MATRIX vp;
+    
     MATRIX world = {1.0f, 0.0f, 0.0f, 0.0f,
                     0.0f, 1.0f, 0.0, 0.0f,
                     0.0f, 0.0f, 1.0f, 0.0f,
@@ -615,18 +615,17 @@ void DrawTexturedObject(GameObject *obj)
     BeginCommand();
     BindTexture(GetTexByName(g_Manager.texManager, wowwer), false);
 
-    MatrixIdentity(vp);
-    MatrixMultiply(vp, vp, world);
-    MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
+    MatrixIdentity(obj->world);
+    MatrixMultiply(obj->world, obj->world, world);
+    MatrixMultiply(obj->world, obj->world, g_DrawCamera->viewProj);
 
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
+    BindMatrix(obj->world, 0);
+    AllocateShaderSpace(12, 4);
 
-    AllocateShaderSpace(16, 0);
-
-    PushMatrix(vp, 0, sizeof(MATRIX));
     PushScaleVector();
     PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1,
@@ -696,7 +695,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
 
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(8);
+    ShaderProgram(8, 0);
     DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     FrameBufferMask(0xFF, 0xFF, 0xFF, 0x00);
@@ -718,10 +717,10 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     }
     StartVertexShader();
     AllocateShaderSpace(3, 9);
-    PushColor(0, 0, 0, 0, 0);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 1);
-    PushMatrix(volLightPos, 2, 12);
-    PushInteger(0x0, 2, 3);
+    PushColor(0, 0, 0, 0, 9);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
+    PushMatrix(volLightPos, 11, 12);
+    PushInteger(0x0, 11, 3);
     DrawCount(count, 1, true);
     for (int i = 0; i < count; i++)
     {
@@ -889,7 +888,7 @@ int Render()
         RenderLine(&mainLine, *colors[3]);
         RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
 
-        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
+      DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 
         RenderShadowVertices(adjs, count, m);
 

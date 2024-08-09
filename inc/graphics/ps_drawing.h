@@ -2,7 +2,7 @@
 #define PS_DRAWING_H
 #include "ps_global.h"
 
-void ShaderProgram(int shader);
+void ShaderProgram(int shader, int slot);
 
 void BeginCommand();
 
@@ -35,6 +35,8 @@ void DepthBufferMask(bool enable);
 void BlendingEquation(blend_t *blend);
 
 void PrimitiveColor(Color c);
+
+void BindMatrix(MATRIX mat, int offset);
 
 void PushQWord(void *q, int offset);
 

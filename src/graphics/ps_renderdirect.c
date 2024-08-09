@@ -28,7 +28,7 @@ void RenderRay(Ray *ray, Color color, float t)
 
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
@@ -49,7 +49,7 @@ void RenderLine(Line *line, Color color)
     PollVU1DoneProcessing(&g_Manager);
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
@@ -70,7 +70,7 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
     PollVU1DoneProcessing(&g_Manager);
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
@@ -103,7 +103,7 @@ void RenderGameObject(GameObject *obj, Color *colors)
 
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
@@ -165,7 +165,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
 
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
@@ -209,7 +209,7 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
 
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
@@ -259,7 +259,7 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
 
     BeginCommand();
     ShaderHeaderLocation(16);
-    ShaderProgram(0);
+    ShaderProgram(0, 0);
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);

@@ -363,13 +363,13 @@ qword_t *CreateVU1VertexUpload(qword_t *q, MeshBuffers *buffer, u32 start, u32 e
 
 qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u32 offset, u8 code)
 {
-  q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->vertices[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+  q = UnpackAddress(q, *top, &(buffer->meshData[MESHTRIANGLES]->vertices[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
   *top += count;
 
   if (code & DRAW_TEXTURE)
   {
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->texCoords[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = UnpackAddress(q, *top, &(buffer->meshData[MESHTRIANGLES]->texCoords[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }
@@ -377,18 +377,18 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
   if (code & DRAW_NORMAL)
   {
 
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->normals[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = UnpackAddress(q, *top, &(buffer->meshData[MESHTRIANGLES]->normals[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }
 
   if (code & DRAW_SKINNED)
   {
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = UnpackAddress(q, *top, &(buffer->meshData[MESHTRIANGLES]->bones[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
 
-    q = add_unpack_data(q, *top, &(buffer->meshData[MESHTRIANGLES]->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
+    q = UnpackAddress(q, *top, &(buffer->meshData[MESHTRIANGLES]->weights[offset]), count, 1, VIF_CMD_UNPACK(0, 3, 0));
 
     *top += count;
   }

@@ -52,7 +52,7 @@ void UploadProgramToVU1(u32 *cStart, u32 *cEnd, u32 dest, u32 packetSize, u32 pr
 
 qword_t *UploadVectorsVU0(qword_t *q, void *vectors, u32 offset, u32 *dest, u32 size)
 {
-    q = add_unpack_data(q, 4, &(((qword_t*)vectors)[offset]), size, 0, VIF_CMD_UNPACK(0, 3, 0));
+    q = UnpackAddress(q, 4, &(((qword_t*)vectors)[offset]), size, 0, VIF_CMD_UNPACK(0, 3, 0));
 
     *dest += size;
 
@@ -69,7 +69,7 @@ u32 UploadFlushTag(u32 inte)
     return VIF_CODE(0, 0, VIF_CMD_FLUSH, inte);
 }
 
-qword_t *add_unpack_data(qword_t *q, u32 dest_address, void *data, u32 qwSize, bool use_top, u32 vif_pack)
+qword_t *UnpackAddress(qword_t *q, u32 dest_address, void *data, u32 qwSize, bool use_top, u32 vif_pack)
 {
     if (qwSize > 256)
     {
