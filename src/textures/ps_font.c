@@ -310,7 +310,7 @@ int RenderL(Font *font_struct, int x, int y, const char *text)
     PrimitiveTypeStruct(font_struct->prim);
 
     SetRegSizeAndType(3, DRAW_RGBAQ_UV_REGLIST);
-    DrawCount(textlen * 4, 1, false);
+    DrawCountDirect(textlen * 4);
 
     u32 lastx = x;
     u32 line = 0;
@@ -359,17 +359,17 @@ int RenderL(Font *font_struct, int x, int y, const char *text)
         int top = y + (line * lineHeight);
         int bottom = y + (line * lineHeight) + lineHeight;
 
-        WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u0, v0));
+        DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u0, v0));
 
-        WritePairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
+        DrawPairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
 
-        WritePairU64(GIF_SET_UV(u0, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
+        DrawPairU64(GIF_SET_UV(u0, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(left, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
 
-        WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u1, v0));
+        DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_UV(u1, v0));
 
-        WritePairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
+        DrawPairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(top, +), 0xFFFFFF), GIF_SET_RGBAQ(red, green, blue, alpha, 1));
 
-        WritePairU64(GIF_SET_UV(u1, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
+        DrawPairU64(GIF_SET_UV(u1, v1), GIF_SET_XYZ(CreateGSScreenCoordinates(right, +), CreateGSScreenCoordinates(bottom, +), 0xFFFFFF));
 
         lastx += (letterwidth);
     }

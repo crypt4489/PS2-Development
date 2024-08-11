@@ -59,7 +59,7 @@ qword_t *CreateDirectHLTag(qword_t *q, u32 size, u32 inte)
 
 qword_t *AddSizeToDMATag(qword_t *q, u32 size)
 {
-    q->sw[0] = (q->sw[0] | (size & 0x0000FFFF));
+    q->sw[0] = ((q->sw[0] & 0xFFFF0000) | (size & 0x0000FFFF));
     return q;
 }
 

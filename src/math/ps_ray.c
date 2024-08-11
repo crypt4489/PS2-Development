@@ -58,22 +58,22 @@ int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
         "cfc2 %0, $vi17\n"
         "vsub.xyz $vf1, $vf2, $vf4\n"
         "cfc2 %1, $vi17\n"
-        "vsub.xyz $vf1, $vf2, $vf3\n"
+        "vsub.xyz $vf1, $vf3, $vf2\n"
         "cfc2 %2, $vi17\n"
         : "=r"(retMac), "=r"(retMac2), "=r"(retMac3)
         : "r"(ray->direction), "r"(ray->origin), "r"(box->top), "r"(box->bottom), "r"(epsilonVec)
         : "memory");
 
 
-    retMac = retMac & 0x00EE;    
-
-    if (((retMac & (retMac2 & 0x00EE)) || (retMac & (retMac3 & 0x00EE))))
+    retMac &= 0x00EE;    
+    if (retMac & retMac2 || retMac & retMac3)
     {
         return NOCOLLISION;
     }
 
     VECTOR odd, t1, t2;
     CreateVector(1.f / ray->direction[0], 1.f / ray->direction[1], 1.f / ray->direction[2], 1.0f, odd);
+
     VectorSubtractXYZ(box->bottom, ray->origin, t1);
     VectorMultiply(t1, odd, t1);
 
@@ -93,11 +93,9 @@ int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
 
     for (int i = 0; i < 3; i++)
     {
-        float tsub1 = t1[i], tsub2 = t2[i];
-        *t = Max(*t, tsub1);
-        max = Min(max, tsub2);
-        if (*t > max)
-            return NOCOLLISION;
+        *t = Max(*t, t1[i]);
+        max = Min(max, t2[i]);
+        if (*t > max) return NOCOLLISION;
     }
     VectorScaleXYZ(p, ray->direction, *t);
     VectorAddXYZ(p, ray->origin, p);

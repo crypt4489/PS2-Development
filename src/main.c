@@ -158,19 +158,8 @@ static Plane plane2 = {{0.0, 0.0, 7.0, 1.0f}, {2.0, 3.0, -1.0, -7.0f}};
 
 #include "math/ps_line.h"
 
-static Color shotBoxColor[36];
 static Color normal;
 static Color boxhigh;
-static void ShotBoxIntersectCB(VECTOR *verts, int index)
-{
-    for (int i = index + 2; i >= index; i--)
-    {
-        shotBoxColor[i].r = boxhigh.r;
-        shotBoxColor[i].g = boxhigh.g;
-        shotBoxColor[i].b = boxhigh.b;
-        shotBoxColor[i].a = boxhigh.a;
-    }
-}
 
 static Ray rayray = {{0.0f, 0.0f, -10.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 
@@ -493,11 +482,13 @@ static void SetupShootBoxBox()
 
     shotBox = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &shotBox->vertexBuffer);
-    SetupGameObjectPrimRegs(shotBox, color, DRAWING_OPTION | COLOR_ENABLE | ZSTATE(1));
+    SetupGameObjectPrimRegs(shotBox, color, RENDERTEXTUREMAPPED);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
-    CreateMaterial(&shotBox->vertexBuffer, 0, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+    CreateMaterial(&shotBox->vertexBuffer, 0, 17, id);
+    id = GetTextureIDByName(g_Manager.texManager, wowwer);
+    CreateMaterial(&shotBox->vertexBuffer, 18, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
     VECTOR pos = {-50.0f, 0.0f, 0.0f, 1.0f};
 
@@ -604,72 +595,8 @@ static void CleanUpGame()
     ClearManagerStruct(&g_Manager);
 }
 
-void DrawTexturedObject(GameObject *obj)
-{
-    PollVU1DoneProcessing(&g_Manager);
-    
-    MATRIX world = {1.0f, 0.0f, 0.0f, 0.0f,
-                    0.0f, 1.0f, 0.0, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    -15.0f, 50.0f, 0.0f, 1.0f};
-    BeginCommand();
-    BindTexture(GetTexByName(g_Manager.texManager, wowwer), false);
-
-    MatrixIdentity(obj->world);
-    MatrixMultiply(obj->world, obj->world, world);
-    MatrixMultiply(obj->world, obj->world, g_DrawCamera->viewProj);
-
-    ShaderHeaderLocation(16);
-    ShaderProgram(0, 0);
-    DepthTest(true, 3);
-    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
-    BindMatrix(obj->world, 0);
-    AllocateShaderSpace(12, 4);
-
-    PushScaleVector();
-    PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1,
-                            GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading,
-                                        true, obj->renderState.prim.fogging,
-                                        obj->renderState.prim.blending, obj->renderState.prim.antialiasing,
-                                        PRIM_MAP_ST, g_Manager.gs_context, PRIM_UNFIXED),
-                            0, 3),
-                DRAW_STQ2_REGLIST, 10);
-    PushInteger(RENDERTEXTUREMAPPED, 12, 3);
-
-    DrawCount(18, 2, true);
-    for (int i = 0; i < 18; i++)
-    {
-        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
-    }
-
-    for (int i = 0; i < 18; i++)
-    {
-        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
-    }
-
-    StartVertexShader();
-
-    BindTexture(GetTexByName(g_Manager.texManager, worldName), true);
-
-    DrawCount(obj->vertexBuffer.meshData[1]->vertexCount / 2, 2, true);
-    for (int i = obj->vertexBuffer.meshData[1]->vertexCount / 2; i < obj->vertexBuffer.meshData[1]->vertexCount; i++)
-    {
-        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
-    }
-
-    for (int i = obj->vertexBuffer.meshData[1]->vertexCount / 2; i < obj->vertexBuffer.meshData[1]->vertexCount; i++)
-    {
-        DrawVector(obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords[i]);
-    }
-
-    StartVertexShader();
-    EndCommand();
-}
-
 void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTest, u32 setFrameMask, u8 alpha, u8 red, u8 green, u8 blue)
 {
-    PollVU1DoneProcessing(&g_Manager);
     bool destTestEnable = destTest;
     BeginCommand();
     DepthTest(true, 1);
@@ -679,11 +606,11 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     DepthBufferMask(true);
     SetRegSizeAndType(2, DRAW_RGBAQ_REGLIST);
     PrimitiveType(GS_SET_PRIM(PRIM_TRIANGLE_STRIP, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED));
-    DrawCount(4, 1, false);
-    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
-    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
-    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
-    WritePairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+    DrawCountDirect(4);
+    DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
+    DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+    DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
+    DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     FrameBufferMask(0, 0, 0, 0);
     DepthBufferMask(false);
     EndCommand();
@@ -691,7 +618,6 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
 {
-    PollVU1DoneProcessing(&g_Manager);
 
     BeginCommand();
     ShaderHeaderLocation(16);
@@ -710,7 +636,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     PushMatrix(volLightPos, 11, 12);
     PushInteger(0x3, 11, 3);
     PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(VECTOR));
-    DrawCount(count, 1, true);
+    DrawCountWrite(count, 1);
     for (int i = 0; i < count; i++)
     {
         DrawVector(verts[i]);
@@ -721,7 +647,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushMatrix(volLightPos, 11, 12);
     PushInteger(0x0, 11, 3);
-    DrawCount(count, 1, true);
+    DrawCountWrite(count, 1);
     for (int i = 0; i < count; i++)
     {
         DrawVector(verts[i]);
@@ -744,7 +670,6 @@ void TestObjects()
     VECTOR temp;
     int ret = 1;
     CreateVector(moveX * 1.25, moveY * 1.25, moveZ * 1.25, 1.0f, temp);
-
     if (objectIndex == 0)
     {
         VectorAddXYZ(mainLine.p1, temp, mainLine.p1);
@@ -765,14 +690,16 @@ void TestObjects()
         {
             MatrixVectorMultiply(v[i], m, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertices[i]);
         }
-
+        // DEBUGLOG("HERE");
         ret = RayIntersectsTriangle(&rayray2, v[0], v[1], v[2], v[3]);
     }
     if (objectIndex == 1)
     {
-        BoundingBox *boxx = (BoundingBox *)box->vboContainer->vbo;
+        BoundingBox *boxx = (BoundingBox *)shotBox->vboContainer->vbo;
 
-        MoveBox(boxx, temp);
+        // MoveBox(boxx, temp);
+
+        VectorAddXYZ(rayray2.origin, temp, rayray2.origin);
 
         //  ret = LineSegmentIntersectBox(&mainLine, boxx, temp);
 
@@ -789,8 +716,9 @@ void TestObjects()
         }
         float t = 0.f;
         // ret = AABBIntersectTriangle(v[0], v[1], v[2], boxx);
-
+        float time1 = getTicks(g_Manager.timer);
         ret = RayIntersectBox(&rayray2, boxx, v[3], &t);
+        DEBUGLOG("%f", getTicks(g_Manager.timer) - time1);
     }
     else if (objectIndex == 3)
     {
@@ -811,7 +739,6 @@ void TestObjects()
         MatrixVectorMultiply(boxx.bottom, world, boxx2->bottom);
         FindCenterAndHalfAABB(&boxx, center, half);
 
-        DumpVector(lolSphere.center);
         DEBUGLOG("dist from line %f", DistanceFromLineSegment(&mainLine, lolSphere.center, temp));
     }
     else if (objectIndex == 4)
@@ -838,16 +765,6 @@ int Render()
 
     CREATE_RGBAQ_STRUCT(boxhigh, 255, 128, 128, 128, 0);
     CREATE_RGBAQ_STRUCT(normal, 128, 255, 128, 128, 0);
-
-    for (int i = 0; i < 3; i++)
-    {
-        CREATE_RGBAQ_STRUCT(shotBoxColor[i], 128, 255, 255, 128, 0);
-    }
-
-    for (int i = 3; i < 36; i++)
-    {
-        CREATE_RGBAQ_STRUCT(shotBoxColor[i], 128, 255, 128, 128, 0);
-    }
 
     colors[0] = &highlight;
     held = &lcolors[0];
@@ -881,14 +798,14 @@ int Render()
         MatrixIdentity(ident);
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
-        RenderGameObject(shotBox, shotBoxColor);
+        RenderGameObject(shotBox);
         RenderPlaneLine(&plane2, *colors[1], 20);
 
         RenderRay(&rayray2, *colors[2], 25);
         RenderLine(&mainLine, *colors[3]);
         RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
 
-      DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
+        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
 
         RenderShadowVertices(adjs, count, m);
 
@@ -896,7 +813,7 @@ int Render()
 
         DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
-        DrawTexturedObject(shotBox);
+        // while(true);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 

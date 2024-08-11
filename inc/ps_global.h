@@ -502,6 +502,15 @@ enum DrawTags
     DRAW_ALPHAMAP = 0x200
 };
 
+typedef enum VertexType
+{
+    V_POS = 1,
+    V_COLOR = 2,
+    V_NORMAL = 4,
+    V_TEXTURE = 8,
+    V_SKINNED = 16
+} VertexType;
+
 #define RENDER_STATE(draw, cull, alpha_enable, alpha_state,                                                                                        \
                      tex_map, color_enable, z_enable, z_type,                                                                                      \
                      light_enable, bface, clip, envmp,                                                                                             \

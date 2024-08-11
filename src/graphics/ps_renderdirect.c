@@ -10,16 +10,18 @@
 #include "pipelines/ps_pipelinecbs.h"
 #include "graphics/ps_drawing.h"
 #include "log/ps_log.h"
-
+#include "gameobject/ps_gameobject.h"
+#include "textures/ps_texturemanager.h"
 #include <string.h>
 #include <stdlib.h>
 
 extern VECTOR up;
 
+void UploadBuffers(u32 start, u32 end, u32 maxCount, MeshVectors *buffer, VertexType type);
 
 void RenderRay(Ray *ray, Color color, float t)
 {
-    PollVU1DoneProcessing(&g_Manager);
+   
     VECTOR v[2];
 
     VectorCopy(v[0], ray->origin);
@@ -37,7 +39,7 @@ void RenderRay(Ray *ray, Color color, float t)
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushInteger(0, 12, 3);
-    DrawCount(2, 1, true);
+    DrawCountWrite(2, 1);
     DrawVectorFloat(v[0][0], v[0][1], v[0][2], 1.0f);
     DrawVectorFloat(v[1][0], v[1][1], v[1][2], 1.0f);
     StartVertexShader();
@@ -46,7 +48,6 @@ void RenderRay(Ray *ray, Color color, float t)
 
 void RenderLine(Line *line, Color color)
 {
-    PollVU1DoneProcessing(&g_Manager);
     BeginCommand();
     ShaderHeaderLocation(16);
     ShaderProgram(0, 0);
@@ -58,7 +59,7 @@ void RenderLine(Line *line, Color color)
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushInteger(0, 12, 3);
-    DrawCount(2, 1, true);
+    DrawCountWrite(2, 1);
     DrawVector(line->p1);
     DrawVector(line->p2);
     StartVertexShader();
@@ -67,7 +68,6 @@ void RenderLine(Line *line, Color color)
 
 void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
 {
-    PollVU1DoneProcessing(&g_Manager);
     BeginCommand();
     ShaderHeaderLocation(16);
     ShaderProgram(0, 0);
@@ -78,7 +78,7 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
     PushScaleVector();
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    DrawCount(numVerts, 1, true);
+    DrawCountWrite(numVerts, 1);
     for (int i = 0; i<numVerts; i++)
     {
         DrawVector(verts[i]);
@@ -87,9 +87,16 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
     EndCommand();
 }
 
-void RenderGameObject(GameObject *obj, Color *colors)
+void RenderGameObject(GameObject *obj)
 {
-    PollVU1DoneProcessing(&g_Manager);
+    u32 matCount = obj->vertexBuffer.matCount;
+    MeshVectors *buffer = obj->vertexBuffer.meshData[MESHTRIANGLES];
+    u32 count = buffer->vertexCount;
+    VertexType type = GetVertexType(obj->renderState.state.render_state);
+    u32 start = 0, end = count-1;
+    Material *mat;
+    Texture *tex;
+    LinkedList *matIter = obj->vertexBuffer.materials;
     MATRIX vp;
 
     MatrixIdentity(vp);
@@ -102,10 +109,18 @@ void RenderGameObject(GameObject *obj, Color *colors)
     MatrixMultiply(vp, vp, g_DrawCamera->viewProj);
 
     BeginCommand();
+    if (matCount) { 
+        mat = (Material*)matIter->data;
+        matIter = matIter->next;
+        start =  mat->start; 
+        end = mat->end;
+        tex = GetTextureByID(g_Manager.texManager, mat->materialId);
+        BindTexture(tex, matCount == 1); 
+    }
     ShaderHeaderLocation(16);
     ShaderProgram(0, 0);
-    DepthTest(1, 3);
-    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
+    DepthTest(true, 3);
+    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     AllocateShaderSpace(16, 0);
     PushMatrix(vp, 0, sizeof(MATRIX));
     PushScaleVector();
@@ -119,27 +134,75 @@ void RenderGameObject(GameObject *obj, Color *colors)
                 obj->renderState.state.gs_reg_mask, 10);
     PushInteger(obj->renderState.state.render_state.state, 12, 3);
 
-    u32 count = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
-    DrawCount(count, 2, true);
-    VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
-    for (int i = 0; i<count; i++)
+    
+    UploadBuffers(start, end, 81, buffer, type);
+    
+    for (int i = 1; i<matCount; i++)
     {
-        DrawVector(verts[i]);
-    }
-
-    for (int i = 0; i<count; i++)
-    {
-        DrawColor(colors[i]); 
-    }
-
-    StartVertexShader();
-
+        mat = (Material*)matIter->data;
+        matIter = matIter->next;
+        start =  mat->start; 
+        end = mat->end;
+        tex = GetTextureByID(g_Manager.texManager, mat->materialId);
+        BindTexture(tex, i == (matCount-1)); 
+        UploadBuffers(start, end, 81, buffer, type);
+    } 
+    
+    
     EndCommand();
+}
+
+void UploadBuffers(u32 start, u32 end, u32 maxCount, MeshVectors *buffer, VertexType type)
+{
+    
+    u32 total = (end - start) + 1;
+    u32 iterations = total / maxCount;
+    if (total % maxCount) iterations++;
+
+    for (int i = 0; i<iterations; i++, total-=maxCount)
+    {
+        u32 top = 1;
+
+        if (maxCount > total)
+            maxCount = total;
+
+        DrawUpload(maxCount);
+        BindVectors(&(buffer->vertices[start]), maxCount, true, top);
+        top += maxCount;
+
+        if (type & V_TEXTURE)
+        {
+            BindVectors(&(buffer->texCoords[start]), maxCount, true, top);
+            top += maxCount;
+        }
+
+        if (type & V_NORMAL)
+        {
+            BindVectors(&(buffer->normals[start]), maxCount, true, top);
+            top += maxCount;
+        }
+
+        if (type & V_COLOR)
+        {
+            BindVectors(&(buffer->colors[start]), maxCount, true, top);
+            top += maxCount;
+        }
+
+        if (type & V_SKINNED)
+        {
+            BindVectorInts(&(buffer->bones[start]), maxCount, true, top);
+            top += maxCount;
+            BindVectors(&(buffer->weights[start]), maxCount, true, top);
+            top += maxCount;
+        }
+        start += maxCount;
+        StartVertexShader();
+    }
 }
 
 void RenderPlaneLine(Plane *plane, Color color, int size)
 {
-    PollVU1DoneProcessing(&g_Manager);
+    
     MATRIX vp;
     VECTOR v[4];
     VECTOR temp;
@@ -174,7 +237,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushInteger(0, 12, 3);
-    DrawCount(10, 1, true);
+    DrawCountWrite(10, 1);
 
     DrawVector(v[0]);
     DrawVector(v[1]);
@@ -197,9 +260,6 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
 
 void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
 {
-    
-    PollVU1DoneProcessing(&g_Manager);
-    MATRIX vp;
     VECTOR center;
     VectorCopy(center, sphere->center);
     float r = sphere->radius;
@@ -219,7 +279,7 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT,
      DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushInteger(0, 12, 3);
-    DrawCount(size*2, 1, true);
+    DrawCountWrite(size*2, 1);
     for (int i = 0; i < size - 1; i++)
     {
         DrawVectorFloat(r * Cos(ang) + center[0], r * Sin(ang) + center[1], center[2], 1.0f);
@@ -236,7 +296,7 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
 
 void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
 {
-    PollVU1DoneProcessing(&g_Manager);
+   
     MATRIX vp;
     VECTOR v[8];
 
@@ -268,7 +328,7 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     PushColor(color.r, color.g, color.b, color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushInteger(0, 12, 3);
-    DrawCount(24, 1, true);
+    DrawCountWrite(24, 1);
 
     DrawVector(v[0]);
     DrawVector(v[1]);
