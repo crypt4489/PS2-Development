@@ -12,7 +12,7 @@ void EnterCommand(qword_t *q);
 
 void SetVIFHeaderUpload(qword_t *q);
 
-qword_t *GetDrawPtr();
+qword_t *GetGlobalDrawPointer();
 
 qword_t* EndCommand();
 

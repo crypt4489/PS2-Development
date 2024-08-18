@@ -20,23 +20,20 @@ typedef struct anim_stack_node_t
 } AnimStackNode;
 
 
-
-static qword_t *LoadQWordForVU1Bones(qword_t *q, u32 index, MATRIX final)
+static void LoadQWordForVU1Bones(VECTOR *verts, u32 index, MATRIX final)
 {
     VECTOR rotVec, scaleVec, trans;
 
     ExtractVectorFromMatrix(trans, rotVec, scaleVec, final);
 
     u32 offset = 3 * index;
-    qword_t *write = q + offset;
+    VECTOR *write = verts + offset;
 
-    memcpy(write, trans, sizeof(float) * 4);
+    memcpy(*write, trans, sizeof(float) * 4);
     write++;
-    memcpy(write, rotVec, sizeof(float) * 4);
+    memcpy(*write, rotVec, sizeof(float) * 4);
     write++;
-    memcpy(write, scaleVec, sizeof(float) * 4);
-
-    return q;
+    memcpy(*write, scaleVec, sizeof(float) * 4);
 }
 
 static s32 GetKeyIndex(AnimationKey **keys, u32 numKeys, float animationTime)
@@ -138,7 +135,7 @@ static void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float 
     CreateWorldMatrixFromQuatScalesTrans(trans, rot, scale, transform);
 }
 
-static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
+static void CalculateBoneTransformVU1(VECTOR *vecs, AnimationData *data,
                                                AnimationNode *node, Joint **joints, u32 numJoints,
                                                float animationTime)
 {
@@ -168,7 +165,7 @@ static void CalculateBoneTransformVU1(qword_t *q, AnimationData *data,
 
             MatrixMultiply(final, joint->offset, globalTrans);
 
-            q = LoadQWordForVU1Bones(q, joint->id, final);
+            LoadQWordForVU1Bones(vecs, joint->id, final);
         }
         else
         {
@@ -246,12 +243,13 @@ void UpdateAnimator(Animator *animator, float animationTime)
     }
 }
 
-void UpdateVU1BoneMatrices(qword_t *q, Animator *animator, Joint **joints, u32 numJoints)
+
+void UpdateVU1BoneMatrices(VECTOR *verts, Animator *animator, Joint **joints, u32 numJoints)
 {
     // DEBUGLOG("Calculating Bones!");
     MatrixIdentity(boneMatricesStack[0]);
 
-    CalculateBoneTransformVU1(q, animator->animation, animator->animation->root, joints, numJoints,
+    CalculateBoneTransformVU1(verts, animator->animation, animator->animation->root, joints, numJoints,
                                animator->currentTime);
 }
 

@@ -184,10 +184,10 @@ void SetupPerObjDrawShadowRegisters(VU1Pipeline *pipe, GameObject *obj, void *ar
     black.b = 0;
     black.a = 255;
     black.q = 1.0f;
-    // q = vif_set_z_test(q, obj->renderState.state.render_state.Z_TYPE, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context); // 4
+    // q = vif_set_z_test(q, obj->renderState.gsstate.render_state.Z_TYPE, obj->renderState.gsstate.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context); // 4
     // q = vif_setup_rgbaq(q, black);
 
-    q = SetupZTestGS(q, obj->renderState.state.render_state.Z_TYPE, obj->renderState.state.render_state.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+    q = SetupZTestGS(q, obj->renderState.properties.Z_TYPE, obj->renderState.properties.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
     q = SetupRGBAQGS(q, black);
 }
 void SetupPerObjDrawShadowVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, qword_t *pipeline_loc)
@@ -204,6 +204,6 @@ void SetupPerObjDrawShadowVU1Header(VU1Pipeline *pipe, GameObject *obj, void *ar
     wvp_screen->sw[3] = (int)255;
     wvp_screen++;
 
-    wvp_screen->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading, 0, 0, 0, 0, obj->renderState.prim.mapping_type, g_Manager.gs_context, obj->renderState.prim.colorfix), 0, 2);
+    wvp_screen->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 0, 0, 0, 0, obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, obj->renderState.gsstate.prim.colorfix), 0, 2);
     wvp_screen->dw[1] = DRAW_RGBAQ_REGLIST;
 }

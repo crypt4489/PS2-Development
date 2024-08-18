@@ -135,7 +135,7 @@ void DrawWorld(RenderWorld *world)
             obj->update_object(obj);
         }
 
-        int draw = (!obj->renderState.state.render_state.CULLING_OPTION ? 1 : TestObjectInCameraFrustum(world->cam, obj));
+        int draw = (!obj->renderState.properties.CULLING_OPTION ? 1 : TestObjectInCameraFrustum(world->cam, obj));
 
         if (draw != 0)
         {

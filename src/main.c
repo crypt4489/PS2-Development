@@ -432,9 +432,9 @@ static void SetupBody()
 
     body->objAnimator = CreateAnimator(data);
 
-    CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
+   // CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
 
-    AddObjectToRenderWorld(world, body);
+   // AddObjectToRenderWorld(world, body);
 }
 
 static void SetupAABBBox()
@@ -486,9 +486,9 @@ static void SetupShootBoxBox()
 
     u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
-    CreateMaterial(&shotBox->vertexBuffer, 0, 17, id);
+    CreateMaterial(&shotBox->vertexBuffer, 0, 35, id);
     id = GetTextureIDByName(g_Manager.texManager, wowwer);
-    CreateMaterial(&shotBox->vertexBuffer, 18, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+   // CreateMaterial(&shotBox->vertexBuffer, 18, shotBox->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
     VECTOR pos = {-50.0f, 0.0f, 0.0f, 1.0f};
 
@@ -563,9 +563,9 @@ static void SetupOBBBody()
 
     InitVBO(bodyCollision, VBO_FIXED);
 
-    CreateGraphicsPipeline(bodyCollision, "Clipper");
+   // CreateGraphicsPipeline(bodyCollision, "Clipper");
 
-    AddObjectToRenderWorld(world, bodyCollision);
+   // AddObjectToRenderWorld(world, bodyCollision);
 }
 
 static void SetupGameObjects()
@@ -574,9 +574,9 @@ static void SetupGameObjects()
     // InitSkybox();
 
     SetupGrid();
-    // SetupBody();
+     SetupBody();
     SetupAABBBox();
-    // SetupOBBBody();
+     SetupOBBBody();
     SetupShootBoxBox();
     // SetupShootBigBoxBox();
     //  SetupMultiSphere();
@@ -716,9 +716,9 @@ void TestObjects()
         }
         float t = 0.f;
         // ret = AABBIntersectTriangle(v[0], v[1], v[2], boxx);
-        float time1 = getTicks(g_Manager.timer);
+       // float time1 = getTicks(g_Manager.timer);
         ret = RayIntersectBox(&rayray2, boxx, v[3], &t);
-        DEBUGLOG("%f", getTicks(g_Manager.timer) - time1);
+       // DEBUGLOG("%f", getTicks(g_Manager.timer) - time1);
     }
     else if (objectIndex == 3)
     {
@@ -798,10 +798,10 @@ int Render()
         MatrixIdentity(ident);
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
-        RenderGameObject(shotBox);
-        RenderPlaneLine(&plane2, *colors[1], 20);
+        RenderGameObject(body);
+       RenderPlaneLine(&plane2, *colors[1], 20);
 
-        RenderRay(&rayray2, *colors[2], 25);
+       RenderRay(&rayray2, *colors[2], 25);
         RenderLine(&mainLine, *colors[3]);
         RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
 
@@ -809,11 +809,11 @@ int Render()
 
         RenderShadowVertices(adjs, count, m);
 
-        // ReadFromVU(vu1_data_address + (*vif1_top * 4), 256*4, 0);
+      //  ReadFromVU(vu1_data_address, 1024*4, 0);
 
         DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
-        // while(true);
+       //  while(true);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
@@ -853,7 +853,7 @@ void StartUpSystem()
     ManagerInfo info;
     info.doublebuffered = true;
     info.drawBufferSize = 3000;
-    info.fsaa = true;
+    info.fsaa = false;
     info.zenable = true;
     info.height = 448;
     info.width = 640;

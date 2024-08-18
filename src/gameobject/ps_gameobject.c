@@ -19,36 +19,36 @@
 
 void SetupGameObjectPrimRegs(GameObject *obj, Color color, u32 renderState)
 {
-  OBJ_RENDER_STATE *render = &obj->renderState.state.render_state;
+  ObjectProperties *render = &obj->renderState.properties;
   obj->renderState.color = color;
-  render->state = renderState;
+  render->props = renderState;
   if (render->TEXTURE_MAPPING)
   {
-    obj->renderState.state.gs_reg_mask = DRAW_STQ2_REGLIST;
-    obj->renderState.state.gs_reg_count = 3;
-    obj->renderState.prim.mapping = DRAW_ENABLE;
-    obj->renderState.prim.mapping_type = PRIM_MAP_ST;
+    obj->renderState.gsstate.gs_reg_mask = DRAW_STQ2_REGLIST;
+    obj->renderState.gsstate.gs_reg_count = 3;
+    obj->renderState.gsstate.prim.mapping = DRAW_ENABLE;
+    obj->renderState.gsstate.prim.mapping_type = PRIM_MAP_ST;
   }
   else
   {
-    obj->renderState.state.gs_reg_mask = DRAW_RGBAQ_REGLIST;
-    obj->renderState.state.gs_reg_count = 2;
-    obj->renderState.prim.mapping = DRAW_DISABLE;
-    obj->renderState.prim.mapping_type = PRIM_MAP_UV;
+    obj->renderState.gsstate.gs_reg_mask = DRAW_RGBAQ_REGLIST;
+    obj->renderState.gsstate.gs_reg_count = 2;
+    obj->renderState.gsstate.prim.mapping = DRAW_DISABLE;
+    obj->renderState.gsstate.prim.mapping_type = PRIM_MAP_UV;
   }
 
   if (render->ALPHA_ENABLE)
   {
-    obj->renderState.prim.blending = DRAW_ENABLE;
+    obj->renderState.gsstate.prim.blending = DRAW_ENABLE;
   }
   else
   {
-    obj->renderState.prim.blending = DRAW_DISABLE;
+    obj->renderState.gsstate.prim.blending = DRAW_DISABLE;
   }
-  obj->renderState.prim.type = PRIM_TRIANGLE;
-  obj->renderState.prim.shading = PRIM_SHADE_GOURAUD;
-  obj->renderState.prim.antialiasing = obj->renderState.prim.fogging = DRAW_DISABLE;
-  obj->renderState.prim.colorfix = PRIM_UNFIXED;
+  obj->renderState.gsstate.prim.type = PRIM_TRIANGLE;
+  obj->renderState.gsstate.prim.shading = PRIM_SHADE_GOURAUD;
+  obj->renderState.gsstate.prim.antialiasing = obj->renderState.gsstate.prim.fogging = DRAW_DISABLE;
+  obj->renderState.gsstate.prim.colorfix = PRIM_UNFIXED;
 }
 
 MeshBuffers *CreateMaterial(MeshBuffers *buff, u32 start, u32 end, u64 id)
@@ -396,7 +396,7 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
   return q;
 }
 
-VertexType GetVertexType(OBJ_RENDER_STATE state)
+VertexType GetVertexType(ObjectProperties state)
 {
   VertexType ret = V_POS | (state.COLOR_ENABLE * V_COLOR);
   ret |= (state.TEXTURE_MAPPING * V_TEXTURE);

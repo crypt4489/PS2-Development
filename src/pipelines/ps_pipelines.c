@@ -33,7 +33,7 @@ static inline u32 MaterialSizeDMACount(u32 msize)
     return (3 * msize);
 }
 
-static void CreateSizesFromRenderFlags(OBJ_RENDER_STATE renderState, u32 *pCode, u16 *dCode, u32 *renderPasses)
+static void CreateSizesFromRenderFlags(ObjectProperties renderState, u32 *pCode, u16 *dCode, u32 *renderPasses)
 {
     if (renderState.CLIPPING)
     {
@@ -333,7 +333,7 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
 
     u32 renderPasses = 1;
 
-    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+    CreateSizesFromRenderFlags(obj->renderState.properties, &pipeCode, &drawCode, &renderPasses);
 
     if (msize == 0)
     {
@@ -436,7 +436,7 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
 }
-/*
+
 void CreateGraphicsPipeline2(GameObject *obj, const char *name)
 {
     u32 totalHeader, sizeOfDCode, headerSize, cbsNums, sizeOfPipeline, drawSize, pipeCode = VU1Stage4;
@@ -453,7 +453,7 @@ void CreateGraphicsPipeline2(GameObject *obj, const char *name)
 
     u32 renderPasses = 1;
 
-    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+    CreateSizesFromRenderFlags(obj->renderState.properties, &pipeCode, &drawCode, &renderPasses);
 
  
 
@@ -478,6 +478,29 @@ void CreateGraphicsPipeline2(GameObject *obj, const char *name)
 
     // DEBUGLOG("size of pipe : %d", sizeOfPipeline);
 
+    u32 matCount = obj->vertexBuffer.matCount;
+    MeshVectors *buffer = obj->vertexBuffer.meshData[MESHTRIANGLES];
+    u32 count = buffer->vertexCount;
+    VertexType type = GetVertexType(obj->renderState.properties);
+    u32 start = 0, end = count-1;
+    LinkedList *matIter = obj->vertexBuffer.materials;
+
+    Material *mat;
+    Texture *tex;
+
+    BeginCommand();
+
+    if (matCount) { 
+        mat = (Material*)matIter->data;
+        matIter = matIter->next;
+        start =  mat->start; 
+        end = mat->end;
+        tex = GetTextureByID(g_Manager.texManager, mat->materialId);
+        BindTexture(tex, matCount == 1); 
+    }
+
+    EndCommand();
+
     qword_t *pipeline_dma = (qword_t *)malloc(sizeof(qword_t) * sizeOfPipeline);
 
     VU1Pipeline *pipeline = CreateVU1Pipeline(name, cbsNums, renderPasses);
@@ -487,11 +510,7 @@ void CreateGraphicsPipeline2(GameObject *obj, const char *name)
 
     pipeline->passes[0]->target = &obj->vertexBuffer;
 
-    BeginCommandSet(pipeline_dma);
-    qword_t *dcode_callback_tags = GetCommandPosition();
-    AdvanceDMATape(cbsNums);
-    ShaderHeaderLocation(totalHeader);
-    AllocateShaderSpace(totalHeader, 0);
+    
   
 
     qword_t *q = pipeline_dma;
@@ -558,7 +577,7 @@ void CreateGraphicsPipeline2(GameObject *obj, const char *name)
     // while(1);
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
-} */
+} 
 
 
 
@@ -699,7 +718,7 @@ void CreateEnvMapPipeline(GameObject *obj, const char *name)
         return;
     }
 
-    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+    CreateSizesFromRenderFlags(obj->renderState.properties, &pipeCode, &drawCode, &renderPasses);
 
     CreatePipelineSizes(pipeCode | VU1Stage2, &cbsNums, &headerSize); //
 
@@ -840,7 +859,7 @@ void CreateAlphaMapPipeline(GameObject *obj, const char *name)
 
     u32 renderPasses = 1;
 
-    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+    CreateSizesFromRenderFlags(obj->renderState.properties, &pipeCode, &drawCode, &renderPasses);
 
     if (msize == 0)
     {
@@ -1024,7 +1043,7 @@ void CreateSpecularPipeline(GameObject *obj, const char *name)
         return;
     }
 
-    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+    CreateSizesFromRenderFlags(obj->renderState.properties, &pipeCode, &drawCode, &renderPasses);
 
     CreatePipelineSizes(pipeCode, &cbsNums, &headerSize); //
 
@@ -1172,7 +1191,7 @@ void CreateBumpMapPipeline(GameObject *obj, const char *name)
         return;
     }
 
-    CreateSizesFromRenderFlags(obj->renderState.state.render_state, &pipeCode, &drawCode, &renderPasses);
+    CreateSizesFromRenderFlags(obj->renderState.properties, &pipeCode, &drawCode, &renderPasses);
 
     CreatePipelineSizes(pipeCode | VU1Stage2, &cbsNums, &headerSize); //
 

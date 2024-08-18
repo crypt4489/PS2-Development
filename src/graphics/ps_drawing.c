@@ -23,7 +23,6 @@ static qword_t *sg_VIFCodeUpload = NULL;
 static qword_t *sg_OpenTextureGap = NULL;
 static qword_t *sg_VU1ProgramEnd = NULL;
 static qword_t *sg_GifDrawPtr = NULL;
-static int sg_reservedVU1Space;
 static int sg_ShaderInUse[4];
 static bool sg_TTEUse;
 static int sg_RegisterCount;
@@ -32,7 +31,6 @@ static u64 sg_PrimitiveType;
 static int sg_VifCodeUploadCount;
 static int sg_GapCount;
 static int sg_VU1LoadOffset;
-static int sg_VertexUploadSize;
 
 static inline void AddVIFCode(u32 a1, u32 a2);
 
@@ -50,7 +48,7 @@ static inline qword_t* ChangeGapSize();
 
 static inline qword_t* BindLocation();
 
-static inline qword_t *GetSplitVIFHeaderUpload();
+static inline qword_t *GetSplitVIFHeaderUpload(int *offset);
 
 static inline void InitProgramUpload(int vertexNum, int unpacksize);
 
@@ -68,7 +66,6 @@ void ResetState() {
     sg_VU1ProgramEnd = NULL;
     sg_VIFDirectDraw = NULL;
     for(int i = 0; i<4; i++) sg_ShaderInUse[i] = 0;
-    sg_reservedVU1Space = 0;
     sg_TTEUse = false;
     sg_RegisterCount = 0;
     sg_RegisterType = 0;
@@ -76,7 +73,6 @@ void ResetState() {
     sg_VifCodeUploadCount = 0;
     sg_GapCount = 0;
     sg_VU1LoadOffset = 0;
-    sg_VertexUploadSize = 0;
 }
 
 void ShaderProgram(int shader, int slot)
@@ -322,33 +318,40 @@ void PushScaleVector()
 void PushQWord(void *q, int offset)
 {
     offset = GetOffsetIntoHeader(offset);
-    memcpy(sg_VIFHeaderUpload + 1 + offset, q, sizeof(qword_t));
+    qword_t *temp = GetSplitVIFHeaderUpload(&offset);
+    temp += 1 + offset;
+    memcpy(temp, q, sizeof(qword_t));
 }
 
 void PushMatrix(float *mat, int offset, int size)
 {
     offset = GetOffsetIntoHeader(offset);
-    memcpy(sg_VIFHeaderUpload + 1 + offset, mat, size);
+    qword_t *temp = GetSplitVIFHeaderUpload(&offset);
+    temp += 1 + offset;
+    memcpy(temp, mat, size);
 }
 
 void PushInteger(int num, int memoffset, int vecoffset)
 {
     memoffset = GetOffsetIntoHeader(memoffset);
-    qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
+    qword_t *temp = GetSplitVIFHeaderUpload(&memoffset);
+    temp += 1 + memoffset;
     temp->sw[vecoffset] = num;
 }
 
 void PushFloat(float num, int memoffset, int vecoffset)
 {
     memoffset = GetOffsetIntoHeader(memoffset);
-    qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
+    qword_t *temp = GetSplitVIFHeaderUpload(&memoffset);
+    temp += 1 + memoffset;
     ((float *)temp->sw)[vecoffset] = num;
 }
 
 void PushColor(int r, int g, int b, int a, int memoffset)
 {
     memoffset = GetOffsetIntoHeader(memoffset);
-    qword_t *temp = sg_VIFHeaderUpload + 1 + memoffset;
+    qword_t *temp = GetSplitVIFHeaderUpload(&memoffset);
+    temp += 1 + memoffset;
     temp->sw[0] = r;
     temp->sw[1] = g;
     temp->sw[2] = b;
@@ -470,29 +473,34 @@ void AllocateShaderSpace(int size, int offset)
         return;
 
     sg_TTEUse = true;
-    sg_reservedVU1Space = size;
     sg_VU1LoadOffset = offset;
     FlushProgram(false);
     u32 outSize = size;
+    qword_t **out = &sg_VIFHeaderUpload;
     if (sg_OpenTextureGap)
     {   
         u32 gapSize = outSize;
-        if (gapSize-1 > sg_GapCount)
+        if (gapSize >= sg_GapCount)
         {
             gapSize = sg_GapCount-1;
         }
         sg_VIFHeaderUpload = ChangeGapSize(gapSize);
+        gapSize = (24-sg_VifCodeUploadCount)-sg_GapCount; 
         ReadUnpackData(sg_VIFHeaderUpload, offset, gapSize, 0, VIF_CMD_UNPACK(0, 3, 0));
         outSize -= gapSize;
         if (!outSize) return;
+        if (!sg_OpenDMATag) {
+            sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT,
+                0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0);
+        }
+        out = &sg_SplitHeaderUpload;
     }
     
     CloseDMATag(false);
-    sg_VIFHeaderUpload = sg_DrawBufferPtr++;
-    ReadUnpackData(sg_VIFHeaderUpload, offset, outSize, 0, VIF_CMD_UNPACK(0, 3, 0));
+    *out = sg_DrawBufferPtr++;
+    ReadUnpackData(*out, offset+(size-outSize), outSize, 0, VIF_CMD_UNPACK(0, 3, 0));
     memset(sg_DrawBufferPtr, 0, 16*outSize);
-    sg_DrawBufferPtr += outSize;
-    
+    sg_DrawBufferPtr += outSize; 
 }
 
 void BindTexture(Texture *tex, bool end)
@@ -521,6 +529,11 @@ void BindTexture(Texture *tex, bool end)
     sg_GapCount = 24;
 }
 
+qword_t *GetGlobalDrawPointer()
+{
+    return sg_DrawBufferPtr;
+}
+
 static inline void AddVIFCode(u32 a1, u32 a2)
 {
     sg_VIFCodeUpload->sw[2] = a1;
@@ -533,8 +546,6 @@ static inline void FlushProgram(bool end)
 {
     if (!sg_VU1ProgramEnd)
         return;
-    
-        //a branchless programming lol
     u32 code = (6 * end) + 1;
     sg_VU1ProgramEnd = CreateDMATag(sg_VU1ProgramEnd, code, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, end), 0, 0);  
     sg_DrawBufferPtr++;
@@ -546,15 +557,20 @@ static inline qword_t* ChangeGapSize(u32 size)
     sg_GapCount -= (size+1);
     if (sg_GapCount <= sg_VifCodeUploadCount || sg_GapCount < 0)
     {
-        ERRORLOG("too many vif code and too much geometry unpack");
+       sg_GapCount = sg_VifCodeUploadCount;
     }
     AddSizeToDMATag(sg_OpenTextureGap, sg_GapCount);
     return sg_OpenTextureGap + sg_GapCount + 1;
 }
 
-static inline qword_t *GetSplitVIFHeaderUpload()
+static inline qword_t *GetSplitVIFHeaderUpload(int *offset)
 {
-
+    int splitSizeTop = (23 - sg_GapCount);
+    if (*offset >= splitSizeTop) { 
+        *offset = *offset - splitSizeTop;
+        return sg_SplitHeaderUpload;
+    }
+    return sg_VIFHeaderUpload;
 }
 
 static inline qword_t* BindLocation()
@@ -563,30 +579,20 @@ static inline qword_t* BindLocation()
     if (sg_OpenTextureGap)
     {  
         assign = ChangeGapSize(0);
+        return assign;
     } 
-    else if (sg_VIFProgramUpload)
-    {
-        assign = sg_DrawBufferPtr++;
-    }
-    else 
-    {
-        CloseDMATag(false);
-        assign = sg_DrawBufferPtr++;
-    }
+    CloseDMATag(false);
+    assign = sg_DrawBufferPtr++;
     return assign;
 }
 
 static inline void InitProgramUpload(int vertexNum, int unpacksize)
 {
-    if (!sg_OpenDMATag && sg_OpenTextureGap)
+    if (!sg_OpenDMATag && !sg_VIFHeaderUpload && sg_OpenTextureGap)
     {
-        
-        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0,
-                                        VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0);
-    }
-    else
-        CloseDMATag(false);
-
+        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0,   VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0);
+    }   
+    CloseDMATag(false);
     sg_OpenTextureGap = NULL;
     sg_TTEUse = true;
     sg_VIFHeaderUpload = NULL;
@@ -594,7 +600,7 @@ static inline void InitProgramUpload(int vertexNum, int unpacksize)
     sg_VIFProgramUpload = sg_DrawBufferPtr;
 
     sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, unpacksize+1, 1, VIF_CMD_UNPACK(0, 3, 0));
-    for (int i = 0; i < 3; i++) sg_DrawBufferPtr->sw[i] = sg_ShaderInUse[i];
+    for (int i = 0; i < 2; i++) sg_DrawBufferPtr->sw[i] = sg_ShaderInUse[i+1];
     sg_DrawBufferPtr->sw[3] = vertexNum;
     sg_DrawBufferPtr++;
 }

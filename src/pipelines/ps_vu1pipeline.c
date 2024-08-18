@@ -16,7 +16,7 @@
 u32 GetDoubleBufferOffset(u32 base)
 {
     u32 half = (1024 - base) >> 1;
-    return half + base;
+    return half;
 }
 
 void CreatePipelineSizes(u32 pCode, u32 *numberOfCbs, u32 *vu1_header_size)

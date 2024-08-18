@@ -12,12 +12,73 @@
 #include "log/ps_log.h"
 #include "gameobject/ps_gameobject.h"
 #include "textures/ps_texturemanager.h"
+#include "animation/ps_animation.h"
+#include "system/ps_vumanager.h"
 #include <string.h>
 #include <stdlib.h>
 
 extern VECTOR up;
 
-void UploadBuffers(u32 start, u32 end, u32 maxCount, MeshVectors *buffer, VertexType type);
+void DetermineVU1Programs(ObjectProperties *state, qword_t *programs)
+{
+    
+    bool stage1 = state->SKELETAL_ANIMATION || state->MORPH_TARGET;
+    bool stage2 = state->ANIMATION_TEXUTRE || state->ENVIRONMENTMAP;
+    bool stage3 = state->LIGHTING_ENABLE || state->SPECULAR;
+
+    u32 addr2 = 0, addr3 = 0, addr4 = 0;
+    
+
+    if (stage3)
+    {
+        if (state->SPECULAR)
+        {
+            addr4 = VU1GenericSpecular;
+        }
+        else
+        {
+            addr4 = VU1GenericLight3D;
+        }
+    }
+
+    if (stage2)
+    {
+        addr3 = addr4;
+        if (state->ENVIRONMENTMAP)
+        {
+            addr4 = VU1GenericEnvMap;
+        }
+        else
+        {
+            addr4 = VU1GenericAnimTex;
+        }
+    }
+
+    if (stage1)
+    {
+        addr2 = addr4;
+        if (state->MORPH_TARGET)
+        {
+            addr4 = VU1GenericMorph;
+        }
+        else
+        {
+            addr4 = VU1GenericSkinned;
+        }
+    }
+
+    if (state->CLIPPING)
+    {
+        programs->sw[stage1] = VU1GenericClipper;
+        programs->sw[(!stage1)&1] = addr4;
+    } else {
+        programs->sw[0] = addr4;
+    }
+    
+    programs->sw[2] = addr2;
+    programs->sw[3] = addr3;
+}
+
 
 void RenderRay(Ray *ray, Color color, float t)
 {
@@ -87,16 +148,49 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
     EndCommand();
 }
 
+int DrawHeaderSize(GameObject *obj, int *baseHeader)
+{
+    int header = 16;
+    *baseHeader = 16;
+    if (obj->renderState.properties.ANIMATION_TEXUTRE || obj->renderState.properties.ENVIRONMENTMAP) { header = 20; *baseHeader = 20; }
+    if (obj->renderState.properties.LIGHTING_ENABLE) { header = 36; *baseHeader = 36; }
+    if (obj->renderState.properties.SKELETAL_ANIMATION) header += (obj->vertexBuffer.meshAnimationData->jointsCount * 3);
+    return header;
+}
+
+int MaxUploadSize(VertexType type, u32 headerEnd, u32 regCount, bool clipping)
+{
+    int size = GetDoubleBufferOffset(headerEnd);
+    u32 uploadCount = 1; 
+    uploadCount += ((type & V_TEXTURE) != 0) * 1;
+    uploadCount += ((type & V_NORMAL) != 0) * 1;
+    uploadCount += ((type & V_COLOR) != 0) * 1;
+    uploadCount += ((type & V_SKINNED) != 0) * 2;
+    u32 precnt = size / (uploadCount + regCount);
+    precnt -= (((type & V_SKINNED) == 0) * (precnt/2) * clipping);
+    return precnt - (precnt%3);
+}
+
 void RenderGameObject(GameObject *obj)
 {
     u32 matCount = obj->vertexBuffer.matCount;
     MeshVectors *buffer = obj->vertexBuffer.meshData[MESHTRIANGLES];
     u32 count = buffer->vertexCount;
-    VertexType type = GetVertexType(obj->renderState.state.render_state);
+    VertexType type = GetVertexType(obj->renderState.properties);
     u32 start = 0, end = count-1;
+    LinkedList *matIter = obj->vertexBuffer.materials;
+    
     Material *mat;
     Texture *tex;
-    LinkedList *matIter = obj->vertexBuffer.materials;
+
+    qword_t programs;
+
+    DetermineVU1Programs(&obj->renderState.properties, &programs);
+
+    int base = 0;
+    
+    int headerSize = DrawHeaderSize(obj, &base);
+
     MATRIX vp;
 
     MatrixIdentity(vp);
@@ -117,25 +211,34 @@ void RenderGameObject(GameObject *obj)
         tex = GetTextureByID(g_Manager.texManager, mat->materialId);
         BindTexture(tex, matCount == 1); 
     }
-    ShaderHeaderLocation(16);
-    ShaderProgram(0, 0);
+    ShaderHeaderLocation(headerSize);
+    for(int i = 0; i<4; i++)
+        ShaderProgram(programs.sw[i], i);
     DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
-    AllocateShaderSpace(16, 0);
+    AllocateShaderSpace(base, 0);
     PushMatrix(vp, 0, sizeof(MATRIX));
     PushScaleVector();
     PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
-                GS_SET_PRIM(obj->renderState.prim.type, obj->renderState.prim.shading, 
-                obj->renderState.prim.mapping, obj->renderState.prim.fogging, 
-                obj->renderState.prim.blending, obj->renderState.prim.antialiasing, 
-                obj->renderState.prim.mapping_type, g_Manager.gs_context, 
-                obj->renderState.prim.colorfix), 0, obj->renderState.state.gs_reg_count), 
-                obj->renderState.state.gs_reg_mask, 10);
-    PushInteger(obj->renderState.state.render_state.state, 12, 3);
-
+                GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
+                obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 
+                obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
+                obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
+                obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count), 
+                obj->renderState.gsstate.gs_reg_mask, 10);
+    PushInteger(obj->renderState.properties.props, 12, 3);
     
-    UploadBuffers(start, end, 81, buffer, type);
+    if (V_SKINNED & type)
+    {
+        PushInteger(base, 11, 0);
+        UpdateVU1BoneMatrices(obj->vertexBuffer.meshAnimationData->finalBones, obj->objAnimator, obj->vertexBuffer.meshAnimationData->joints, obj->vertexBuffer.meshAnimationData->jointsCount);
+        BindVectors(obj->vertexBuffer.meshAnimationData->finalBones, obj->vertexBuffer.meshAnimationData->jointsCount * 3, 0, base);
+    }
+
+    int max = MaxUploadSize(type, headerSize, obj->renderState.gsstate.gs_reg_count, obj->renderState.properties.CLIPPING);
+
+    UploadBuffers(start, end, max, buffer, type);
     
     for (int i = 1; i<matCount; i++)
     {
@@ -145,7 +248,7 @@ void RenderGameObject(GameObject *obj)
         end = mat->end;
         tex = GetTextureByID(g_Manager.texManager, mat->materialId);
         BindTexture(tex, i == (matCount-1)); 
-        UploadBuffers(start, end, 81, buffer, type);
+        UploadBuffers(start, end, max, buffer, type);
     } 
     
     

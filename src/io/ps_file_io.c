@@ -454,7 +454,7 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     buffers->meshAnimationData->jointsCount = size;
     buffers->meshAnimationData->joints = malloc(sizeof(Joint *) * size);
-
+    buffers->meshAnimationData->finalBones = (VECTOR*)malloc(sizeof(VECTOR) * 3 * size);
     input_int++;
 
     for (int i = 0; i < size; i++)
@@ -931,6 +931,8 @@ void DestroyAnimationMesh(AnimationMesh *meshAnimationData)
         }
 
         free(meshAnimationData->joints);
+
+        free(meshAnimationData->finalBones);
 
         if (meshAnimationData->animations)
         {

@@ -338,6 +338,7 @@ struct animation_mesh_t
     u32 animationsCount;
     LinkedList *animations;
     Joint **joints;
+    VECTOR *finalBones;
 };
 
 struct animator_t
@@ -521,7 +522,7 @@ typedef enum VertexType
         (u32)((clip)&0x00000001) << 13 | (u32)((envmp)&0x00000001) << 14 | (u32)((spec)&0x00000001) << 15 | (u32)((animtex)&0x00000001) << 16 |    \
         (u32)((morph)&0x00000001) << 17 | (u32)((bones)&0x00000001) << 18 | (u32)((alphamap)&0x00000001) << 19
 
-typedef union obj_render_state
+typedef union obj_render_properties
 {
     struct
     {
@@ -546,22 +547,22 @@ typedef union obj_render_state
         unsigned int pad : 12;               // 21-32
     };
 
-    unsigned int state;
+    unsigned int props;
 
-} OBJ_RENDER_STATE;
+} ObjectProperties;
 
-struct gs_state_t
+typedef struct obj_gs_state_t
 {
     int gs_reg_count;
     int gs_reg_mask;
-    OBJ_RENDER_STATE render_state;
-};
+    prim_t prim;
+} ObjGSState;
 
 typedef struct render_state_t
 {
-    prim_t prim;
     Color color;
-    struct gs_state_t state;
+    ObjectProperties properties;
+    ObjGSState gsstate;
 } ObjectRenderState;
 
 enum Lighting
