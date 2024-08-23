@@ -28,7 +28,7 @@ void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign align
     blender.fixed_alpha = 0x80;
 
     BeginCommand();
-    BindTexture(fontStruct->fontTex, true);
+    BindTexture(fontStruct->fontTex, true, true);
     DepthTest(true, 1);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0);
     BlendingEquation(&blender);
@@ -49,7 +49,7 @@ void PrintText(Font *fontStruct, const char *text, int x, int y, TextAlign align
    
    // 
   // PrintOut();
-    EndCommand();
+    SubmitCommand();
     
 }
 

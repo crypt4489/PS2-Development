@@ -692,7 +692,7 @@ static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 vertSize, u
 {
     float divisor = 1.f / 8.f;
     u32 sizeOfBuffer = vertSize * divisor;
-    if ((vertSize & 0x7) != 0)
+    if ((vertSize & 0x7))
     {
         sizeOfBuffer++;
     }

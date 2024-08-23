@@ -412,7 +412,7 @@ static void SetupBody()
 
     ReadModelFile("MODELS\\BODY.BIN", &body->vertexBuffer);
 
-    SetupGameObjectPrimRegs(body, color, RENDERTEXTUREMAPPED | CLIPPING | SKELETAL_ANIMATION);
+    SetupGameObjectPrimRegs(body, color, RENDERTEXTUREMAPPED | SKELETAL_ANIMATION);
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -445,7 +445,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION | CLIPPING);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
 
@@ -573,10 +573,10 @@ static void SetupGameObjects()
 
     // InitSkybox();
 
-    SetupGrid();
+    //SetupGrid();
      SetupBody();
     SetupAABBBox();
-     SetupOBBBody();
+    // SetupOBBBody();
     SetupShootBoxBox();
     // SetupShootBigBoxBox();
     //  SetupMultiSphere();
@@ -613,7 +613,7 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     FrameBufferMask(0, 0, 0, 0);
     DepthBufferMask(false);
-    EndCommand();
+    SubmitCommand();
 }
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
@@ -655,7 +655,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     StartVertexShader();
     FrameBufferMask(0x0, 0x0, 0x0, 0x0);
     DepthBufferMask(false);
-    EndCommand();
+    SubmitCommand();
 }
 
 Color *colors[5];
@@ -774,6 +774,8 @@ int Render()
     colors[4] = &lcolors[4];
     float lastTime = getTicks(g_Manager.timer);
 
+    
+
     for (;;)
     {
         float currentTime = getTicks(g_Manager.timer);
@@ -793,7 +795,11 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-        // DrawWorld(world);
+        DrawWorld(world);
+        // ReadFromVU(vu1_data_address, 100*4, 0);
+
+        // while(1);
+
         MATRIX ident;
         MatrixIdentity(ident);
 

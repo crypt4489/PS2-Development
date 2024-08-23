@@ -2,10 +2,10 @@
 
 #include <draw.h>
 
-
 #include <string.h>
 #include <stdlib.h>
 
+#include "graphics/ps_drawing.h"
 #include "camera/ps_camera.h"
 #include "dma/ps_dma.h"
 #include "textures/ps_texture.h"
@@ -13,141 +13,12 @@
 
 #include "textures/ps_texturemanager.h"
 
+
+
 u32 GetDoubleBufferOffset(u32 base)
 {
     u32 half = (1024 - base) >> 1;
     return half;
-}
-
-void CreatePipelineSizes(u32 pCode, u32 *numberOfCbs, u32 *vu1_header_size)
-{
-    u32 size = 3;
-    u32 header = 16;
-
-    if ((pCode & VU1Stage1) != 0)
-    {
-        size += 1;
-    }
-
-    if ((pCode & VU1Stage2) != 0)
-    {
-        header += 4;
-        size++;
-    }
-
-    if ((pCode & VU1Stage3) != 0)
-    {
-        header = 36;
-        size++;
-    }
-
-    *numberOfCbs = size;
-    *vu1_header_size = header;
-}
-
-void ParsePipeline(GameObject *obj, VU1Pipeline *pipe)
-{
-    qword_t *q = pipe->q;
-    DMA_DCODE_STRUCT decode;
-    int loop = 1;
-    int channel, qwc, tte, type;
-   // DEBUGLOG("Here!");
-    while (loop)
-    {
-        decode.code = q->sw[0];
-        if (decode.code == DMA_DCODE_END)
-        {
-            loop = 0;
-            break;
-        }
-        else if (decode.code == DMA_DCODE_LOAD_MATERIAL)
-        {
-            Material *mat = (Material *)q->sw[1];
-            Texture *tex = GetTextureByID(g_Manager.texManager, mat->materialId);
-            q++;
-            if (tex)
-            {
-                UploadTextureViaManagerToVRAM(tex);
-            }
-            else
-            {
-                ERRORLOG("texture is null");
-                while(1);
-            }
-        }
-
-        else if (decode.code == DMA_DCODE_LOAD_ID_TEXTURE)
-        {
-
-            u64 id = q->dw[1];
-            // INFOLOG("texhere! %d", id);
-            Texture *tex = GetTextureByID(g_Manager.texManager, id);
-            q++;
-            if (tex)
-            {
-                UploadTextureViaManagerToVRAM(tex);
-            }
-            else
-            {
-                ERRORLOG("texture is null");
-            }
-        }
-
-        else if (decode.code == DMA_DCODE_CALLBACK_FUNC)
-        {
-             //printf("here!");
-            int index = ((int)q->sw[1]) - 1;
-            //ERRORLOG("%d", index);
-            pipe->cbs[index]->callback(pipe, obj, pipe->cbs[index]->args, pipe->cbs[index]->q);
-            q++;
-        }
-        else if (decode.code == DMA_DCODE_UPLOAD_MESH)
-        {
-            DMA_DCODE_STRUCT temp;
-            temp.code = q->sw[1];
-            channel = temp.chann;
-            tte = temp.tte;
-            type = temp.type;
-            qwc = temp.qwc;
-            q++;
-           // DEBUGLOG("Here!!");
-            SubmitToDMAController(q, channel, type, qwc, tte);
-            q += qwc;
-            pipe->currentRenderPass += 1;
-        }
-        else if (decode.code == DMA_DCODE_DRAW_FINISH)
-        {
-            DMA_DCODE_STRUCT temp;
-            temp.code = q->sw[1];
-            channel = temp.chann;
-            tte = temp.tte;
-            type = temp.type;
-            qwc = temp.qwc;
-            q++;
-            SubmitToDMAController(q, channel, type, qwc, tte);
-            q += qwc;
-            draw_wait_finish();
-        }
-
-        else
-        {
-            channel = decode.chann;
-            qwc = decode.qwc;
-            tte = decode.tte;
-            type = decode.type;
-            // q++;
-            //    ERRORLOG("%x %x %x", q->sw[0], q->sw[1], q->sw[2]);
-            //  dump_packet(pipe->q);
-            // while(1);
-
-            q++;
-
-            SubmitToDMAController(q, channel, type, qwc, tte);
-            q += qwc;
-        }
-    }
-
-    pipe->currentRenderPass = 0;
 }
 
 void ExecutePipelineCBs(GameObject *obj, VU1Pipeline *pipe)
@@ -157,14 +28,27 @@ void ExecutePipelineCBs(GameObject *obj, VU1Pipeline *pipe)
     // INFOLOG("%s", pipe->name);
     for (int i = 0; i < pipe->numberCBS; i++)
     {
-        link[i]->callback(pipe, obj, link[i]->args, link[i]->q);
+        link[i]->callback(pipe, obj, link[i]->args, link[i]->offset);
     }
 }
 
 void RenderPipeline(GameObject *obj, VU1Pipeline *active_pipe)
 {
     // dump_packet(active_pipe->q);
-    ParsePipeline(obj, active_pipe);
+    ExecutePipelineCBs(obj, active_pipe);
+    u32 matCount = obj->vertexBuffer.matCount;
+    LinkedList *mats = obj->vertexBuffer.materials;
+    while(matCount)
+    {
+        Material *mat = (Material*)mats->data;
+        UploadTextureDrawing(GetTextureByID(g_Manager.texManager, mat->materialId), !(matCount-1));
+        matCount--;
+        mats = mats->next;
+    }
+    BeginCommand();
+    SendBuffer(active_pipe->q);
+    DispatchDrawBuffers();
+    ResetState();
 }
 
 void SetActivePipelineByName(GameObject *obj, const char *name)
@@ -243,14 +127,26 @@ void AddVU1Pipeline(GameObject *obj, VU1Pipeline *pipeline)
     return;
 }
 
-PipelineCallback *CreatePipelineCBNode(pipeline_callback cb, qword_t *pipeline_loc, void *argument, u32 id)
+PipelineCallback *CreatePipelineCBNode(pipeline_callback cb, u32 offset, void *argument, u32 id)
 {
     PipelineCallback *node = (PipelineCallback *)malloc(sizeof(PipelineCallback));
     node->args = argument;
-    node->q = pipeline_loc;
+    node->offset = offset;
     node->callback = cb;
     node->id = id;
     return node;
+}
+
+PipelineCallback *CreateVU1WriteCBNode( pipeline_callback cb, u32 pipeline_loc, 
+                                        u32 count, 
+                                        u32 splitloc, 
+                                        u32 id)
+{
+    VU1HeaderArgs *args = (VU1HeaderArgs*)malloc(sizeof(VU1HeaderArgs));
+    args->count = count;
+    args->loc = splitloc;
+    return CreatePipelineCBNode(cb, pipeline_loc, args, id);
+
 }
 
 VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses)
@@ -271,6 +167,7 @@ VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses
 
     node->next = NULL;
     node->q = NULL;
+    node->qwSize = 0;
     node->numberCBS = 0;
     node->callBackSize = sizeOfCBS;
     node->currentRenderPass = 0;
@@ -281,32 +178,9 @@ VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses
     return node;
 }
 
-qword_t *AddPipelineCallbackNodeQword(VU1Pipeline *pipeline, PipelineCallback *node, qword_t *q, qword_t *targ)
+
+VU1Pipeline* AddPipelineCallbackNode(VU1Pipeline *pipeline, PipelineCallback *node)
 {
-    int callNumber = 1;
-    int size = pipeline->numberCBS;
-
-
-    for (int i = 0; i <= size; i++)
-    {
-        if (!pipeline->cbs[i])
-        {
-            pipeline->numberCBS++;
-            pipeline->cbs[i] = node;
-            break;
-        }
-        else if (pipeline->cbs[i]->callback == node->callback && pipeline->cbs[i]->q == targ)
-        {
-            break;
-        }
-        callNumber++;
-    }
-
-    qword_t *b = q;
-    b->sw[0] = DMA_DCODE_CALLBACK_FUNC;
-    b->sw[1] = callNumber;
-    b->sw[2] = DMA_DCODE_CALLBACK_FUNC;
-    b->sw[3] = DMA_DCODE_CALLBACK_FUNC;
-    b++;
-    return b;
+    pipeline->cbs[pipeline->numberCBS++] = node;
+    return pipeline;
 }

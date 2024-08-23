@@ -422,14 +422,14 @@ struct worldcblist_t
     GameObject *obj;
 };
 
-typedef void (*pipeline_callback)(VU1Pipeline *, GameObject *, void *, qword_t *);
+typedef void (*pipeline_callback)(VU1Pipeline *, GameObject *, void *, u32);
 
 struct pipelinecblist_t
 {
     u32 id;
     pipeline_callback callback;
     void *args;
-    qword_t *q;
+    u32 offset;
     /* data */
 };
 
@@ -455,6 +455,7 @@ struct vu_pipeline_t
     qword_t *q;
     u32 renderPasses;
     u32 currentRenderPass;
+    u32 qwSize;
     VU1PipelineRenderPass **passes;
 };
 

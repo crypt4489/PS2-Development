@@ -139,7 +139,7 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     PipelineCallback *setupGSRegs = CreatePipelineCBNode(SetupPerObjDrawShadowRegisters, q, NULL, 0x90);
 
-    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags, q);
+  //  dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupGSRegs, dcode_callback_tags, q);
 
     q += 2; //(obj-> tex == NULL ? 4 : 14);
 
@@ -147,11 +147,11 @@ void CreateShadowMapVU1Pipeline(GameObject *obj, u32 programNumber, u32 qwSize)
 
     PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL, DEFAULT_OBJ_WVP_PCB);
 
-    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupMVPHeader, dcode_callback_tags, q);
+   // dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupMVPHeader, dcode_callback_tags, q);
 
     PipelineCallback *setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawShadowVU1Header, q, NULL, 0x91);
 
-    dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupVU1Header, dcode_callback_tags, q);
+   // dcode_callback_tags = AddPipelineCallbackNodeQword(pipeline, setupVU1Header, dcode_callback_tags, q);
 
     q += 16;
 

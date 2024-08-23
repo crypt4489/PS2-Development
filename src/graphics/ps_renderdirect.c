@@ -14,6 +14,7 @@
 #include "textures/ps_texturemanager.h"
 #include "animation/ps_animation.h"
 #include "system/ps_vumanager.h"
+#include "camera/ps_camera.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -44,27 +45,13 @@ void DetermineVU1Programs(ObjectProperties *state, qword_t *programs)
     if (stage2)
     {
         addr3 = addr4;
-        if (state->ENVIRONMENTMAP)
-        {
-            addr4 = VU1GenericEnvMap;
-        }
-        else
-        {
-            addr4 = VU1GenericAnimTex;
-        }
+        addr4 = (state->ENVIRONMENTMAP * VU1GenericEnvMap) | (state->ANIMATION_TEXUTRE * VU1GenericAnimTex);
     }
 
     if (stage1)
     {
         addr2 = addr4;
-        if (state->MORPH_TARGET)
-        {
-            addr4 = VU1GenericMorph;
-        }
-        else
-        {
-            addr4 = VU1GenericSkinned;
-        }
+        addr4 = (state->MORPH_TARGET * VU1GenericMorph) | (state->SKELETAL_ANIMATION * VU1GenericSkinned);
     }
 
     if (state->CLIPPING)
@@ -104,7 +91,7 @@ void RenderRay(Ray *ray, Color color, float t)
     DrawVectorFloat(v[0][0], v[0][1], v[0][2], 1.0f);
     DrawVectorFloat(v[1][0], v[1][1], v[1][2], 1.0f);
     StartVertexShader();
-    EndCommand();
+    SubmitCommand();
 }
 
 void RenderLine(Line *line, Color color)
@@ -124,7 +111,7 @@ void RenderLine(Line *line, Color color)
     DrawVector(line->p1);
     DrawVector(line->p2);
     StartVertexShader();
-    EndCommand();
+    SubmitCommand();
 }
 
 void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
@@ -145,14 +132,14 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
         DrawVector(verts[i]);
     }
     StartVertexShader();
-    EndCommand();
+    SubmitCommand();
 }
 
 int DrawHeaderSize(GameObject *obj, int *baseHeader)
 {
     int header = 16;
     *baseHeader = 16;
-    if (obj->renderState.properties.ANIMATION_TEXUTRE || obj->renderState.properties.ENVIRONMENTMAP) { header = 20; *baseHeader = 20; }
+    if (obj->renderState.properties.ANIMATION_TEXUTRE || obj->renderState.properties.ENVIRONMENTMAP) { header = 20; }
     if (obj->renderState.properties.LIGHTING_ENABLE) { header = 36; *baseHeader = 36; }
     if (obj->renderState.properties.SKELETAL_ANIMATION) header += (obj->vertexBuffer.meshAnimationData->jointsCount * 3);
     return header;
@@ -167,8 +154,18 @@ int MaxUploadSize(VertexType type, u32 headerEnd, u32 regCount, bool clipping)
     uploadCount += ((type & V_COLOR) != 0) * 1;
     uploadCount += ((type & V_SKINNED) != 0) * 2;
     u32 precnt = size / (uploadCount + regCount);
-    precnt -= (((type & V_SKINNED) == 0) * (precnt/2) * clipping);
+    precnt -= (precnt/2) * clipping;
     return precnt - (precnt%3);
+}
+
+LinkedList *LoadMaterial(LinkedList *list, bool enddma, bool immediate, u32 *start, u32 *end)
+{
+    Material *mat = (Material*)list->data;
+    *start =  mat->start; 
+    *end = mat->end;
+    Texture *tex = GetTextureByID(g_Manager.texManager, mat->materialId);
+    BindTexture(tex, enddma, immediate);
+    return list->next;
 }
 
 void RenderGameObject(GameObject *obj)
@@ -176,12 +173,10 @@ void RenderGameObject(GameObject *obj)
     u32 matCount = obj->vertexBuffer.matCount;
     MeshVectors *buffer = obj->vertexBuffer.meshData[MESHTRIANGLES];
     u32 count = buffer->vertexCount;
-    VertexType type = GetVertexType(obj->renderState.properties);
+    VertexType type = GetVertexType(&obj->renderState.properties);
     u32 start = 0, end = count-1;
     LinkedList *matIter = obj->vertexBuffer.materials;
-    
-    Material *mat;
-    Texture *tex;
+
 
     qword_t programs;
 
@@ -204,20 +199,16 @@ void RenderGameObject(GameObject *obj)
 
     BeginCommand();
     if (matCount) { 
-        mat = (Material*)matIter->data;
-        matIter = matIter->next;
-        start =  mat->start; 
-        end = mat->end;
-        tex = GetTextureByID(g_Manager.texManager, mat->materialId);
-        BindTexture(tex, matCount == 1); 
+        matIter = LoadMaterial(matIter, (matCount == 1), true, &start, &end);
     }
     ShaderHeaderLocation(headerSize);
     for(int i = 0; i<4; i++)
         ShaderProgram(programs.sw[i], i);
-    DepthTest(true, 3);
+    DepthTest(obj->renderState.properties.Z_ENABLE, obj->renderState.properties.Z_TYPE);;
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     AllocateShaderSpace(base, 0);
     PushMatrix(vp, 0, sizeof(MATRIX));
+    PushMatrix(m, 4, sizeof(MATRIX));
     PushScaleVector();
     PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
@@ -228,6 +219,26 @@ void RenderGameObject(GameObject *obj)
                 obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count), 
                 obj->renderState.gsstate.gs_reg_mask, 10);
     PushInteger(obj->renderState.properties.props, 12, 3);
+
+    Camera *cam = NULL;
+    if (g_DrawWorld)
+    {
+        cam = g_DrawWorld->cam;
+    }
+    else
+    {
+     cam = g_DrawCamera;
+    }
+    VECTOR camProps;
+    camProps[0] = cam->near;
+    camProps[1] = cam->frus[0]->nwidth;
+    camProps[2] = cam->frus[0]->nheight;
+    PushMatrix(camProps, 13, sizeof(float) * 4);
+    VECTOR quat;
+    CreateCameraQuat(cam, quat);
+    PushMatrix(quat, 14, sizeof(float) * 4);
+    PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(float) * 3);
+  
     
     if (V_SKINNED & type)
     {
@@ -242,17 +253,12 @@ void RenderGameObject(GameObject *obj)
     
     for (int i = 1; i<matCount; i++)
     {
-        mat = (Material*)matIter->data;
-        matIter = matIter->next;
-        start =  mat->start; 
-        end = mat->end;
-        tex = GetTextureByID(g_Manager.texManager, mat->materialId);
-        BindTexture(tex, i == (matCount-1)); 
+        matIter = LoadMaterial(matIter, i == (matCount-1), true, &start, &end);
         UploadBuffers(start, end, max, buffer, type);
     } 
     
     
-    EndCommand();
+    SubmitCommand();
 }
 
 void UploadBuffers(u32 start, u32 end, u32 maxCount, MeshVectors *buffer, VertexType type)
@@ -358,7 +364,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     DrawVector(v[0]);
 
     StartVertexShader();
-    EndCommand();
+    SubmitCommand();
 }
 
 void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
@@ -394,7 +400,7 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
    
 
     StartVertexShader();
-    EndCommand();
+    SubmitCommand();
 }
 
 void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
@@ -460,5 +466,5 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     DrawVector(v[3]);
     DrawVector(v[6]);
     StartVertexShader();
-    EndCommand();
+    SubmitCommand();
 }

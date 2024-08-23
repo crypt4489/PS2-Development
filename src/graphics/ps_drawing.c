@@ -48,9 +48,37 @@ static inline qword_t* ChangeGapSize();
 
 static inline qword_t* BindLocation();
 
-static inline qword_t *GetSplitVIFHeaderUpload(int *offset);
+static inline qword_t *DetermineVIFHeader(int *offset);
 
 static inline void InitProgramUpload(int vertexNum, int unpacksize);
+
+qword_t *GetVIFHeaderUpload()
+{
+    return sg_VIFHeaderUpload;
+}
+
+qword_t *GetSplitHeaderUpload()
+{
+    return sg_SplitHeaderUpload;
+}
+
+u32 GetGapCount()
+{
+    return sg_GapCount;
+}
+
+void DispatchDrawBuffers()
+{
+    if (sg_GifDrawPtr)
+    {
+        SubmitDrawBuffersToController(sg_GifDrawPtr, DMA_CHANNEL_GIF, 1, false);
+    }
+   // PrintOut();
+    if (sg_DrawBufferPtr)
+    {
+        SubmitDrawBuffersToController(sg_DrawBufferPtr, DMA_CHANNEL_VIF1, 1, sg_TTEUse);
+    }
+}
 
 void ResetState() {
     sg_DrawBufferPtr = NULL;
@@ -110,22 +138,22 @@ static inline int GetOffsetIntoHeader(int offset)
     return offset - sg_VU1LoadOffset;
 }
 
-qword_t* EndCommand()
+int CloseCommand()
+{
+    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_RET, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0);
+    qword_t *ret = sg_DrawBufferPtr;
+    ResetState();
+    return ret - g_Manager.drawBuffers->currentvif;
+}
+
+qword_t* SubmitCommand()
 {
 
     FlushProgram(true);
 
     CloseDMATag(true);
 
-    if (sg_GifDrawPtr)
-    {
-        SubmitDrawBuffersToController(sg_GifDrawPtr, DMA_CHANNEL_GIF, 1, false);
-    }
-   // PrintOut();
-    if (sg_DrawBufferPtr)
-    {
-        SubmitDrawBuffersToController(sg_DrawBufferPtr, DMA_CHANNEL_VIF1, 1, sg_TTEUse);
-    }
+    DispatchDrawBuffers();
     
     qword_t *ret = sg_DrawBufferPtr;
     ResetState();
@@ -318,7 +346,7 @@ void PushScaleVector()
 void PushQWord(void *q, int offset)
 {
     offset = GetOffsetIntoHeader(offset);
-    qword_t *temp = GetSplitVIFHeaderUpload(&offset);
+    qword_t *temp = DetermineVIFHeader(&offset);
     temp += 1 + offset;
     memcpy(temp, q, sizeof(qword_t));
 }
@@ -326,7 +354,7 @@ void PushQWord(void *q, int offset)
 void PushMatrix(float *mat, int offset, int size)
 {
     offset = GetOffsetIntoHeader(offset);
-    qword_t *temp = GetSplitVIFHeaderUpload(&offset);
+    qword_t *temp = DetermineVIFHeader(&offset);
     temp += 1 + offset;
     memcpy(temp, mat, size);
 }
@@ -334,7 +362,7 @@ void PushMatrix(float *mat, int offset, int size)
 void PushInteger(int num, int memoffset, int vecoffset)
 {
     memoffset = GetOffsetIntoHeader(memoffset);
-    qword_t *temp = GetSplitVIFHeaderUpload(&memoffset);
+    qword_t *temp = DetermineVIFHeader(&memoffset);
     temp += 1 + memoffset;
     temp->sw[vecoffset] = num;
 }
@@ -342,7 +370,7 @@ void PushInteger(int num, int memoffset, int vecoffset)
 void PushFloat(float num, int memoffset, int vecoffset)
 {
     memoffset = GetOffsetIntoHeader(memoffset);
-    qword_t *temp = GetSplitVIFHeaderUpload(&memoffset);
+    qword_t *temp = DetermineVIFHeader(&memoffset);
     temp += 1 + memoffset;
     ((float *)temp->sw)[vecoffset] = num;
 }
@@ -350,7 +378,7 @@ void PushFloat(float num, int memoffset, int vecoffset)
 void PushColor(int r, int g, int b, int a, int memoffset)
 {
     memoffset = GetOffsetIntoHeader(memoffset);
-    qword_t *temp = GetSplitVIFHeaderUpload(&memoffset);
+    qword_t *temp = DetermineVIFHeader(&memoffset);
     temp += 1 + memoffset;
     temp->sw[0] = r;
     temp->sw[1] = g;
@@ -503,12 +531,9 @@ void AllocateShaderSpace(int size, int offset)
     sg_DrawBufferPtr += outSize; 
 }
 
-void BindTexture(Texture *tex, bool end)
+void BindTexture(Texture *tex, bool end, bool immediate)
 {
-    if (!sg_GifDrawPtr)
-        sg_GifDrawPtr = g_Manager.drawBuffers->currentgif;
-    
-    sg_GifDrawPtr = CreateTextureUploadChain(tex, sg_GifDrawPtr, false, end);
+    if (immediate) UploadTextureDrawing(tex, end);
 
     CloseDMATag(false);
 
@@ -529,9 +554,46 @@ void BindTexture(Texture *tex, bool end)
     sg_GapCount = 24;
 }
 
+void UploadTextureDrawing(Texture *tex, bool end)
+{
+    if (!sg_GifDrawPtr) { 
+        sg_GifDrawPtr = g_Manager.drawBuffers->currentgif;
+    }
+    
+    sg_GifDrawPtr = CreateTextureUploadChain(tex, sg_GifDrawPtr, false, end);
+}
+
 qword_t *GetGlobalDrawPointer()
 {
     return sg_DrawBufferPtr;
+}
+
+qword_t *GetDrawBegin()
+{
+    return g_Manager.drawBuffers->currentvif;
+}
+
+void InitializeDMATag(qword_t *mem, bool giftag)
+{
+    int offset = 1;
+    sg_OpenDMATag = mem;
+    sg_OpenDirectTag = mem+offset++;
+    if (giftag) sg_OpenGIFTag = mem+offset++;
+    sg_DrawBufferPtr = mem+offset;
+}
+
+void InitializeVIFHeaderUpload(qword_t *top, qword_t *bottom, u32 count)
+{
+    sg_VIFHeaderUpload = top;
+    sg_SplitHeaderUpload = bottom;
+    sg_GapCount = count;
+}
+
+void SendBuffer(qword_t *q)
+{
+    sg_TTEUse = true;
+    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CALL, 0, 0, 0, 0, (u32)q);
+    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
 }
 
 static inline void AddVIFCode(u32 a1, u32 a2)
@@ -563,7 +625,7 @@ static inline qword_t* ChangeGapSize(u32 size)
     return sg_OpenTextureGap + sg_GapCount + 1;
 }
 
-static inline qword_t *GetSplitVIFHeaderUpload(int *offset)
+static inline qword_t *DetermineVIFHeader(int *offset)
 {
     int splitSizeTop = (23 - sg_GapCount);
     if (*offset >= splitSizeTop) { 

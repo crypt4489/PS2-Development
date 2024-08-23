@@ -10,11 +10,19 @@ void BeginCommandSet(qword_t *drawBuffer);
 
 void EnterCommand(qword_t *q);
 
-void SetVIFHeaderUpload(qword_t *q);
-
 qword_t *GetGlobalDrawPointer();
 
-qword_t* EndCommand();
+qword_t *GetDrawBegin();
+
+qword_t* SubmitCommand();
+
+void ResetState();
+
+void InitializeDMATag(qword_t *mem, bool giftag);
+
+void InitializeVIFHeaderUpload(qword_t *top, qword_t *bottom, u32 count);
+
+int CloseCommand();
 
 void DepthTest(bool enable, int method);
 
@@ -82,10 +90,20 @@ void DrawVectorFloat(float x, float y, float z, float w);
 
 void SetRegSizeAndType(u64 size, u64 type);
 
-void BindTexture(Texture *tex, bool end);
+void BindTexture(Texture *tex, bool end, bool immediate);
 
-void EndVifImmediate();
+void UploadTextureDrawing(Texture *tex, bool end);
+
+void DispatchDrawBuffers();
+
+void SendBuffer(qword_t *q);
 
 void PrintOut();
+
+u32 GetGapCount();
+
+qword_t *GetVIFHeaderUpload();
+
+qword_t *GetSplitHeaderUpload();
 
 #endif

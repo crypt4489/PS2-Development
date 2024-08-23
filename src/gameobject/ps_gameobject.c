@@ -396,11 +396,11 @@ qword_t *PackBuffersVU1(qword_t *q, MeshBuffers *buffer, u32 count, u32 *top, u3
   return q;
 }
 
-VertexType GetVertexType(ObjectProperties state)
+VertexType GetVertexType(ObjectProperties *state)
 {
-  VertexType ret = V_POS | (state.COLOR_ENABLE * V_COLOR);
-  ret |= (state.TEXTURE_MAPPING * V_TEXTURE);
-  ret |= (state.LIGHTING_ENABLE * V_NORMAL);
-  ret |= (state.SKELETAL_ANIMATION * V_SKINNED);
+  VertexType ret = V_POS | (state->COLOR_ENABLE * V_COLOR);
+  ret |= (state->TEXTURE_MAPPING * V_TEXTURE);
+  ret |= (state->LIGHTING_ENABLE * V_NORMAL);
+  ret |= (state->SKELETAL_ANIMATION * V_SKINNED);
   return ret;
 }
