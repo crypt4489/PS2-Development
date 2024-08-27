@@ -40,22 +40,28 @@ void SetupAlphaMapPass1(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipel
   qword_t *q = pipe->q + pipeline_loc;
   Color color;
   CREATE_RGBAQ_STRUCT(color, 0, 0, 0, 0, 1.0f);
-  q = SetupZTestGS(q, 1, obj->renderState.properties.Z_ENABLE, 0x00, ATEST_METHOD_ALLPASS, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
-  q = SetupRGBAQGS(q, color);
-  q = SetFrameBufferMask(q, g_Manager.targetBack->render, 0x00ffffff, g_Manager.gs_context);
-  q = SetZBufferMask(q, g_Manager.targetBack->z, 1, g_Manager.gs_context);
+  InitializeDMATag(q, true);
+  DepthTest(true, 1);
+  SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0x00);
+  PrimitiveColor(color);
+  FrameBufferMaskWord(0x00ffffff);
+  DepthBufferMask(true);
+  ResetState(true);
 }
 
 void SetupAlphaMapPass3(VU1Pipeline *pipe, GameObject *obj, void *mat, u32 pipeline_loc)
 {
   // draw object normally, not affecting alpha channel of framebuffer
   qword_t *q = pipe->q + pipeline_loc;
-  q = SetupZTestGS(q, 2, obj->renderState.properties.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 1, DTEST_METHOD_PASS_ONE, g_Manager.gs_context);
-  q = SetFrameBufferMask(q, g_Manager.targetBack->render, 0xff000000, g_Manager.gs_context);
-  q = SetZBufferMask(q, g_Manager.targetBack->z, 0, g_Manager.gs_context);
-  q++;
-
-  q->sw[3] = obj->renderState.properties.props;
+  InitializeDMATag(q, true);
+  DepthTest(true, 2);
+  SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0x00);
+  DestinationAlphaTest(true, DTEST_METHOD_PASS_ONE);
+  FrameBufferMaskWord(0x00ffffff);
+  DepthBufferMask(false);
+  InitializeVIFHeaderUpload(pipe->q + pipeline_loc + 6, NULL, 1);
+  PushInteger(obj->renderState.properties.props, 12, 3);
+  ResetState(true);
 }
 
 void SetupAlphaMapPass2(VU1Pipeline *pipe, GameObject *obj, void *mat, u32 pipeline_loc)
@@ -63,14 +69,20 @@ void SetupAlphaMapPass2(VU1Pipeline *pipe, GameObject *obj, void *mat, u32 pipel
   // draw object with normal rgbaq and update alpha to one
   // where the texture alpha is one
   qword_t *q = pipe->q + pipeline_loc;
-  q = SetupRGBAQGS(q, obj->renderState.color);
-  q = SetupZTestGS(q, 1, obj->renderState.properties.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
+  InitializeDMATag(q, true);
+  DepthTest(true, 1);
+  SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0x00);
+  PrimitiveColor(obj->renderState.color);
+  ResetState(true);
+  
 }
 
 void SetupAlphaMapFinish(VU1Pipeline *pipe, GameObject *obj, void *mat, u32 pipeline_loc)
 {
   qword_t *q = pipe->q + pipeline_loc;
-  q = SetFrameBufferMask(q, g_Manager.targetBack->render, 0x00000000, g_Manager.gs_context);
+  InitializeDMATag(q, true);
+  FrameBufferMaskWord(0x0);
+  ResetState(true);
 }
 
 void SetupStage2MATVU1(VU1Pipeline *pipe, GameObject *obj, void *mat, u32 pipeline_loc)
@@ -95,7 +107,6 @@ void SetupMapTexture(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline
 
 void SetupBlendingCXT(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
 {
-  // printf("here!");
   qword_t *q = pipe->q + pipeline_loc;
 
   blend_t blendee;
@@ -106,14 +117,18 @@ void SetupBlendingCXT(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipelin
   blendee.alpha = BLEND_ALPHA_FIXED;
   blendee.fixed_alpha = 0x80;
 
-  q = SetupZTestGS(q, 2, obj->renderState.properties.Z_ENABLE, 0x00, ATEST_METHOD_NOTEQUAL, ATEST_KEEP_FRAMEBUFFER, 0, 0, g_Manager.gs_context);
-
-  q = SetupAlphaGS(q, &blendee, g_Manager.gs_context);
-
-  q++;
-
-  q->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 1, obj->renderState.gsstate.prim.antialiasing, obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count);
-  q->dw[1] = obj->renderState.gsstate.gs_reg_mask;
+  InitializeDMATag(q, true);
+  DepthTest(true, 2);
+  SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0);
+  BlendingEquation(&blendee);
+  InitializeVIFHeaderUpload(q + 5, NULL, 1);
+  PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(obj->renderState.gsstate.prim.type, 
+              obj->renderState.gsstate.prim.shading, obj->renderState.gsstate.prim.mapping, 
+              obj->renderState.gsstate.prim.fogging, 1, obj->renderState.gsstate.prim.antialiasing, 
+              obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
+              obj->renderState.gsstate.prim.colorfix), 0, 
+              obj->renderState.gsstate.gs_reg_count), obj->renderState.gsstate.gs_reg_mask, 10);
+  ResetState(true);
 }
 
 void SetupPerBoneAnimationVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
@@ -199,91 +214,65 @@ qword_t *CreateBonesVectorsDMAUpload(qword_t *tag, qword_t *q, VU1Pipeline *pipe
   return tag;
 }
 
-void SetupPerObjDrawTessVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
-{
-  qword_t *pipeline_temp = pipe->q + pipeline_loc; // obj->wvp_matrix;//
-
-  pipeline_temp += 4;
-
-  TessGrid *grid = (TessGrid *)arg;
-
-  float lengthX = Abs(grid->extent.top[0] - grid->extent.bottom[0]);
-
-  float lengthY = Abs(grid->extent.top[2] - grid->extent.bottom[2]);
-
-  float stepVertX = lengthX / (float)grid->xDim;
-
-  float stepVertY = lengthY / (float)grid->yDim;
-
-  VECTOR firstSet;
-  firstSet[0] = stepVertX;
-  firstSet[1] = stepVertY;
-
-  pipeline_temp = VectorToQWord(pipeline_temp, firstSet);
-
-  // pack dim
-
-  pipeline_temp->sw[0] = grid->xDim + 1;
-  pipeline_temp->sw[1] = grid->yDim;
-  pipeline_temp->sw[2] = 0;
-  pipeline_temp->sw[3] = 0;
-  pipeline_temp++;
-
-  VECTOR extent;
-  VectorCopy(extent, grid->extent.top);
-  extent[3] = 0.0f;
-
-  pipeline_temp = VectorToQWord(pipeline_temp, extent);
-
-  //  printf("here in tess grid callback");
-}
-
 void SetupPerObjDrawRegisters(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
 {
   qword_t *q = pipe->q + pipeline_loc;
   InitializeDMATag(q, true);
   DepthTest(obj->renderState.properties.Z_ENABLE, obj->renderState.properties.Z_TYPE);
   SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0x80);
-  ResetState();
+  ResetState(true);
 }
 
-void SetupPerObjDrawWireframeVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
-{
-  qword_t *pipeline_temp = pipe->q + pipeline_loc;
-
-  pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
-
-  pipeline_temp = VIFSetupScaleVector(pipeline_temp);
-
-  pipeline_temp->sw[0] = (int)255;
-  pipeline_temp->sw[1] = (int)0;
-  pipeline_temp->sw[2] = (int)0;
-  pipeline_temp->sw[3] = (int)128;
-  pipeline_temp++;
-
-  pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, obj->renderState.gsstate.prim.shading, DRAW_DISABLE, obj->renderState.gsstate.prim.fogging, obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, obj->renderState.gsstate.prim.colorfix), 0, 2);
-  pipeline_temp->dw[1] = DRAW_RGBAQ_REGLIST;
-  pipeline_temp += 2;
-  pipeline_temp->sw[3] = obj->renderState.properties.props;
-}
 void SetupPerObjDrawVU1HeaderAlphaMap(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
 {
   qword_t *pipeline_temp = pipe->q + pipeline_loc;
+  VU1HeaderArgs *args = (VU1HeaderArgs*)arg;
 
-  pipeline_temp += VU1_LOCATION_SCALE_VECTOR;
+  MATRIX screen, m;
+  CreateWorldMatrixLTM(obj->ltm, m);
 
-  pipeline_temp = VIFSetupScaleVector(pipeline_temp);
+  MatrixIdentity(screen);
+  MatrixMultiply(screen, screen, m);
 
-  pipeline_temp->sw[0] = (int)obj->renderState.color.r;
-  pipeline_temp->sw[1] = (int)obj->renderState.color.g;
-  pipeline_temp->sw[2] = (int)obj->renderState.color.b;
-  pipeline_temp->sw[3] = (int)obj->renderState.color.a;
-  pipeline_temp++;
+  Camera *cam = NULL;
+  if (g_DrawWorld)
+  {
+    cam = g_DrawWorld->cam;
+  }
+  else
+  {
+    cam = g_DrawCamera;
+  }
 
-  pipeline_temp->dw[0] = GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count);
-  pipeline_temp->dw[1] = obj->renderState.gsstate.gs_reg_mask;
-  pipeline_temp += 2;
-  pipeline_temp->sw[3] = (obj->renderState.properties.props & 0xffffff7f);
+  MatrixMultiply(screen, screen, cam->viewProj);
+
+  InitializeVIFHeaderUpload(pipeline_temp, pipe->q + args->loc, args->count);
+
+  PushMatrix(screen, 0, sizeof(MATRIX));
+  PushMatrix(m, 4, sizeof(MATRIX));
+  PushScaleVector();
+  PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
+  PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
+                obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 
+                obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
+                obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
+                obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count), 
+                obj->renderState.gsstate.gs_reg_mask, 10);
+  PushInteger((obj->renderState.properties.props & 0xffffff7f), 12, 3);
+  VECTOR camProps;
+  camProps[0] = cam->near;
+  camProps[1] = cam->frus[0]->nwidth;
+  camProps[2] = cam->frus[0]->nheight;
+  PushMatrix(camProps, 13, sizeof(float) * 4);
+  if (GetDirtyLTM(cam->ltm))
+  {
+    VECTOR quat;
+    CreateCameraQuat(cam, quat);
+    PushMatrix(quat, 14, sizeof(float) * 4);
+    PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(float) * 3);
+  }
+  ResetState(true);
 }
 
 void SetupPerObjDrawVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
@@ -335,56 +324,11 @@ void SetupPerObjDrawVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, u32
     PushMatrix(quat, 14, sizeof(float) * 4);
     PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(float) * 3);
   }
-  ResetState();
-}
-
-void SetupPerObjMVPMatrix(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
-{
-  MATRIX screen, m;
-  CreateWorldMatrixLTM(obj->ltm, m);
-
-  MatrixIdentity(screen);
-  MatrixMultiply(screen, screen, m);
-
-  VECTOR camProps;
-
-
-
-  //if (!cam)
-  {
-    ERRORLOG("something went wrong with camera");
-  }
-
-  qword_t *pipeline_temp = pipe->q + pipeline_loc;
-
-  memcpy(pipeline_temp + 4, m, 4 * sizeof(qword_t));
-
-  
-
-  memcpy(pipeline_temp, screen, 4 * sizeof(qword_t));
-
- // camProps[0] = cam->near;
-  //camProps[1] = cam->frus[0]->nwidth;
- // camProps[2] = cam->frus[0]->nheight;
-  memcpy(pipeline_temp + 13, camProps, sizeof(float) * 4);
-  //if (GetDirtyLTM(cam->ltm))
-  {
-    VECTOR quat;
-    //CreateCameraQuat(cam, quat);
-    memcpy(pipeline_temp + 14, quat, sizeof(float) * 4);
-   // memcpy(pipeline_temp + 15, GetPositionVectorLTM(cam->ltm), sizeof(float) * 3);
-  }
+  ResetState(true);
 }
 
 void SetupPerObjLightBuffer(VU1Pipeline *pipe, GameObject *obj, void *arg, u32 pipeline_loc)
 {
-  MATRIX m;
-  if (GetDirtyLTM(obj->ltm))
-  {
-    CreateWorldMatrixLTM(obj->ltm, m);
-    //memcpy(pipeline_loc + VU1_LOCATION_GLOBAL_MATRIX, m, sizeof(MATRIX));
-  }
-
   qword_t *q = pipe->q + pipeline_loc + VU1_LOCATION_LIGHTS_BUFFER;
 
   if (g_DrawWorld)

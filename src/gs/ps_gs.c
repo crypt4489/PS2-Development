@@ -340,11 +340,16 @@ void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a)
 	q = draw_disable_tests_alpha(q, context, alpha);
 	q = draw_clear_alpha(q, context, xOff, yOff, target->render->width, target->render->height, r, g, b, a);
 
-	DMATAG_END(dmatag, q - dmatag - 1, 0, 0, 0);
+	DMATAG_END(dmatag, q - dmatag - 1, 0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), 0);
 	CreateDirectTag(dmatag+1, q- dmatag-2, 1);
+	SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, 1);
+}
 
-
-	SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, 0);
+qword_t *CreateNOPTag(qword_t *q, int size)
+{
+	PACK_GIFTAG(q, GIF_SET_TAG(size, 1, 0, 0, GIF_FLG_PACKED, 1), GIF_REG_NOP);
+	q+=(size+1);
+	return q;
 }
 
 qword_t *draw_clear_alpha(qword_t *q, int context, float x, float y, float width, float height, int r, int g, int b, int a)
@@ -356,8 +361,7 @@ qword_t *draw_clear_alpha(qword_t *q, int context, float x, float y, float width
 	{
 		float fvalue;
 		u32 ivalue;
-	} q0 = {
-		1.0f};
+	} q0 = {1.0f};
 
 	rect.v0.x = x;
 	rect.v0.y = y;

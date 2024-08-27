@@ -112,7 +112,7 @@ RenderWorld *RemoveObjectFromRenderWorld(RenderWorld *world, GameObject *obj)
     }
     return world;
 }
-
+#include "math/ps_misc.h"
 void DrawWorld(RenderWorld *world)
 {
     LinkedList *node = world->objList;
@@ -123,7 +123,6 @@ void DrawWorld(RenderWorld *world)
 
     while (node)
     {
-
         GameObject *obj = (GameObject *)node->data;
         if (obj->interpolator)
         {
@@ -136,7 +135,7 @@ void DrawWorld(RenderWorld *world)
         }
 
         int draw = (!obj->renderState.properties.CULLING_OPTION ? 1 : TestObjectInCameraFrustum(world->cam, obj));
-
+        
         if (draw != 0)
         {
             RenderPipeline(obj, obj->activePipeline);
@@ -146,7 +145,6 @@ void DrawWorld(RenderWorld *world)
 
         node = node->next;
     }
-
     g_DrawWorld = NULL;
 }
 

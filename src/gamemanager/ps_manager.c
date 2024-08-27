@@ -219,7 +219,6 @@ void EndFrame(bool useVsync)
     q = draw_finish(q);
     AddSizeToDirectTag(direct, q-direct-1);
     SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 0, 0);
-    while(PollVU1DoneProcessing(&g_Manager) < 0);
     draw_wait_finish();
     static u32 frameCounter = 0;
     static u8 init = 0;

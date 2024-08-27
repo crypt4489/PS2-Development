@@ -91,7 +91,7 @@ void RenderRay(Ray *ray, Color color, float t)
     DrawVectorFloat(v[0][0], v[0][1], v[0][2], 1.0f);
     DrawVectorFloat(v[1][0], v[1][1], v[1][2], 1.0f);
     StartVertexShader();
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 void RenderLine(Line *line, Color color)
@@ -111,7 +111,7 @@ void RenderLine(Line *line, Color color)
     DrawVector(line->p1);
     DrawVector(line->p2);
     StartVertexShader();
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
@@ -132,7 +132,7 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
         DrawVector(verts[i]);
     }
     StartVertexShader();
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 int DrawHeaderSize(GameObject *obj, int *baseHeader)
@@ -158,13 +158,13 @@ int MaxUploadSize(VertexType type, u32 headerEnd, u32 regCount, bool clipping)
     return precnt - (precnt%3);
 }
 
-LinkedList *LoadMaterial(LinkedList *list, bool enddma, bool immediate, u32 *start, u32 *end)
+LinkedList *LoadMaterial(LinkedList *list, bool immediate, u32 *start, u32 *end)
 {
     Material *mat = (Material*)list->data;
     *start =  mat->start; 
     *end = mat->end;
     Texture *tex = GetTextureByID(g_Manager.texManager, mat->materialId);
-    BindTexture(tex, enddma, immediate);
+    BindTexture(tex, immediate);
     return list->next;
 }
 
@@ -199,7 +199,7 @@ void RenderGameObject(GameObject *obj)
 
     BeginCommand();
     if (matCount) { 
-        matIter = LoadMaterial(matIter, (matCount == 1), true, &start, &end);
+        matIter = LoadMaterial(matIter, true, &start, &end);
     }
     ShaderHeaderLocation(headerSize);
     for(int i = 0; i<4; i++)
@@ -253,12 +253,12 @@ void RenderGameObject(GameObject *obj)
     
     for (int i = 1; i<matCount; i++)
     {
-        matIter = LoadMaterial(matIter, i == (matCount-1), true, &start, &end);
+        matIter = LoadMaterial(matIter, true, &start, &end);
         UploadBuffers(start, end, max, buffer, type);
     } 
     
     
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 void UploadBuffers(u32 start, u32 end, u32 maxCount, MeshVectors *buffer, VertexType type)
@@ -364,7 +364,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     DrawVector(v[0]);
 
     StartVertexShader();
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
@@ -400,7 +400,7 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
    
 
     StartVertexShader();
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
@@ -466,5 +466,5 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     DrawVector(v[3]);
     DrawVector(v[6]);
     StartVertexShader();
-    SubmitCommand();
+    SubmitCommand(false);
 }

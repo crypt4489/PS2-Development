@@ -701,9 +701,9 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     int headerSize = DrawHeaderSize(obj, &base);
 
     BeginCommand();
-    qword_t *begin = GetDrawBegin();
+    qword_t *begin = GetGlobalDrawPointer();
     if (matCount) { 
-        matIter = LoadMaterial(matIter, 0 == (matCount-1), false, &start, &end);
+        matIter = LoadMaterial(matIter, false, &start, &end);
     }
     ShaderHeaderLocation(headerSize);
     for(int i = 0; i<4; i++) ShaderProgram(pipeline->passes[0]->programs.sw[i], i);
@@ -725,7 +725,7 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     UploadBuffers(start, end, max, buffer, type);
     for (int i = 1; i<matCount; i++)
     {
-        matIter = LoadMaterial(matIter, i == (matCount-1), false, &start, &end);
+        matIter = LoadMaterial(matIter, false, &start, &end);
         UploadBuffers(start, end, max, buffer, type);
     } 
     int size = CloseCommand();

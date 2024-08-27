@@ -13,42 +13,29 @@
 
 #include "textures/ps_texturemanager.h"
 
-
-
-u32 GetDoubleBufferOffset(u32 base)
-{
-    u32 half = (1024 - base) >> 1;
-    return half;
-}
-
 void ExecutePipelineCBs(GameObject *obj, VU1Pipeline *pipe)
 {
     PipelineCallback **link = pipe->cbs;
-
-    // INFOLOG("%s", pipe->name);
     for (int i = 0; i < pipe->numberCBS; i++)
     {
         link[i]->callback(pipe, obj, link[i]->args, link[i]->offset);
     }
 }
 
-void RenderPipeline(GameObject *obj, VU1Pipeline *active_pipe)
+void RenderPipeline(GameObject *obj, VU1Pipeline *pipe)
 {
-    // dump_packet(active_pipe->q);
-    ExecutePipelineCBs(obj, active_pipe);
+    ExecutePipelineCBs(obj, pipe);
     u32 matCount = obj->vertexBuffer.matCount;
     LinkedList *mats = obj->vertexBuffer.materials;
     while(matCount)
     {
         Material *mat = (Material*)mats->data;
-        UploadTextureDrawing(GetTextureByID(g_Manager.texManager, mat->materialId), !(matCount-1));
+        UploadTextureDrawing(GetTextureByID(g_Manager.texManager, mat->materialId));
         matCount--;
         mats = mats->next;
     }
-    BeginCommand();
-    SendBuffer(active_pipe->q);
-    DispatchDrawBuffers();
-    ResetState();
+    CallCommand(pipe->q, true);
+    ResetState(false);
 }
 
 void SetActivePipelineByName(GameObject *obj, const char *name)

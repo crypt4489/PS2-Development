@@ -41,5 +41,6 @@ qword_t *draw_disable_tests_alpha(qword_t *q, int context, int alpha);
 qword_t *SetupZTestGS(qword_t* q, int z_test_method, int z_test_enable, char alphaValue, char alpha_test_method, char frameBufferTest, char alpha_test_enable, char alpha_test, int context);
 qword_t* SetupRGBAQGS(qword_t *b, Color color);
 qword_t* SetupAlphaGS(qword_t *q, blend_t *blend, int context);
+qword_t *CreateNOPTag(qword_t *q, int size);
 #endif
 

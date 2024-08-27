@@ -13,7 +13,7 @@ void InitializeDMAChannels()
 {
     dma_channel_initialize(DMA_CHANNEL_VIF1, NULL, 0);
     dma_channel_initialize(DMA_CHANNEL_GIF, NULL, 0);
-    
+
     dma_channel_initialize(DMA_CHANNEL_VIF0, NULL, 0);
     dma_channel_initialize(DMA_CHANNEL_toSPR, NULL, 0);
     dma_channel_initialize(DMA_CHANNEL_fromSPR, NULL, 0);
@@ -69,51 +69,20 @@ qword_t *AddSizeToDirectTag(qword_t *q, u32 size)
     return q;
 }
 
-void ParsePipelineDMA(void *data, qword_t *pipelineData)
-{
-    qword_t *q = pipelineData;
-    DMA_DCODE_STRUCT decode;
-    int loop = 1;
-    int channel, qwc, tte, type;
-    while (loop)
-    {
-        decode.code = q->sw[0];
-        if (decode.code == DMA_DCODE_END)
-        {
-            loop = 0;
-            break;
-        }
-        else
-        {
-            channel = decode.chann;
-            qwc = decode.qwc;
-            tte = decode.tte;
-            type = decode.type;
-            q++;
-             // ERRORLOG("%d %d %d", channel, qwc, tte);
-            //  dump_packet(pipe->q);
-            // while(1);
-
-            SubmitToDMAController(q, channel, type, qwc, tte);
-            q += qwc;
-        }
-    }
-}
-
 DrawBuffers *CreateDrawBuffers(u32 size)
 {
     DrawBuffers *buffer = (DrawBuffers *)malloc(sizeof(DrawBuffers));
     buffer->context = 0;
     buffer->size = size;
-    for (int i = 1; i>=0; i--)
+    for (int i = 1; i >= 0; i--)
     {
-        buffer->gifupload[i] = (qword_t*)calloc(size,sizeof(qword_t));
-        buffer->vifupload[i] = (qword_t*)calloc(size, sizeof(qword_t));
+        buffer->gifupload[i] = (qword_t *)calloc(size, sizeof(qword_t));
+        buffer->vifupload[i] = (qword_t *)calloc(size, sizeof(qword_t));
     }
-    
+
     buffer->currentgif = buffer->gifupload[0];
     buffer->currentvif = buffer->vifupload[0];
-    
+
     return buffer;
 }
 
@@ -126,7 +95,7 @@ void SwitchDrawBuffers(DrawBuffers *bufferstruct)
 
 void DestroyDrawBuffers(DrawBuffers *buff)
 {
-    for (int i = 1; i>=0; i--)
+    for (int i = 1; i >= 0; i--)
     {
         free(buff->gifupload[i]);
         free(buff->vifupload[i]);
@@ -136,7 +105,8 @@ void DestroyDrawBuffers(DrawBuffers *buff)
 
 void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
 {
-    while (PollVU1DoneProcessing(&g_Manager) < 0);
+    while (PollVU1DoneProcessing(&g_Manager) < 0)
+        ;
     if (channel == DMA_CHANNEL_GIF)
     {
         dma_channel_wait(DMA_CHANNEL_GIF, -1);
@@ -148,7 +118,6 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
     }
     else if (channel == DMA_CHANNEL_VIF0)
     {
-
     }
     else
     {
@@ -159,7 +128,7 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
         }
     }
     FlushCache(0);
-    if (type == 0)
+    if (!type)
     {
         dma_channel_send_normal(channel, q, qwc, tte, 0);
     }
@@ -172,27 +141,89 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
 void SubmitDrawBuffersToController(qword_t *q, u32 channel, u32 type, bool tte)
 {
     qword_t *send;
-    switch(channel)
+    switch (channel)
     {
-        case DMA_CHANNEL_GIF:
+    case DMA_CHANNEL_GIF:
         send = g_Manager.drawBuffers->currentgif;
         g_Manager.drawBuffers->currentgif = q;
         break;
-        case DMA_CHANNEL_VIF1:
+    case DMA_CHANNEL_VIF1:
         send = g_Manager.drawBuffers->currentvif;
-         g_Manager.drawBuffers->currentvif = q;
+        g_Manager.drawBuffers->currentvif = q;
         break;
-        default:
+    default:
         ERRORLOG("Unsupposerted channel for submitting draw buffer");
         return;
     }
-    
+
     u32 size = q - send;
     SubmitToDMAController(send, channel, type, size, tte);
 }
 
-void SubmitDMABuffersAsPipeline(qword_t *q, void *data)
+static inline void SetINTVIFCode(qword_t *q, int index)
 {
-    //ParsePipelineDMA(data, g_Manager.dmabuffers->currPointer);
-   // g_Manager.dmabuffers->currPointer = q;
+    q->sw[index] |= 0x80000000;
+}
+
+qword_t *StitchDMAChain(qword_t *q, qword_t *end, bool vif)
+{
+    qword_t *traverse = q;
+    qword_t *lasttag = q;
+    s32 code = -1;
+    bool traveling = true;
+    bool jumpref = false;
+    while (traveling)
+    {
+        if (traverse == end) break;
+        if (code == DMA_END)
+        {
+            SetDMACode(lasttag, DMA_CNT);
+        } 
+        else if (code == DMA_REFE)
+        {
+            SetDMACode(lasttag, DMA_REF);
+        }
+        jumpref = false;
+        u32 stride = (traverse->sw[0] & 0x0000FFFF);
+        code = GetDMACode(traverse);
+        switch (code)
+        {
+        case DMA_REF:
+        case DMA_REFS:
+            stride=0;
+            break;
+        case DMA_CALL:
+        case DMA_NEXT:
+            jumpref = true;
+            break;
+        case DMA_CNT:
+        case DMA_END:
+        case DMA_REFE:
+            break;
+        case DMA_RET:
+        default:
+            traveling = false;
+            break;
+        }
+        lasttag = traverse;
+        traverse+=(stride+1);
+    }
+    if (traveling) {
+        if (jumpref) 
+        {
+            if (code == DMA_REF)
+            {
+                SetDMACode(lasttag, DMA_REFE);
+            } else { 
+                end = CreateDMATag(end, DMA_END, 0, vif * VIF_CODE(0, 0, VIF_CMD_FLUSHA, 1), 0, 0);
+            }
+        }
+        if (code == DMA_CNT) { SetDMACode(lasttag, DMA_END); }
+        if (vif) {
+            int i = 2;
+            if (lasttag->sw[3]) i = 3;
+            SetINTVIFCode(lasttag, i);
+        }
+    }
+    return end;
 }

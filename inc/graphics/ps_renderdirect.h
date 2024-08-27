@@ -13,5 +13,5 @@ void UploadBuffers(u32 start, u32 end, u32 maxCount, MeshVectors *buffer, Vertex
 int DrawHeaderSize(GameObject *obj, int *baseHeader);
 int MaxUploadSize(VertexType type, u32 headerEnd, u32 regCount, bool clipping);
 void DetermineVU1Programs(ObjectProperties *state, qword_t *programs);
-LinkedList *LoadMaterial(LinkedList *list, bool enddma, bool immediate, u32 *start, u32 *end);
+LinkedList *LoadMaterial(LinkedList *list, bool immediate, u32 *start, u32 *end);
 #endif

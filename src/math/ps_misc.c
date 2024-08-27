@@ -222,7 +222,7 @@ void dump_packet(qword_t *q, int max, int usefloat)
     qword_t *iter = q;
     ; //= obj->pipeline_dma;
     int i = 0;
-    while (iter->sw[0] != DMA_DCODE_END && i < max)
+    while (i < max)
     {
         if (usefloat)
         {

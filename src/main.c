@@ -37,7 +37,6 @@
 #include "body.h"
 #include "pad.h"
 #include "skybox.h"
-#include "graphics/shadows.h"
 #include "dma/ps_dma.h"
 #include "animation/ps_morphtarget.h"
 #include "pipelines/ps_pipelines.h"
@@ -57,13 +56,9 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-TimerStruct *ts;
-
 char print_out[50];
 
 MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
-
-TessGrid tessGrid, tessGrid2;
 
 Font *myFont;
 
@@ -103,8 +98,6 @@ GameObject *box = NULL;
 GameObject *bodyCollision = NULL;
 GameObject *shotBox = NULL;
 
-static float lodGrid[4] = {150.0f, 125.0f, 75.0f, 50.0f};
-
 RenderWorld *world = NULL;
 RenderWorld *roomWorld = NULL;
 
@@ -138,8 +131,6 @@ int alpha = 0x80;
 
 int FrameCounter = 0;
 
-MeshBuffers sphereTarget;
-
 float k = -1.0f;
 
 Line mainLine = {{-45.0f, 0.0f, 50.0f, 1.0f}, {-45.0f, 0.0f, -50.0f, 1.0f}};
@@ -166,111 +157,6 @@ static Ray rayray = {{0.0f, 0.0f, -10.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};
 static Ray rayray2 = {{-5.0f, 0.0f, -5.0f, 1.0f}, {-1.0f, 0.0f, 0.0f, 1.0f}};
 
 static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
-
-#if 0
-VECTOR drawVECS[250];
-u32 drawCnt;
-
-static void WriteOut(VECTOR a, VECTOR b)
-{
-    VECTOR v3 = {0.0f, 0.0f, 0.0f, 1.0f};
-    VECTOR v4 = {0.0f, 0.0f, 0.0f, 1.0f};
-    VectorSubtractXYZ(a, volLightPos, v3);
-    VectorScaleXYZ(v3, v3, 2.0f);
-    VectorSubtractXYZ(b, volLightPos, v4);
-    VectorScaleXYZ(v4, v4, 2.0f);
-    VectorCopy(drawVECS[drawCnt], a);
-    VectorAddXYZ(v3, a, drawVECS[drawCnt + 1]);
-    VectorCopy(drawVECS[drawCnt + 2], b);
-    VectorAddXYZ(v3, a, drawVECS[drawCnt + 3]);
-    VectorCopy(drawVECS[drawCnt + 4], b);
-    VectorAddXYZ(v4, b, drawVECS[drawCnt + 5]);
-    for (int v = drawCnt; v < drawCnt + 6; v++)
-    {
-        drawVECS[v][3] = 1.0f;
-    }
-    drawCnt += 6;
-}
-
-static void DrawShadowExtrusion2(VECTOR *vertices, u32 numVerts, MATRIX m)
-{
-    u32 count = 0;
-    u32 face = 0;
-    for (int i = 0; i < numVerts; i += count + 1, face++)
-    {
-
-        count = *((u32 *)&vertices[i][3]);
-        VECTOR v1, v2, v3, v7, v8, v9, cross, dists;
-        ZeroVector(dists);
-        int ind = 1;
-        MatrixVectorMultiply(v1, m, vertices[i + ind++]);
-        MatrixVectorMultiply(v2, m, vertices[i + ind++]);
-        MatrixVectorMultiply(v3, m, vertices[i + ind++]);
-        VectorSubtractXYZ(v2, v1, v7);
-        VectorSubtractXYZ(v3, v2, v8);
-        CrossProduct(v7, v8, cross);
-        VectorSubtractXYZ(volLightPos, v1, v9);
-        float d = DotProduct(cross, v9);
-        if (d <= 0.0f)
-            continue;
-        if (vertices[i][0] < 0.0f)
-        {
-            WriteOut(v1, v2);
-        }
-        else
-        {
-            MatrixVectorMultiply(v9, m, vertices[i + ind++]);
-            VectorSubtractXYZ(v9, v2, v9);
-            CrossProduct(v9, v7, cross);
-            VectorSubtractXYZ(volLightPos, v1, v9);
-            dists[0] = DotProduct(cross, v9);
-        }
-
-        if (vertices[i][1] < 0.0f)
-        {
-            WriteOut(v2, v3);
-        }
-        else
-        {
-            MatrixVectorMultiply(v9, m, vertices[i + ind++]);
-            VectorSubtractXYZ(v9, v3, v9);
-            CrossProduct(v9, v8, cross);
-            VectorSubtractXYZ(volLightPos, v2, v9);
-            dists[1] = DotProduct(cross, v9);
-        }
-
-        if (vertices[i][2] < 0.0f)
-        {
-            WriteOut(v3, v1);
-        }
-        else
-        {
-            MatrixVectorMultiply(v9, m, vertices[i + ind++]);
-            VectorSubtractXYZ(v1, v3, v8);
-            VectorSubtractXYZ(v9, v3, v9);
-            CrossProduct(v9, v8, cross);
-            VectorSubtractXYZ(volLightPos, v3, v9);
-            dists[2] = DotProduct(cross, v9);
-        }
-
-        if (dists[0] <= 0.0f)
-        {
-            WriteOut(v1, v2);
-        }
-
-        if (dists[1] <= 0.0f)
-        {
-            WriteOut(v2, v3);
-        }
-
-        if (dists[2] <= 0.0f)
-        {
-            WriteOut(v3, v1);
-        }
-    }
-}
-
-#endif
 
 static void update_cube(GameObject *cube)
 {
@@ -364,19 +250,19 @@ static void SetupGrid()
 {
     Color color;
 
-    CREATE_RGBAQ_STRUCT(color, 0xFF, 0xFF, 0xFF, 0x80, 1.0f);
+    CREATE_RGBAQ_STRUCT(color, 0x10, 0xFF, 0xFF, 0x80, 1.0f);
 
     grid = InitializeGameObject();
     SetupGameObjectPrimRegs(grid, color, RENDERNORMAL | CLIPPING);
 
     int dw, dl;
     float w, h;
-    dw = 10;
-    dl = 10;
+    dw = 2;
+    dl = 2;
     w = 1000;
     h = 1000;
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
-    u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
     CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -394,8 +280,6 @@ static void SetupGrid()
     // InitOBB(grid, VBO_FIXED);
 
     CreateGraphicsPipeline(grid, "Clipper");
-
-    //  CreateShadowMapVU1Pipeline(box, 0, DEFAULT_PIPELINE_SIZE);
 
     AddObjectToRenderWorld(world, grid);
 }
@@ -420,7 +304,7 @@ static void SetupBody()
              scales,
              1.0f, body->ltm);
 
-    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(g_Manager.texManager, worldName));
+    CreateMaterial(&body->vertexBuffer, 0, body->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, GetTextureIDByName(g_Manager.texManager, wowwer));
 
     body->update_object = NULL;
 
@@ -432,7 +316,7 @@ static void SetupBody()
 
     body->objAnimator = CreateAnimator(data);
 
-   // CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
+    //CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
 
    // AddObjectToRenderWorld(world, body);
 }
@@ -445,11 +329,13 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION | CLIPPING);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
 
-    u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
-    CreateMaterial(&box->vertexBuffer, 0, box->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+    CreateMaterial(&box->vertexBuffer, 0, 17, id);
+
+    CreateMaterial(&box->vertexBuffer, 18, 35, GetTextureIDByName(g_Manager.texManager, worldName));
 
     VECTOR pos = {50.0f, 0.0f, 0.0f, 1.0f};
 
@@ -545,7 +431,7 @@ static void SetupOBBBody()
     ReadModelFile("MODELS\\BODY.BIN", &bodyCollision->vertexBuffer);
     SetupGameObjectPrimRegs(bodyCollision, color, RENDERTEXTUREMAPPED | CLIPPING);
 
-    u64 id = GetTextureIDByName(g_Manager.texManager, worldName);
+    u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
     CreateMaterial(&bodyCollision->vertexBuffer, 0, bodyCollision->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
@@ -572,10 +458,12 @@ static void SetupGameObjects()
 {
 
     // InitSkybox();
-
-    //SetupGrid();
-     SetupBody();
+     
+    SetupGrid();
     SetupAABBBox();
+    
+   //  SetupBody();
+   
     // SetupOBBBody();
     SetupShootBoxBox();
     // SetupShootBigBoxBox();
@@ -613,7 +501,7 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     FrameBufferMask(0, 0, 0, 0);
     DepthBufferMask(false);
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
@@ -655,7 +543,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     StartVertexShader();
     FrameBufferMask(0x0, 0x0, 0x0, 0x0);
     DepthBufferMask(false);
-    SubmitCommand();
+    SubmitCommand(false);
 }
 
 Color *colors[5];
@@ -796,18 +684,13 @@ int Render()
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
         DrawWorld(world);
-        // ReadFromVU(vu1_data_address, 100*4, 0);
-
-        // while(1);
 
         MATRIX ident;
         MatrixIdentity(ident);
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
-        RenderGameObject(body);
-       RenderPlaneLine(&plane2, *colors[1], 20);
-
-       RenderRay(&rayray2, *colors[2], 25);
+        RenderPlaneLine(&plane2, *colors[1], 20);
+        RenderRay(&rayray2, *colors[2], 25);
         RenderLine(&mainLine, *colors[3]);
         RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
 
@@ -815,19 +698,30 @@ int Render()
 
         RenderShadowVertices(adjs, count, m);
 
-      //  ReadFromVU(vu1_data_address, 1024*4, 0);
+       // ReadFromVU(vu1_data_address, 1024*4, 0);
 
         DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
-       //  while(true);
+
+        //RenderGameObject(box);
 
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
         PrintText(myFont, print_out, -310, -220, LEFT);
 
+        StitchDrawBuffer(true);
+
+        DEBUGLOG("%f", getTicks(g_Manager.timer)- time1);
+
+        DispatchDrawBuffers();
+
+    
+        //ReadFromVU(vu1_data_address, 100*4, 0);
+
         EndRendering(cam);
 
         EndFrame(true);
+    
         // while(true);
         FrameCounter++;
     }

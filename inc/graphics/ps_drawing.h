@@ -14,9 +14,13 @@ qword_t *GetGlobalDrawPointer();
 
 qword_t *GetDrawBegin();
 
-qword_t* SubmitCommand();
+qword_t* GetTextureUploadPtr();
 
-void ResetState();
+void StitchDrawBuffer(bool textures);
+
+qword_t* SubmitCommand(bool flush);
+
+void ResetState(bool flush);
 
 void InitializeDMATag(qword_t *mem, bool giftag);
 
@@ -90,13 +94,13 @@ void DrawVectorFloat(float x, float y, float z, float w);
 
 void SetRegSizeAndType(u64 size, u64 type);
 
-void BindTexture(Texture *tex, bool end, bool immediate);
+void BindTexture(Texture *tex, bool immediate);
 
-void UploadTextureDrawing(Texture *tex, bool end);
+void UploadTextureDrawing(Texture *tex);
 
 void DispatchDrawBuffers();
 
-void SendBuffer(qword_t *q);
+void CallCommand(qword_t *q, bool delay);
 
 void PrintOut();
 

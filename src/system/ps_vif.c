@@ -9,6 +9,12 @@
 #include "dma/ps_dma.h"
 #include "log/ps_log.h"
 
+u32 GetDoubleBufferOffset(u32 base)
+{
+    u32 half = (1024 - base) >> 1;
+    return half;
+}
+
 qword_t *InitDoubleBufferingQWord(qword_t *q, u16 base, u16 offset)
 {
     qword_t *b = q;

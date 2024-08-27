@@ -85,19 +85,12 @@ enum VU1PipelineLocations
 {
     VU1_LOCATION_GLOBAL_MATRIX = 4,
     VU1_LOCATION_SCALE_VECTOR = 8,
+    VU1_LOCATION_PRIM_TAG = 10,
     VU1_LOCATION_ANIMATION_VECTOR = 11,
     VU1_LOCATION_UV_TRANSFORM = 16,
     VU1_LOCATION_LIGHTS_BUFFER = 20,
 };
 
-enum VU1Stages
-{
-    VU1StageClip = 16,
-    VU1Stage4 = 8,
-    VU1Stage3 = 4,
-    VU1Stage2 = 2,
-    VU1Stage1 = 1,
-};
 
 #define GEN_PIPELINE_NAME "GEN_PIPELINE"
 #define LIGHT_PIPELINE_NAME "LIGHT_PIPELINE"
@@ -107,37 +100,6 @@ enum VU1Stages
         ((num << 8) & 0xff0000) | \
         ((num >> 8) & 0xff00) |   \
         ((num << 24) & 0xff000000)
-
-#define DMA_DCODE(channel, qwc, tte, type)                        \
-    (u32)((tte)&0x00000001) << 0 | (u32)((qwc)&0x00007FFF) << 1 | \
-        (u32)((channel)&0x0000000F) << 16 | (u32)((type)&0x00000001) << 20
-
-enum DMA_DCODE
-{
-    DMA_DCODE_END = 0xFF841234,
-    DMA_DCODE_LOAD_OBJ_TEXTURE = 0xFF128765,
-    DMA_DCODE_LOAD_ID_TEXTURE = 0xFF128766,
-    DMA_DCODE_LOAD_MATERIAL = 0xFF128767,
-    DMA_DCODE_CALLBACK_FUNC = 0xFF369453,
-    DMA_DCODE_SKIP_QWORDS = 0xFF369454,
-    DMA_DCODE_UPLOAD_MESH = 0xFF369455,
-    DMA_DCODE_DRAW_FINISH = 0xFF748992
-};
-
-typedef union dma_dcode_t
-{
-    struct
-    {
-        unsigned int tte : 1;
-        unsigned int qwc : 15;
-        unsigned int chann : 4;
-        unsigned int type : 1;
-        unsigned int pad : 11;
-    };
-
-    unsigned int code;
-
-} DMA_DCODE_STRUCT;
 
 enum DMATAG_CODES
 {

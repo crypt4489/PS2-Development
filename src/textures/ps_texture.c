@@ -354,7 +354,7 @@ qword_t *TextureTransfer(qword_t *q, void *src, int width, int height,
 
         q = CreateGSSetTag(q, remaining, 0, GIF_FLG_IMAGE, 0, 0);
 
-        q = CreateDMATag(q, DMA_REFS, remaining, 0, 0, 0, (u32)src);
+        q = CreateDMATag(q, DMA_REF, remaining, 0, 0, 0, (u32)src);
     }
 
     return q;
@@ -478,10 +478,10 @@ static void SetupTexRegistersGIF(Texture *tex)
 
 void UploadTextureToVRAM(Texture *tex)
 {
-    qword_t *q = g_Manager.drawBuffers->currentgif;
-    q = CreateTextureUploadChain(tex, q, false, true); 
-    u32 size = q - g_Manager.drawBuffers->currentgif; 
-    SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, false);
+    qword_t *q = g_Manager.drawBuffers->currentvif;
+    q = CreateTextureUploadChain(tex, q, true, true); 
+    u32 size = q - g_Manager.drawBuffers->currentvif; 
+    SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, false);
     g_Manager.texManager->currIndex = tex->id;
 }
 
