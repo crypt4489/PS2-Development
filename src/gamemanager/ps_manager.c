@@ -194,6 +194,7 @@ void StartFrame()
         MatrixIdentity(g_DrawCamera->viewProj);
         MatrixMultiply(g_DrawCamera->viewProj, g_DrawCamera->viewProj, g_DrawCamera->view);
         MatrixMultiply(g_DrawCamera->viewProj, g_DrawCamera->viewProj, g_DrawCamera->proj);
+        CreateCameraQuat(g_DrawCamera, g_DrawCamera->quat);
         for (int i = 0; i < 6; i++)
         {
             VECTOR normal;

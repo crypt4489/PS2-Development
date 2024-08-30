@@ -82,6 +82,8 @@ DrawBuffers *CreateDrawBuffers(u32 size)
 
     buffer->currentgif = buffer->gifupload[0];
     buffer->currentvif = buffer->vifupload[0];
+    buffer->readgif = buffer->gifupload[0];
+    buffer->readvif = buffer->vifupload[0];
 
     return buffer;
 }
@@ -91,6 +93,8 @@ void SwitchDrawBuffers(DrawBuffers *bufferstruct)
     u32 context = (bufferstruct->context ^= 1);
     bufferstruct->currentvif = bufferstruct->vifupload[context];
     bufferstruct->currentgif = bufferstruct->gifupload[context];
+    bufferstruct->readvif = bufferstruct->vifupload[context];
+    bufferstruct->readgif = bufferstruct->gifupload[context];
 }
 
 void DestroyDrawBuffers(DrawBuffers *buff)
@@ -144,12 +148,14 @@ void SubmitDrawBuffersToController(qword_t *q, u32 channel, u32 type, bool tte)
     switch (channel)
     {
     case DMA_CHANNEL_GIF:
-        send = g_Manager.drawBuffers->currentgif;
+        send = g_Manager.drawBuffers->readgif;
         g_Manager.drawBuffers->currentgif = q;
+        g_Manager.drawBuffers->readgif = q;
         break;
     case DMA_CHANNEL_VIF1:
-        send = g_Manager.drawBuffers->currentvif;
+        send = g_Manager.drawBuffers->readvif;
         g_Manager.drawBuffers->currentvif = q;
+        g_Manager.drawBuffers->readvif = q;
         break;
     default:
         ERRORLOG("Unsupposerted channel for submitting draw buffer");
@@ -190,23 +196,27 @@ qword_t *StitchDMAChain(qword_t *q, qword_t *end, bool vif)
         {
         case DMA_REF:
         case DMA_REFS:
+        case DMA_REFE:
             stride=0;
-            break;
         case DMA_CALL:
         case DMA_NEXT:
             jumpref = true;
             break;
         case DMA_CNT:
         case DMA_END:
-        case DMA_REFE:
             break;
         case DMA_RET:
         default:
             traveling = false;
             break;
         }
-        lasttag = traverse;
-        traverse+=(stride+1);
+
+        
+
+        if (traveling) {
+            lasttag = traverse;
+            traverse+=(stride+1);
+        }
     }
     if (traveling) {
         if (jumpref) 
@@ -224,6 +234,15 @@ qword_t *StitchDMAChain(qword_t *q, qword_t *end, bool vif)
             if (lasttag->sw[3]) i = 3;
             SetINTVIFCode(lasttag, i);
         }
+    } else {
+        if (code != DMA_REF && code != DMA_CALL)
+        {
+            if (!traverse->sw[2] && !traverse->sw[3])
+            {
+                SetDMACode(lasttag, DMA_RET);
+                end--; // remove ret tag;
+            }
+        } 
     }
     return end;
 }

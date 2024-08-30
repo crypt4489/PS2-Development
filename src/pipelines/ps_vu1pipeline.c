@@ -35,7 +35,6 @@ void RenderPipeline(GameObject *obj, VU1Pipeline *pipe)
         mats = mats->next;
     }
     CallCommand(pipe->q, true);
-    ResetState(false);
 }
 
 void SetActivePipelineByName(GameObject *obj, const char *name)

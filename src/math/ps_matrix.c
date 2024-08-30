@@ -11,11 +11,12 @@ void MatrixIdentity(MATRIX m)
     asm __volatile__(
         "vmr32 $vf1, $vf0\n"
         "vmr32 $vf2, $vf1\n"
-        "vmr32 $vf3, $vf2\n"
-        "sqc2 $vf3, 0x00(%0)\n"
-        "sqc2 $vf2, 0x10(%0)\n"
         "sqc2 $vf1, 0x20(%0)\n"
+        "vmr32 $vf3, $vf2\n"
+        "sqc2 $vf2, 0x10(%0)\n"
         "sqc2 $vf0, 0x30(%0)\n"
+        "sqc2 $vf3, 0x00(%0)\n"
+        
         :
         : "r"(m)
         : "memory");

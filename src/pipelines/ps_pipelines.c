@@ -677,24 +677,25 @@ void CreateBumpMapPipeline(GameObject *obj, const char *name)
 
 #endif
 
+static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj);
 
 void CreateGraphicsPipeline(GameObject *obj, const char *name)
 {
-    VU1Pipeline *pipeline = CreateVU1Pipeline(name, 2, 1);
+    ObjectProperties *props = &obj->renderState.properties;
+    u32 matCount = obj->vertexBuffer.matCount;
+    MeshVectors *buffer = obj->vertexBuffer.meshData[MESHTRIANGLES];
+    u32 count = buffer->vertexCount;
+    VertexType type = GetVertexType(props);
+    u32 start = 0, end = count-1;
+    LinkedList *matIter = obj->vertexBuffer.materials;
+    VU1Pipeline *pipeline = CreateVU1Pipeline(name, DetermineCallbackCount(props), 1);
 
     qword_t *vu1_addr = &pipeline->passes[0]->programs;
     vu1_addr->sw[0] = vu1_addr->sw[1] = vu1_addr->sw[2] = vu1_addr->sw[3] = MAX_VU1_CODE_ADDRESS;
 
     pipeline->passes[0]->target = &obj->vertexBuffer;
 
-    u32 matCount = obj->vertexBuffer.matCount;
-    MeshVectors *buffer = obj->vertexBuffer.meshData[MESHTRIANGLES];
-    u32 count = buffer->vertexCount;
-    VertexType type = GetVertexType(&obj->renderState.properties);
-    u32 start = 0, end = count-1;
-    LinkedList *matIter = obj->vertexBuffer.materials;
-
-    DetermineVU1Programs(&obj->renderState.properties, &pipeline->passes[0]->programs);
+    DetermineVU1Programs(props, &pipeline->passes[0]->programs);
 
     int base = 0;
     
@@ -707,13 +708,34 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     }
     ShaderHeaderLocation(headerSize);
     for(int i = 0; i<4; i++) ShaderProgram(pipeline->passes[0]->programs.sw[i], i);
-    PipelineCallback *SetupGSRegs = CreatePipelineCBNode(SetupPerObjDrawRegisters, GetGlobalDrawPointer()-begin, NULL, DEFAULT_GS_REG_PCB);        
+    PipelineCallback *SetupGSRegs = CreatePipelineCBNode(SetupPerObjDrawRegisters , GetGlobalDrawPointer()-begin, NULL, DEFAULT_GS_REG_PCB);        
     pipeline = AddPipelineCallbackNode(pipeline, SetupGSRegs);
     DepthTest(obj->renderState.properties.Z_ENABLE, obj->renderState.properties.Z_TYPE);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
-    AllocateShaderSpace(base, 0);
-    PipelineCallback *SetupVU1Header = CreateVU1WriteCBNode(SetupPerObjDrawVU1Header, GetVIFHeaderUpload()-begin, GetGapCount(), GetSplitHeaderUpload()-begin, DEFAULT_VU1_HEADER_PCB);
+    AllocateShaderSpace(base-8, 8);
+    PipelineCallback *SetupVU1Header; 
+    if (obj->renderState.properties.ALPHA_MAPPING)
+        SetupVU1Header = CreateVU1WriteCBNode( SetupPerObjDrawVU1HeaderAlphaMap, GetVIFHeaderUpload()-begin, GetGapCount(), GetSplitHeaderUpload()-begin, DEFAULT_VU1_HEADER_PCB);
+    else 
+        SetupVU1Header = CreateVU1WriteCBNode(SetupPerObjDrawVU1Header, GetVIFHeaderUpload()-begin, GetGapCount(), GetSplitHeaderUpload()-begin, DEFAULT_VU1_HEADER_PCB);
+
     pipeline = AddPipelineCallbackNode(pipeline, SetupVU1Header);
+
+    BindMatrix(g_DrawCamera->viewProj, 0, false);
+    BindMatrix(obj->world, 4, false);
+
+    if (props->ANIMATION_TEXUTRE || props->ENVIRONMENTMAP)
+    {
+        PipelineCallback *setupStage2Mat = CreatePipelineCBNode(SetupStage2MATVU1, GetGlobalDrawPointer()-begin, NULL, DEFAULT_STAGE2_MATRIX_PCB);
+        BindMatrix(NULL, VU1_LOCATION_UV_TRANSFORM, false);
+        pipeline = AddPipelineCallbackNode(pipeline, setupStage2Mat);
+    }
+
+    if (props->LIGHTING_ENABLE)
+    {
+        PipelineCallback *setupLightsHeader = CreatePipelineCBNode(SetupPerObjLightBuffer, GetVIFHeaderUpload()-begin, NULL, LIGHT_BUFFER_PCB);
+    }
+
     if (V_SKINNED & type)
     {
         PushInteger(base, 11, 0);
@@ -728,61 +750,25 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
         matIter = LoadMaterial(matIter, false, &start, &end);
         UploadBuffers(start, end, max, buffer, type);
     } 
-    int size = CloseCommand();
+    
+    EndAndCopy(pipeline, begin, obj);
+} 
+
+static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
+{
+    int size = ReturnCommand();
     pipeline->qwSize = size;
     pipeline->q = (qword_t *)malloc(sizeof(qword_t) * size);
     memcpy(pipeline->q, begin, sizeof(qword_t) * size); 
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
-} 
-
-#if 0
-
-qword_t *CreateVU1Callbacks(qword_t *tag, qword_t *q, VU1Pipeline *pipeline, u32 headerSize, u32 pCode, u32 dCode)
-{
-    PipelineCallback *setupVU1Header;
-
-    if ((dCode & DRAW_ALPHAMAP) != 0)
-    {
-        setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawVU1HeaderAlphaMap, q, NULL, ALPHAMAP_VU1_HEADER_PCB);
-    }
-    else
-    {
-        setupVU1Header = CreatePipelineCBNode(SetupPerObjDrawVU1Header, q, NULL, DEFAULT_VU1_HEADER_PCB);
-    }
-
-    tag = AddPipelineCallbackNodeQword(pipeline, setupVU1Header, tag, q);
-
-    PipelineCallback *setupMVPHeader = CreatePipelineCBNode(SetupPerObjMVPMatrix, q, NULL, DEFAULT_OBJ_WVP_PCB);
-
-    tag = AddPipelineCallbackNodeQword(pipeline, setupMVPHeader, tag, q);
-
-    if ((pCode & VU1Stage3) != 0)
-    {
-        PipelineCallback *setupLightsHeader = CreatePipelineCBNode(SetupPerObjLightBuffer, q, NULL, LIGHT_BUFFER_PCB);
-
-        tag = AddPipelineCallbackNodeQword(pipeline, setupLightsHeader, tag, q);
-    }
-
-    if ((pCode & VU1Stage2) != 0)
-    {
-        PipelineCallback *setupStage2Mat = CreatePipelineCBNode(SetupStage2MATVU1, q, NULL, DEFAULT_STAGE2_MATRIX_PCB);
-        tag = AddPipelineCallbackNodeQword(pipeline, setupStage2Mat, tag, q);
-    }
-
-    if ((pCode & VU1Stage1) != 0)
-    {
-        if ((dCode & DRAW_MORPH) != 0)
-        {
-            tag = CreateMorphPipelineCallbacks(tag, q, pipeline);
-        }
-        else if ((dCode & DRAW_SKINNED) != 0)
-        {
-            tag = CreateSkinnedAnimationCallbacks(tag, q, pipeline, headerSize);
-            tag = CreateBonesVectorsDMAUpload(tag, q + headerSize, pipeline);
-        }
-    }
-    return tag;
 }
 
-#endif
+int DetermineCallbackCount(ObjectProperties *props)
+{
+    int cb = 2;
+    cb += (props->ENVIRONMENTMAP || props->ANIMATION_TEXUTRE);
+    cb += props->LIGHTING_ENABLE;
+    cb += props->MORPH_TARGET;
+    return cb;
+}

@@ -264,7 +264,7 @@ static void SetupGrid()
     CreateGrid(dw, dl, w, h, &grid->vertexBuffer);
     u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
-    CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
+   // CreateMaterial(&grid->vertexBuffer, 0, grid->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount - 1, id);
 
     VECTOR pos = {-50.0f, -15.0f, 0.0f, 1.0f};
 
@@ -521,25 +521,19 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     PushScaleVector();
     PushColor(0, 0, 0, 0x80, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    PushMatrix(volLightPos, 11, 12);
+    PushFloats(volLightPos, 11, 12);
     PushInteger(0x3, 11, 3);
     PushMatrix(*GetPositionVectorLTM(cam->ltm), 15, sizeof(VECTOR));
-    DrawCountWrite(count, 1);
-    for (int i = 0; i < count; i++)
-    {
-        DrawVector(verts[i]);
-    }
+    DrawUpload(numVerts);
+    BindVectors(verts, numVerts, true, 1);
     StartVertexShader();
     AllocateShaderSpace(3, 9);
     PushColor(0, 0, 0, 0, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    PushMatrix(volLightPos, 11, 12);
+    PushFloats(volLightPos, 11, 12);
     PushInteger(0x0, 11, 3);
-    DrawCountWrite(count, 1);
-    for (int i = 0; i < count; i++)
-    {
-        DrawVector(verts[i]);
-    }
+    DrawUpload(numVerts);
+    BindVectors(verts, numVerts, true, 1);
     StartVertexShader();
     FrameBufferMask(0x0, 0x0, 0x0, 0x0);
     DepthBufferMask(false);
@@ -685,19 +679,25 @@ int Render()
 
         DrawWorld(world);
 
+       
+
         MATRIX ident;
         MatrixIdentity(ident);
 
         RenderSphereLine(&lolSphere, *colors[3], 40);
+
         RenderPlaneLine(&plane2, *colors[1], 20);
+
         RenderRay(&rayray2, *colors[2], 25);
+        
         RenderLine(&mainLine, *colors[3]);
+        
         RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
-
+         
         DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
-
+    
         RenderShadowVertices(adjs, count, m);
-
+        
        // ReadFromVU(vu1_data_address, 1024*4, 0);
 
         DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
@@ -708,6 +708,7 @@ int Render()
         snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
 
         PrintText(myFont, print_out, -310, -220, LEFT);
+
 
         StitchDrawBuffer(true);
 
@@ -721,8 +722,9 @@ int Render()
         EndRendering(cam);
 
         EndFrame(true);
+
+       //  ReadFromVU(vu1_data_address, 100*4, true)
     
-        // while(true);
         FrameCounter++;
     }
 

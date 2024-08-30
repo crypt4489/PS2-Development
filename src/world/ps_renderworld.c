@@ -12,6 +12,7 @@
 #include "log/ps_log.h"
 #include "math/ps_matrix.h"
 #include "util/ps_linkedlist.h"
+#include "graphics/ps_drawing.h"
 
 
 RenderWorld *g_DrawWorld = NULL;
@@ -138,13 +139,17 @@ void DrawWorld(RenderWorld *world)
         
         if (draw != 0)
         {
+            CreateWorldMatrixLTM(obj->ltm, obj->world);
+        
             RenderPipeline(obj, obj->activePipeline);
         }
-
+        //dump_packet(obj->activePipeline->q, obj->activePipeline->qwSize, 0);
         ClearDirtyLTM(obj->ltm);
 
         node = node->next;
     }
+    ResetState();
+   // while(true);
     g_DrawWorld = NULL;
 }
 

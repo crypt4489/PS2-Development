@@ -12,6 +12,7 @@ void CreateBumpMapPipeline(GameObject *obj, const char *name);
 
 void SetupStage2MATRIX(VU1Pipeline *pipeline, MATRIX m);
 void SetupTextureCB(VU1Pipeline *pipeline, Texture *tex);
+int DetermineCallbackCount(ObjectProperties *props);
 
 #define SetEnvMapMATRIX(pipeline, mat)  SetupStage2MATRIX(pipeline, mat)
 #define SetEnvMapTexture(pipeline, tex) SetupTextureCB(pipeline, tex);

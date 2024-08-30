@@ -20,13 +20,17 @@ void StitchDrawBuffer(bool textures);
 
 qword_t* SubmitCommand(bool flush);
 
-void ResetState(bool flush);
+void ResetVIFDrawingState();
+
+void ResetDMAState();
+
+void ResetState();
 
 void InitializeDMATag(qword_t *mem, bool giftag);
 
 void InitializeVIFHeaderUpload(qword_t *top, qword_t *bottom, u32 count);
 
-int CloseCommand();
+int ReturnCommand();
 
 void DepthTest(bool enable, int method);
 
@@ -57,6 +61,8 @@ void BindVectorInts(VectorInt *vectors, u32 count, bool top, u32 offset);
 void PushQWord(void *q, int offset);
 
 void PushMatrix(float *mat, int offset, int size);
+
+void PushFloats(float *floats, int offset, int size);
 
 void PushInteger(int num, int vuoffset, int vecoffset);
 

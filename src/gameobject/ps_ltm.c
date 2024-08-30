@@ -32,14 +32,18 @@ void CreateWorldMatrixLTM(MATRIX ltm, MATRIX m)
     work[5] = ltm[5] * ltm[7];
     work[10] = ltm[10] * ltm[11];
 
+
     work[1] = ltm[1] * ltm[3];
     work[2] = ltm[2] * ltm[3];
+    work[3] = 0;
 
     work[4] = ltm[4] * ltm[7];
     work[6] = ltm[6] * ltm[7];
+    work[7] = 0;
 
     work[8] = ltm[8] * ltm[11];
     work[9] = ltm[9] * ltm[11];
+    work[11] = 0;
 
     work[12] = ltm[12];
     work[13] = ltm[13];

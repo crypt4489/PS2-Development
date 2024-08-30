@@ -5,6 +5,7 @@
 START:
 
     MatrixLoad{ viewProj, 0, vi00 }
+    MatrixLoad{ world, 4, vi00 }
 
 	fcset   0x000000
 
@@ -48,7 +49,7 @@ writeCountTag:
 
     iadd vertexCounter, iBase, vertCount
 
-
+    MatrixMultiply{ WVP, world, viewProj }
 
     vertexLoop:
 
@@ -57,7 +58,7 @@ writeCountTag:
         lq vertex, 0(inPtr)
 
 
-        MatrixMultiplyVertex{ vertex, viewProj, vertex }
+        MatrixMultiplyVertex{ vertex, WVP, vertex }
 
         clipw.xyz	vertex, vertex
         fcand		VI01,   0x3FFFF

@@ -450,6 +450,7 @@ typedef struct camera_t
     MATRIX ltm;
     MATRIX world;
     MATRIX viewProj;
+    VECTOR quat;
 } Camera;
 
 enum DrawTags
@@ -608,15 +609,6 @@ typedef struct
     HashMap *textureMap;
 } TextureManager;
 
-struct dma_buffers_t;
-typedef struct dma_buffers_t DMABuffers;
-
-struct dma_buffers_t
-{
-    packet_t *dma_chains[2];
-    qword_t *currPointer;
-    int bufferId;
-};
 
 struct timer_struct_t;
 typedef struct timer_struct_t TimerStruct;
@@ -653,8 +645,10 @@ typedef struct manager_info_t
 typedef struct draw_buffers_t {
     qword_t *vifupload[2];
     qword_t *gifupload[2];
-    qword_t *currentvif;
-    qword_t *currentgif;
+    qword_t *currentvif; //where the write head is VIF
+    qword_t *currentgif; //where the write head is GIF
+    qword_t *readvif;
+    qword_t *readgif;
     u32 size;
     u32 context;
 } DrawBuffers;
