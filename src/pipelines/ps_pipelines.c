@@ -18,6 +18,7 @@
 #include "log/ps_log.h"
 #include "util/ps_linkedlist.h"
 #include "graphics/ps_drawing.h"
+#include "system/ps_spr.h"
 
 #if 0 
 
@@ -731,7 +732,7 @@ static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
     int size = ReturnCommand();
     pipeline->qwSize = size;
     pipeline->q = (qword_t *)malloc(sizeof(qword_t) * size);
-    memcpy(pipeline->q, begin, sizeof(qword_t) * size); 
+    Ultimatememcpy(begin, size, pipeline->q);
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
 }

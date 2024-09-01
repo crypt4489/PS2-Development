@@ -5,14 +5,23 @@
 
 #include "dma/ps_dma.h"
 #include "system/ps_timer.h"
-void sendPacketSPR(void *data, u32 qwc)
+#include "math/ps_misc.h"
+
+#define MAX_SPR_CHAIN_DATA_QWC 1023
+
+static qword_t *StartSPRTransfer()
 {
-	qword_t *q = g_Manager.drawBuffers->currentvif;
-	DMATAG_REF(q, qwc, (u32)data, 0, 0, 0);
-	dma_channel_send_chain(DMA_CHANNEL_toSPR, q, 1, 0, 1);
+	return g_Manager.dmaBuffers->tospr;
 }
 
-void receiveSPR(void *data, void *dest, u32 qwc)
+void SendPacketSPR(qword_t *q)
+{
+	u32 qwc = q - g_Manager.dmaBuffers->tospr;
+	dma_channel_send_chain(DMA_CHANNEL_toSPR, g_Manager.dmaBuffers->tospr, qwc, 0, 0);
+	g_Manager.dmaBuffers->tospr += qwc;
+}
+
+void ReceiveSPRNormal(void *dest, u32 qwc)
 {
 
 	*DMA_REG_STAT = DMA_SET_STAT(1 << DMA_CHANNEL_fromSPR, 0, 0, 0, 0, 0, 0);
@@ -29,31 +38,47 @@ void receiveSPR(void *data, void *dest, u32 qwc)
 	*(vu32 *)0x1000D000 = DMA_SET_CHCR(0, 0, 0, 0, 0, 1, 0);
 }
 
-void ultimate_memcpy(void *from_data, u32 qwc, void *to_data)
+void ReceiveSPRChain(u32 sprstart)
+{
+
+	*DMA_REG_STAT = DMA_SET_STAT(1 << DMA_CHANNEL_fromSPR, 0, 0, 0, 0, 0, 0);
+
+	// Start the transfer.
+	*(vu32 *)0x1000D000 = DMA_SET_CHCR(0, 1, 0, 0, 0, 1, 0);
+}
+
+void Ultimatememcpy(void *from_data, u32 qwc, void *to_data)
 {
 	u32 totalSize = qwc;
-	while (totalSize > 0)
+	
+	qword_t *q = StartSPRTransfer();
+
+
+	qword_t *qwrdptrfrom = (qword_t*)from_data;
+	qword_t *qwrdptrto = (qword_t*)to_data;
+
+	bool end = false;
+	while (totalSize)
 	{
+		
+		u32 sendSize = MAX_SPR_CHAIN_DATA_QWC;
 
-		u32 sendSize;
-
-		if (totalSize >= 1024)
+		if (totalSize <= MAX_SPR_CHAIN_DATA_QWC)
 		{
-			sendSize = 1024;
-		}
-		else
-		{
+			end = true;
 			sendSize = totalSize;
 		}
 
 		totalSize -= sendSize;
-	
-		sendPacketSPR(from_data, sendSize);
-		dma_channel_wait(DMA_CHANNEL_toSPR, -1);
-		receiveSPR(0, to_data, sendSize);
-		//dma_channel_wait(DMA_CHANNEL_fromSPR, -1);
 
-		to_data += sendSize * 4;
-		from_data += sendSize * 4;
+		q = CreateDMATag(q, DMA_CNT, 1, 0, 0, 0, 0);
+		q = CreateDMATag(q, (6 * end) + 1, sendSize, 0, 0, 0, (u32)qwrdptrto);
+		q = CreateDMATag(q, DMA_REF - (3*end), sendSize, 0, 0, 0, (u32)qwrdptrfrom);
+
+		qwrdptrfrom += sendSize;
+		qwrdptrto += sendSize;
 	}
+	
+	SendPacketSPR(q);
+	ReceiveSPRChain(0);
 }

@@ -170,6 +170,7 @@ void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSiz
     g_Manager.vu1Manager = NULL;
 
     g_Manager.drawBuffers = CreateDrawBuffers(bufferSize);
+    g_Manager.dmaBuffers = CreateDMABuffers();
     g_Manager.vu1Manager = CreateVU1Manager(programSize);
     g_Manager.FPS = 0;
     g_Manager.timer = TimerZeroEnable();
@@ -230,6 +231,8 @@ void EndFrame(bool useVsync)
         SwapManagerFrameBuffers();
 
     SwapManagerDrawBuffers();
+
+    g_Manager.dmaBuffers->tospr = g_Manager.dmaBuffers->tosprtape;
 
     if (init)
     {

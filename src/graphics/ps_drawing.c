@@ -165,7 +165,7 @@ int ReturnCommand()
         CloseDMATag(false);
         SetDMACode(retloc, DMA_RET);
     } else {
-        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_RET, 0, 0, 0, 0);
+        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_RET, 0, 0, 0, 0, 0);
     }
 
     u32 size = sg_DrawBufferPtr - g_Manager.drawBuffers->readvif;
@@ -480,7 +480,7 @@ void DrawPairU64(u64 a, u64 b)
 
 void StartVertexShader()
 {
-    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, sg_ShaderInUse[0]), 0, VIF_CMD_MSCAL, 0), 0);        
+    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, 0, VIF_CODE(GetProgramAddressVU1Manager(g_Manager.vu1Manager, sg_ShaderInUse[0]), 0, VIF_CMD_MSCAL, 0), 0, 0);        
     sg_VU1ProgramEnd = sg_DrawBufferPtr;    
     sg_VIFProgramUpload = NULL;
 }
@@ -516,7 +516,7 @@ void AllocateShaderSpace(int size, int offset)
         if (!outSize) { DEBUGLOG("HERE"); return;}
         if (!sg_OpenDMATag) {
             sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT,
-                0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0);
+                0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0, 0);
         }
         out = &sg_SplitHeaderUpload;
     }
@@ -539,7 +539,7 @@ void BindTexture(Texture *tex, bool immediate)
     sg_GapCount = sgc_TextureSyncSize;
 
     sg_OpenTextureGap = sg_DrawBufferPtr;
-    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, sg_GapCount, VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0);
+    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, sg_GapCount, VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), VIF_CODE(0x0000, 0, VIF_CMD_MSKPATH3, 0), 0, 0);
     sg_VIFCodeUpload = sg_DrawBufferPtr;
     memset(sg_DrawBufferPtr, 0, sizeof(qword_t)*sg_GapCount);
     sg_DrawBufferPtr += sg_GapCount;
@@ -596,7 +596,7 @@ void CallCommand(qword_t *q, bool delay)
     BeginCommand();
     sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CALL, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0, (u32)q);
     if (delay) { g_Manager.drawBuffers->currentvif++; }
-    else sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0);
+    else sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0);
 }
 
 static void AddVIFCode(u32 a1, u32 a2)
@@ -615,7 +615,7 @@ static void FlushProgram(bool end)
     if (!sg_VU1ProgramEnd)
         return;
     u32 code = (6 * end) + 1;
-    sg_VU1ProgramEnd = CreateDMATag(sg_VU1ProgramEnd, code, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, end), 0, 0);  
+    sg_VU1ProgramEnd = CreateDMATag(sg_VU1ProgramEnd, code, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, end), 0, 0, 0);  
     sg_DrawBufferPtr++;
     sg_VU1ProgramEnd = NULL;
 }
@@ -659,7 +659,7 @@ static void InitProgramUpload(int vertexNum, int unpacksize)
 {
     if ((!sg_OpenDMATag && !sg_VIFHeaderUpload) && sg_OpenTextureGap)
     {
-        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0,   VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0);
+        sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT, 0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0, 0);
     }
 
     CloseDMATag(false);
@@ -701,7 +701,7 @@ static void OpenDMATag()
         arg2 = VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0);
     }
        
-    sg_DrawBufferPtr = CreateDMATag(sg_OpenDMATag, DMA_CNT, 0, arg1, arg2, 0);
+    sg_DrawBufferPtr = CreateDMATag(sg_OpenDMATag, DMA_CNT, 0, arg1, arg2, 0, 0);
     sg_OpenDirectTag = sg_DrawBufferPtr;
     sg_DrawBufferPtr = CreateDirectTag(sg_OpenDirectTag, 0, 0);
 }

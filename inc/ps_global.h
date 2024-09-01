@@ -653,6 +653,11 @@ typedef struct draw_buffers_t {
     u32 context;
 } DrawBuffers;
 
+typedef struct dma_buffers_t
+{
+    qword_t tosprtape[100];
+    qword_t *tospr;
+} DMABuffers;
 
 typedef struct
 {
@@ -661,6 +666,7 @@ typedef struct
     TextureManager *texManager;
     VU1Manager *vu1Manager;
     DrawBuffers *drawBuffers;
+    DMABuffers *dmaBuffers;
     VRAMManager *vramManager;
     bool vu1DoneProcessing;
     u16 gs_context;

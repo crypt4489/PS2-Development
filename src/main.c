@@ -767,6 +767,8 @@ void StartUpSystem()
     SetupWorldObjects();
 }
 
+#include "system/ps_spr.h"
+
 int main(int argc, char **argv)
 {
     StartUpSystem();

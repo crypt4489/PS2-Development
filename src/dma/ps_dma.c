@@ -24,16 +24,8 @@ void InitializeDMAChannels()
     dma_channel_fast_waits(DMA_CHANNEL_fromSPR);
 }
 
-qword_t *CreateDMATag(qword_t *q, u32 code, u32 size, u32 w2, u32 w3, u32 spr, ...)
+qword_t *CreateDMATag(qword_t *q, u32 code, u32 size, u32 w2, u32 w3, u32 spr, u32 addr)
 {
-    va_list tag_args;
-    va_start(tag_args, spr);
-    u32 addr = 0;
-    if ((DMA_REFE == code) || (DMA_REFS == code) || (DMA_REF == code) || (DMA_CALL == code) || (DMA_NEXT == code))
-    {
-        addr = va_arg(tag_args, u32);
-    }
-
     q->dw[0] = DMATAG(size, 0, code, 0, addr, spr);
     q->sw[2] = w2;
     q->sw[3] = w3;
@@ -88,6 +80,13 @@ DrawBuffers *CreateDrawBuffers(u32 size)
     return buffer;
 }
 
+DMABuffers *CreateDMABuffers()
+{
+    DMABuffers *dma = (DMABuffers*)malloc(sizeof(DMABuffers));
+    dma->tospr = dma->tosprtape;
+    return dma;
+}
+
 void SwitchDrawBuffers(DrawBuffers *bufferstruct)
 {
     u32 context = (bufferstruct->context ^= 1);
@@ -131,9 +130,10 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
         {
         }
     }
-    FlushCache(0);
+    
     if (!type)
     {
+        FlushCache(0);
         dma_channel_send_normal(channel, q, qwc, tte, 0);
     }
     else
@@ -225,7 +225,7 @@ qword_t *StitchDMAChain(qword_t *q, qword_t *end, bool vif)
             {
                 SetDMACode(lasttag, DMA_REFE);
             } else { 
-                end = CreateDMATag(end, DMA_END, 0, vif * VIF_CODE(0, 0, VIF_CMD_FLUSHA, 1), 0, 0);
+                end = CreateDMATag(end, DMA_END, 0, vif * VIF_CODE(0, 0, VIF_CMD_FLUSHA, 1), 0, 0, 0);
             }
         }
         if (code == DMA_CNT) { SetDMACode(lasttag, DMA_END); }

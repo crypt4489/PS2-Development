@@ -227,8 +227,8 @@ bool useProgrammedAlpha, u8 alphaVal, u32 mode)
 
 qword_t *FlushTextureCache(qword_t *q, bool end, bool direct, int size)
 {
-    if (end) q = CreateDMATag(q, DMA_END, 2+size+direct, 0, 0, 0);
-    else q = CreateDMATag(q, DMA_CNT, 2+size+direct, 0, 0, 0);
+    if (end) q = CreateDMATag(q, DMA_END, 2+size+direct, 0, 0, 0, 0);
+    else q = CreateDMATag(q, DMA_CNT, 2+size+direct, 0, 0, 0, 0);
     if (direct) q = CreateDirectTag(q, 2+size, end);
 	PACK_GIFTAG(q,GIF_SET_TAG(1+size,1,0,0,GIF_FLG_PACKED,1),GIF_REG_AD);
 	q++;
@@ -319,7 +319,7 @@ qword_t *TextureTransfer(qword_t *q, void *src, int width, int height,
     int directacct = (int)usevif;
     int remaining = 0;
     int i = UploadSize(height, width, psm, &remaining);
-    q = CreateDMATag(q, DMA_CNT, 5+directacct, 0, 0, 0);
+    q = CreateDMATag(q, DMA_CNT, 5+directacct, 0, 0, 0, 0);
     if (usevif)
         q = CreateDirectTag(q, 5, 0);
     q = CreateGSSetTag(q, 4, 0, GIF_FLG_PACKED, 1, GIF_REG_AD);    
@@ -334,7 +334,7 @@ qword_t *TextureTransfer(qword_t *q, void *src, int width, int height,
 
     while (i-- > 0)
     {
-        q= CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0);
+        q= CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0, 0);
 
         if (usevif)
             q = CreateDirectHLTag(q, GIF_BLOCK_SIZE+1, 0);
@@ -347,7 +347,7 @@ qword_t *TextureTransfer(qword_t *q, void *src, int width, int height,
 
     if (remaining)
     {
-        q = CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0);
+        q = CreateDMATag(q, DMA_CNT, 1+directacct, 0, 0, 0, 0);
 
         if (usevif)
             q = CreateDirectHLTag(q, remaining+1, 0);
