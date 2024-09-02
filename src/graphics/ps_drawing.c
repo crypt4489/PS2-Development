@@ -332,8 +332,7 @@ void PushMatrix(float *mat, int offset, int size)
     offset = GetOffsetIntoHeader(offset);
     qword_t *temp = DetermineVIFHeader(&offset);
     temp += 1 + offset;
-    int iter = size>>4;
-    for (int i = iter; i>0; i--)
+    for (int iter = size>>4; iter>0; iter--)
     {
         asm __volatile__(
         "lqc2		$vf1, 0x00(%1)	\n"
@@ -513,7 +512,7 @@ void AllocateShaderSpace(int size, int offset)
        // DEBUGLOG("%d", gapSize);
         ReadUnpackData(sg_VIFHeaderUpload, offset, gapSize, 0, VIF_CMD_UNPACK(0, 3, 0));
         outSize -= gapSize;
-        if (!outSize) { DEBUGLOG("HERE"); return;}
+        if (!outSize) { return;}
         if (!sg_OpenDMATag) {
             sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT,
                 0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0, 0);

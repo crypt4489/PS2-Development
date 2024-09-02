@@ -313,8 +313,10 @@ struct animator_t
 enum MeshBuffersType
 {
     MESHVERTICES = 0,
-    MESHTRIANGLES = 1
+    MESHTRIANGLES = 1,
+    MESHADJACENCY = 2
 };
+
 typedef struct mesh_vectors
 {
     u32 vertexCount;
@@ -416,17 +418,9 @@ struct vu_pipeline_t
     PipelineCallback **cbs;
     qword_t *q;
     u32 renderPasses;
-    u32 currentRenderPass;
     u32 qwSize;
     VU1PipelineRenderPass **passes;
 };
-
-typedef struct TessGridStruct
-{
-    int xDim, yDim;
-    BoundingBox extent;
-    int tessLevel;
-} TessGrid;
 
 typedef struct frustum_t
 {
@@ -452,20 +446,6 @@ typedef struct camera_t
     MATRIX viewProj;
     VECTOR quat;
 } Camera;
-
-enum DrawTags
-{
-    DRAW_VERTICES = 0x001,
-    DRAW_TEXTURE = 0x002,
-    DRAW_NORMAL = 0x004,
-    DRAW_COLOR = 0x008,
-    DRAW_MORPH = 0x010,
-    DRAW_SKINNED = 0x020,
-    DRAW_ANIM_TEX = 0x040,
-    DRAW_ENVMAP = 0x080,
-    DRAW_SPECULAR = 0x100,
-    DRAW_ALPHAMAP = 0x200
-};
 
 typedef enum VertexType
 {

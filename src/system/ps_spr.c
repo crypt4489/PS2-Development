@@ -4,8 +4,7 @@
 #include <dma.h>
 
 #include "dma/ps_dma.h"
-#include "system/ps_timer.h"
-#include "math/ps_misc.h"
+#include "log/ps_log.h"
 
 #define MAX_SPR_CHAIN_DATA_QWC 1023
 
@@ -29,6 +28,7 @@ void ReceiveSPRNormal(void *dest, u32 qwc)
 	// Set the size of the data, in quadwords.
 	*(vu32 *)0x1000D020 = DMA_SET_QWC(qwc);
 
+	// Set address of data in SPR
 	*(vu32 *)0x1000D080 = DMA_SET_SADR(0);
 
 	// Set the address of the data.
@@ -47,36 +47,38 @@ void ReceiveSPRChain(u32 sprstart)
 	*(vu32 *)0x1000D000 = DMA_SET_CHCR(0, 1, 0, 0, 0, 1, 0);
 }
 
-void Ultimatememcpy(void *from_data, u32 qwc, void *to_data)
+void Ultimatememcpy(void *from_data, u32 totalSize, void *to_data)
 {
-	u32 totalSize = qwc;
+	if (((u32)from_data | (u32)to_data) & 0x0000000F)
+	{
+		ERRORLOG("Misaligned data being copied to SPR and back from=%d to=%d", (u32)from_data, (u32)to_data);
+		return;
+	}
 	
 	qword_t *q = StartSPRTransfer();
-
 
 	qword_t *qwrdptrfrom = (qword_t*)from_data;
 	qword_t *qwrdptrto = (qword_t*)to_data;
 
-	bool end = false;
+	u32 refcode = DMA_REF;
+	u32 sprtag = DMA_CNT;
+	u32 sendSize = MAX_SPR_CHAIN_DATA_QWC;
 	while (totalSize)
 	{
-		
-		u32 sendSize = MAX_SPR_CHAIN_DATA_QWC;
-
 		if (totalSize <= MAX_SPR_CHAIN_DATA_QWC)
 		{
-			end = true;
 			sendSize = totalSize;
+			refcode = DMA_REFE;
+			sprtag = DMA_END;
 		}
 
-		totalSize -= sendSize;
-
 		q = CreateDMATag(q, DMA_CNT, 1, 0, 0, 0, 0);
-		q = CreateDMATag(q, (6 * end) + 1, sendSize, 0, 0, 0, (u32)qwrdptrto);
-		q = CreateDMATag(q, DMA_REF - (3*end), sendSize, 0, 0, 0, (u32)qwrdptrfrom);
+		q = CreateDMATag(q, sprtag, sendSize, 0, 0, 0, (u32)qwrdptrto);
+		q = CreateDMATag(q, refcode, sendSize, 0, 0, 0, (u32)qwrdptrfrom);
 
 		qwrdptrfrom += sendSize;
 		qwrdptrto += sendSize;
+		totalSize -= sendSize;
 	}
 	
 	SendPacketSPR(q);

@@ -41,7 +41,7 @@ void SetActivePipelineByName(GameObject *obj, const char *name)
 {
     VU1Pipeline *iter = obj->pipelines;
     int len = strnlen(name, MAX_CHAR_PIPELINE_NAME);
-    while (strncmp(name, iter->name, len) != 0)
+    while (strncmp(name, iter->name, len))
     {
         iter = iter->next;
         if (!iter)
@@ -156,7 +156,6 @@ VU1Pipeline *CreateVU1Pipeline(const char *name, int sizeOfCBS, u32 renderPasses
     node->qwSize = 0;
     node->numberCBS = 0;
     node->callBackSize = sizeOfCBS;
-    node->currentRenderPass = 0;
     node->renderPasses = renderPasses;
 
     memcpy(node->name, name, strnlen(name, MAX_CHAR_PIPELINE_NAME));
