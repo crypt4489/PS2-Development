@@ -8,5 +8,5 @@ void SetupPlane(VECTOR planeNormal, VECTOR planePoint, Plane *plane);
 float DistanceFromPlane(VECTOR planeEquation, VECTOR point);
 
 void NormalizePlane(VECTOR in, VECTOR out);
-int PlaneIntersectsTriangle(Plane *plane, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect);
+bool PlaneIntersectsTriangle(Plane *plane, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect);
 #endif

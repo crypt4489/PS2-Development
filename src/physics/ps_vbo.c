@@ -19,8 +19,6 @@
 
 extern volatile u32 *vu1_data_address;
 
-#define NOCOLLISION 1
-#define COLLISION 0
 
 void DestroyVBO(ObjectBounds *bound)
 {
@@ -80,37 +78,37 @@ void ReadVBOFromVU1(GameObject *obj)
     box->top[3] = 0.0f;
 }
 
-int AABBCollision(VECTOR top1, VECTOR bottom1, VECTOR top2, VECTOR bottom2)
+bool AABBCollision(VECTOR top1, VECTOR bottom1, VECTOR top2, VECTOR bottom2)
 {
     if ((top1[0] > bottom2[0]) && (bottom1[0] < top2[0]) && (top1[1] > bottom2[1]) && (bottom1[1] < top2[1]) && (top1[2] > bottom2[2]) && (bottom1[2] < top2[2]))
     {
-        return NOCOLLISION;
+        return true;
     }
-    return COLLISION;
+    return false;
 }
 
-int SphereCollision(BoundingSphere *s1, BoundingSphere *s2)
+bool SphereCollision(BoundingSphere *s1, BoundingSphere *s2)
 {
     VECTOR traj;
     VectorSubtractXYZ(s1->center, s2->center, traj);
     float radiisum = s1->radius + s2->radius;
-    if (DotProduct(traj, traj) <= (radiisum * radiisum)) return COLLISION;
-    return NOCOLLISION;
+    if (DotProduct(traj, traj) <= (radiisum * radiisum)) return false;
+    return true;
 }
 
-int SpherePlaneCollision(BoundingSphere *s, Plane *p)
+bool SpherePlaneCollision(BoundingSphere *s, Plane *p)
 {
     float dist = DistanceFromPlane(p->planeEquation, s->center);
     return Abs(dist) <= s->radius;
 }
 
-int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point)
+bool PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point)
 {
     CrossProduct(p1->planeEquation, p2->planeEquation, axisOfIntersect);
 
     float den = DotProduct(axisOfIntersect, axisOfIntersect);
 
-    if (den < EPSILON) return NOCOLLISION;
+    if (den < EPSILON) return true;
 
     float invDen = 1.0f / den;
 
@@ -125,10 +123,10 @@ int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point)
 
     VectorScaleXYZ(point, cross1, invDen);
 
-    return COLLISION;
+    return false;
 }
 
-static int PlaneRotatedBox(VECTOR right, VECTOR up, VECTOR forward, VECTOR planeEquation,
+static bool PlaneRotatedBox(VECTOR right, VECTOR up, VECTOR forward, VECTOR planeEquation,
                             VECTOR half, VECTOR center)
 {
     VECTOR dots;
@@ -138,11 +136,11 @@ static int PlaneRotatedBox(VECTOR right, VECTOR up, VECTOR forward, VECTOR plane
     
     float r = DotProduct(half, dots);
     float s = DotProduct(planeEquation, center) + planeEquation[3];
-    if (Abs(s) <= r) return COLLISION;
-    return NOCOLLISION;
+    if (Abs(s) <= r) return false;
+    return true;
 }
 
-int PlaneOBBCollision(Plane *p, BoundingOrientBox *box)
+bool PlaneOBBCollision(Plane *p, BoundingOrientBox *box)
 {
     return PlaneRotatedBox( box->axes[0], box->axes[1], 
                             box->axes[2], p->planeEquation, 
@@ -150,14 +148,14 @@ int PlaneOBBCollision(Plane *p, BoundingOrientBox *box)
 }
 
 
-int PlaneRotatedAABBCollision(Plane *p, BoundingBox *box, VECTOR right, VECTOR up, VECTOR forward)
+bool PlaneRotatedAABBCollision(Plane *p, BoundingBox *box, VECTOR right, VECTOR up, VECTOR forward)
 {
     VECTOR center, half;
     FindCenterAndHalfAABB(box, center, half);
     return PlaneRotatedBox(right, up, forward, p->planeEquation, half, center);
 }
 
-int PlaneAABBCollision(Plane *plane, BoundingBox *box)
+bool PlaneAABBCollision(Plane *plane, BoundingBox *box)
 {
     VECTOR center, half;
     FindCenterAndHalfAABB(box, center, half);
@@ -179,9 +177,9 @@ int PlaneAABBCollision(Plane *plane, BoundingBox *box)
         : "r"(plane->planeEquation), "r"(half), "r"(center)
         : "memory");  
 
-    if (Abs(s + plane->planeEquation[3]) <= r) return COLLISION;
+    if (Abs(s + plane->planeEquation[3]) <= r) return false;
 
-    return NOCOLLISION;
+    return true;
 }
 
 void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
@@ -205,7 +203,7 @@ void FindCenterOfVBO(void *collisionData, int type, VECTOR center)
     }
 }
 
-int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
+bool CheckCollision(GameObject *obj1, GameObject *obj2, ...)
 {
     int ret = 0, firstcondition = 0;
     va_list vectorArgs;
@@ -311,8 +309,8 @@ int CheckCollision(GameObject *obj1, GameObject *obj2, ...)
 
         float d = SqrDistFromAABB(sphere->center, box);
         
-        if (d <= sphere->radius * sphere->radius) ret = COLLISION;
-        else ret = NOCOLLISION;
+        if (d <= sphere->radius * sphere->radius) ret = false;
+        else ret = true;
     } else if ((firstcondition = (obb1->type == VBO_FIXED && obb2->type == VBO_SPHERE)) || (obb1->type == VBO_SPHERE  && obb2->type == VBO_FIXED))
     {
         VECTOR half, pos, right, up, forward, center;
@@ -368,7 +366,7 @@ int PerformSAT(VECTOR pos, VECTOR half1, VECTOR half2, VECTOR xAxis1, VECTOR yAx
                CheckSeparatingPlane(pos, z1y2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2) ||
                CheckSeparatingPlane(pos, z1z2, half1, half2, xAxis1, yAxis1, zAxis1, xAxis2, yAxis2, zAxis2));
 
-    if (ret == 0)
+    if (!ret)
     {
         return 1;
     }

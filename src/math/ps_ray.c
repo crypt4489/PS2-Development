@@ -7,10 +7,9 @@
 #include "math/ps_matrix.h"
 
 #include <float.h>
-#define COLLISION 0
-#define NOCOLLISION 1
 
-int RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point)
+
+bool RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point)
 {
     VECTOR dir, m;
 
@@ -21,12 +20,12 @@ int RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point)
     float c = DotProduct(m, m) - sphere->radius * sphere->radius;
 
     if (c > 0.0f && b > 0.0f)
-        return NOCOLLISION;
+        return true;
 
     float bbc = b * b - c;
 
     if (bbc < 0.0f)
-        return NOCOLLISION;
+        return true;
 
     float t = -b - Sqrt(bbc);
 
@@ -37,10 +36,10 @@ int RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point)
 
     VectorAddXYZ(dir, ray->origin, point);
 
-    return COLLISION;
+    return false;
 }
 
-int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
+bool RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
 {
     
     *t = 0.0f;
@@ -68,7 +67,7 @@ int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
     retMac &= 0x00EE;    
     if (retMac & retMac2 || retMac & retMac3)
     {
-        return NOCOLLISION;
+        return true;
     }
 
     VECTOR odd, t1, t2;
@@ -95,42 +94,42 @@ int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t)
     {
         *t = Max(*t, t1[i]);
         max = Min(max, t2[i]);
-        if (*t > max) return NOCOLLISION;
+        if (*t > max) return true;
     }
     VectorScaleXYZ(p, ray->direction, *t);
     VectorAddXYZ(p, ray->origin, p);
     
-    return COLLISION;
+    return false;
 }
-int RayIntersectPlane(Ray *ray, Plane *plane, VECTOR point)
+bool RayIntersectPlane(Ray *ray, Plane *plane, VECTOR point)
 {
     float orignormal = DotProduct(ray->origin, plane->planeEquation) - plane->planeEquation[3];
     float normaldir = DotProduct(ray->direction, plane->planeEquation);
     if (normaldir == 0.0f)
     {
-        return NOCOLLISION;
+        return true;
     }
     float t = -orignormal / normaldir;
 
     if (t < 0.0f)
-        return NOCOLLISION;
+        return true;
     VectorScaleXYZ(point, ray->direction, t);
     VectorAddXYZ(point, ray->origin, point);
-    return COLLISION;
+    return false;
 }
 
-int RayIntersectRay(Ray *ray, Ray *ray2)
+bool RayIntersectRay(Ray *ray, Ray *ray2)
 {
     VECTOR dirs, dist;
     VectorSubtractXYZ(ray->origin, ray2->origin, dist);
     CrossProduct(ray->direction, ray2->direction, dirs);
     float d = DotProduct(dirs, dist);
     if (d == 0.0f)
-        return COLLISION;
-    return NOCOLLISION;
+        return false;
+    return true;
 }
 
-int RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
+bool RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
 {
     VECTOR e1, e2, cross_out;
     VectorSubtractXYZ(b, a, e1);
@@ -140,7 +139,7 @@ int RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR interse
 
     if (det > -EPSILON && det < EPSILON)
     {
-        return NOCOLLISION;
+        return true;
     }
 
     float inv = 1.f / det;
@@ -149,7 +148,7 @@ int RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR interse
     float u = inv * DotProduct(s, cross_out);
     if (u < 0 || u > 1)
     {
-        return NOCOLLISION;
+        return true;
     }
 
     VECTOR cross_out2;
@@ -158,7 +157,7 @@ int RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR interse
 
     if (v < 0 || u + v > 1)
     {
-        return NOCOLLISION;
+        return true;
     }
 
     float t = inv * DotProduct(e2, cross_out2);
@@ -167,8 +166,8 @@ int RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR interse
     {
         VectorScaleXYZ(intersect, ray->direction, t);
         VectorAddXYZ(intersect, ray->origin, intersect);
-        return COLLISION;
+        return false;
     }
 
-    return NOCOLLISION;
+    return true;
 }

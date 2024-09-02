@@ -2,18 +2,17 @@
 #define PS_VBO_H
 
 #include "ps_global.h"
-#define NOCOLLISION 1
-#define COLLISION 0
+
 
 void ReadVBOFromVU1(GameObject *obj);
 void InitVBO(GameObject *obj, int type);
 void DestroyVBO(ObjectBounds *bound);
 
-int AABBCollision(VECTOR top1, VECTOR bottom1, VECTOR top2, VECTOR bottom2);
+bool AABBCollision(VECTOR top1, VECTOR bottom1, VECTOR top2, VECTOR bottom2);
 
-int CheckCollision(GameObject *obj1, GameObject *obj2, ...);
+bool CheckCollision(GameObject *obj1, GameObject *obj2, ...);
 
-int SphereCollision(BoundingSphere *s1, BoundingSphere *s2);
+bool SphereCollision(BoundingSphere *s1, BoundingSphere *s2);
 //find center and half pos from trans, scale, and axes of a RotatedAABB
 void FindCenterAndHalfRotatedAABB(BoundingBox *box, VECTOR pos, VECTOR scale, VECTOR xAxis, VECTOR yAxis, VECTOR zAxis, VECTOR outCenter, VECTOR outHalf);
 void FindCenterAndHalfAABB(BoundingBox *box, VECTOR outCenter, VECTOR outHalf);
@@ -38,12 +37,12 @@ void ClosestPointToOBB(VECTOR p, VECTOR center, VECTOR halfWidths, VECTOR q);
 
 void MoveBox(BoundingBox *box, VECTOR move);
 
-int SpherePlaneCollision(BoundingSphere *s, Plane *p);
+bool SpherePlaneCollision(BoundingSphere *s, Plane *p);
 
-int PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point);
+bool PlaneCollision(Plane *p1, Plane *p2, VECTOR axisOfIntersect, VECTOR point);
 
-int PlaneOBBCollision(Plane *p, BoundingOrientBox *box);
-int PlaneRotatedAABBCollision(Plane *p, BoundingBox *box, VECTOR right, VECTOR up, VECTOR forward);
-int PlaneAABBCollision(Plane *plane, BoundingBox *box);
+bool PlaneOBBCollision(Plane *p, BoundingOrientBox *box);
+bool PlaneRotatedAABBCollision(Plane *p, BoundingBox *box, VECTOR right, VECTOR up, VECTOR forward);
+bool PlaneAABBCollision(Plane *plane, BoundingBox *box);
 
 #endif

@@ -2,9 +2,9 @@
 #define PS_RAY_H
 #include "ps_global.h"
 #include "physics/ps_vbo.h"
-int RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t);
-int RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point);
-int RayIntersectPlane(Ray *ray, Plane *plane, VECTOR point);
-int RayIntersectRay(Ray *ray, Ray *ray2);
-int RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect);
+bool RayIntersectBox(Ray *ray, BoundingBox *box, VECTOR p, float *t);
+bool RayIntersectSphere(Ray *ray, BoundingSphere *sphere, VECTOR point);
+bool RayIntersectPlane(Ray *ray, Plane *plane, VECTOR point);
+bool RayIntersectRay(Ray *ray, Ray *ray2);
+bool RayIntersectsTriangle(Ray *ray, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect);
 #endif

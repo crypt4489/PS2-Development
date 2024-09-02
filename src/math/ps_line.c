@@ -7,11 +7,7 @@
 
 #include <float.h>
 
-#define COLLISION 0
-#define NOCOLLISION 1
-
-
-int LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
+bool LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
 {
     VECTOR halfwidths, center;
     FindCenterAndHalfAABB(box, center, halfwidths);
@@ -25,31 +21,31 @@ int LineSegmentIntersectBox(Line *line, BoundingBox *box, VECTOR point)
     VectorSubtractXYZ(m, center, m);
 
     float adx = Abs(d[0]);
-    if (Abs(m[0]) > halfwidths[0] + adx) return NOCOLLISION;
+    if (Abs(m[0]) > halfwidths[0] + adx) return true;
     float ady = Abs(d[1]);
-    if (Abs(m[1]) > halfwidths[1] + ady) return NOCOLLISION;
+    if (Abs(m[1]) > halfwidths[1] + ady) return true;
     float adz = Abs(d[2]);
-    if (Abs(m[2]) > halfwidths[2] + adz) return NOCOLLISION;
+    if (Abs(m[2]) > halfwidths[2] + adz) return true;
 
     adx += 0.001; ady += 0.001; adz += 0.001;
 
-    if (Abs(m[1] * d[2] - m[2] * d[1]) > halfwidths[1] * adz + halfwidths[2] * ady) return NOCOLLISION;
-    if (Abs(m[2] * d[0] - m[0] * d[2]) > halfwidths[0] * adz + halfwidths[2] * adx) return NOCOLLISION;
-    if (Abs(m[0] * d[1] - m[1] * d[0]) > halfwidths[0] * ady + halfwidths[1] * adx) return NOCOLLISION;
+    if (Abs(m[1] * d[2] - m[2] * d[1]) > halfwidths[1] * adz + halfwidths[2] * ady) return true;
+    if (Abs(m[2] * d[0] - m[0] * d[2]) > halfwidths[0] * adz + halfwidths[2] * adx) return true;
+    if (Abs(m[0] * d[1] - m[1] * d[0]) > halfwidths[0] * ady + halfwidths[1] * adx) return true;
 
 
 
-    return COLLISION;
+    return false;
 }
 
-int LineSegmentIntersectSphere(Line *line, BoundingSphere *sphere, VECTOR point)
+bool LineSegmentIntersectSphere(Line *line, BoundingSphere *sphere, VECTOR point)
 {
    float d = DistanceFromLineSegment(line, sphere->center, point);
-   if (Abs(d) < sphere->radius) return COLLISION;
-   return NOCOLLISION;
+   if (Abs(d) < sphere->radius) return false;
+   return true;
 }
 
-int LineSegmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
+bool LineSegmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
 {
     VECTOR dist;
 
@@ -70,10 +66,10 @@ int LineSegmentIntersectPlane(Line *line, VECTOR plane, VECTOR point)
     {
         VectorScaleXYZ(dist, dist, t);
         VectorAddXYZ(line->p1, dist, point);
-        return COLLISION;
+        return false;
     }
 
-    return NOCOLLISION;
+    return true;
 }
 
 float DistanceFromLineSegment(Line *line, VECTOR point, VECTOR close)
@@ -100,7 +96,7 @@ float DistanceFromLineSegment(Line *line, VECTOR point, VECTOR close)
 
 }
 
-int LineSegmentIntersectsTriangle(Line *line, VECTOR a, VECTOR b, VECTOR c, VECTOR coordinates)
+bool LineSegmentIntersectsTriangle(Line *line, VECTOR a, VECTOR b, VECTOR c, VECTOR coordinates)
 {
     VECTOR ab, ac, qp;
     VectorSubtractXYZ(b, a, ab);
@@ -110,21 +106,21 @@ int LineSegmentIntersectsTriangle(Line *line, VECTOR a, VECTOR b, VECTOR c, VECT
     VECTOR n;
     CrossProduct(ab, ac, n);
     float d = DotProduct(qp, n);
-    if (d <= 0.0f) return NOCOLLISION;
+    if (d <= 0.0f) return true;
 
     VECTOR ap;
 
     VectorSubtractXYZ(line->p1, a, ap);
     float t = DotProduct(ap, n);
-    if (t > d || t < 0.0f) return NOCOLLISION;
+    if (t > d || t < 0.0f) return true;
 
     VECTOR e;
     CrossProduct(qp, ap, e);
 
     float v = DotProduct(ac, e);
-    if (v < 0.0f || v > d) return NOCOLLISION;
+    if (v < 0.0f || v > d) return true;
     float w = -DotProduct(ab, e);
-    if (w < 0.0f || (v+w)>d) return NOCOLLISION;
+    if (w < 0.0f || (v+w)>d) return true;
 
     float o = 1.0f / d;
     t *= o;
@@ -132,14 +128,11 @@ int LineSegmentIntersectsTriangle(Line *line, VECTOR a, VECTOR b, VECTOR c, VECT
     v *= o;
     float u = 1.0f - v - w;
     CreateVector(u, v, w, t, coordinates);
-    return COLLISION;
+    return false;
 }
 
-int LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MATRIX m, void(*ft)(VECTOR*, int))
+bool LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MATRIX m, void(*ft)(VECTOR*, int))
 {
-        
-
-    
     for (int i = 0; i<count; i+=3)
     {
         VECTOR a, b, c, d;
@@ -147,24 +140,23 @@ int LineSegmentIntersectForAllTriangles(Line *line, VECTOR *verts, u32 count, MA
         MatrixVectorMultiply(a, m, verts[i]);
         MatrixVectorMultiply(b, m, verts[i+1]);
         MatrixVectorMultiply(c, m, verts[i+2]);
-        int ret =  LineSegmentIntersectsTriangle(line, c, b, a, d);
+        bool ret =  LineSegmentIntersectsTriangle(line, c, b, a, d);
         if (ret)
         {
             ret =  LineSegmentIntersectsTriangle(line, a, b, c, d);
         }
 
 
-         if (!ret)
+        if (!ret)
         {
             ft(verts+i, i);
         }
-
     }
     return 0;
 }
 
 
-int LineIntersectLine(Line *l1, Line *l2, VECTOR point)
+bool LineIntersectLine(Line *l1, Line *l2, VECTOR point)
 {
     VECTOR l12l11, l22l21, l21l11, ab, cb, ca;
     VectorSubtractXYZ(l1->p2, l1->p1, l12l11);
@@ -179,7 +171,7 @@ int LineIntersectLine(Line *l1, Line *l2, VECTOR point)
 
     if (num != 0.0f)
     {
-        return NOCOLLISION;
+        return true;
     }
 
     float denom = DotProduct(ab, ab);
@@ -192,9 +184,9 @@ int LineIntersectLine(Line *l1, Line *l2, VECTOR point)
         && (Min(l1->p1[2], l1->p2[2]) <= l2->p1[2] && Max(l1->p1[2], l1->p2[2]) >= l2->p2[2]))
         {
             VectorCopy(point, l2->p1);
-            return COLLISION;
+            return false;
         }
-        return NOCOLLISION;
+        return true;
     }
 
     float s = DotProduct(cb, ab)/denom;
@@ -205,8 +197,8 @@ int LineIntersectLine(Line *l1, Line *l2, VECTOR point)
     
         VectorScaleXYZ(point, l12l11, s);
         VectorAddXYZ(point, l1->p1, point);
-        return COLLISION;
+        return false;
     } 
 
-    return NOCOLLISION;
+    return true;
 }

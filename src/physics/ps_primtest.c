@@ -112,15 +112,15 @@ void ClosestPointToTriangle(VECTOR point, VECTOR a, VECTOR b, VECTOR c, VECTOR i
     VectorAddXYZ(ac, a, intersect);
 }
 
-int SphereIntersectTriangle(BoundingSphere *sphere, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
+bool SphereIntersectTriangle(BoundingSphere *sphere, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
 {
     ClosestPointToTriangle(sphere->center, a, b, c, intersect);
     if (DotProduct(intersect, sphere->center) <= sphere->radius * sphere->radius)
-        return COLLISION;
-    return NOCOLLISION;
+        return false;
+    return true;
 }
 
-int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
+bool AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
 {
     VECTOR half, cent;
     FindCenterAndHalfAABB(box, cent, half);
@@ -154,7 +154,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     float p2 = c0[2] * (f0[1]) - c0[2] * (f0[2]);
     float r = half[1] * Abs(f0[2]) + half[2] * Abs(f0[1]);
     if (Max(-Max(p0, p2), Min(p0, p2)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 2
 
@@ -163,7 +163,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     // p2 = -c0[1] * (c0[2] - b0[2]) + c0[2] * (c0[1] - b0[1]);
     r = half[1] * Abs(f1[2]) + half[2] * Abs(f1[1]);
     if (Max(-Max(p0, p1), Min(p0, p1)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 3
 
@@ -172,7 +172,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     p2 = -c0[1] * (f2[2]) + c0[2] * (f2[1]);
     r = half[1] * Abs(f2[2]) + half[2] * Abs(f2[1]);
     if (Max(-Max(p1, p2), Min(p1, p2)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 4
 
@@ -181,7 +181,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     p2 = c0[0] * (f0[2]) - c0[2] * (f0[0]);
     r = half[0] * Abs(f0[2]) + half[2] * Abs(f0[0]);
     if (Max(-Max(p1, p2), Min(p1, p2)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 5
 
@@ -190,7 +190,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     p2 = c0[0] * (f1[2]) - c0[2] * (f1[0]);
     r = half[0] * Abs(f1[2]) + half[2] * Abs(f1[0]);
     if (Max(-Max(p0, p2), Min(p0, p2)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 6
 
@@ -199,7 +199,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     p2 = c0[0] * (f2[2]) - c0[2] * (f2[0]);
     r = half[0] * Abs(f2[2]) + half[2] * Abs(f2[0]);
     if (Max(-Max(p1, p2), Min(p1, p2)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 7
 
@@ -208,7 +208,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     p2 = -c0[0] * (f0[1]) + c0[1] * (f0[0]);
     r = half[0] * Abs(f0[1]) + half[1] * Abs(f0[0]);
     if (Max(-Max(p1, p2), Min(p1, p2)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 8
 
@@ -217,7 +217,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     // p2 = -c0[0] * (c0[1] - b0[1]) + c0[1] * (c0[0] - b0[0]);
     r = half[0] * Abs(f1[1]) + half[1] * Abs(f1[0]);
     if (Max(-Max(p1, p0), Min(p1, p0)) > r)
-        return NOCOLLISION;
+        return true;
 
     // axis 9
 
@@ -226,7 +226,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
     // p2 = -c0[0] * (a0[1] - c0[1]) + c0[1] * (a0[0] - c0[0]);
     r = half[0] * Abs(f2[1]) + half[1] * Abs(f2[0]);
     if (Max(-Max(p1, p0), Min(p1, p0)) > r)
-        return NOCOLLISION;
+        return true;
 
     u32 mac, mac2;
     asm __volatile__(
@@ -248,7 +248,7 @@ int AABBIntersectTriangle(VECTOR a, VECTOR b, VECTOR c, BoundingBox *box)
         : "memory");
 
     if ((mac2 & 0x00EE) || (mac & 0x00EE))
-        return NOCOLLISION;
+        return true;
 
     Plane plane;
     VECTOR planeNormal;

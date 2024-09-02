@@ -2,8 +2,7 @@
 #include "math/ps_vector.h"
 #include "math/ps_fast_maths.h"
 #include "math/ps_line.h"
-#define COLLISION 0
-#define NOCOLLISION 1
+
 void ComputePlane(VECTOR vec, VECTOR normal, VECTOR plane)
 {
     float d;
@@ -62,7 +61,7 @@ static int IsSign(float t)
     return ((x.int_x & 0x80000000) >> 31);
 }
 
-int PlaneIntersectsTriangle(Plane *plane, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
+bool PlaneIntersectsTriangle(Plane *plane, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
 {
     float d1 = DistanceFromPlane(plane->planeEquation, a);
     float d2 = DistanceFromPlane(plane->planeEquation, b);
@@ -74,13 +73,13 @@ int PlaneIntersectsTriangle(Plane *plane, VECTOR a, VECTOR b, VECTOR c, VECTOR i
 
     if ((!i1 && !i2 && !i3) || (i1 > 0 && i2 > 0 && i3 > 0)) 
     {
-        return NOCOLLISION;
+        return true;
     }
 
     if (i1 < 0 && i2 < 0 && i3 < 0)
     {
         VectorCopy(intersect, a);
-        return COLLISION;
+        return false;
     }
     Line line;
     if (i1 != i2)
@@ -102,6 +101,6 @@ int PlaneIntersectsTriangle(Plane *plane, VECTOR a, VECTOR b, VECTOR c, VECTOR i
 
     LineSegmentIntersectPlane(&line, plane->planeEquation, intersect);
 
-    return COLLISION;
+    return false;
 
 }
