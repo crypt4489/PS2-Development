@@ -8,6 +8,7 @@
 #include "pipelines/ps_vu1pipeline.h"
 #include "log/ps_log.h"
 #include "textures/ps_texture.h"
+#include "math/ps_misc.h"
 #include <string.h>
 
 static qword_t *sg_DrawBufferPtr = NULL;
@@ -188,7 +189,6 @@ qword_t* SubmitCommand(bool flush)
 
 void PrintOut()
 {
-    #include "math/ps_misc.h"
     qword_t *dump = g_Manager.drawBuffers->readvif;
     dump_packet(dump, g_Manager.drawBuffers->currentvif-g_Manager.drawBuffers->readvif, 0);
 }

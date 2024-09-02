@@ -39,7 +39,6 @@ void CleanTextureManager(TextureManager *manager)
     }
     free(manager->textureMap->trees);
     manager->count = 0;
-    manager->currIndex = -1;
     free(manager);
 }
 
@@ -56,7 +55,6 @@ TextureManager *CreateTextureManager()
 {
     TextureManager *texManager = (TextureManager *)malloc(sizeof(TextureManager));
     texManager->count = 0;
-    texManager->currIndex = -1;
     texManager->textureMap = CreateHashMap(1024, TextureManagerHashFunction);
     return texManager;
 }

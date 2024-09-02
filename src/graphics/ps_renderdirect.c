@@ -308,8 +308,6 @@ void UploadBuffers(u32 start, u32 end, u32 maxCount, MeshVectors *buffer, Vertex
 
 void RenderPlaneLine(Plane *plane, Color color, int size)
 {
-    
-    MATRIX vp;
     VECTOR v[4];
     VECTOR temp;
 

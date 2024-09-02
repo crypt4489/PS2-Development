@@ -152,7 +152,7 @@ int PlaneOBBCollision(Plane *p, BoundingOrientBox *box)
 
 int PlaneRotatedAABBCollision(Plane *p, BoundingBox *box, VECTOR right, VECTOR up, VECTOR forward)
 {
-    VECTOR center, half, dots;
+    VECTOR center, half;
     FindCenterAndHalfAABB(box, center, half);
     return PlaneRotatedBox(right, up, forward, p->planeEquation, half, center);
 }

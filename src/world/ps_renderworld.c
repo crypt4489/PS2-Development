@@ -118,8 +118,6 @@ void DrawWorld(RenderWorld *world)
 {
     LinkedList *node = world->objList;
 
-    int i = 0;
-
     g_DrawWorld = world;
 
     while (node)

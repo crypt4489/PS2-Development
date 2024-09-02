@@ -418,7 +418,7 @@ void DumpCameraFrustum(Camera *cam)
     MATRIX m;
     Frustum *frum = cam->frus[0];
     CreateCameraWorldMatrix(cam, m);
-    VECTOR temp, temp1;
+    VECTOR temp;
     Matrix3VectorMultiply(temp, m, frum->sides[0].planeEquation);
     DEBUGLOG("Front Normal");
     DumpVector(temp);

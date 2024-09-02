@@ -192,7 +192,7 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
     case PNG_FORMAT_RGB_COLORMAP:
         clutStride = 3;
     case PNG_FORMAT_RGBA_COLORMAP:
-        tex->pixels = (u8 *)malloc(imageSize * 2);
+        
         if (image.colormap_entries == 256)
         {
             tex->clut_buffer = (u8 *)malloc(256 * 4);
@@ -203,6 +203,7 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
             tex->clut_buffer = (u8 *)malloc(4 * 16);
             tex->psm = GS_PSM_4;
         }
+        tex->pixels = (u8 *)malloc(imageSize * 2);
         break;
     default:
         ERRORLOG("Unsupported bit depth and color format");

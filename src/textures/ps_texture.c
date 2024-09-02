@@ -482,29 +482,6 @@ void UploadTextureToVRAM(Texture *tex)
     q = CreateTextureUploadChain(tex, q, true, true); 
     u32 size = q - g_Manager.drawBuffers->currentvif; 
     SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, false);
-    g_Manager.texManager->currIndex = tex->id;
-}
-
-void UploadTextureViaManagerToVRAM(Texture *tex)
-{
-    TextureManager *texManager = g_Manager.texManager;
-    if (tex->id != texManager->currIndex && tex->type == PS_TEX_MEMORY)
-    {
-         qword_t *q = g_Manager.drawBuffers->currentgif;
-        q = CreateTextureUploadChain(tex, q, false, true); 
-        u32 size = q - g_Manager.drawBuffers->currentgif; 
-        SubmitDrawBuffersToController(q, DMA_CHANNEL_GIF, 1, false);
-        g_Manager.texManager->currIndex = tex->id;
-    }
-    else
-    {
-        if (tex->type == PS_TEX_VRAM)
-        {
-            texManager->currIndex = -1; // invalidate the current texture upload identifier
-        }
-
-        SetupTexRegistersGIF(tex); // already uploaded, just reset the registers for the current context
-    }
 }
 
 void SampleTextureByUV(Texture *tex, Color *rgba, float x, float y)

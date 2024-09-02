@@ -411,7 +411,7 @@ void GribbHartmann(MATRIX m)
 
     DumpMatrix(m);
 
-    VECTOR m_left_plane, lp;
+    VECTOR m_left_plane;
 #ifndef DOES_THIS_WORK
     m_left_plane[0] = m[12] + m[0];
     m_left_plane[1] = m[13] + m[1];
@@ -429,7 +429,7 @@ void GribbHartmann(MATRIX m)
 
     DEBUGLOG("#1");
 
-    VECTOR m_right_plane, rp;
+    VECTOR m_right_plane;
 #ifndef DOES_THIS_WORK
     m_right_plane[0] = m[12] - m[0];
     m_right_plane[1] = m[13] - m[1];
@@ -447,7 +447,7 @@ void GribbHartmann(MATRIX m)
 
     DEBUGLOG("#2");
 
-    VECTOR m_bottom_plane, bp;
+    VECTOR m_bottom_plane;
 #ifndef DOES_THIS_WORK
     m_bottom_plane[0] = m[12] + m[4];
     m_bottom_plane[1] = m[13] + m[5];
@@ -465,7 +465,7 @@ void GribbHartmann(MATRIX m)
 
     DEBUGLOG("#3");
 
-    VECTOR m_top_plane, tp;
+    VECTOR m_top_plane;
 #ifndef DOES_THIS_WORK
     m_top_plane[0] = m[12] - m[4];
     m_top_plane[1] = m[13] - m[5];

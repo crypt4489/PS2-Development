@@ -11,8 +11,8 @@ int HandleBodyMovement(GameObject *obj, u32 type)
     VECTOR newPos, tempDir;
     int ret = 0;
     int collision_check = 0;
-    VECTOR *pos, *right, *up, *forward;
-    pos = GetPositionVectorLTM(obj->ltm);
+    VECTOR *right, *up, *forward;
+  //  pos = GetPositionVectorLTM(obj->ltm);
     right = GetRightVectorLTM(obj->ltm);
     up = GetUpVectorLTM(obj->ltm);
     forward = GetForwardVectorLTM(obj->ltm);

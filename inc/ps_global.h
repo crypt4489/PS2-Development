@@ -585,7 +585,6 @@ typedef struct hashentry_t
 typedef struct
 {
     u32 count;        // global tex count
-    u64 currIndex;    // current texture loaded into memory
     HashMap *textureMap;
 } TextureManager;
 
@@ -659,15 +658,6 @@ typedef struct
     u32 FPS;
     TimerStruct *timer;
 } GameManager;
-
-typedef struct waves_t
-{
-    float amp;
-    float wavelength;
-    float time;
-    float velocity;
-    float firstTerm;
-} Waves;
 
 typedef struct font_t
 {
