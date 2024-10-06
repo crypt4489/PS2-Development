@@ -21,10 +21,10 @@ void InitGS(GameManager *manager, framebuffer_t *frame1, framebuffer_t *frame2, 
 
 	if (frame2) InitFramebuffer(frame2, manager->ScreenWidth, manager->ScreenHeight, psm, true);
 	
-	manager->bgkc.r = 0x80;
-	manager->bgkc.g = 0x70;
-	manager->bgkc.b = 0x05;
-	manager->bgkc.a = 0x00;
+	manager->bgkc.r = 0x00;
+	manager->bgkc.g = 0x00;
+	manager->bgkc.b = 0x00;
+	manager->bgkc.a = 0x80;
 	manager->bgkc.q = 0.0f;
 
 	SetGraph(manager);
@@ -333,8 +333,8 @@ void ClearScreen(RenderTarget *target, int context, int r, int g, int b, int a)
 
 	q+=2;
 
-	float xOff = 2048.0f - (target->render->width >> 1);
-	float yOff = 2048.0f - (target->render->height >> 1);
+	float xOff = 2048.0f - (float)(target->render->width >> 1);
+	float yOff = 2048.0f - (float)(target->render->height >> 1);
 	if (!a) alpha = ATEST_METHOD_EQUAL;
 
 	q = draw_disable_tests_alpha(q, context, alpha);

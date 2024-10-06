@@ -77,4 +77,6 @@ void DestroyWAVFile(WavFile *file);
 
 void DestroyVAGFile(VagFile *file);
 
+void AudioInitialization();
+
 #endif

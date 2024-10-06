@@ -82,5 +82,5 @@ void Ultimatememcpy(void *from_data, u32 totalSize, void *to_data)
 	}
 	
 	SendPacketSPR(q);
-	ReceiveSPRChain(0);
+	//ReceiveSPRChain(0);
 }

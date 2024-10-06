@@ -208,7 +208,9 @@ void VectorSubtractXYZ(VECTOR in, VECTOR in2, VECTOR out)
 #endif
 }
 
-void VectorMultiply(VECTOR in, VECTOR in2, VECTOR out)
+
+
+void VectorMultiplyXYZ(VECTOR in, VECTOR in2, VECTOR out)
 {
 #ifndef VECTORIZE
     VECTOR work;
@@ -222,6 +224,29 @@ void VectorMultiply(VECTOR in, VECTOR in2, VECTOR out)
         "lqc2 $vf1, 0x00(%0)\n"
         "lqc2 $vf2, 0x00(%1)\n"
         "lqc2 $vf3, 0x00(%2)\n"
+        "vmul.xyz $vf3, $vf1, $vf2\n"
+        "sqc2 $vf3, 0x00(%2)\n"
+        :
+        : "r"(in), "r"(in2), "r"(out)
+        : "memory"
+    );
+#endif
+}
+
+
+void VectorMultiply(VECTOR in, VECTOR in2, VECTOR out)
+{
+#ifndef VECTORIZE
+    VECTOR work;
+    work[0] = in[0] * in2[0];
+    work[1] = in[1] * in2[1];
+    work[2] = in[2] * in2[2];
+    work[3] = in[3] * in2[3];
+    VectorCopy(out, work);
+#else
+     asm __volatile(
+        "lqc2 $vf1, 0x00(%0)\n"
+        "lqc2 $vf2, 0x00(%1)\n"
         "vmul $vf3, $vf1, $vf2\n"
         "sqc2 $vf3, 0x00(%2)\n"
         :

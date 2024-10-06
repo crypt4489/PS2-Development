@@ -410,7 +410,7 @@ void SetRegSizeAndType(u64 size, u64 type)
     sg_RegisterType = type;
 }
 
-void DrawCountDirect(int num)
+void DrawCountDirectRegList(int num)
 {
     OpenDMATag();
     OpenGSSetTag();    
@@ -611,12 +611,22 @@ static void AddVIFCode(u32 a1, u32 a2)
 
 static void FlushProgram(bool end)
 {
-    if (!sg_VU1ProgramEnd)
-        return;
-    u32 code = (6 * end) + 1;
-    sg_VU1ProgramEnd = CreateDMATag(sg_VU1ProgramEnd, code, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, end), 0, 0, 0);  
-    sg_DrawBufferPtr++;
-    sg_VU1ProgramEnd = NULL;
+    if (sg_VU1ProgramEnd)
+    {    
+        u32 code = (6 * end) + 1;
+        sg_VU1ProgramEnd = CreateDMATag(sg_VU1ProgramEnd, code, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, end), 0, 0, 0);  
+        sg_DrawBufferPtr++;
+        sg_VU1ProgramEnd = NULL;
+    } 
+    else if (sg_VIFDirectDraw)
+    {
+        if (!(sg_VIFDirectDraw->dw[0] & 0x00007fff)) {
+            u32 size = sg_DrawBufferPtr - sg_VIFDirectDraw;
+            u32 dmaToPrimSize = ((size<<1) / sg_RegisterCount);
+            AddSizeToGSSetTag(sg_VIFDirectDraw, dmaToPrimSize);
+        }
+        sg_VIFDirectDraw = NULL;
+    }
 }
 
 static qword_t* ChangeGapSize(u32 size)

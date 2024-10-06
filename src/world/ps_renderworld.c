@@ -19,9 +19,9 @@ RenderWorld *g_DrawWorld = NULL;
 
 RenderWorld *CreateRenderWorld()
 {
-    RenderWorld *ret = (RenderWorld *)malloc(sizeof(RenderWorld));
-    ret->lightCount = ret->objectCount = 0;
-    ret->objList = ret->lights = NULL;
+    RenderWorld *ret = (RenderWorld *)calloc(1, sizeof(RenderWorld));
+    //ret->lightCount = ret->objectCount = 0;
+    //ret->objList = ret->lights = NULL;
     return ret;
 }
 
@@ -120,7 +120,7 @@ void DrawWorld(RenderWorld *world)
 
     g_DrawWorld = world;
 
-    while (node)
+    while (node != NULL)
     {
         GameObject *obj = (GameObject *)node->data;
         if (obj->interpolator)
@@ -146,6 +146,7 @@ void DrawWorld(RenderWorld *world)
 
         node = node->next;
     }
+    
     ResetState();
    // while(true);
     g_DrawWorld = NULL;

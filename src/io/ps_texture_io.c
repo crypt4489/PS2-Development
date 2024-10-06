@@ -11,7 +11,7 @@
 #include "log/ps_log.h"
 #include "gs/ps_gs.h"
 
-static inline void BGR2RGB(u8 *buffer, u32 stride, u32 size)
+static void BGR2RGB(u8 *buffer, u32 stride, u32 size)
 {
     u8 temp;
     for (int i = 0; i < size; i += stride)
@@ -23,29 +23,29 @@ static inline void BGR2RGB(u8 *buffer, u32 stride, u32 size)
     }
 }
 
-static inline void Swizzle(int *out, int *clut,
+static void Swizzle(int *out, int *clut,
                     bool useAlpha, u8 alpha)
 {
     for (int i = 0; i < 256; i++)
     {
-        int index = (i & 231) + ((i & 8) << 1) + ((i & 16) >> 1);
-        u8 *pPtr = (u8 *)&out[index];
-        if (useAlpha)
-        {
-            pPtr[3] = alpha;
-        }
-        else
-        {
-            if ((pPtr[0] == alpha) && (pPtr[1] == alpha) && (pPtr[2] == alpha))
-            {
-                pPtr[3] = 0;
-            }
-        }
-        memcpy(&out[index], &clut[i], 3);
+         int index = (i & 231) + ((i & 8) << 1) + ((i & 16) >> 1);
+-        u8 *pPtr = (u8 *)&out[index];
+-        if (useAlpha)
+-        {
+-            pPtr[3] = alpha;
+-        }
+-        else
+-        {
+-            if ((pPtr[0] == alpha) && (pPtr[1] == alpha) && (pPtr[2] == alpha))
+-            {
+-                pPtr[3] = 0;
+-            }
+-        }
+-        memcpy(&out[index], &clut[i], 3);
     }
 }
 
-static inline void CopyColorMap(u8 *colormap, u8 *copyTo, u32 size, u32 clutStride)
+static void CopyColorMap(u8 *colormap, u8 *copyTo, u32 size, u32 clutStride)
 {
     for (int i = 0, k = 0; i < size; k += 4, i += clutStride)
     {
@@ -56,7 +56,8 @@ static inline void CopyColorMap(u8 *colormap, u8 *copyTo, u32 size, u32 clutStri
         }
     }
 }
-
+u32 onewhat = 0;
+u32 twowhat = 0;
 void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
 {
     BitmapFileHeader bmfh;
@@ -104,13 +105,16 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
 
     if (image_depth == 8)
     {
-        tex->clut_buffer = memalign(32, 1024);
+        tex->clut_buffer = memalign(128, 1024);
         BGR2RGB(iter, 4, 4 * 256);
+        //memcpy(tex->clut_buffer, iter, 1024);
+        
         Swizzle((int *)tex->clut_buffer, (int *)iter, useAlpha, alpha);
     }
     else if (image_depth == 4)
     {
-        tex->clut_buffer = memalign(32, 64);
+        onewhat = 1;
+        tex->clut_buffer = memalign(128, 64);
         BGR2RGB(iter, 4, 4 * 16);
         memcpy(tex->clut_buffer, iter, 64);
     }
@@ -126,7 +130,9 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
         image_size = bmfh.bfSize - bmfh.bfOffBits;
     }
 
-    tex->pixels = memalign(32, image_size); 
+    tex->pixels = memalign(128, image_size); 
+
+    memset(tex->pixels, 0, image_size);
 
     unsigned int uLine;
     unsigned int bottomLine = tex->height - 1;
@@ -143,7 +149,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
     for (i = 0; i <= bottomLine; i++)
     {
 
-        memcpy(&(tex->pixels[offset]), currline, bytesPerRow);
+        memcpy(tex->pixels+offset, currline, bytesPerRow);
 
         --uLine;
 
@@ -159,9 +165,10 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
     }
 }
 
+u8 colormap[1024];
+u8 clut[1024];
 void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 {
-    u8 colormap[1024];
     png_image image;
     memset(&image, 0, sizeof(png_image));
     image.version = PNG_IMAGE_VERSION;
@@ -174,25 +181,26 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 
     tex->width = image.width;
     tex->height = image.height;
-    int imageSize = PNG_IMAGE_SIZE(image);
 
+    int imageSize = PNG_IMAGE_SIZE(image);
     int clutStride = 4, texStride = 4, useBGR = 0;
 
     switch (image.format & 0x0F)
     {
     case PNG_FORMAT_RGB:
-        tex->pixels = (u8 *)malloc(imageSize * 3);
+        tex->pixels = (u8 *)malloc(imageSize);
         tex->psm = GS_PSM_24;
         texStride = 3;
         break;
     case PNG_FORMAT_RGBA:
-        tex->pixels = (u8 *)malloc(imageSize * 4);
+        tex->pixels = (u8 *)memalign(128, imageSize);
         tex->psm = GS_PSM_32;
+        twowhat = true;
         break;
     case PNG_FORMAT_RGB_COLORMAP:
         clutStride = 3;
     case PNG_FORMAT_RGBA_COLORMAP:
-        
+        twowhat = 1;
         if (image.colormap_entries == 256)
         {
             tex->clut_buffer = (u8 *)malloc(256 * 4);
@@ -203,22 +211,25 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
             tex->clut_buffer = (u8 *)malloc(4 * 16);
             tex->psm = GS_PSM_4;
         }
-        tex->pixels = (u8 *)malloc(imageSize * 2);
+        tex->pixels = (u8 *)malloc(imageSize);
         break;
     default:
         ERRORLOG("Unsupported bit depth and color format");
         return;
     }
 
-    if (!png_image_finish_read(&image, NULL, tex->pixels, 0, colormap))
+    memset(tex->pixels, 0, imageSize);
+
+    int ret = png_image_finish_read(&image, NULL, tex->pixels, 0, colormap);
+
+    if (!ret)
     {
-        ERRORLOG("Cannot load png image");
+        ERRORLOG("Cannot load png image %d", image.warning_or_error);
         free(tex->pixels);
-        if (tex->clut_buffer)
-            free(tex->clut_buffer);
+        if (tex->clut_buffer) free(tex->clut_buffer);
         return;
     }
-
+    
     if (useBGR)
     {
         if ((tex->psm == GS_PSM_8 || tex->psm == GS_PSM_4) && useBGR)
@@ -226,16 +237,16 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
         else
             BGR2RGB(tex->pixels, texStride, imageSize * texStride);
     }
+    
+    onewhat = 2;
 
     if (tex->psm == GS_PSM_8)
     {
-        u8 clut[1024];
-
         CopyColorMap(colormap, clut, image.colormap_entries * clutStride, clutStride);
-
         Swizzle((int *)tex->clut_buffer, (int *)clut, useAlpha, alphaVal);
     }
-    else if (tex->psm == GS_PSM_4)
+    
+    if (tex->psm == GS_PSM_4)
     {
         for (int i = 0, k = 0; i < imageSize; i++, k += 2)
         {
@@ -246,6 +257,8 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 
         CopyColorMap(colormap, tex->clut_buffer, image.colormap_entries * clutStride, clutStride);
     }
+
+    png_image_free(&image);
 }
 
 void CreateTextureFromFile(void *object, void *arg, u8 *buffer, u32 bufferLen)

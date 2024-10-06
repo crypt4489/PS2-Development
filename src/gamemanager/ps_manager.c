@@ -25,6 +25,7 @@
 #include "math/ps_plane.h"
 #include "math/ps_vector.h"
 #include "camera/ps_camera.h"
+#include "audio/ps_sound.h"
 
 GameManager g_Manager;
 
@@ -73,6 +74,8 @@ void InitializeSystem(ManagerInfo *info)
 
     SetupVU1INTEHandler();
 
+    AudioInitialization();
+
     *R_EE_GIF_CTRL |= 1;
 
     *R_EE_VIF1_FBRST |= 1;
@@ -81,7 +84,6 @@ void InitializeSystem(ManagerInfo *info)
 
     *R_EE_GIF_MODE |= 0x04;
     
-
     InitializeManager(info);
 }
 
@@ -176,7 +178,7 @@ void CreateManagerStruct(u32 width, u32 height, bool doubleBuffer, u32 bufferSiz
     g_Manager.timer = TimerZeroEnable();
     g_Manager.currentTime = g_Manager.lastTime = getTicks(g_Manager.timer);
 
-    SetupVU1Programs();
+    if (programSize) SetupVU1Programs();
 }
 
 void InitializeManager(ManagerInfo *info)

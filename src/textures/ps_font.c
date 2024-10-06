@@ -308,7 +308,7 @@ int RenderL(Font *font_struct, int x, int y, const char *text)
     PrimitiveTypeStruct(font_struct->prim);
 
     SetRegSizeAndType(3, DRAW_RGBAQ_UV_REGLIST);
-    DrawCountDirect(textlen * 4);
+    DrawCountDirectRegList(textlen * 4);
 
     u32 lastx = x;
     u32 line = 0;

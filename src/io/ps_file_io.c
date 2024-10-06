@@ -289,12 +289,9 @@ static u32 LoadVertices(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     for (int i = _start; i < _end; i++)
     {
-
         memcpy(buffers->meshData[MESHTRIANGLES]->vertices[i], input_int, 12);
-
         buffers->meshData[MESHTRIANGLES]->vertices[i][3] = 1.0f;
         input_int+=3;
-
     }
 
     return 4 + (12 * size);
@@ -818,10 +815,10 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
 
                 // while(1);
                 iter += 4;
-                u8 code = iter[0];
-                //  DEBUGLOG("%x", code);
-                iter += 1;
                 input_int = (u32 *)iter;
+                u32 code = *input_int;
+                input_int++;
+                iter += 4;
 
                 if (code <= 11)
                 {
@@ -832,6 +829,8 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
                 {
                     ERRORLOG("Unsupported load mesh code %x", code);
                 }
+            } else {
+                break;
             }
             // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
             // break;

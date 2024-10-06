@@ -13,7 +13,7 @@ OBJEXT    := o
 CEXT      := c
 VSMEXT    := vsm
 
-EE_BIN = test.elf
+EE_BIN = ABCD_123.45
 EE_LIB = libps2.a
 
 BUILD_TOOL ?= EE-CC

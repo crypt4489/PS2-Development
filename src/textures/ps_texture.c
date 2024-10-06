@@ -366,7 +366,7 @@ static qword_t *TextureUploadGS(qword_t *q, Texture *tex, u32 texAddress, u32 cl
     {
         int width = (tex-> psm  == GS_PSM_8) ? 16 : 8;
         int height = (tex-> psm  == GS_PSM_8) ? 16 : 2;
-        q = TextureTransfer(q, tex->clut_buffer, width, height, tex->clut.psm, clutAddress, 16, usevif);
+        q = TextureTransfer(q, tex->clut_buffer, width, height, tex->clut.psm, clutAddress, 64, usevif);
     }
 
     q = TextureTransfer(q, tex->pixels, tex->width, tex->height, tex->psm, texAddress, tex->texbuf.width, usevif);

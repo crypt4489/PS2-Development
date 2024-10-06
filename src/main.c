@@ -1,11 +1,7 @@
 #include "ps_global.h"
 
-#include <graph.h>
 #include <audsrv.h>
-#include <sifrpc.h>
-#include <loadfile.h>
-#include <iopheap.h>
-#include <kernel.h>
+
 
 #include <math.h>
 #include <stdio.h>
@@ -52,11 +48,16 @@
 #include "graphics/ps_drawing.h"
 #include "textures/ps_texturemanager.h"
 
+#include <loadfile.h>
+#include <sifrpc.h>
+#include <iopcontrol.h>
+#include <sbv_patches.h>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-char print_out[50];
+char print_out[150];
 
 MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
 
@@ -81,13 +82,13 @@ const char *face4Name = "FACE4.PNG";
 const char *face5Name = "FACE5.PNG";
 const char *face6Name = "FACE6.PNG";
 const char *glossName = "SPHERE.PNG";
-const char *worldName = "WORLD.BMP";
+const char *worldName = "WOW2.PNG";
 const char *wallName = "WALL.PNG";
 const char *alphaMap = "ALPHA_MAP.PNG";
 const char *digitZero = "DIGIT.PNG";
 const char *digitOne = "DIGITM1.PNG";
 const char *digitTwo = "DIGITM2.PNG";
-const char *wowwer = "WOW.PNG";
+const char *wowwer = "WOW3.PNG";
 
 GameObject *grid = NULL;
 GameObject *body = NULL;
@@ -122,6 +123,9 @@ GameObject *shadowTexView = NULL;
 Texture *targetTex = NULL;
 
 Texture *zero = NULL;
+
+Texture *comeon;
+Texture *wowitwork;
 
 FaceVertexTable table = NULL;
 
@@ -158,6 +162,42 @@ static Ray rayray2 = {{-5.0f, 0.0f, -5.0f, 1.0f}, {-1.0f, 0.0f, 0.0f, 1.0f}};
 
 static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
 
+
+static void WriteOut(VECTOR v)
+{
+    
+}
+
+static void ClippVerts(GameObject *obj)
+{
+    MATRIX m;
+
+    VECTOR scale = {2048.0f, 2048.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
+    
+    u32 vertCount = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
+    VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
+
+    CreateWorldMatrixLTM(obj->ltm, m);
+    MatrixMultiply(m, m, cam->viewProj);
+
+    
+    BeginCommand();
+    DepthTest(true, 3);
+    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
+    SetRegSizeAndType(2, DRAW_RGBAQ_REGLIST);
+    PrimitiveType(GS_SET_PRIM(PRIM_TRIANGLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED));
+    for(int i = 0; i<vertCount; i++)
+    {
+        u64 comeon, what;
+        VECTOR v;
+        MatrixVectorMultiply(v, m, verts[i]);  
+        
+        
+        DumpVector(v);
+    }
+   
+}
+
 static void update_cube(GameObject *cube)
 {
     static float angle = 1.0f;
@@ -171,6 +211,8 @@ static void SetupFont()
 {
     myFont = CreateFontStruct("FONTS\\LAUNCHERFONT.BMP", "FONTS\\LAUNCHERDATA.DAT", READ_BMP);
 }
+
+
 
 static void SetupWorldObjects()
 {
@@ -281,7 +323,7 @@ static void SetupGrid()
 
     CreateGraphicsPipeline(grid, "Clipper");
 
-    AddObjectToRenderWorld(world, grid);
+  //  AddObjectToRenderWorld(world, grid);
 }
 
 static void SetupBody()
@@ -329,29 +371,38 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED);
 
-    u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
+    //u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
-    CreateMaterial(&box->vertexBuffer, 0, 17, id);
+    //CreateMaterial(&box->vertexBuffer, 0, 17, comeon->id);
 
-    CreateMaterial(&box->vertexBuffer, 18, 35, GetTextureIDByName(g_Manager.texManager, worldName));
+    CreateMaterial(&box->vertexBuffer, 0, 35, GetTextureIDByName(g_Manager.texManager, worldName));
+    VECTOR pos;
+    CreateVector(50.0f, 0.0f, 0.0f, 1.0f, pos);
 
-    VECTOR pos = {50.0f, 0.0f, 0.0f, 1.0f};
+    VECTOR scales;
+    CreateVector(1.0f, 1.0f, 1.0f, 1.0f, scales);
 
-    VECTOR scales = {1.f, 1.f, 1.f, 1.0f};
-
-    SetupLTM(pos, up, right, forward,
+    SetupLTM(pos, up, right, forward, 
              scales,
              1.0f, box->ltm);
 
+    CreateWorldMatrixLTM(box->ltm, box->world);         
+   /*
+
+   
+
+             */
+
     box->update_object = NULL;
+    
 
     InitVBO(box, VBO_FIT);
 
-    CreateGraphicsPipeline(box, "Clipper");
+   CreateGraphicsPipeline(box, "Clipper");
 
-    AddObjectToRenderWorld(world, box);
+   AddObjectToRenderWorld(world, box);  
 }
 
 u32 count;
@@ -459,20 +510,18 @@ static void SetupGameObjects()
 
     // InitSkybox();
      
-    SetupGrid();
+   // SetupGrid();
     SetupAABBBox();
     
    //  SetupBody();
    
     // SetupOBBBody();
-    SetupShootBoxBox();
+    //SetupShootBoxBox();
     // SetupShootBigBoxBox();
     //  SetupMultiSphere();
-    //   SetupShadowViewer();
 
     // SetupRoom();
 
-    //  SetupTessObject();
 }
 
 static void CleanUpGame()
@@ -494,7 +543,7 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     DepthBufferMask(true);
     SetRegSizeAndType(2, DRAW_RGBAQ_REGLIST);
     PrimitiveType(GS_SET_PRIM(PRIM_TRIANGLE_STRIP, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED));
-    DrawCountDirect(4);
+    DrawCountDirectRegList(4);
     DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
     DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
     DrawPairU64(GIF_SET_RGBAQ(red, green, blue, alpha, 1), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF));
@@ -503,6 +552,36 @@ void DrawShadowQuad(int height, int width, int xOffset, int yOffset, u32 destTes
     DepthBufferMask(false);
     SubmitCommand(false);
 }
+
+void DrawTexturedQuad(int height, int width, Texture *tex)
+{
+    height >>= 1;
+    width >>= 1;
+    BeginCommand();
+    BindTexture(tex, true);
+    DepthTest(true, 1);
+    SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
+
+    DepthBufferMask(true);
+    SetRegSizeAndType(3, DRAW_RGBAQ_UV_REGLIST);
+    PrimitiveType(GS_SET_PRIM(PRIM_TRIANGLE_STRIP, DRAW_DISABLE, DRAW_ENABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED));
+    DrawCountDirectRegList(4);
+    
+     DrawPairU64(GIF_SET_RGBAQ(0x80, 0x80, 0x80, 0x80, 1), GIF_SET_UV(0, 0));
+
+    DrawPairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, -), 0xFFFFFF), GIF_SET_RGBAQ(0x80, 0x80, 0x80, 0x80, 1));
+
+    DrawPairU64(GIF_SET_UV(0, tex->height << 4), GIF_SET_XYZ(CreateGSScreenCoordinates(width, -), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+
+    DrawPairU64(GIF_SET_RGBAQ(0x80, 0x80, 0x80, 0x80, 1), GIF_SET_UV(tex->width << 4, 0));
+
+    DrawPairU64(GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, -), 0xFFFFFF), GIF_SET_RGBAQ(0x80, 0x80, 0x80, 0x80, 1));
+
+    DrawPairU64(GIF_SET_UV(tex->width << 4, tex->height << 4), GIF_SET_XYZ(CreateGSScreenCoordinates(width, +), CreateGSScreenCoordinates(height, +), 0xFFFFFF));
+    
+    SubmitCommand(false);
+}
+
 
 static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
 {
@@ -636,6 +715,9 @@ static u8 glowR = 255;
 static u8 glowG = 128;
 static u8 glowB = 128;
 
+extern u32 onewhat;
+extern u32 twowhat;
+char *pngoutput;
 int Render()
 {
     CREATE_RGBAQ_STRUCT(highlight, 255, 0, 0, 128, 0);
@@ -664,7 +746,7 @@ int Render()
         float delta = (currentTime - lastTime) * 0.001f;
         lastTime = currentTime;
 
-        TestObjects();
+       // TestObjects();
 
         UpdatePad();
 
@@ -677,42 +759,48 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-        DrawWorld(world);
+       // CreateWorldMatrixLTM(box->ltm, box->world);
+
+      //  DrawWorld(world);
 
        
 
         MATRIX ident;
         MatrixIdentity(ident);
 
-        RenderSphereLine(&lolSphere, *colors[3], 40);
+       // RenderSphereLine(&lolSphere, *colors[3], 40);
 
-        RenderPlaneLine(&plane2, *colors[1], 20);
+      //  RenderPlaneLine(&plane2, *colors[1], 20);
 
-        RenderRay(&rayray2, *colors[2], 25);
+       // RenderRay(&rayray2, *colors[2], 25);
         
-        RenderLine(&mainLine, *colors[3]);
+       // RenderLine(&mainLine, *colors[3]);
         
-        RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
+       // RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
          
-        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
+       // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
     
-        RenderShadowVertices(adjs, count, m);
+       // RenderShadowVertices(adjs, count, m);
         
        // ReadFromVU(vu1_data_address, 1024*4, 0);
 
-        DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
+       // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
 
-        //RenderGameObject(box);
+      //  RenderGameObject(box);
 
-        snprintf(print_out, 35, "DERRICK REGINALD %d", FrameCounter);
+        snprintf(print_out, 100, "DERRICK REGINALD %d %s", onewhat, pngoutput);
+
+       // 
+
+        
+        DrawTexturedQuad(480, 640, GetTexByName(g_Manager.texManager, worldName));
 
         PrintText(myFont, print_out, -310, -220, LEFT);
 
-
         StitchDrawBuffer(true);
 
-        DEBUGLOG("%f", getTicks(g_Manager.timer)- time1);
+       // DEBUGLOG("%f", getTicks(g_Manager.timer)- time1);
 
         DispatchDrawBuffers();
 
@@ -722,6 +810,9 @@ int Render()
         EndRendering(cam);
 
         EndFrame(true);
+
+        //ClippVerts(grid);
+
 
        //  ReadFromVU(vu1_data_address, 100*4, true)
     
@@ -737,18 +828,22 @@ static void LoadInTextures()
 
     char _folder[9] = "TEXTURES\\";
 
-    AppendString(_folder, worldName, _file, MAX_FILE_NAME);
-
-    Texture *tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_CLAMP);
-
-    SetFilters(tex, PS_FILTER_BILINEAR);
-
     AppendString(_folder, wowwer, _file, MAX_FILE_NAME);
 
-    tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+   // comeon = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
 
-    SetFilters(tex, PS_FILTER_BILINEAR);
+    //SetFilters(comeon, PS_FILTER_BILINEAR);
+
+    AppendString(_folder, worldName, _file, MAX_FILE_NAME);
+
+    wowitwork = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_WRAP);
+
+    SetFilters(wowitwork, PS_FILTER_NNEIGHBOR);
+
+   
 }
+
+
 
 void StartUpSystem()
 {
@@ -767,10 +862,16 @@ void StartUpSystem()
     SetupWorldObjects();
 }
 
-#include "system/ps_spr.h"
-
 int main(int argc, char **argv)
 {
+    ResetEE(0);
+
+    SifExitRpc();
+
+    while(!SifIopReset(NULL, 0x8000000));
+    while(!SifIopSync()) {}
+    SifInitRpc(0);
+    
     StartUpSystem();
 
     float totalTime;
@@ -781,7 +882,11 @@ int main(int argc, char **argv)
 
     startTime = getTicks(g_Manager.timer);
 
+    SetupFont();
+
     LoadInTextures();
+
+   // 
 
     endTime = getTicks(g_Manager.timer);
 
@@ -789,11 +894,13 @@ int main(int argc, char **argv)
 
     CreateLights();
 
-    SetupFont();
+    
 
     startTime = getTicks(g_Manager.timer);
 
     SetupGameObjects();
+
+
 
     endTime = getTicks(g_Manager.timer);
 
@@ -803,31 +910,20 @@ int main(int argc, char **argv)
 
     DEBUGLOG("total %f", endTime - totalTime);
 
-    audsrv_adpcm_t sample;
+   // audsrv_adpcm_t sample;
 
-    VagFile *vag = LoadVagFile("SOUNDS\\HOW.VAG");
+   // VagFile *vag = LoadVagFile("SOUNDS\\HOW.VAG");
 
-    int ret;
-    printf("sample: kicking IRXs\n");
-    ret = SifLoadModule("cdrom0:\\LIBSD.IRX", 0, NULL);
-    printf("libsd loadmodule %d\n", ret);
+    //audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength + 16);
+   // DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
+    //int channel = audsrv_ch_play_adpcm(-1, &sample);
+    //audsrv_adpcm_set_volume(channel, MAX_VOLUME);
 
-    printf("sample: loading audsrv\n");
-    ret = SifLoadModule("cdrom0:\\AUDSRV.IRX", 0, NULL);
-    printf("audsrv loadmodule %d\n", ret);
-
-    ret = audsrv_init();
-
-    audsrv_adpcm_init();
-
-    audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength + 16);
-    DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
-    int channel = audsrv_ch_play_adpcm(-1, &sample);
-    audsrv_adpcm_set_volume(channel, MAX_VOLUME);
+    
 
     Render();
 
-    DestroyVAGFile(vag);
+    //DestroyVAGFile(vag);
 
     CleanUpGame();
 

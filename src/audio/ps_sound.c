@@ -8,6 +8,8 @@
 #include <kernel.h>
 #include <stdlib.h>
 
+#include <audsrv.h>
+
 #include "log/ps_log.h"
 #include "io/ps_file_io.h"
 #include "math/ps_misc.h"
@@ -639,4 +641,17 @@ void DestroyWAVFile(WavFile *file)
 		free(file->samples);
 		free(file);
 	}
+}
+
+void AudioInitialization()
+{
+	int ret;
+	
+    ret = SifLoadModule("cdrom0:\\LIBSD.IRX", 0, NULL);
+
+    ret = SifLoadModule("cdrom0:\\AUDSRV.IRX", 0, NULL);
+
+    ret = audsrv_init();
+
+    audsrv_adpcm_init();
 }

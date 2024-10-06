@@ -72,7 +72,7 @@ void DrawCount(int num, int vertexMemberCount, bool toVU);
 
 void DrawCountWrite(int num, int vertexMemberCount);
 
-void DrawCountDirect(int num);
+void DrawCountDirectRegList(int num);
 
 void DrawUpload(int num);
 

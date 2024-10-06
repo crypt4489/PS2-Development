@@ -732,7 +732,8 @@ static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
     int size = ReturnCommand();
     pipeline->qwSize = size;
     pipeline->q = (qword_t *)malloc(sizeof(qword_t) * size);
-    Ultimatememcpy(begin, size, pipeline->q);
+   // Ultimatememcpy(begin, size, pipeline->q);
+    memcpy(pipeline->q, begin, size * 16);
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
 }
