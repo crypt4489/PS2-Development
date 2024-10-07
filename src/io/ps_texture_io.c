@@ -29,19 +29,19 @@ static void Swizzle(int *out, int *clut,
     for (int i = 0; i < 256; i++)
     {
          int index = (i & 231) + ((i & 8) << 1) + ((i & 16) >> 1);
--        u8 *pPtr = (u8 *)&out[index];
--        if (useAlpha)
--        {
--            pPtr[3] = alpha;
--        }
--        else
--        {
--            if ((pPtr[0] == alpha) && (pPtr[1] == alpha) && (pPtr[2] == alpha))
--            {
--                pPtr[3] = 0;
--            }
--        }
--        memcpy(&out[index], &clut[i], 3);
+        u8* pPtr = (u8*)&out[index];
+        if (useAlpha)
+        {
+            pPtr[3] = alpha;
+        }
+        else
+        {
+            if ((pPtr[0] == alpha) && (pPtr[1] == alpha) && (pPtr[2] == alpha))
+            {
+                pPtr[3] = 0;
+            }
+        }
+        memcpy(&out[index], &clut[i], 3);
     }
 }
 
