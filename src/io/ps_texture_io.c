@@ -56,8 +56,7 @@ static void CopyColorMap(u8 *colormap, u8 *copyTo, u32 size, u32 clutStride)
         }
     }
 }
-u32 onewhat = 0;
-u32 twowhat = 0;
+
 void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
 {
     BitmapFileHeader bmfh;
@@ -83,41 +82,7 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
     tex->height = bmih.biHeight;
 
     int image_depth = bmih.biBitCount;
-
-    switch (image_depth)
-    {
-    case 4:
-        tex->psm = GS_PSM_4;
-        break;
-    case 8:
-        tex->psm = GS_PSM_8;
-        break;
-    case 24:
-        tex->psm = GS_PSM_24;
-        break;
-    case 32:
-        tex->psm = GS_PSM_32;
-        break;
-    default:
-        ERRORLOG("unsupported bit depth %d", image_depth);
-        return;
-    }
-
-    if (image_depth == 8)
-    {
-        tex->clut_buffer = memalign(128, 1024);
-        BGR2RGB(iter, 4, 4 * 256);
-        //memcpy(tex->clut_buffer, iter, 1024);
-        
-        Swizzle((int *)tex->clut_buffer, (int *)iter, useAlpha, alpha);
-    }
-    else if (image_depth == 4)
-    {
-        onewhat = 1;
-        tex->clut_buffer = memalign(128, 64);
-        BGR2RGB(iter, 4, 4 * 16);
-        memcpy(tex->clut_buffer, iter, 64);
-    }
+    int imageOffset = bmfh.bfOffBits;
 
     int image_size;
 
@@ -130,30 +95,63 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
         image_size = bmfh.bfSize - bmfh.bfOffBits;
     }
 
-    tex->pixels = memalign(128, image_size); 
+    int bytesPerRow;
 
-    memset(tex->pixels, 0, image_size);
+    switch (image_depth)
+    {
+    case 4:
+        tex->psm = GS_PSM_4;
+        bytesPerRow = tex->width>>1;
+        break;
+    case 8:
+        tex->psm = GS_PSM_8;
+        bytesPerRow = tex->width;
+        break;
+    case 24:
+        tex->psm = GS_PSM_24;
+        bytesPerRow = tex->width*3;
+        break;
+    case 32:
+        tex->psm = GS_PSM_32;
+        bytesPerRow = tex->width*4;
+        break;
+    default:
+        ERRORLOG("unsupported bit depth %d", image_depth);
+        return;
+    }
+
+    if (image_depth == 8)
+    {
+        tex->clut_buffer = (u8*)memalign(128, 1024);
+        BGR2RGB(iter, 4, 4 * 256);    
+        Swizzle((int *)tex->clut_buffer, (int *)iter, useAlpha, alpha);
+    }
+    else if (image_depth == 4)
+    {
+        tex->clut_buffer = (u8*)memalign(128, 64);
+        BGR2RGB(iter, 4, 4 * 16);
+        memcpy(tex->clut_buffer, iter, 64);
+    }
+    
+    tex->pixels = (u8*)memalign(128, image_size); 
 
     unsigned int uLine;
     unsigned int bottomLine = tex->height - 1;
     int i = 0;
 
-    int bytesPerRow = tex->width * ((float)bmih.biBitCount / 8);
-
     int offset = 0;
 
     uLine = bottomLine;
 
-    u8 *currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
+    u8 *currline = buffer + ((imageOffset) + (uLine * bytesPerRow));
 
     for (i = 0; i <= bottomLine; i++)
     {
+        u8 *copy = tex->pixels+offset;
 
-        memcpy(tex->pixels+offset, currline, bytesPerRow);
+        for (int j = 0; j<bytesPerRow; j++) copy[j] = currline[j];
 
-        --uLine;
-
-        currline = buffer + ((bmfh.bfOffBits) + (uLine * bytesPerRow));
+        currline -= bytesPerRow;
 
         offset += bytesPerRow;
     }
@@ -165,10 +163,13 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
     }
 }
 
-u8 colormap[1024];
-u8 clut[1024];
+
 void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 {
+
+    u8 *colormap = NULL;
+    u8 *clut = NULL;
+
     png_image image;
     memset(&image, 0, sizeof(png_image));
     image.version = PNG_IMAGE_VERSION;
@@ -188,37 +189,34 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
     switch (image.format & 0x0F)
     {
     case PNG_FORMAT_RGB:
-        tex->pixels = (u8 *)malloc(imageSize);
+        tex->pixels = (u8 *)memalign(128, imageSize);
         tex->psm = GS_PSM_24;
         texStride = 3;
         break;
     case PNG_FORMAT_RGBA:
         tex->pixels = (u8 *)memalign(128, imageSize);
         tex->psm = GS_PSM_32;
-        twowhat = true;
         break;
     case PNG_FORMAT_RGB_COLORMAP:
         clutStride = 3;
     case PNG_FORMAT_RGBA_COLORMAP:
-        twowhat = 1;
         if (image.colormap_entries == 256)
         {
-            tex->clut_buffer = (u8 *)malloc(256 * 4);
+            tex->clut_buffer = (u8 *)memalign(128, 256 * 4);
             tex->psm = GS_PSM_8;
         }
         else
         {
-            tex->clut_buffer = (u8 *)malloc(4 * 16);
+            tex->clut_buffer = (u8 *)memalign(128, 4 * 16);
             tex->psm = GS_PSM_4;
         }
-        tex->pixels = (u8 *)malloc(imageSize);
+        tex->pixels = (u8 *)memalign(128, imageSize);
+        colormap = (u8 *)memalign(128, 1024);
         break;
     default:
         ERRORLOG("Unsupported bit depth and color format");
         return;
     }
-
-    memset(tex->pixels, 0, imageSize);
 
     int ret = png_image_finish_read(&image, NULL, tex->pixels, 0, colormap);
 
@@ -227,7 +225,7 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
         ERRORLOG("Cannot load png image %d", image.warning_or_error);
         free(tex->pixels);
         if (tex->clut_buffer) free(tex->clut_buffer);
-        return;
+        goto pngend;
     }
     
     if (useBGR)
@@ -237,13 +235,13 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
         else
             BGR2RGB(tex->pixels, texStride, imageSize * texStride);
     }
-    
-    onewhat = 2;
 
     if (tex->psm == GS_PSM_8)
     {
+        clut = (u8*)memalign(128, 1024);
         CopyColorMap(colormap, clut, image.colormap_entries * clutStride, clutStride);
         Swizzle((int *)tex->clut_buffer, (int *)clut, useAlpha, alphaVal);
+        free(clut);
     }
     
     if (tex->psm == GS_PSM_4)
@@ -257,7 +255,8 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 
         CopyColorMap(colormap, tex->clut_buffer, image.colormap_entries * clutStride, clutStride);
     }
-
+pngend:
+    if (colormap) free(colormap);
     png_image_free(&image);
 }
 
@@ -271,13 +270,17 @@ void CreateTextureFromFile(void *object, void *arg, u8 *buffer, u32 bufferLen)
     tex->clut_buffer = NULL;
     tex->pixels = NULL;
 
-    if (params->readType == READ_BMP)
+    switch(params->readType)
     {
-        LoadBitmap(buffer, tex, params->useAlpha, params->alpha);
-    }
-    else if (params->readType == READ_PNG)
-    {
-        LoadPng(buffer, tex, bufferLen, params->useAlpha, params->alpha);
+        case READ_BMP:
+            LoadBitmap(buffer, tex, params->useAlpha, params->alpha);
+            break;
+        case READ_PNG:
+            LoadPng(buffer, tex, bufferLen, params->useAlpha, params->alpha);
+            break;
+        default:
+            ERRORLOG("Unhandled image type %d", params->readType);
+            break;
     }
 }
 

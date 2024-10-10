@@ -124,29 +124,24 @@ Font *CreateFontStructFromBuffer(const char *fontName, u8 *fontPic,
 
 Font *CreateFontStruct(const char *fontName, const char *fontData, int read_type)
 {
-    prim_t prim;
-    Color color;
-
     Texture *myFontTex = NULL;
     Font *font = (Font *)malloc(sizeof(Font));
 
-    prim.type = PRIM_TRIANGLE_STRIP;
-    prim.shading = PRIM_SHADE_GOURAUD;
-    prim.mapping = DRAW_ENABLE;
-    prim.fogging = DRAW_DISABLE;
-    prim.blending = DRAW_ENABLE;
-    prim.antialiasing = DRAW_DISABLE;
-    prim.mapping_type = PRIM_MAP_UV;
-    prim.colorfix = PRIM_UNFIXED;
+    font->prim.type = PRIM_TRIANGLE_STRIP;
+    font->prim.shading = PRIM_SHADE_GOURAUD;
+    font->prim.mapping = DRAW_ENABLE;
+    font->prim.fogging = DRAW_DISABLE;
+    font->prim.blending = DRAW_ENABLE;
+    font->prim.antialiasing = DRAW_DISABLE;
+    font->prim.mapping_type = PRIM_MAP_UV;
+    font->prim.colorfix = PRIM_UNFIXED;
 
-    color.r = 0xFF;
-    color.g = 0x00;
-    color.b = 0x00;
-    color.a = 0x80;
-    color.q = 1.0f;
-
-    font->color = color;
-    font->prim = prim;
+    font->color.r = 0xFF;
+    font->color.g = 0x00;
+    font->color.b = 0x00;
+    font->color.a = 0x80;
+    font->color.q = 1.0f;
+    
 
     myFontTex = AddAndCreateTexture(fontName, read_type, 1, 0x80, TEX_ADDRESS_CLAMP);
 

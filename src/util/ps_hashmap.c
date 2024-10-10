@@ -51,6 +51,7 @@ static int DescendHashIndex(AVLTree *root, HashEntry *entry, u64 code)
 
     if (code > root->node)
     {
+        
         next = root->right;
     }
 
@@ -92,7 +93,7 @@ static HashEntry *FindHashEntry(AVLTree *tree, const void *key, int lenKey, u64 
     {
         u64 code = tree->node;
         HashEntry *found = tree->data;
-        
+
         if (hashCode == code && (!key || (lenKey == found->sizeKey && !memcmp(found->key, key, lenKey))))
                 return found;           
     

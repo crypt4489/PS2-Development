@@ -169,19 +169,21 @@ void LoadASync(const char *name,
 
     int compressed = IsFileCompressed(_file);
 
-    sceCdlFILE *loc_file_struct = FindFileByName(_file);
+    sceCdlFILE loc_file_struct; 
+    
+    bool ret = FindFileByName(_file, &loc_file_struct);
 
-    if (!loc_file_struct)
+    if (!ret)
     {
         ERRORLOG("Cannot find file %s in async loader", name);
         return;
     }
 
-    u32 sectors = loc_file_struct->size / SECTOR_SIZE;
+    u32 sectors = loc_file_struct.size / SECTOR_SIZE;
 
-    u32 remaining = loc_file_struct->size % SECTOR_SIZE;
+    u32 remaining = loc_file_struct.size % SECTOR_SIZE;
 
-    u32 bufferSize = loc_file_struct->size;
+    u32 bufferSize = loc_file_struct.size;
 
     if (remaining)
     {
@@ -192,7 +194,7 @@ void LoadASync(const char *name,
 
     FileInfo *info = CreateFileInfo(bufferSize, sectors);
 
-    IOQueueItem *item = CreateIOQueueItem(loc_file_struct, loaderCB, finish,
+    IOQueueItem *item = CreateIOQueueItem(&loc_file_struct, loaderCB, finish,
                                           compressed, info, buffer, params,
                                           object);
 

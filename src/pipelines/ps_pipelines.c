@@ -20,6 +20,8 @@
 #include "graphics/ps_drawing.h"
 #include "system/ps_spr.h"
 
+#include <malloc.h>
+
 #if 0 
 
 void SetupStage2MATRIX(VU1Pipeline *pipeline, MATRIX m)
@@ -571,6 +573,8 @@ static void BasePipelineCommand(VU1Pipeline *pipeline, GameObject *obj, VertexTy
     BindMatrix(g_DrawCamera->viewProj, 0, false);
     BindMatrix(obj->world, 4, false);
 
+    
+
     if (props->ANIMATION_TEXUTRE || props->ENVIRONMENTMAP)
     {
         PipelineCallback *setupStage2Mat = CreatePipelineCBNode(SetupStage2MATVU1, GetGlobalDrawPointer()-begin, NULL, DEFAULT_STAGE2_MATRIX_PCB);
@@ -590,13 +594,14 @@ static void BasePipelineCommand(VU1Pipeline *pipeline, GameObject *obj, VertexTy
     }
 
     int max = MaxUploadSize(type, headerSize, obj->renderState.gsstate.gs_reg_count, obj->renderState.properties.CLIPPING);
-
+    
     UploadBuffers(start, end, max, buffer, type);
     for (int i = 1; i<matCount; i++)
     {
         matIter = LoadMaterial(matIter, false, &start, &end);
         UploadBuffers(start, end, max, buffer, type);
     } 
+    
 }
 
 void CreateAlphaMapPipeline(GameObject *obj, const char *name)
@@ -731,8 +736,9 @@ static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
 {
     int size = ReturnCommand();
     pipeline->qwSize = size;
-    pipeline->q = (qword_t *)malloc(sizeof(qword_t) * size);
+    pipeline->q = (qword_t *)memalign(128,sizeof(qword_t) * size);
    // Ultimatememcpy(begin, size, pipeline->q);
+    memset(pipeline->q , 0, size * 16);
     memcpy(pipeline->q, begin, size * 16);
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);

@@ -5,7 +5,7 @@
 
 #define SECTOR_SIZE 2048
 
-sceCdlFILE *FindFileByName(const char *filename);
+bool FindFileByName(const char *filename, sceCdlFILE *loc_file_struct);
 
 u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
                     u8 *outBuffer,

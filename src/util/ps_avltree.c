@@ -73,8 +73,8 @@ AVLTree *InsertAVLNode(AVLTree *tree, AVLTree *node)
         return tree;
     }
 
-    int val = node->node;
-    int comp = tree->node;
+    u64 val = node->node;
+    u64 comp = tree->node;
     
     if (val > comp)
     {

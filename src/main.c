@@ -82,13 +82,13 @@ const char *face4Name = "FACE4.PNG";
 const char *face5Name = "FACE5.PNG";
 const char *face6Name = "FACE6.PNG";
 const char *glossName = "SPHERE.PNG";
-const char *worldName = "WOW2.PNG";
+const char *worldName = "WORLD2.BMP";
 const char *wallName = "WALL.PNG";
 const char *alphaMap = "ALPHA_MAP.PNG";
 const char *digitZero = "DIGIT.PNG";
 const char *digitOne = "DIGITM1.PNG";
-const char *digitTwo = "DIGITM2.PNG";
-const char *wowwer = "WOW3.PNG";
+const char *dudeer = "WORLD4BMP.BMP";
+const char *wowwer = "WOW.PNG";
 
 GameObject *grid = NULL;
 GameObject *body = NULL;
@@ -124,8 +124,6 @@ Texture *targetTex = NULL;
 
 Texture *zero = NULL;
 
-Texture *comeon;
-Texture *wowitwork;
 
 FaceVertexTable table = NULL;
 
@@ -375,7 +373,7 @@ static void SetupAABBBox()
 
     //u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
-    //CreateMaterial(&box->vertexBuffer, 0, 17, comeon->id);
+    //CreateMaterial(&box->vertexBuffer, 0, 17, id);
 
     CreateMaterial(&box->vertexBuffer, 0, 35, GetTextureIDByName(g_Manager.texManager, worldName));
     VECTOR pos;
@@ -715,9 +713,6 @@ static u8 glowR = 255;
 static u8 glowG = 128;
 static u8 glowB = 128;
 
-extern u32 onewhat;
-extern u32 twowhat;
-char *pngoutput;
 int Render()
 {
     CREATE_RGBAQ_STRUCT(highlight, 255, 0, 0, 128, 0);
@@ -759,9 +754,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-       // CreateWorldMatrixLTM(box->ltm, box->world);
-
-      //  DrawWorld(world);
+        DrawWorld(world);
 
        
 
@@ -770,7 +763,7 @@ int Render()
 
        // RenderSphereLine(&lolSphere, *colors[3], 40);
 
-      //  RenderPlaneLine(&plane2, *colors[1], 20);
+       // RenderPlaneLine(&plane2, *colors[1], 20);
 
        // RenderRay(&rayray2, *colors[2], 25);
         
@@ -787,16 +780,15 @@ int Render()
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
 
-      //  RenderGameObject(box);
+         //RenderGameObject(box);
 
-        snprintf(print_out, 100, "DERRICK REGINALD %d %s", onewhat, pngoutput);
+        snprintf(print_out, 100, "DERRICK REGINALD %d", FrameCounter);
 
        // 
 
-        
-        DrawTexturedQuad(480, 640, GetTexByName(g_Manager.texManager, worldName));
+       // DrawTexturedQuad(448, 640, GetTexByName(g_Manager.texManager, wowwer));
 
-        PrintText(myFont, print_out, -310, -220, LEFT);
+     //   PrintText(myFont, print_out, -310, -220, LEFT);
 
         StitchDrawBuffer(true);
 
@@ -828,18 +820,30 @@ static void LoadInTextures()
 
     char _folder[9] = "TEXTURES\\";
 
-    AppendString(_folder, wowwer, _file, MAX_FILE_NAME);
 
-   // comeon = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+    
+    Texture *tex;
 
-    //SetFilters(comeon, PS_FILTER_BILINEAR);
+    
+
+    AppendString(_folder, dudeer, _file, MAX_FILE_NAME);
+
+  //  tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_WRAP);
+
+  //  SetFilters(tex, PS_FILTER_NNEIGHBOR);
+
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
 
-    wowitwork = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_WRAP);
+    tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_WRAP);
 
-    SetFilters(wowitwork, PS_FILTER_NNEIGHBOR);
+    SetFilters(tex, PS_FILTER_NNEIGHBOR);
 
+    AppendString(_folder, wowwer, _file, MAX_FILE_NAME);
+
+  //  tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+
+   // SetFilters(tex, PS_FILTER_BILINEAR);
    
 }
 
@@ -882,7 +886,7 @@ int main(int argc, char **argv)
 
     startTime = getTicks(g_Manager.timer);
 
-    SetupFont();
+  SetupFont();
 
     LoadInTextures();
 

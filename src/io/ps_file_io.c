@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <malloc.h>
 
 #include "gameobject/ps_gameobject.h"
 #include "textures/ps_texture.h"
@@ -73,18 +74,15 @@ bool FileExist(const char *filename) {
     return true;
 }
 
-sceCdlFILE *FindFileByName(const char *filename)
+bool FindFileByName(const char *filename, sceCdlFILE *file_struct)
 {
-    sceCdlFILE *file_struct = (sceCdlFILE *)malloc(sizeof(sceCdlFILE)); //(sceCdlFILE *)malloc(sizeof(sceCdlFILE));
-
     if (!(sceCdSearchFile(file_struct, filename)))
     {
         ERRORLOG("FINDFILEBYNAME: Not found %s", filename);
-        free(file_struct);
-        return NULL;
+        return false;
     }
 
-    return file_struct;
+    return true;
 }
 
 u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
@@ -143,22 +141,24 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
     // DEBUGLOG("Compressed file ? %d", compressed);
 
-    sceCdlFILE *loc_file_struct = FindFileByName(filename);
+    sceCdlFILE loc_file_struct;
 
-    if (!loc_file_struct) return NULL;
+    bool ret = FindFileByName(filename, &loc_file_struct);
+
+    if (!ret) return NULL;
     
-    u32 starting_sec = loc_file_struct->lsn;
-    u32 sectors = loc_file_struct->size / SECTOR_SIZE;
+    u32 starting_sec = loc_file_struct.lsn;
+    u32 sectors = loc_file_struct.size / SECTOR_SIZE;
 
-    u32 remaining = loc_file_struct->size & (SECTOR_SIZE-1);
+    u32 remaining = loc_file_struct.size & (SECTOR_SIZE-1);
 
-    u32 bufferSize = loc_file_struct->size;
+    u32 bufferSize = loc_file_struct.size;
 
     if (remaining)  sectors++;
 
     u32 bytesLeft = bufferSize;
 
-    u8 *buffer = (u8 *)malloc(bufferSize);
+    u8 *buffer = (u8 *)memalign(128, bufferSize);
 
     u8 *head_of_copy = buffer;
 
@@ -172,7 +172,7 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
         u32 bytesRead = SECTOR_SIZE;
         if (SECTOR_SIZE > bytesLeft)
         {
-            u8 readBuffer[SECTOR_SIZE];
+            u8 readBuffer[2048];
             bytesRead = bytesLeft;
             ReadSector(starting_sec + i, 1, readBuffer);
             memcpy(head_of_copy, readBuffer, bytesRead);
@@ -199,8 +199,6 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
     *outSize = bufferSize;
 
-    free(loc_file_struct);
-
     return buffer;
 }
 
@@ -210,17 +208,17 @@ MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 siz
     buffers->meshAnimationData = NULL;
     if (code & 0x01)
     {
-        buffers->meshData[MESHTRIANGLES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHTRIANGLES]->vertices = (VECTOR *)memalign(128,sizeof(VECTOR) * size);
     }
 
     if (code & 0x04)
     {
-        buffers->meshData[MESHTRIANGLES]->normals = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHTRIANGLES]->normals = (VECTOR *)memalign(128,sizeof(VECTOR) * size);
     }
 
     if (code & 0x02)
     {
-        buffers->meshData[MESHTRIANGLES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHTRIANGLES]->texCoords = (VECTOR *)memalign(128,sizeof(VECTOR) * size);
     }
 
     if (code & 0x08)
@@ -230,8 +228,8 @@ MeshBuffers *AllocateMeshBuffersFromCode(MeshBuffers *buffers, u16 code, u32 siz
 
     if ((code & 0x20))
     {
-        buffers->meshData[MESHTRIANGLES]->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);
-        buffers->meshData[MESHTRIANGLES]->bones = (VectorInt *)malloc(sizeof(VectorInt) * size);
+        buffers->meshData[MESHTRIANGLES]->weights = (VECTOR *)memalign(128,sizeof(VECTOR) * size);
+        buffers->meshData[MESHTRIANGLES]->bones = (VectorInt *)memalign(128,sizeof(VectorInt) * size);
         buffers->meshAnimationData = (AnimationMesh *)malloc(sizeof(AnimationMesh));
         buffers->meshAnimationData->animationsCount = buffers->meshAnimationData->jointsCount = 0;
         buffers->meshAnimationData->animations = NULL;
@@ -451,7 +449,7 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 
     buffers->meshAnimationData->jointsCount = size;
     buffers->meshAnimationData->joints = malloc(sizeof(Joint *) * size);
-    buffers->meshAnimationData->finalBones = (VECTOR*)malloc(sizeof(VECTOR) * 3 * size);
+    buffers->meshAnimationData->finalBones = (VECTOR*)memalign(128,sizeof(VECTOR) * 3 * size);
     input_int++;
 
     for (int i = 0; i < size; i++)
@@ -752,24 +750,24 @@ static void AllocateVerticesBufferFromCode(MeshBuffers *buffers, u16 code, u32 s
     buffers->meshData[MESHVERTICES]->vertexCount = size;
     if (code & 0x01)
     {
-        buffers->meshData[MESHVERTICES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHVERTICES]->vertices = (VECTOR *)memalign(128, sizeof(VECTOR) * size);
     }
 
     if (code & 0x04)
     {
-        buffers->meshData[MESHVERTICES]->normals = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHVERTICES]->normals = (VECTOR *)memalign(128,sizeof(VECTOR) * size);
     }
 
     if (code & 0x02)
     {
-        buffers->meshData[MESHVERTICES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * size);
+        buffers->meshData[MESHVERTICES]->texCoords = (VECTOR *)memalign(128,sizeof(VECTOR) * size);
     }
 
     if (code & 0x20)
     {
 
-        buffers->meshData[MESHVERTICES]->weights = (VECTOR *)malloc(sizeof(VECTOR) * size);
-        buffers->meshData[MESHVERTICES]->bones = (VectorInt *)malloc(sizeof(VectorInt) * size);
+        buffers->meshData[MESHVERTICES]->weights = (VECTOR *)memalign(128,sizeof(VECTOR) * size);
+        buffers->meshData[MESHVERTICES]->bones = (VectorInt *)memalign(128,sizeof(VectorInt) * size);
     }
 }
 
