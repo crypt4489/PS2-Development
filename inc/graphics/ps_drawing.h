@@ -116,4 +116,6 @@ qword_t *GetVIFHeaderUpload();
 
 qword_t *GetSplitHeaderUpload();
 
+void ClearTape(int size);
+
 #endif

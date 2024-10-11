@@ -594,6 +594,7 @@ static void BasePipelineCommand(VU1Pipeline *pipeline, GameObject *obj, VertexTy
     }
 
     int max = MaxUploadSize(type, headerSize, obj->renderState.gsstate.gs_reg_count, obj->renderState.properties.CLIPPING);
+
     
     UploadBuffers(start, end, max, buffer, type);
     for (int i = 1; i<matCount; i++)
@@ -731,15 +732,16 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     
     EndAndCopy(pipeline, GetDrawBegin(), obj);
 } 
-
+#include "math/ps_misc.h"
 static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
 {
     int size = ReturnCommand();
     pipeline->qwSize = size;
-    pipeline->q = (qword_t *)memalign(128,sizeof(qword_t) * size);
+    pipeline->q = (qword_t *)memalign(128, sizeof(qword_t) * size);
+    memset(pipeline->q, 0, size * 16);
    // Ultimatememcpy(begin, size, pipeline->q);
-    memset(pipeline->q , 0, size * 16);
-    memcpy(pipeline->q, begin, size * 16);
+    memcpy(pipeline->q, GetDrawBegin(), size * 16);
+    ClearTape(size);
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);
 }

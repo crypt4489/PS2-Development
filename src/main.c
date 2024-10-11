@@ -371,9 +371,9 @@ static void SetupAABBBox()
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
     SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED);
 
-    //u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
+    u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
-    //CreateMaterial(&box->vertexBuffer, 0, 17, id);
+   // CreateMaterial(&box->vertexBuffer, 0, 17, id);
 
     CreateMaterial(&box->vertexBuffer, 0, 35, GetTextureIDByName(g_Manager.texManager, worldName));
     VECTOR pos;
@@ -396,7 +396,7 @@ static void SetupAABBBox()
     box->update_object = NULL;
     
 
-    InitVBO(box, VBO_FIT);
+    //InitVBO(box, VBO_FIT);
 
    CreateGraphicsPipeline(box, "Clipper");
 
@@ -733,8 +733,6 @@ int Render()
     colors[4] = &lcolors[4];
     float lastTime = getTicks(g_Manager.timer);
 
-    
-
     for (;;)
     {
         float currentTime = getTicks(g_Manager.timer);
@@ -761,11 +759,11 @@ int Render()
         MATRIX ident;
         MatrixIdentity(ident);
 
-       // RenderSphereLine(&lolSphere, *colors[3], 40);
+      // RenderSphereLine(&lolSphere, *colors[3], 40);
 
-       // RenderPlaneLine(&plane2, *colors[1], 20);
+       //  RenderPlaneLine(&plane2, *colors[1], 20);
 
-       // RenderRay(&rayray2, *colors[2], 25);
+      // RenderRay(&rayray2, *colors[2], 25);
         
        // RenderLine(&mainLine, *colors[3]);
         
@@ -780,20 +778,22 @@ int Render()
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
 
-         //RenderGameObject(box);
+       //  RenderGameObject(box);
 
-        snprintf(print_out, 100, "DERRICK REGINALD %d", FrameCounter);
+
+        snprintf(print_out, 100, "DERRICK REGINALD %d", g_Manager.FPS);
 
        // 
-
+       // dump_packet(g_Manager.drawBuffers->readvif, 5, 0);
        // DrawTexturedQuad(448, 640, GetTexByName(g_Manager.texManager, wowwer));
 
-     //   PrintText(myFont, print_out, -310, -220, LEFT);
+      //  PrintText(myFont, print_out, -310, -220, LEFT);
 
         StitchDrawBuffer(true);
 
-       // DEBUGLOG("%f", getTicks(g_Manager.timer)- time1);
-
+      //  DEBUGLOG("%f", getTicks(g_Manager.timer)- time1);
+      // dump_packet(g_Manager.drawBuffers->readvif, 100, 0);
+      // DEBUGLOG("%d",g_Manager.drawBuffers->currentvif - g_Manager.drawBuffers->readvif );
         DispatchDrawBuffers();
 
     
@@ -809,6 +809,9 @@ int Render()
        //  ReadFromVU(vu1_data_address, 100*4, true)
     
         FrameCounter++;
+
+
+       // while(true);
     }
 
     return 0;
@@ -818,7 +821,7 @@ static void LoadInTextures()
 {
     char _file[MAX_FILE_NAME];
 
-    char _folder[9] = "TEXTURES\\";
+    char _folder[11] = "TEXTURES\\";
 
 
     
@@ -828,9 +831,9 @@ static void LoadInTextures()
 
     AppendString(_folder, dudeer, _file, MAX_FILE_NAME);
 
-  //  tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_WRAP);
+    tex = AddAndCreateTexture(_file, READ_BMP, 1, 0xFF, TEX_ADDRESS_WRAP);
 
-  //  SetFilters(tex, PS_FILTER_NNEIGHBOR);
+    SetFilters(tex, PS_FILTER_NNEIGHBOR);
 
 
     AppendString(_folder, worldName, _file, MAX_FILE_NAME);
@@ -841,9 +844,9 @@ static void LoadInTextures()
 
     AppendString(_folder, wowwer, _file, MAX_FILE_NAME);
 
-  //  tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
+    tex = AddAndCreateTexture(_file, READ_PNG, 1, 0xFF, TEX_ADDRESS_CLAMP);
 
-   // SetFilters(tex, PS_FILTER_BILINEAR);
+    SetFilters(tex, PS_FILTER_BILINEAR);
    
 }
 
@@ -868,13 +871,6 @@ void StartUpSystem()
 
 int main(int argc, char **argv)
 {
-    ResetEE(0);
-
-    SifExitRpc();
-
-    while(!SifIopReset(NULL, 0x8000000));
-    while(!SifIopSync()) {}
-    SifInitRpc(0);
     
     StartUpSystem();
 
@@ -896,7 +892,7 @@ int main(int argc, char **argv)
 
     DEBUGLOG("texes %f", endTime - startTime);
 
-    CreateLights();
+   // CreateLights();
 
     
 

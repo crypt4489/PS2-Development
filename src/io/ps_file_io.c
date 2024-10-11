@@ -833,8 +833,8 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
             // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
             // break;
         }
-        AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
-        CreateVerticesBuffer(buffers, meshCode, verticesSize, indicesSize);
+      AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
+       CreateVerticesBuffer(buffers, meshCode, verticesSize, indicesSize);
     }
 }
 

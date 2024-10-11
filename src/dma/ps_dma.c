@@ -111,8 +111,7 @@ void DestroyDrawBuffers(DrawBuffers *buff)
 
 void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
 {
-    while (PollVU1DoneProcessing(&g_Manager) < 0)
-        ;
+    while (PollVU1DoneProcessing(&g_Manager) < 0);
     if (channel == DMA_CHANNEL_GIF)
     {
         dma_channel_wait(DMA_CHANNEL_GIF, -1);
@@ -141,7 +140,8 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
     }
     else
     {
-        dma_channel_send_chain(channel, q, qwc, tte, 0);
+        // just let the chain do the work, make qwc max for call dma
+        dma_channel_send_chain(channel, q, 65536, tte, 0);
     }
 }
 
@@ -228,11 +228,12 @@ qword_t *StitchDMAChain(qword_t *q, qword_t *end, bool vif)
             {
                 SetDMACode(lasttag, DMA_REFE);
             } else { 
-                end = CreateDMATag(end, DMA_END, 0, vif * VIF_CODE(0, 0, VIF_CMD_FLUSHA, 1), 0, 0, 0);
+              end = CreateDMATag(end, DMA_END, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0, 0);
+              return end;
             }
         }
         if (code == DMA_CNT) { SetDMACode(lasttag, DMA_END); }
-        if (vif) {
+        if (vif && code != DMA_CALL) {
             int i = 2;
             if (lasttag->sw[3]) i = 3;
             SetINTVIFCode(lasttag, i);

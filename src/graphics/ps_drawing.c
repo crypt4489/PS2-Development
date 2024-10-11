@@ -168,7 +168,7 @@ int ReturnCommand()
     } else {
         sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_RET, 0, 0, 0, 0, 0);
     }
-
+   // sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_RET, 0, VIF_CODE(0, 0, 0, 0), 0, 0, 0);
     u32 size = sg_DrawBufferPtr - g_Manager.drawBuffers->readvif;
     ResetState();
     return size;
@@ -562,6 +562,11 @@ qword_t *GetDrawBegin()
     return g_Manager.drawBuffers->readvif;
 }
 
+void ClearTape(int size)
+{
+    memset(g_Manager.drawBuffers->readvif, 0, size*16);
+}
+
 void StitchDrawBuffer(bool textures)
 {
     u32 gifsize = g_Manager.drawBuffers->currentgif - g_Manager.drawBuffers->readgif;
@@ -593,9 +598,10 @@ void InitializeVIFHeaderUpload(qword_t *top, qword_t *bottom, u32 count)
 void CallCommand(qword_t *q, bool delay)
 {
     BeginCommand();
-    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CALL, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0, (u32)q);
+   // DEBUGLOG("%x", (u32)q);
+    sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CALL, 0, 0, 0, 0, (u32)q);
     if (delay) { g_Manager.drawBuffers->currentvif++; }
-    else sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0);
+   // else sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_END, 0, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 0), 0, 0);
 }
 
 static void AddVIFCode(u32 a1, u32 a2)
@@ -677,7 +683,7 @@ static void InitProgramUpload(int vertexNum, int unpacksize)
     sg_VIFCodeUpload = NULL;
     sg_VIFProgramUpload = sg_DrawBufferPtr;
 
-    sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, unpacksize+1, 1, VIF_CMD_UNPACK(0, 3, 0));
+    sg_DrawBufferPtr = ReadUnpackData(sg_DrawBufferPtr, 0, unpacksize+1, true, VIF_CMD_UNPACK(0, 3, 0));
     for (int i = 2; i >= 0; i--) sg_DrawBufferPtr->sw[i] = sg_ShaderInUse[i+1];
     sg_DrawBufferPtr->sw[3] = vertexNum;
     sg_DrawBufferPtr++;

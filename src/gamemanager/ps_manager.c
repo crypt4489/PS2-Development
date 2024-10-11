@@ -213,16 +213,15 @@ void StartFrame()
     }
 }
 
-
+#include "system/ps_vif.h"
 void EndFrame(bool useVsync)
 {
 
     qword_t *q = g_Manager.drawBuffers->currentvif;
-    qword_t *direct = q;
-    q = CreateDirectTag(q, 0, 1);
+    q = CreateDMATag(q, DMA_END, 3, 0, 0, 0, 0);
+    q = CreateDirectTag(q, 2, 1);
     q = draw_finish(q);
-    AddSizeToDirectTag(direct, q-direct-1);
-    SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 0, 0);
+    SubmitDrawBuffersToController(q, DMA_CHANNEL_VIF1, 1, 0);
     draw_wait_finish();
     static u32 frameCounter = 0;
     static u8 init = 0;
