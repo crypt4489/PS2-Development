@@ -369,7 +369,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
@@ -387,20 +387,14 @@ static void SetupAABBBox()
              1.0f, box->ltm);
 
     CreateWorldMatrixLTM(box->ltm, box->world);         
-   /*
-
-   
-
-             */
 
     box->update_object = NULL;
     
+    InitVBO(box, VBO_FIT);
 
-    //InitVBO(box, VBO_FIT);
+    CreateGraphicsPipeline(box, "Clipper");
 
-   CreateGraphicsPipeline(box, "Clipper");
-
-   AddObjectToRenderWorld(world, box);  
+    AddObjectToRenderWorld(world, box);  
 }
 
 u32 count;

@@ -6,6 +6,7 @@
 #include <vif_codes.h>
 #include <kernel.h>
 #include <malloc.h>
+#include <limits.h>
 
 #include "gamemanager/ps_manager.h"
 #include "log/ps_log.h"
@@ -141,7 +142,7 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
     else
     {
         // just let the chain do the work, make qwc max for call dma
-        dma_channel_send_chain(channel, q, 65536, tte, 0);
+        dma_channel_send_chain(channel, q, USHRT_MAX, tte, 0);
     }
 }
 
@@ -214,39 +215,26 @@ qword_t *StitchDMAChain(qword_t *q, qword_t *end, bool vif)
             break;
         }
 
-        
-
         if (traveling) {
             lasttag = traverse;
             traverse+=(stride+1);
         }
     }
-    if (traveling) {
-        if (jumpref) 
+    
+    if (jumpref) 
+    {
+        if (code == DMA_REF)
         {
-            if (code == DMA_REF)
-            {
-                SetDMACode(lasttag, DMA_REFE);
-            } else { 
-              end = CreateDMATag(end, DMA_END, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0, 0);
-              return end;
-            }
+            SetDMACode(lasttag, DMA_REFE);
+        } else { 
+            end = CreateDMATag(end, DMA_END, 0, VIF_CODE(0, 0, VIF_CMD_FLUSH, 1), 0, 0, 0);
         }
-        if (code == DMA_CNT) { SetDMACode(lasttag, DMA_END); }
-        if (vif && code != DMA_CALL) {
-            int i = 2;
-            if (lasttag->sw[3]) i = 3;
-            SetINTVIFCode(lasttag, i);
-        }
-    } else {
-        if (code != DMA_REF && code != DMA_CALL)
-        {
-            if (!traverse->sw[2] && !traverse->sw[3])
-            {
-                SetDMACode(lasttag, DMA_RET);
-                end--; // remove ret tag;
-            }
-        } 
     }
+    if (code == DMA_CNT) { SetDMACode(lasttag, DMA_END); }
+    if (vif) {
+        int i = (lasttag->sw[3]) ? 3 : 2;
+        SetINTVIFCode(lasttag, i);
+    }
+    
     return end;
 }

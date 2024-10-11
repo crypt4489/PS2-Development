@@ -168,7 +168,7 @@ int ReturnCommand()
     } else {
         sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_RET, 0, 0, 0, 0, 0);
     }
-   // sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_RET, 0, VIF_CODE(0, 0, 0, 0), 0, 0, 0);
+   
     u32 size = sg_DrawBufferPtr - g_Manager.drawBuffers->readvif;
     ResetState();
     return size;
