@@ -70,9 +70,9 @@ DrawBuffers *CreateDrawBuffers(u32 size)
     buffer->size = size;
     for (int i = 1; i >= 0; i--)
     {
-        buffer->gifupload[i] = (qword_t *)memalign(128, size*sizeof(qword_t));
+        buffer->gifupload[i] = (qword_t *)memalign(16, size*sizeof(qword_t));
         memset(buffer->gifupload[i], 0, sizeof(qword_t)*size);
-        buffer->vifupload[i] = (qword_t *)memalign(128, size*sizeof(qword_t));
+        buffer->vifupload[i] = (qword_t *)memalign(16, size*sizeof(qword_t));
         memset(buffer->vifupload[i], 0, sizeof(qword_t)*size);
     }
 
@@ -87,6 +87,7 @@ DrawBuffers *CreateDrawBuffers(u32 size)
 DMABuffers *CreateDMABuffers()
 {
     DMABuffers *dma = (DMABuffers*)malloc(sizeof(DMABuffers));
+    dma->tosprtape = (qword_t*)memalign(16, 100 * sizeof(qword_t));
     dma->tospr = dma->tosprtape;
     return dma;
 }

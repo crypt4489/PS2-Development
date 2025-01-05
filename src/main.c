@@ -726,7 +726,7 @@ int Render()
     colors[3] = &lcolors[3];
     colors[4] = &lcolors[4];
     float lastTime = getTicks(g_Manager.timer);
-
+    
     for (;;)
     {
         float currentTime = getTicks(g_Manager.timer);
@@ -753,15 +753,15 @@ int Render()
         MATRIX ident;
         MatrixIdentity(ident);
 
-      // RenderSphereLine(&lolSphere, *colors[3], 40);
+       RenderSphereLine(&lolSphere, *colors[3], 40);
 
-       //  RenderPlaneLine(&plane2, *colors[1], 20);
+         RenderPlaneLine(&plane2, *colors[1], 20);
 
-      // RenderRay(&rayray2, *colors[2], 25);
+       RenderRay(&rayray2, *colors[2], 25);
         
-       // RenderLine(&mainLine, *colors[3]);
+        RenderLine(&mainLine, *colors[3]);
         
-       // RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
+        //RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
          
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
     
@@ -770,18 +770,16 @@ int Render()
        // ReadFromVU(vu1_data_address, 1024*4, 0);
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
+       
 
 
-       //  RenderGameObject(box);
-
-
-        snprintf(print_out, 100, "DERRICK REGINALD %d", g_Manager.FPS);
+        snprintf(print_out, 150, "%d",  FrameCounter);
 
        // 
        // dump_packet(g_Manager.drawBuffers->readvif, 5, 0);
        // DrawTexturedQuad(448, 640, GetTexByName(g_Manager.texManager, wowwer));
 
-      //  PrintText(myFont, print_out, -310, -220, LEFT);
+        PrintText(myFont, print_out, -310, -220, LEFT);
 
         StitchDrawBuffer(true);
 
@@ -810,7 +808,7 @@ int Render()
 
     return 0;
 }
-
+#include "system/ps_spr.h"
 static void LoadInTextures()
 {
     char _file[MAX_FILE_NAME];
@@ -863,6 +861,8 @@ void StartUpSystem()
     SetupWorldObjects();
 }
 
+
+
 int main(int argc, char **argv)
 {
     
@@ -876,7 +876,7 @@ int main(int argc, char **argv)
 
     startTime = getTicks(g_Manager.timer);
 
-  SetupFont();
+     SetupFont();
 
     LoadInTextures();
 
@@ -912,8 +912,6 @@ int main(int argc, char **argv)
    // DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
     //int channel = audsrv_ch_play_adpcm(-1, &sample);
     //audsrv_adpcm_set_volume(channel, MAX_VOLUME);
-
-    
 
     Render();
 

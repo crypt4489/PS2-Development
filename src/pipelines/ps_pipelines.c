@@ -732,15 +732,33 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     
     EndAndCopy(pipeline, GetDrawBegin(), obj);
 } 
+
 #include "math/ps_misc.h"
 static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
 {
     int size = ReturnCommand();
     pipeline->qwSize = size;
-    pipeline->q = (qword_t *)memalign(128, sizeof(qword_t) * size);
+    pipeline->q = (qword_t *)memalign(16, sizeof(qword_t) * size);
     memset(pipeline->q, 0, size * 16);
-   // Ultimatememcpy(begin, size, pipeline->q);
-    memcpy(pipeline->q, GetDrawBegin(), size * 16);
+    Ultimatememcpy(begin, size, pipeline->q);
+    //memcpy(pipeline->q, GetDrawBegin(), size * 16);
+   /** for(int i = 0; i<size; i++)
+    {
+       // DEBUGLOG("%d %d %d %d %d", i+1, begin[i].sw[0], begin[i].sw[1], begin[i].sw[2], begin[i].sw[3]);
+    } **/
+    //DEBUGLOG("size is %d", size*16);
+   /* u8* ptr1 = (u8*)pipeline->q;
+    u8 *ptr2 = (u8*)begin;
+   for(int i = 0; i<size*16; i++)
+   {
+        if (*ptr1 != *ptr2)
+        {
+            good = i;
+            break;
+        }
+        ptr1++;
+        ptr2++;
+   } */
     ClearTape(size);
     AddVU1Pipeline(obj, pipeline);
     SetActivePipeline(obj, pipeline);

@@ -632,11 +632,11 @@ typedef struct draw_buffers_t {
     u32 context;
 } DrawBuffers;
 
-typedef struct dma_buffers_t
+typedef struct dma_buffers_t 
 {
-    qword_t tosprtape[100];
+    qword_t *tosprtape;
     qword_t *tospr;
-} DMABuffers;
+} DMABuffers __attribute__((aligned(16)));
 
 typedef struct
 {
