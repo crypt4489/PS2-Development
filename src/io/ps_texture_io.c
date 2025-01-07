@@ -122,18 +122,18 @@ void LoadBitmap(u8 *buffer, Texture *tex, bool useAlpha, unsigned char alpha)
 
     if (image_depth == 8)
     {
-        tex->clut_buffer = (u8*)memalign(128, 1024);
+        tex->clut_buffer = (u8*)memalign(16, 1024);
         BGR2RGB(iter, 4, 4 * 256);    
         Swizzle((int *)tex->clut_buffer, (int *)iter, useAlpha, alpha);
     }
     else if (image_depth == 4)
     {
-        tex->clut_buffer = (u8*)memalign(128, 64);
+        tex->clut_buffer = (u8*)memalign(16, 64);
         BGR2RGB(iter, 4, 4 * 16);
         memcpy(tex->clut_buffer, iter, 64);
     }
     
-    tex->pixels = (u8*)memalign(128, image_size); 
+    tex->pixels = (u8*)memalign(16, image_size); 
 
     unsigned int uLine;
     unsigned int bottomLine = tex->height - 1;
@@ -202,16 +202,16 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
     case PNG_FORMAT_RGBA_COLORMAP:
         if (image.colormap_entries == 256)
         {
-            tex->clut_buffer = (u8 *)memalign(128, 256 * 4);
+            tex->clut_buffer = (u8 *)memalign(16, 256 * 4);
             tex->psm = GS_PSM_8;
         }
         else
         {
-            tex->clut_buffer = (u8 *)memalign(128, 4 * 16);
+            tex->clut_buffer = (u8 *)memalign(16, 4 * 16);
             tex->psm = GS_PSM_4;
         }
-        tex->pixels = (u8 *)memalign(128, imageSize);
-        colormap = (u8 *)memalign(128, 1024);
+        tex->pixels = (u8 *)memalign(16, imageSize);
+        colormap = (u8 *)memalign(16, 1024);
         break;
     default:
         ERRORLOG("Unsupported bit depth and color format");
@@ -238,7 +238,7 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
 
     if (tex->psm == GS_PSM_8)
     {
-        clut = (u8*)memalign(128, 1024);
+        clut = (u8*)memalign(16, 1024);
         CopyColorMap(colormap, clut, image.colormap_entries * clutStride, clutStride);
         Swizzle((int *)tex->clut_buffer, (int *)clut, useAlpha, alphaVal);
         free(clut);

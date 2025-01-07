@@ -246,7 +246,7 @@ void UpdateAnimator(Animator *animator, float animationTime)
 
 void UpdateVU1BoneMatrices(VECTOR *verts, Animator *animator, Joint **joints, u32 numJoints)
 {
-    // DEBUGLOG("Calculating Bones!");
+     //DEBUGLOG("Calculating Bones!");
     MatrixIdentity(boneMatricesStack[0]);
 
     CalculateBoneTransformVU1(verts, animator->animation, animator->animation->root, joints, numJoints,

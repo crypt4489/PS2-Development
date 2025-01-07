@@ -16,8 +16,8 @@
 #define MAX_CHAR_TEXTURE_NAME 20
 #define MAX_CHAR_PIPELINE_NAME 20
 #define MAX_FILE_NAME 35
-#define MAX_ANIMATION_NAME 50
-#define MAX_JOINT_NAME 50
+#define MAX_ANIMATION_NAME 48
+#define MAX_JOINT_NAME 48
 
 #define DRAW_DISABLE 0
 #define DRAW_ENABLE 1
@@ -272,7 +272,7 @@ struct joint_t
     MATRIX offset;
 };
 
-struct animation_node_t
+struct animation_node_t 
 {
     char name[MAX_ANIMATION_NAME];
     u32 childrenCount;

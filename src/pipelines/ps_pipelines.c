@@ -740,7 +740,7 @@ static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
     pipeline->qwSize = size;
     pipeline->q = (qword_t *)memalign(16, sizeof(qword_t) * size);
     memset(pipeline->q, 0, size * 16);
-    Ultimatememcpy(begin, size, pipeline->q);
+   Ultimatememcpy(begin, size, pipeline->q);
     //memcpy(pipeline->q, GetDrawBegin(), size * 16);
    /** for(int i = 0; i<size; i++)
     {

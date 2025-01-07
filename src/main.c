@@ -290,7 +290,7 @@ static void SetupGrid()
 {
     Color color;
 
-    CREATE_RGBAQ_STRUCT(color, 0x10, 0xFF, 0xFF, 0x80, 1.0f);
+    CREATE_RGBAQ_STRUCT(color, 0x10, 0x80, 0xFF, 0x80, 1.0f);
 
     grid = InitializeGameObject();
     SetupGameObjectPrimRegs(grid, color, RENDERNORMAL | CLIPPING);
@@ -321,7 +321,7 @@ static void SetupGrid()
 
     CreateGraphicsPipeline(grid, "Clipper");
 
-  //  AddObjectToRenderWorld(world, grid);
+    AddObjectToRenderWorld(world, grid);
 }
 
 static void SetupBody()
@@ -337,6 +337,8 @@ static void SetupBody()
     ReadModelFile("MODELS\\BODY.BIN", &body->vertexBuffer);
 
     SetupGameObjectPrimRegs(body, color, RENDERTEXTUREMAPPED | SKELETAL_ANIMATION);
+
+    //VECTOR scales = {100.f, 100.f, 100.f, 1.0f};
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -354,11 +356,13 @@ static void SetupBody()
 
     AnimationData *data = GetAnimationByIndex(body->vertexBuffer.meshAnimationData->animations, 2);
 
-    body->objAnimator = CreateAnimator(data);
+    body->objAnimator = CreateAnimator(data); 
 
-    //CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
+    CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
 
-   // AddObjectToRenderWorld(world, body);
+    AddObjectToRenderWorld(world, body);
+
+    
 }
 
 static void SetupAABBBox()
@@ -503,9 +507,9 @@ static void SetupGameObjects()
     // InitSkybox();
      
    // SetupGrid();
-    SetupAABBBox();
+  // SetupAABBBox();
     
-   //  SetupBody();
+     SetupBody();
    
     // SetupOBBBody();
     //SetupShootBoxBox();
@@ -726,7 +730,7 @@ int Render()
     colors[3] = &lcolors[3];
     colors[4] = &lcolors[4];
     float lastTime = getTicks(g_Manager.timer);
-    
+    bool helpme = true;
     for (;;)
     {
         float currentTime = getTicks(g_Manager.timer);
@@ -737,8 +741,13 @@ int Render()
 
         UpdatePad();
 
-        if (body)
-            UpdateAnimator(body->objAnimator, delta);
+        if (body) {
+            if (helpme) {
+                UpdateAnimator(body->objAnimator, delta);
+                helpme = false;
+            }
+            UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, body->objAnimator, body->vertexBuffer.meshAnimationData->joints, body->vertexBuffer.meshAnimationData->jointsCount);
+        }
 
         float time1 = getTicks(g_Manager.timer);
 
@@ -753,15 +762,15 @@ int Render()
         MATRIX ident;
         MatrixIdentity(ident);
 
-       RenderSphereLine(&lolSphere, *colors[3], 40);
+      // RenderSphereLine(&lolSphere, *colors[3], 40);
 
-         RenderPlaneLine(&plane2, *colors[1], 20);
+       //  RenderPlaneLine(&plane2, *colors[1], 20);
 
-       RenderRay(&rayray2, *colors[2], 25);
+       //RenderRay(&rayray2, *colors[2], 25);
         
-        RenderLine(&mainLine, *colors[3]);
+      //  RenderLine(&mainLine, *colors[3]);
         
-        //RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
+      //  RenderAABBBoxLine(shotBox->vboContainer->vbo, *colors[2], ident);
          
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 0, 0x00FFFFFF, 0, 0, 0, 0);
     
@@ -770,10 +779,9 @@ int Render()
        // ReadFromVU(vu1_data_address, 1024*4, 0);
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
-       
 
 
-        snprintf(print_out, 150, "%d",  FrameCounter);
+        snprintf(print_out, 150, "%d",  g_Manager.FPS);
 
        // 
        // dump_packet(g_Manager.drawBuffers->readvif, 5, 0);

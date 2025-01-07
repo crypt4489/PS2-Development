@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <malloc.h>
 
 #include <kernel.h>
 
@@ -335,8 +336,8 @@ MeshBuffers *CreateGrid(int N, int M, float depth, float width, MeshBuffers *buf
     DEBUGLOG("Grid indices count %d", buffer->meshData[MESHTRIANGLES]->vertexCount);
 
     buffer->indices = (u32 *)malloc(sizeof(int) * index_count);
-    buffer->meshData[MESHTRIANGLES]->texCoords = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
-    buffer->meshData[MESHTRIANGLES]->vertices = (VECTOR *)malloc(sizeof(VECTOR) * index_count);
+    buffer->meshData[MESHTRIANGLES]->texCoords = (VECTOR *)memalign(16, sizeof(VECTOR) * index_count);
+    buffer->meshData[MESHTRIANGLES]->vertices = (VECTOR *)memalign(16, sizeof(VECTOR) * index_count);
     CreateGridIndices(N, M, width, depth, buffer);
     CreateGridVectors(N, M, width, depth, buffer);
     CreateGridUVS(N, M, width, depth, buffer);
