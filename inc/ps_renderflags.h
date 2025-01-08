@@ -8,21 +8,21 @@ enum RenderFlags {
     ALPHA_ENABLE = 0x8,       // 4
     ALPHA_STATE = 0x30,       // 5-6
     TEXTURE_MAPPING = 0x40,   // 7
-    COLOR_ENABLE = 0x80,      // 8
-    Z_ENABLE = 0x100,         // 9
-    Z_TYPE = 0x600,           // 10-11
-    LIGHTING_ENABLE = 0x800,  // 12
-    BACKFACE_CULLING = 0x1000, // 13
-    CLIPPING = 0x2000,         // 14
-    ENVIRONMENTMAP = 0x4000,   // 15
-    SPECULAR = 0x8000,         // 16
-    ANIMATION_TEXUTRE = 0x10000,  // 17
-    MORPH_TARGET = 0x20000,       // 18
-    SKELETAL_ANIMATION = 0x40000, // 19
+    COLOR_ENABLE = 0x80, // 8
+    SKELETAL_ANIMATION = 0x100,      // 9
+    Z_ENABLE = 0x200,         // 10
+    Z_TYPE = 0xc00,           // 11-12
+    LIGHTING_ENABLE = 0x1000,  // 13
+    BACKFACE_CULLING = 0x2000, // 14
+    CLIPPING = 0x4000,         // 15
+    ENVIRONMENTMAP = 0x8000,   // 16
+    SPECULAR = 0x10000,         // 17
+    ANIMATION_TEXUTRE = 0x20000,  // 18
+    MORPH_TARGET = 0x40000,       // 19
     ALPHA_MAPPING = 0x80000      // 20
 };
 
-#define ZSTATE(x) ((1 << 8) | (x << 9))
+#define ZSTATE(x) ((1 << 9) | (x << 10))
 
 #define RENDERENVIRONMENTAL (DRAWING_OPTION | ENVIRONMENTMAP | LIGHTING_ENABLE | ZSTATE(3) | TEXTURE_MAPPING)
 

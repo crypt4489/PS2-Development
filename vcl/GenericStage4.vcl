@@ -35,9 +35,16 @@ begin:
 colorData:
     ibeq    useColor,          vi00,         createColorOut
     iadd    destAddress,    destAddress,  vertCount
-    b       writeCountTag
+    b       checkOutBonesAndWeights
 createColorOut:
     lq     outColor, 9(vi00)
+
+checkOutBonesAndWeights:
+    iaddiu  useBW,            vi00,         0x0100
+    iand    useBW,           renderFlags,    useBW
+    ibeq    useBW,            vi00,         writeCountTag
+    iadd    destAddress,    destAddress,  vertCount
+    iadd    destAddress,    destAddress,  vertCount
 
 writeCountTag:
     iadd kickAddress, vi00, destAddress

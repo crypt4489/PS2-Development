@@ -338,7 +338,7 @@ static void SetupBody()
 
     SetupGameObjectPrimRegs(body, color, RENDERTEXTUREMAPPED | SKELETAL_ANIMATION);
 
-    //VECTOR scales = {100.f, 100.f, 100.f, 1.0f};
+    //VECTOR scales = {10.f, 10.f, 10.f, 1.0f};
 
     VECTOR scales = {.1f, .1f, .1f, 1.0f};
 
@@ -360,7 +360,7 @@ static void SetupBody()
 
     CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
 
-    AddObjectToRenderWorld(world, body);
+   // AddObjectToRenderWorld(world, body);
 
     
 }
@@ -506,8 +506,8 @@ static void SetupGameObjects()
 
     // InitSkybox();
      
-   // SetupGrid();
-  // SetupAABBBox();
+    SetupGrid();
+   SetupAABBBox();
     
      SetupBody();
    
@@ -742,11 +742,12 @@ int Render()
         UpdatePad();
 
         if (body) {
+            UpdateAnimator(body->objAnimator, delta);
             if (helpme) {
-                UpdateAnimator(body->objAnimator, delta);
+               
                 helpme = false;
             }
-            UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, body->objAnimator, body->vertexBuffer.meshAnimationData->joints, body->vertexBuffer.meshAnimationData->jointsCount);
+           // UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, body->objAnimator, body->vertexBuffer.meshAnimationData->joints, body->vertexBuffer.meshAnimationData->jointsCount);
         }
 
         float time1 = getTicks(g_Manager.timer);
@@ -780,6 +781,9 @@ int Render()
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
+       CreateWorldMatrixLTM(body->ltm, body->world);
+
+        RenderGameObject(body);
 
         snprintf(print_out, 150, "%d",  g_Manager.FPS);
 

@@ -461,10 +461,10 @@ typedef enum VertexType
                      light_enable, bface, clip, envmp,                                                                                             \
                      spec, animtex, morph, bones, alphamap)                                                                                \
     (u32)((draw)&0x00000001) << 0 | (u32)((cull)&0x00000001) << 1 | (u32)((alpha_enable)&0x00000001) << 3 | (u32)((alpha_state)&0x00000003) << 4 | \
-        (u32)((tex_map)&0x00000001) << 6 | (u32)((color_enable)&0x00000001) << 7 | (u32)((z_enable)&0x00000001) << 8 |                             \
-        (u32)((z_type)&0x00000003) << 9 | (u32)((light_enable)&0x00000001) << 11 | (u32)((bface)&0x00000001) << 12 |                               \
-        (u32)((clip)&0x00000001) << 13 | (u32)((envmp)&0x00000001) << 14 | (u32)((spec)&0x00000001) << 15 | (u32)((animtex)&0x00000001) << 16 |    \
-        (u32)((morph)&0x00000001) << 17 | (u32)((bones)&0x00000001) << 18 | (u32)((alphamap)&0x00000001) << 19
+        (u32)((tex_map)&0x00000001) << 6 | (u32)((color_enable)&0x00000001) << 7 | (u32)((z_enable)&0x00000001) << 9 |                             \
+        (u32)((z_type)&0x00000003) << 10 | (u32)((light_enable)&0x00000001) << 12 | (u32)((bface)&0x00000001) << 13 |                               \
+        (u32)((clip)&0x00000001) << 14 | (u32)((envmp)&0x00000001) << 15 | (u32)((spec)&0x00000001) << 16 | (u32)((animtex)&0x00000001) << 17 |    \
+        (u32)((morph)&0x00000001) << 18 | (u32)((bones)&0x00000001) << 8 | (u32)((alphamap)&0x00000001) << 19
 
 typedef union obj_render_properties
 {
@@ -477,16 +477,17 @@ typedef union obj_render_properties
         unsigned int ALPHA_STATE : 2;        // 5-6
         unsigned int TEXTURE_MAPPING : 1;    // 7
         unsigned int COLOR_ENABLE : 1;       // 8
-        unsigned int Z_ENABLE : 1;           // 9
-        unsigned int Z_TYPE : 2;             // 10-11
-        unsigned int LIGHTING_ENABLE : 1;    // 12
-        unsigned int BACKFACE_CULLING : 1;   // 13
-        unsigned int CLIPPING : 1;           // 14
-        unsigned int ENVIRONMENTMAP : 1;     // 15
-        unsigned int SPECULAR : 1;           // 16
-        unsigned int ANIMATION_TEXUTRE : 1;  // 17
-        unsigned int MORPH_TARGET : 1;       // 18
-        unsigned int SKELETAL_ANIMATION : 1; // 19
+        unsigned int SKELETAL_ANIMATION : 1; // 9
+        unsigned int Z_ENABLE : 1;           // 10
+        unsigned int Z_TYPE : 2;             // 11-12
+        unsigned int LIGHTING_ENABLE : 1;    // 13
+        unsigned int BACKFACE_CULLING : 1;   // 14
+        unsigned int CLIPPING : 1;           // 15
+        unsigned int ENVIRONMENTMAP : 1;     // 16
+        unsigned int SPECULAR : 1;           // 17
+        unsigned int ANIMATION_TEXUTRE : 1;  // 18
+        unsigned int MORPH_TARGET : 1;       // 19
+        
         unsigned int ALPHA_MAPPING : 1;      // 20
         unsigned int pad : 12;               // 21-32
     };
