@@ -85,6 +85,8 @@ bool FindFileByName(const char *filename, sceCdlFILE *file_struct)
     return true;
 }
 
+u8 readbuf[2048] __attribute__((aligned(2048)));
+
 u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
                   u8 *outBuffer,
                   u32 offset, u32 readSize)
@@ -117,10 +119,9 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
         u32 bytesRead = SECTOR_SIZE;
         if (SECTOR_SIZE > bytesLeft)
         {
-            u8 readBuffer[SECTOR_SIZE];
             bytesRead = bytesLeft;
-            ReadSector(starting_sec + i, 1, readBuffer);
-            memcpy(head_of_copy, readBuffer, bytesRead);
+            ReadSector(starting_sec + i, 1, readbuf);
+            memcpy(head_of_copy, readbuf, bytesRead);
         }
         else
         {
@@ -156,35 +157,20 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
     if (remaining)  sectors++;
 
-    u32 bytesLeft = bufferSize;
+    // allocate enough to read all sectors and avoid memory issues
 
-    u8 *buffer = (u8 *)memalign(128, bufferSize);
+    u8 *buffer = (u8 *)malloc(bufferSize + (SECTOR_SIZE-remaining));
 
     u8 *head_of_copy = buffer;
-
-    memset(head_of_copy, 0, bufferSize);
 
     u32 i = 0;
 
     while (i < sectors)
     {
-
-        u32 bytesRead = SECTOR_SIZE;
-        if (SECTOR_SIZE > bytesLeft)
-        {
-            u8 readBuffer[2048];
-            bytesRead = bytesLeft;
-            ReadSector(starting_sec + i, 1, readBuffer);
-            memcpy(head_of_copy, readBuffer, bytesRead);
-        }
-        else
-        {
-            ReadSector(starting_sec + i, 1, head_of_copy);
-        }
-
+        ReadSector(starting_sec + i, 1, readbuf);
         i++;
-        head_of_copy += bytesRead;
-        bytesLeft -= bytesRead;
+        memcpy(head_of_copy, readbuf, SECTOR_SIZE);
+        head_of_copy += SECTOR_SIZE;
     }
 
     if (compressed)
@@ -467,11 +453,11 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     return (input_int - begin) * 4;
 }
 
+
 static u32* ReadAnimationNode(AnimationNode *node, u32 *input_ptr)
 {
-
-    u32 nodeNameLength = *input_ptr++;
-
+    u32 nodeNameLength  = *input_ptr++;
+    
     memcpy(node->name, input_ptr, nodeNameLength);
 
     node->name[nodeNameLength] = 0;
@@ -490,8 +476,10 @@ static u32* ReadAnimationNode(AnimationNode *node, u32 *input_ptr)
 
     for (int child = 0; child < count; child++)
     {
-       node->children[child] = (AnimationNode *)malloc(sizeof(AnimationNode));
-       input_ptr = ReadAnimationNode(node->children[child], input_ptr);
+        node->children[child] = (AnimationNode *)malloc(sizeof(AnimationNode));
+
+        input_ptr = ReadAnimationNode(node->children[child], input_ptr);
+        
     }
 
     return input_ptr;
@@ -739,15 +727,17 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
 
     // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
 
-    if (iter[0] == 0xDF && iter[1] == 0x01)
+    if (iter[1] == 0xDF && iter[0] == 0x01)
     {
-        iter += 2;
+        iter += 4;
 
-        u16 meshCode = (u16)(0xFF00 & (((u16)iter[0]) << 8)) | (0x00FF & (u16)iter[1]);
+        u16 meshCode = iter[0] | ((iter[1] << 8) & 0xFF00);
+
+        DEBUGLOG("%d", meshCode);
 
        //DEBUGLOG("what's going on? %x", meshCode);
-
-        iter += 2;
+        
+        iter += 4;
         // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
         input_int = (u32 *)iter;
         u32 indicesSize = *input_int;
@@ -762,7 +752,7 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
         buffers = AllocateMeshBuffersFromCode(buffers, meshCode, indicesSize);
         u32 index = 0;
         u32 end = indicesSize;
-
+    
         while (iter[0] != 0xFF && iter[1] != 0xFF && iter[2] != 0x41 && iter[3] != 0x14)
         {
             if (iter[0] == 0xAB && iter[1] == 0xAD && iter[2] == 0xBE && iter[3] == 0xEF)
@@ -778,12 +768,13 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
 
                 if (code <= 11)
                 {
-                    // DEBUGLOG("%x", code);
+                   // DEBUGLOG("%x", code);
                     iter += loadFuncArray[code - 1](input_int, buffers, &index, &end);
                 }
                 else
                 {
                     ERRORLOG("Unsupported load mesh code %x", code);
+                    break;
                 }
             } else {
                 break;
@@ -791,7 +782,7 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
             // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
             // break;
         }
-      AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
+       AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
        CreateVerticesBuffer(buffers, meshCode, verticesSize, indicesSize);
     }
 }

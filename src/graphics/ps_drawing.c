@@ -620,7 +620,7 @@ void CallCommand(qword_t *q, bool delay)
 
 static void AddVIFCode(u32 a1, u32 a2)
 {
-    if (!sg_VIFCodeUpload)
+    if (!sg_VIFCodeUpload && sg_GapCount)
         return;
     sg_VIFCodeUpload->sw[2] = a1;
     sg_VIFCodeUpload->sw[3] = a2;

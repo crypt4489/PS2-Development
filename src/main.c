@@ -361,7 +361,6 @@ static void SetupBody()
     CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
 
     AddObjectToRenderWorld(world, body);
-
     
 }
 
@@ -505,11 +504,11 @@ static void SetupGameObjects()
 {
 
     // InitSkybox();
-     
+     SetupBody();
     SetupGrid();
    SetupAABBBox();
     
-     SetupBody();
+     
    
     // SetupOBBBody();
     //SetupShootBoxBox();
@@ -743,10 +742,6 @@ int Render()
 
         if (body) {
             UpdateAnimator(body->objAnimator, delta);
-            if (helpme) {
-               
-                helpme = false;
-            }
             UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, body->objAnimator, body->vertexBuffer.meshAnimationData->joints, body->vertexBuffer.meshAnimationData->jointsCount);
         }
 
@@ -781,11 +776,11 @@ int Render()
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
-       CreateWorldMatrixLTM(body->ltm, body->world);
+      // CreateWorldMatrixLTM(body->ltm, body->world);
 
        // RenderGameObject(body);
-
-        snprintf(print_out, 150, "%d",  g_Manager.FPS);
+    
+        snprintf(print_out, 150, "%d", FrameCounter);
 
        // 
        // dump_packet(g_Manager.drawBuffers->readvif, 5, 0);

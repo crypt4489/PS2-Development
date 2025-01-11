@@ -189,12 +189,12 @@ void LoadPng(u8 *data, Texture *tex, u32 size, bool useAlpha, u8 alphaVal)
     switch (image.format & 0x0F)
     {
     case PNG_FORMAT_RGB:
-        tex->pixels = (u8 *)memalign(128, imageSize);
+        tex->pixels = (u8 *)memalign(16, imageSize);
         tex->psm = GS_PSM_24;
         texStride = 3;
         break;
     case PNG_FORMAT_RGBA:
-        tex->pixels = (u8 *)memalign(128, imageSize);
+        tex->pixels = (u8 *)memalign(16, imageSize);
         tex->psm = GS_PSM_32;
         break;
     case PNG_FORMAT_RGB_COLORMAP:
