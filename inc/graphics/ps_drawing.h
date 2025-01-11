@@ -112,6 +112,8 @@ void PrintOut();
 
 u32 GetGapCount();
 
+u32 GetTopHeaderSize();
+
 qword_t *GetVIFHeaderUpload();
 
 qword_t *GetSplitHeaderUpload();

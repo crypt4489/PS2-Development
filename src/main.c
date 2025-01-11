@@ -360,7 +360,7 @@ static void SetupBody()
 
     CreateGraphicsPipeline(body, GEN_PIPELINE_NAME);
 
-   // AddObjectToRenderWorld(world, body);
+    AddObjectToRenderWorld(world, body);
 
     
 }
@@ -747,7 +747,7 @@ int Render()
                
                 helpme = false;
             }
-           // UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, body->objAnimator, body->vertexBuffer.meshAnimationData->joints, body->vertexBuffer.meshAnimationData->jointsCount);
+            UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, body->objAnimator, body->vertexBuffer.meshAnimationData->joints, body->vertexBuffer.meshAnimationData->jointsCount);
         }
 
         float time1 = getTicks(g_Manager.timer);
@@ -783,7 +783,7 @@ int Render()
 
        CreateWorldMatrixLTM(body->ltm, body->world);
 
-        RenderGameObject(body);
+       // RenderGameObject(body);
 
         snprintf(print_out, 150, "%d",  g_Manager.FPS);
 
@@ -808,7 +808,6 @@ int Render()
         EndFrame(true);
 
         //ClippVerts(grid);
-
 
        //  ReadFromVU(vu1_data_address, 100*4, true)
     

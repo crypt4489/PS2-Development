@@ -11,19 +11,19 @@
 #include "math/ps_misc.h"
 #include <string.h>
 
-static qword_t *sg_DrawBufferPtr = NULL;
-static qword_t *sg_GifDrawPtr = NULL;
-static qword_t *sg_OpenDMATag = NULL;
-static qword_t *sg_OpenDirectTag = NULL;
-static qword_t *sg_OpenTestReg = NULL;
-static qword_t *sg_VIFProgramUpload = NULL;
-static qword_t *sg_VIFHeaderUpload = NULL;
-static qword_t *sg_VIFDirectDraw = NULL;
-static qword_t *sg_SplitHeaderUpload = NULL;
-static qword_t *sg_OpenGIFTag = NULL;
-static qword_t *sg_VIFCodeUpload = NULL;
-static qword_t *sg_OpenTextureGap = NULL;
-static qword_t *sg_VU1ProgramEnd = NULL;
+static qword_t *sg_DrawBufferPtr = NULL; // current draw buffer pointer
+static qword_t *sg_GifDrawPtr = NULL; // current gif texture upload pointer
+static qword_t *sg_OpenDMATag = NULL; // open dma tag to be closed with vif args and count, usually a dma_cnt or dma_end
+static qword_t *sg_OpenDirectTag = NULL; // direct tag to transfer over vif
+static qword_t *sg_OpenTestReg = NULL; // pointer for test register (alpha test, destination alpha, depth test)
+static qword_t *sg_VIFProgramUpload = NULL; // pipeline stages upload, signifies a new 
+static qword_t *sg_VIFHeaderUpload = NULL; // Pointer to the top of the header (inside texture gap or outside)
+static qword_t *sg_VIFDirectDraw = NULL; // REGLIST pointer for drawing
+static qword_t *sg_SplitHeaderUpload = NULL; // Bottom part of header after texture gap
+static qword_t *sg_OpenGIFTag = NULL; // GIFTAG registers for number of prims or commands sent to gif
+static qword_t *sg_VIFCodeUpload = NULL; // vif codes, mostly to add during texture gap
+static qword_t *sg_OpenTextureGap = NULL; // where the texture gap begin in vif chain
+static qword_t *sg_VU1ProgramEnd = NULL; // mscal and flush if necessary
 static int sg_ShaderInUse[4];
 static int sg_RegisterCount;
 static int sg_RegisterType;
@@ -71,6 +71,11 @@ u32 GetGapCount()
     return sg_GapCount;
 }
 
+u32 GetTopHeaderSize()
+{
+    return sg_VU1SplitTopSize;
+}
+
 qword_t* GetTextureUploadPtr()
 {
     return sg_GifDrawPtr;
@@ -101,10 +106,12 @@ void ResetDMAState()
     sg_OpenTestReg = NULL;
     sg_OpenGIFTag = NULL;
     sg_DrawBufferPtr = NULL;
+   
 }
 
 void ResetVIFDrawingState()
 {
+     
     sg_VIFProgramUpload = NULL;
     sg_VIFHeaderUpload = NULL;
     sg_VIFCodeUpload = NULL;
@@ -461,11 +468,11 @@ void DrawVectorFloat(float x, float y, float z, float w)
 {
     if (!sg_VIFProgramUpload)
         return;
-    qword_t *temp = sg_DrawBufferPtr++;
-    ((float *)temp->sw)[0] = x;
-    ((float *)temp->sw)[1] = y;
-    ((float *)temp->sw)[2] = z;
-    ((float *)temp->sw)[3] = w;
+    ((float *)sg_DrawBufferPtr->sw)[0] = x;
+    ((float *)sg_DrawBufferPtr->sw)[1] = y;
+    ((float *)sg_DrawBufferPtr->sw)[2] = z;
+    ((float *)sg_DrawBufferPtr->sw)[3] = w;
+    sg_DrawBufferPtr++;
 }
 
 void DrawPairU64(u64 a, u64 b)
@@ -499,32 +506,32 @@ void AllocateShaderSpace(int size, int offset)
     sg_VU1LoadOffset = offset;
     FlushProgram(false);
     u32 outSize = size;
-    qword_t **out = &sg_VIFHeaderUpload;
-    if (sg_OpenTextureGap && sg_GapCount > 1)
-    {   
-        u32 gapSize = outSize;
-        if (gapSize >= sg_GapCount)
+    qword_t **out = &sg_VIFHeaderUpload; // where are we writing data
+    if (sg_OpenTextureGap && sg_GapCount > 1) // make sure gapCount > 1 because we will offset one for DMATAG
+    {   // we have a texture gap that still has space
+        u32 gapSize = outSize; 
+        if (gapSize >= sg_GapCount) 
         {
-            gapSize = sg_GapCount-1;
+            gapSize = sg_GapCount-1; // limit to -1 gap space to make room for dmatag
         }
         sg_VIFHeaderUpload = ChangeGapSize(gapSize);
-        gapSize = (sgc_TextureSyncSize-(sg_VifCodeUploadCount+sg_GapCount))-1; 
-       // DEBUGLOG("%d", gapSize);
+        gapSize = (sgc_TextureSyncSize-(sg_VifCodeUploadCount+sg_GapCount+1)); // change gap size to remainder of 24 qword space(vifcodes, prev gapCount, plus dmatag)
         ReadUnpackData(sg_VIFHeaderUpload, offset, gapSize, 0, VIF_CMD_UNPACK(0, 3, 0));
         outSize -= gapSize;
-        if (!outSize) { return;}
+        if (!outSize) return;  // if there is no more data needed, no split bottom
+        sg_OpenTextureGap = NULL; // otherwise close gap
         if (!sg_OpenDMATag) {
             sg_DrawBufferPtr = CreateDMATag(sg_DrawBufferPtr, DMA_CNT,
                 0, VIF_CODE(0x8000, 0, VIF_CMD_MSKPATH3, 0), VIF_CODE(0, 0, VIF_CMD_FLUSHA, 0), 0, 0);
-        }
+        } // we are going to have a split bottom, so we need to mask and flush gif.
         out = &sg_SplitHeaderUpload;
     }
-    
-    CloseDMATag(false);
+    CloseDMATag(false); //close open tag in event we don't have open texture gap
     *out = sg_DrawBufferPtr++;
-    ReadUnpackData(*out, offset+(size-outSize), outSize, 0, VIF_CMD_UNPACK(0, 3, 0));
+    ReadUnpackData(*out, offset+(size-outSize), outSize, 0, VIF_CMD_UNPACK(0, 3, 0)); // set offset to diff from current size to prev size (will be zero if there is no top header)
     memset(sg_DrawBufferPtr, 0, 16*outSize);
     sg_DrawBufferPtr += outSize; 
+    //DEBUGLOG("%x %x %x %x", sg_VIFHeaderUpload->sw[0], sg_VIFHeaderUpload->sw[1], sg_VIFHeaderUpload->sw[2], sg_VIFHeaderUpload->sw[3]);
 }
 
 void BindTexture(Texture *tex, bool immediate)
@@ -587,12 +594,19 @@ void InitializeDMATag(qword_t *mem, bool giftag)
 void InitializeVIFHeaderUpload(qword_t *top, qword_t *bottom, u32 count)
 {
     sg_VIFHeaderUpload = top;
-    sg_SplitHeaderUpload = bottom;
-    sg_GapCount = count;
     sg_VU1LoadOffset = (top->sw[3] & 0x00003FFF);
-    sg_VifCodeUploadCount = sgc_TextureSyncSize - (top->sw[0] & 0x0000FFFF) - count - 1;
-    sg_VU1SplitTopSize = sgc_TextureSyncSize - (sg_GapCount+sg_VifCodeUploadCount);
-   // DEBUGLOG("%d %d %d", sg_GapCount, sg_VifCodeUploadCount, sg_VU1SplitTopSize);
+    if (count) { // needed for texture gap
+        sg_SplitHeaderUpload = bottom;
+        sg_VU1SplitTopSize = count;
+        sg_VifCodeUploadCount = sgc_TextureSyncSize - (count+1);
+        sg_GapCount = sgc_TextureSyncSize - (sg_VU1SplitTopSize+sg_VifCodeUploadCount+1);
+    }
+    
+    
+    
+   // DEBUGLOG("%x %x %x %x", sg_VIFHeaderUpload->sw[0], sg_VIFHeaderUpload->sw[1], sg_VIFHeaderUpload->sw[2], sg_VIFHeaderUpload->sw[3]);
+   // DEBUGLOG("%x %x %x %x", sg_SplitHeaderUpload->sw[0], sg_SplitHeaderUpload->sw[1], sg_SplitHeaderUpload->sw[2], sg_SplitHeaderUpload->sw[3]);
+    //DEBUGLOG("%d %d %d %d", sg_GapCount, sg_VifCodeUploadCount, sg_VU1SplitTopSize, sg_VU1LoadOffset);
 }
 
 void CallCommand(qword_t *q, bool delay)
@@ -637,14 +651,14 @@ static void FlushProgram(bool end)
 
 static qword_t* ChangeGapSize(u32 size)
 {
-    sg_GapCount -= (size+1);
+    sg_GapCount -= (size+1); // account for dma_tag
     if (sg_GapCount <= sg_VifCodeUploadCount)
     {
        sg_GapCount = 0;
     }
    // DEBUGLOG("%d %d", sg_GapCount, sg_VifCodeUploadCount);
     AddSizeToDMATag(sg_OpenTextureGap, sg_GapCount + sg_VifCodeUploadCount);
-    sg_VU1SplitTopSize = (sgc_TextureSyncSize - (sg_GapCount + sg_VifCodeUploadCount));
+    sg_VU1SplitTopSize = (sgc_TextureSyncSize - (sg_GapCount + sg_VifCodeUploadCount + 1));
     return sg_OpenTextureGap + sg_GapCount + sg_VifCodeUploadCount + 1;
 }
 

@@ -567,7 +567,7 @@ static void BasePipelineCommand(VU1Pipeline *pipeline, GameObject *obj, VertexTy
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     AllocateShaderSpace(base-8, 8);
     PipelineCallback *SetupVU1Header; 
-    SetupVU1Header = CreateVU1WriteCBNode(SetupPerObjDrawVU1Header, GetVIFHeaderUpload()-begin, GetGapCount(), GetSplitHeaderUpload()-begin, DEFAULT_VU1_HEADER_PCB);
+    SetupVU1Header = CreateVU1WriteCBNode(SetupPerObjDrawVU1Header, GetVIFHeaderUpload()-begin, GetTopHeaderSize(), GetSplitHeaderUpload()-begin, DEFAULT_VU1_HEADER_PCB);
     pipeline = AddPipelineCallbackNode(pipeline, SetupVU1Header);
 
     BindMatrix(g_DrawCamera->viewProj, 0, false);
@@ -599,10 +599,9 @@ static void BasePipelineCommand(VU1Pipeline *pipeline, GameObject *obj, VertexTy
     UploadBuffers(start, end, max, buffer, type);
     for (int i = 1; i<matCount; i++)
     {
-        matIter = LoadMaterial(matIter, false, &start, &end);
-        UploadBuffers(start, end, max, buffer, type);
-    } 
-    
+       matIter = LoadMaterial(matIter, false, &start, &end);
+       UploadBuffers(start, end, max, buffer, type);
+    }  
 }
 
 void CreateAlphaMapPipeline(GameObject *obj, const char *name)
