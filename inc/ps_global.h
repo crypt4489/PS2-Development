@@ -277,7 +277,7 @@ struct animation_node_t
     char name[MAX_ANIMATION_NAME];
     u32 childrenCount;
     MATRIX transformation;
-    AnimationNode **children;
+    AnimationNode *children;
 };
 
 struct animation_data_t

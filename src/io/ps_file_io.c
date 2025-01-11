@@ -117,17 +117,10 @@ u32 ReadFileBytes(sceCdlFILE *loc_file_struct,
     while (i < sectors)
     {
         u32 bytesRead = SECTOR_SIZE;
-        if (SECTOR_SIZE > bytesLeft)
-        {
-            bytesRead = bytesLeft;
-            ReadSector(starting_sec + i, 1, readbuf);
-            memcpy(head_of_copy, readbuf, bytesRead);
-        }
-        else
-        {
-            ReadSector(starting_sec + i, 1, head_of_copy);
-        }
-        i += 1;
+        if (bytesRead > bytesLeft) bytesRead = bytesLeft;
+        ReadSector(starting_sec + i, 1, readbuf);
+        memcpy(head_of_copy, readbuf, bytesRead);
+        i++;
         head_of_copy += bytesRead;
         bytesLeft -= bytesRead;
         totalBytesRead += bytesRead;
@@ -159,18 +152,23 @@ u8 *ReadFileInFull(const char *filename, u32 *outSize)
 
     // allocate enough to read all sectors and avoid memory issues
 
-    u8 *buffer = (u8 *)malloc(bufferSize + (SECTOR_SIZE-remaining));
+    u8 *buffer = (u8 *)malloc(bufferSize/* + (SECTOR_SIZE-remaining)*/);
 
     u8 *head_of_copy = buffer;
 
     u32 i = 0;
 
+    u32 bytesLeft = bufferSize;
+
     while (i < sectors)
     {
+        u32 bytesRead = SECTOR_SIZE;
+        if (bytesLeft < bytesRead) bytesRead = bytesLeft;
         ReadSector(starting_sec + i, 1, readbuf);
         i++;
-        memcpy(head_of_copy, readbuf, SECTOR_SIZE);
-        head_of_copy += SECTOR_SIZE;
+        memcpy(head_of_copy, readbuf, bytesRead);
+        head_of_copy += bytesRead;
+        bytesLeft -= bytesRead;
     }
 
     if (compressed)
@@ -472,14 +470,11 @@ static u32* ReadAnimationNode(AnimationNode *node, u32 *input_ptr)
 
     input_ptr = LoadMatrix(node->transformation, input_ptr);
 
-    node->children = malloc(sizeof(AnimationNode *) * count);
+    node->children = malloc(sizeof(AnimationNode) * count);
 
     for (int child = 0; child < count; child++)
     {
-        node->children[child] = (AnimationNode *)malloc(sizeof(AnimationNode));
-
-        input_ptr = ReadAnimationNode(node->children[child], input_ptr);
-        
+        input_ptr = ReadAnimationNode(&(node->children[child]), input_ptr);   
     }
 
     return input_ptr;
@@ -733,8 +728,6 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
 
         u16 meshCode = iter[0] | ((iter[1] << 8) & 0xFF00);
 
-        DEBUGLOG("%d", meshCode);
-
        //DEBUGLOG("what's going on? %x", meshCode);
         
         iter += 4;
@@ -810,8 +803,10 @@ static void DeleteAnimationNode(AnimationNode *root)
     {
         for (int i = 0; i<root->childrenCount; i++)
         {
-            DeleteAnimationNode(root->children[i]);
+            DeleteAnimationNode(&root->children[i]);
         }
+
+        free(root->children);
 
         free(root);
     }

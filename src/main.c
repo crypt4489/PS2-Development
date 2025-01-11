@@ -475,7 +475,7 @@ static void SetupOBBBody()
 
     bodyCollision = InitializeGameObject();
     ReadModelFile("MODELS\\BODY.BIN", &bodyCollision->vertexBuffer);
-    SetupGameObjectPrimRegs(bodyCollision, color, RENDERTEXTUREMAPPED | CLIPPING);
+    SetupGameObjectPrimRegs(bodyCollision, color, RENDERTEXTUREMAPPED);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
@@ -495,22 +495,22 @@ static void SetupOBBBody()
 
     InitVBO(bodyCollision, VBO_FIXED);
 
-   // CreateGraphicsPipeline(bodyCollision, "Clipper");
+    CreateGraphicsPipeline(bodyCollision, "Clipper");
 
-   // AddObjectToRenderWorld(world, bodyCollision);
+    AddObjectToRenderWorld(world, bodyCollision);
 }
 
 static void SetupGameObjects()
 {
 
     // InitSkybox();
-     SetupBody();
+     
     SetupGrid();
    SetupAABBBox();
     
-     
+     SetupBody();
    
-    // SetupOBBBody();
+     SetupOBBBody();
     //SetupShootBoxBox();
     // SetupShootBigBoxBox();
     //  SetupMultiSphere();
@@ -780,7 +780,7 @@ int Render()
 
        // RenderGameObject(body);
     
-        snprintf(print_out, 150, "%d", FrameCounter);
+        snprintf(print_out, 150, "%d", g_Manager.FPS);
 
        // 
        // dump_packet(g_Manager.drawBuffers->readvif, 5, 0);

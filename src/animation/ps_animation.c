@@ -178,7 +178,7 @@ static void CalculateBoneTransformVU1(VECTOR *vecs, AnimationData *data,
         {
 
             AnimStackNode *child = (AnimStackNode *)malloc(sizeof(AnimStackNode));
-            child->data = current->data->children[i];
+            child->data = &current->data->children[i];
             child->parentMatIndex = currentBoneStack;
             child->next = NULL;
             parent->next = child;
