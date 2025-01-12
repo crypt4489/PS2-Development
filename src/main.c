@@ -372,7 +372,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
 
@@ -393,7 +393,7 @@ static void SetupAABBBox()
 
     box->update_object = NULL;
     
-    InitVBO(box, VBO_FIT);
+   // InitVBO(box, VBO_FIT);
 
     CreateGraphicsPipeline(box, "Clipper");
 
@@ -493,7 +493,7 @@ static void SetupOBBBody()
 
     PitchLTM(bodyCollision->ltm, 90.0f);
 
-    InitVBO(bodyCollision, VBO_FIXED);
+    //InitVBO(bodyCollision, VBO_FIXED);
 
     CreateGraphicsPipeline(bodyCollision, "Clipper");
 
@@ -504,13 +504,16 @@ static void SetupGameObjects()
 {
 
     // InitSkybox();
-     
+    SetupBody();
+     SetupOBBBody();
     SetupGrid();
    SetupAABBBox();
-    
-     SetupBody();
+
    
-     SetupOBBBody();
+    
+     
+   
+     
     //SetupShootBoxBox();
     // SetupShootBigBoxBox();
     //  SetupMultiSphere();

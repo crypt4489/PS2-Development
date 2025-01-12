@@ -135,18 +135,19 @@ static void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float 
     CreateWorldMatrixFromQuatScalesTrans(trans, rot, scale, transform);
 }
 
+static AnimStackNode nodes[256];
+
 static void CalculateBoneTransformVU1(VECTOR *vecs, AnimationData *data,
                                                AnimationNode *node, Joint **joints, u32 numJoints,
                                                float animationTime)
 {
-
-    AnimStackNode *current = (AnimStackNode *)malloc(sizeof(AnimStackNode));
+    u32 stackptr = 0;
+    AnimStackNode *current = &nodes[stackptr++];
     current->data = node;
     current->next = NULL;
     current->parentMatIndex = 0;
     u32 currentBoneStack = 1;
     AnimStackNode *parent = current;
-    AnimStackNode *clear;
     u32 count = 0;
     while (current && count < 256)
     {
@@ -176,18 +177,15 @@ static void CalculateBoneTransformVU1(VECTOR *vecs, AnimationData *data,
 
         for (u32 i = 0; i < current->data->childrenCount; i++)
         {
-
-            AnimStackNode *child = (AnimStackNode *)malloc(sizeof(AnimStackNode));
-            child->data = &current->data->children[i];
+            AnimStackNode *child = &nodes[stackptr++];
+            child->data = &node[current->data->children[i]];
             child->parentMatIndex = currentBoneStack;
             child->next = NULL;
             parent->next = child;
             parent = child;
         }
 
-        clear = current;
         current = current->next;
-        free(clear);
         currentBoneStack++;
         count++;
     }

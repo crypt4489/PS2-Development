@@ -8,6 +8,7 @@ SRC_DIR := ./src
 TARGET_DIR := ./bin
 INC_DIR := ./inc/
 WIN_DIR := /mnt/c/Users/dflet/Desktop/
+OPL_DIR := /mnt/c/Users/Public/ps2/DVD/
 
 OBJEXT    := o
 CEXT      := c
@@ -70,7 +71,8 @@ directories:
 	if [ ! -d $(INC_DIR) ]; then mkdir -p $(INC_DIR) ; fi
 
 update_win:
-	cp $(ISO_TGT) $(WIN_DIR)
+	if [ -d $(WIN_DIR) ]; then cp $(ISO_TGT) $(WIN_DIR) ; fi
+	if [ -d $(OPL_DIR) ]; then cp $(ISO_TGT) $(OPL_DIR) ; fi
 
 disc:
 	mkisofs -l -o $(ISO_TGT) $(TARGET_DIR)/$(EE_BIN) SYSTEM.CNF $(IRX_DIR) $(ASSETS_DIR)

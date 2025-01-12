@@ -449,10 +449,10 @@ static u32 LoadJoints(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
     }
 
     return (input_int - begin) * 4;
-}
+} 
 
 
-static u32* ReadAnimationNode(AnimationNode *node, u32 *input_ptr)
+static u32* ReadAnimationNodes(AnimationNode *node, u32* input_ptr)
 {
     u32 nodeNameLength  = *input_ptr++;
     
@@ -470,19 +470,54 @@ static u32* ReadAnimationNode(AnimationNode *node, u32 *input_ptr)
 
     input_ptr = LoadMatrix(node->transformation, input_ptr);
 
-    node->children = malloc(sizeof(AnimationNode) * count);
-
-    for (int child = 0; child < count; child++)
-    {
-        input_ptr = ReadAnimationNode(&(node->children[child]), input_ptr);   
-    }
+    node->children = (u32*)malloc(sizeof(u32) * count);
 
     return input_ptr;
 }
 
+static void AssignChildren(AnimationNode *node, u32 nodeCount)
+{
+    u32 *nodes = (u32*)malloc(sizeof(u32) * nodeCount);
+
+    u32 *child = (u32*)malloc(sizeof(u32) * nodeCount);
+
+    u32 current = 0;
+
+    int stackptr = 0;
+
+    child[stackptr] = 0;
+
+    nodes[stackptr] = 0;
+
+    u32 i = 1;
+
+    while (true)
+    {
+        u32 ni = nodes[stackptr];
+        u32 ci = child[stackptr];
+        AnimationNode *eval = &node[ni];
+        while(!eval->childrenCount || ci == eval->childrenCount)
+        {
+            child[stackptr] = 0;
+            stackptr--;
+            if (stackptr < 0) goto end;
+            ni = nodes[stackptr];
+            ci = child[stackptr];
+            eval = &node[ni];
+        }
+        eval->children[ci] = i;
+        child[stackptr]++;
+        nodes[++stackptr] = i;
+        child[stackptr] = 0;
+        i++;
+    }
+end:
+    free(nodes);
+    free(child);
+}
+
 static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
 {
-
     AnimationData *data = (AnimationData *)malloc(sizeof(AnimationData));
 
     u32 *input_int = ptr;
@@ -509,9 +544,16 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     input_int++;
 
-    data->root = (AnimationNode *)malloc(sizeof(AnimationNode));
+    u32 nodeCount = data->nodeCount = *input_int++;
 
-    input_int = ReadAnimationNode(data->root, input_int);
+    data->root = (AnimationNode *)malloc(data->nodeCount* sizeof(AnimationNode));
+   
+    for(u32 i = 0; i<nodeCount; i++)
+    {
+        input_int = ReadAnimationNodes(&(data->root[i]), input_int);
+    }
+
+    AssignChildren(data->root, nodeCount);
 
     LinkedList *newAnim = CreateLinkedListItem(data);
 
@@ -761,7 +803,7 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
 
                 if (code <= 11)
                 {
-                   // DEBUGLOG("%x", code);
+                    DEBUGLOG("%x", code);
                     iter += loadFuncArray[code - 1](input_int, buffers, &index, &end);
                 }
                 else
@@ -775,8 +817,8 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
             // DEBUGLOG("%x %x %x %x", iter[0], iter[1], iter[2], iter[3]);
             // break;
         }
-       AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
-       CreateVerticesBuffer(buffers, meshCode, verticesSize, indicesSize);
+        AllocateVerticesBufferFromCode(buffers, meshCode, verticesSize);
+        CreateVerticesBuffer(buffers, meshCode, verticesSize, indicesSize);
     }
 }
 
@@ -797,19 +839,13 @@ void ReadModelFile(const char *filename, MeshBuffers *buffers)
     free(buffer);
 }
 
-static void DeleteAnimationNode(AnimationNode *root)
+static void DeleteAnimationNode(AnimationNode *root, u32 nodeCount)
 {
-    if (root)
+    for (u32 i = 0; i<nodeCount; i++)
     {
-        for (int i = 0; i<root->childrenCount; i++)
-        {
-            DeleteAnimationNode(&root->children[i]);
-        }
-
-        free(root->children);
-
-        free(root);
+        free(root[i].children);
     }
+    free(root);
 }
 
 static void DeleteAnimationData(AnimationData *data)
@@ -856,7 +892,7 @@ static void DeleteAnimationData(AnimationData *data)
 
         free(data->keyScalings);
 
-        DeleteAnimationNode(data->root);
+        DeleteAnimationNode(data->root, data->nodeCount);
 
         free(data);
     }
@@ -881,6 +917,7 @@ void DestroyAnimationMesh(AnimationMesh *meshAnimationData)
             while(list)
             {
                 DeleteAnimationData(list->data);
+                free(list->data);
                 list = CleanLinkedListNode(list);
             }
         }

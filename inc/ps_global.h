@@ -277,7 +277,7 @@ struct animation_node_t
     char name[MAX_ANIMATION_NAME];
     u32 childrenCount;
     MATRIX transformation;
-    AnimationNode *children;
+    u32 *children;
 };
 
 struct animation_data_t
@@ -285,6 +285,7 @@ struct animation_data_t
     char name[MAX_ANIMATION_NAME];
     float duration;
     float ticksPerSecond;
+    u32 nodeCount;
     AnimationNode *root;
     u32 numPositionKeys;
     u32 numRotationKeys;

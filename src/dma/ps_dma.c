@@ -134,16 +134,14 @@ void SubmitToDMAController(qword_t *q, int channel, int type, int qwc, bool tte)
         {
         }
     }
-    
+    FlushCache(0); // invalidate the dcache for mem transfers
     if (!type)
     {
-        FlushCache(0);
         dma_channel_send_normal(channel, q, qwc, tte, 0);
     }
     else
     {
-        // just let the chain do the work, make qwc max for call dma
-        dma_channel_send_chain(channel, q, USHRT_MAX, tte, 0);
+        dma_channel_send_chain(channel, q, qwc, tte, 0);
     }
 }
 
