@@ -167,6 +167,7 @@ typedef struct
     u16 mode;
     u16 type;
     u16 mipLevels;
+    u16 pad1;
     LinkedList *mipMaps;
 } Texture;
 

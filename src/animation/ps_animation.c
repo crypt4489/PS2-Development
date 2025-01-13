@@ -18,6 +18,7 @@ typedef struct anim_stack_node_t
     struct anim_stack_node_t *next;
     u32 parentMatIndex;
 } AnimStackNode;
+static AnimStackNode nodes[256];
 
 
 static void LoadQWordForVU1Bones(VECTOR *verts, u32 index, MATRIX final)
@@ -134,8 +135,6 @@ static void UpdateJoint(AnimationData *data, u32 index, MATRIX transform, float 
 
     CreateWorldMatrixFromQuatScalesTrans(trans, rot, scale, transform);
 }
-
-static AnimStackNode nodes[256];
 
 static void CalculateBoneTransformVU1(VECTOR *vecs, AnimationData *data,
                                                AnimationNode *node, Joint **joints, u32 numJoints,
