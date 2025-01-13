@@ -745,7 +745,10 @@ int Render()
 
         if (body) {
             UpdateAnimator(body->objAnimator, delta);
-            UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, body->objAnimator, body->vertexBuffer.meshAnimationData->joints, body->vertexBuffer.meshAnimationData->jointsCount);
+            UpdateVU1BoneMatrices(body->vertexBuffer.meshAnimationData->finalBones, 
+                body->vertexBuffer.meshAnimationData->root, body->objAnimator, 
+                body->vertexBuffer.meshAnimationData->joints, 
+                body->vertexBuffer.meshAnimationData->jointsCount);
         }
 
         float time1 = getTicks(g_Manager.timer);
@@ -913,18 +916,18 @@ int main(int argc, char **argv)
 
     DEBUGLOG("total %f", endTime - totalTime);
 
-   // audsrv_adpcm_t sample;
+    audsrv_adpcm_t sample;
 
-   // VagFile *vag = LoadVagFile("SOUNDS\\HOW.VAG");
+    VagFile *vag = LoadVagFile("SOUNDS\\TEST.VAG");
 
-    //audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength + 16);
-   // DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
-    //int channel = audsrv_ch_play_adpcm(-1, &sample);
-    //audsrv_adpcm_set_volume(channel, MAX_VOLUME);
+    audsrv_load_adpcm(&sample, vag->samples, vag->header.dataLength + 16);
+    DEBUGLOG("%d %d %d %d %d", sample.pitch, sample.loop, sample.channels, sample.size, vag->header.sampleRate);
+    int channel = audsrv_ch_play_adpcm(-1, &sample);
+    audsrv_adpcm_set_volume(channel, 0);
 
     Render();
 
-    //DestroyVAGFile(vag);
+    DestroyVAGFile(vag);
 
     CleanUpGame();
 

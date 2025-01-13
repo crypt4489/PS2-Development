@@ -5,6 +5,6 @@
 AnimationData * GetAnimationByIndex(LinkedList *animations, u32 index);
 Joint* FindJointByName(Joint **joints, u32 total, const char* name);
 void UpdateAnimator(Animator *animator, float animationTime);
-void UpdateVU1BoneMatrices(VECTOR *verts, Animator *animator, Joint **joints, u32 numJoints);
+void UpdateVU1BoneMatrices(VECTOR *verts, AnimationNode *root, Animator *animator, Joint **joints, u32 numJoints);
 Animator *CreateAnimator(AnimationData *data);
 #endif

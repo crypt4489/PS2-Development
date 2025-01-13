@@ -544,17 +544,6 @@ static u32 LoadAnimationData(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     input_int++;
 
-    u32 nodeCount = data->nodeCount = *input_int++;
-
-    data->root = (AnimationNode *)malloc(data->nodeCount* sizeof(AnimationNode));
-   
-    for(u32 i = 0; i<nodeCount; i++)
-    {
-        input_int = ReadAnimationNodes(&(data->root[i]), input_int);
-    }
-
-    AssignChildren(data->root, nodeCount);
-
     LinkedList *newAnim = CreateLinkedListItem(data);
 
     buffers->meshAnimationData->animations = AddToLinkedList(buffers->meshAnimationData->animations, newAnim);
@@ -663,8 +652,28 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
     return (input - ret) * 4;
 }
 
-static LoadFunc_Array loadFuncArray[11] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
-                                           LoadNormals, LoadBones, LoadWeights, LoadMaterial, LoadJoints, LoadAnimationData, LoadAnimationSRTs};
+static u32 LoadAnimationNodes(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *end)
+{
+    u32 *input_int = ptr;
+
+    u32 *begin = input_int;
+
+    u32 nodeCount = buffers->meshAnimationData->nodeCount = *input_int++;
+
+    buffers->meshAnimationData->root = (AnimationNode *)malloc(nodeCount* sizeof(AnimationNode));
+   
+    for(u32 i = 0; i<nodeCount; i++)
+    {
+        input_int = ReadAnimationNodes(&(buffers->meshAnimationData->root[i]), input_int);
+    }
+
+    AssignChildren(buffers->meshAnimationData->root, nodeCount);
+
+    return (input_int - begin) * 4;
+}
+
+static LoadFunc_Array loadFuncArray[12] = {NULL, LoadVertices, LoadIndices, LoadTexCoords,
+                                           LoadNormals, LoadBones, LoadWeights, LoadMaterial, LoadJoints, LoadAnimationData, LoadAnimationSRTs, LoadAnimationNodes};
 
 static void CreateVerticesBuffer(MeshBuffers *buffers, u16 code, u32 vertSize, u32 indicesSize)
 {
@@ -801,7 +810,7 @@ void CreateMeshBuffersFromFile(void *object, void *params, u8 *buffer, u32 buffe
                 input_int++;
                 iter += 4;
 
-                if (code <= 11)
+                if (code <= 12)
                 {
                     DEBUGLOG("%x", code);
                     iter += loadFuncArray[code - 1](input_int, buffers, &index, &end);
@@ -892,7 +901,7 @@ static void DeleteAnimationData(AnimationData *data)
 
         free(data->keyScalings);
 
-        DeleteAnimationNode(data->root, data->nodeCount);
+       
 
         free(data);
     }
@@ -906,6 +915,8 @@ void DestroyAnimationMesh(AnimationMesh *meshAnimationData)
         {
             free(meshAnimationData->joints[i]);
         }
+
+        DeleteAnimationNode(meshAnimationData->root, meshAnimationData->nodeCount);
 
         free(meshAnimationData->joints);
 

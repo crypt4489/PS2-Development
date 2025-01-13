@@ -240,7 +240,11 @@ void RenderGameObject(GameObject *obj)
     if (V_SKINNED & type)
     {
         PushInteger(base, 11, 0);
-        UpdateVU1BoneMatrices(obj->vertexBuffer.meshAnimationData->finalBones, obj->objAnimator, obj->vertexBuffer.meshAnimationData->joints, obj->vertexBuffer.meshAnimationData->jointsCount);
+        UpdateVU1BoneMatrices(obj->vertexBuffer.meshAnimationData->finalBones, 
+        obj->vertexBuffer.meshAnimationData->root,
+        obj->objAnimator, 
+        obj->vertexBuffer.meshAnimationData->joints, 
+        obj->vertexBuffer.meshAnimationData->jointsCount);
         BindVectors(obj->vertexBuffer.meshAnimationData->finalBones, obj->vertexBuffer.meshAnimationData->jointsCount * 3, 0, base);
     }
 

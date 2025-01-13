@@ -285,8 +285,6 @@ struct animation_data_t
     char name[MAX_ANIMATION_NAME];
     float duration;
     float ticksPerSecond;
-    u32 nodeCount;
-    AnimationNode *root;
     u32 numPositionKeys;
     u32 numRotationKeys;
     u32 numScalingKeys;
@@ -302,6 +300,8 @@ struct animation_mesh_t
     LinkedList *animations;
     Joint **joints;
     VECTOR *finalBones;
+    u32 nodeCount;
+    AnimationNode *root;
 };
 
 struct animator_t
