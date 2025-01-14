@@ -174,26 +174,95 @@ static void ClippVerts(GameObject *obj)
     
     u32 vertCount = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
     VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
-
+    VECTOR *texes = obj->vertexBuffer.meshData[MESHTRIANGLES]->texCoords;
+    Color *color = &obj->renderState.color;
+    MatrixIdentity(m);
     CreateWorldMatrixLTM(obj->ltm, m);
     MatrixMultiply(m, m, cam->viewProj);
-
-    
     BeginCommand();
+    u32 start = 0;
+    LoadMaterial(obj->vertexBuffer.materials, true, &start, &vertCount);
     DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
-    SetRegSizeAndType(2, DRAW_RGBAQ_REGLIST);
-    PrimitiveType(GS_SET_PRIM(PRIM_TRIANGLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED));
+    SetRegSizeAndType(obj->renderState.gsstate.gs_reg_count, obj->renderState.gsstate.gs_reg_mask);
+    PrimitiveType(GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
+                obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 
+                obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
+                obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
+                obj->renderState.gsstate.prim.colorfix));
+   // DrawCountDirectRegList(vertCount);
+    DrawCountDirectPacked(vertCount);
+
+    VECTOR zero;
+    u32 clipping1;
+    ZeroVector(zero);
+    for (int i = 0; i<4; i++)
+    {
+         asm __volatile(
+            "lqc2 $vf1, 0x00(%1)\n"
+            "vclipw.xyz $vf1, $vf1\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
+            "cfc2 %0, $vi18\n"
+            : "=r"(clipping1)
+            : "r"(zero)
+            : "memory"
+        );
+    }
+
+    //DEBUGLOG("%d", clipping1);
+
     for(int i = 0; i<vertCount; i++)
     {
-        u64 comeon, what;
-        VECTOR v;
-        MatrixVectorMultiply(v, m, verts[i]);  
+        u32 clipping;
+        VECTOR v, st;
+        MatrixVectorMultiply(v, m, verts[i]);
+        //DumpVector(v);  
+        asm __volatile(
+            "lqc2 $vf1, 0x00(%1)\n"
+            "vclipw.xyz $vf1, $vf1\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
+            "cfc2 %0, $vi18\n"
+            : "=r"(clipping)
+            : "r"(v)
+            : "memory"
+        );
         
+        clipping = ((clipping & 0x3FFFF) + 0x7FFF);
+        //if (clipping >= 0x8000) clipping = 0x8000;
+        clipping = 0x7fff;
+        //DEBUGLOG("%x", clipping);
+        float q = 1.0f/v[3];
+        VectorScaleXYZ(v, v, q);
+        VectorMultiplyXYZ(v, scale, v);
+        VectorAddXYZ(v, scale, v);
+        asm __volatile(
+            "lqc2 $vf1, 0x00(%0)\n"
+            "vftoi4.xyz $vf1, $vf1\n"
+            "sqc2 $vf1, 0x00(%0)\n"
+            :
+            : "r"(v)
+            : "memory"
+        );
+
+        VectorScaleXYZ(st, texes[i], q);
+        DrawVector(st);
+        DrawColor(*color);
         
-        DumpVector(v);
+        Bin2Float x1;
+        x1.int_x = clipping;
+    
+        v[3] = x1.float_x;
+        DrawVector(v);
+        //printf("%f %f %f", v[0], v[1], v[2]);
+        //printf("%d %x %x %x %x\n", i, x1.int_x, x2.int_x, x3.int_x, clipping);
     }
-   
+   SubmitCommand(false);
 }
 
 static void update_cube(GameObject *cube)
@@ -375,7 +444,6 @@ static void SetupAABBBox()
     SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
-
    // CreateMaterial(&box->vertexBuffer, 0, 17, id);
 
     CreateMaterial(&box->vertexBuffer, 0, 35, GetTextureIDByName(g_Manager.texManager, worldName));
@@ -504,9 +572,9 @@ static void SetupGameObjects()
 {
 
     // InitSkybox();
-    SetupBody();
-     SetupOBBBody();
-    SetupGrid();
+    //SetupBody();
+    // SetupOBBBody();
+   // SetupGrid();
    SetupAABBBox();
 
    
@@ -757,7 +825,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-        DrawWorld(world);
+       // DrawWorld(world);
 
        
 
@@ -778,7 +846,7 @@ int Render()
     
        // RenderShadowVertices(adjs, count, m);
         
-       // ReadFromVU(vu1_data_address, 1024*4, 0);
+       ClippVerts(box);
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
@@ -786,31 +854,37 @@ int Render()
 
        // RenderGameObject(body);
     
-        snprintf(print_out, 150, "%d", g_Manager.FPS);
+        snprintf(print_out, 150, "%d", FrameCounter);
 
        // 
        // dump_packet(g_Manager.drawBuffers->readvif, 5, 0);
        // DrawTexturedQuad(448, 640, GetTexByName(g_Manager.texManager, wowwer));
 
-        PrintText(myFont, print_out, -310, -220, LEFT);
-
+      //  PrintText(myFont, print_out, -310, -220, LEFT);
+       // PrintOut();
+      //while(true);
         StitchDrawBuffer(true);
 
       //  DEBUGLOG("%f", getTicks(g_Manager.timer)- time1);
       // dump_packet(g_Manager.drawBuffers->readvif, 100, 0);
       // DEBUGLOG("%d",g_Manager.drawBuffers->currentvif - g_Manager.drawBuffers->readvif );
+      
         DispatchDrawBuffers();
 
-    
+
         //ReadFromVU(vu1_data_address, 100*4, 0);
 
         EndRendering(cam);
 
         EndFrame(true);
 
-        //ClippVerts(grid);
+       // ReadFromVU(vu1_data_address, 128*4, 0);
 
-       //  ReadFromVU(vu1_data_address, 100*4, true)
+        
+        //DEBUGLOG("heye");
+        //while(true);
+
+        // ReadFromVU(vu1_data_address, 100*4, true)
     
         FrameCounter++;
 

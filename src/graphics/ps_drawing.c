@@ -429,6 +429,16 @@ void DrawCountDirectRegList(int num)
     sg_DrawBufferPtr++;
 }
 
+void DrawCountDirectPacked(int num)
+{
+    //DEBUGLOG()
+    //OpenDMATag();
+    CloseGSSetTag();
+    PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(num, 1, 1, sg_PrimitiveType, GIF_FLG_PACKED, sg_RegisterCount), sg_RegisterType);
+    sg_VIFDirectDraw = sg_DrawBufferPtr;
+    sg_DrawBufferPtr++;
+}
+
 void DrawCountWrite(int num, int vertexMemberCount)
 {
     u32 size = (vertexMemberCount * num);
@@ -442,7 +452,7 @@ void DrawUpload(int num)
 
 void DrawVector(VECTOR v)
 {
-    if (!sg_VIFProgramUpload)
+    if (!sg_VIFProgramUpload && !sg_VIFDirectDraw)
         return;
     asm __volatile__(
         "lqc2		$vf1, 0x00(%1)	\n"

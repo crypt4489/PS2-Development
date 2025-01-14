@@ -74,6 +74,8 @@ void DrawCountWrite(int num, int vertexMemberCount);
 
 void DrawCountDirectRegList(int num);
 
+void DrawCountDirectPacked(int num);
+
 void DrawUpload(int num);
 
 void DrawVector(VECTOR v);
