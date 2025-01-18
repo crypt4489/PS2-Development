@@ -165,7 +165,7 @@ static void WriteOut(VECTOR v)
 {
     
 }
-
+u32 clipping, outclip;
 static void ClippVerts(GameObject *obj)
 {
     MATRIX m;
@@ -181,7 +181,8 @@ static void ClippVerts(GameObject *obj)
     MatrixMultiply(m, m, cam->viewProj);
     BeginCommand();
     u32 start = 0;
-    LoadMaterial(obj->vertexBuffer.materials, true, &start, &vertCount);
+    u32 end = 35;
+    LoadMaterial(obj->vertexBuffer.materials, true, &start, &end);
     DepthTest(true, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
     SetRegSizeAndType(obj->renderState.gsstate.gs_reg_count, obj->renderState.gsstate.gs_reg_mask);
@@ -191,7 +192,7 @@ static void ClippVerts(GameObject *obj)
                 obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
                 obj->renderState.gsstate.prim.colorfix));
    // DrawCountDirectRegList(vertCount);
-    DrawCountDirectPacked(vertCount);
+    DrawCountDirectPacked(0);
 
     VECTOR zero;
     u32 clipping1;
@@ -213,12 +214,14 @@ static void ClippVerts(GameObject *obj)
     }
 
     //DEBUGLOG("%d", clipping1);
-
-    for(int i = 0; i<vertCount; i++)
+    int count = 0;
+    for(int i = 0; i<3; i+=3)
     {
-        u32 clipping;
-        VECTOR v, st;
+        clipping = 0;
+        VECTOR v, v1, v2, st, st1, st2;
         MatrixVectorMultiply(v, m, verts[i]);
+        MatrixVectorMultiply(v1, m, verts[i+1]);
+        MatrixVectorMultiply(v2, m, verts[i+2]);
         //DumpVector(v);  
         asm __volatile(
             "lqc2 $vf1, 0x00(%1)\n"
@@ -227,41 +230,111 @@ static void ClippVerts(GameObject *obj)
             "vnop\n"
             "vnop\n"
             "vnop\n"
+            "lqc2 $vf1, 0x00(%2)\n"
+            "vclipw.xyz $vf1, $vf1\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
+            "lqc2 $vf1, 0x00(%3)\n"
+            "vclipw.xyz $vf1, $vf1\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
+            "vnop\n"
             "cfc2 %0, $vi18\n"
             : "=r"(clipping)
-            : "r"(v)
+            : "r"(v), "r"(v1), "r"(v2)
             : "memory"
         );
+
+        clipping &= 0x3FFFF;
+        u32 judgement = 0;
+        DEBUGLOG("%x", clipping);
+
+        //positive z near plane
+        judgement = clipping & 0x10410;
+        if (judgement == 0x10410) {DEBUGLOG("HERElol");  continue;}  
+        //negative z far plane
+        judgement = clipping & 0x20820;
+        if (judgement == 0x20820) {DEBUGLOG("HERE");  continue;} 
+
+        //y bottom plane
+        judgement = clipping & 0x04104;
+        if (judgement == 0x04104) {DEBUGLOG("HEREy+");  continue;}  
+        //y top plane
+        judgement = clipping & 0x08208;
+        if (judgement == 0x08208) {DEBUGLOG("HEREy-");  continue;} 
+
+        //x right plane
+        judgement = clipping & 0x01041;
+        if (judgement == 0x01041) {DEBUGLOG("HEREx+");  continue;}  
+        //x left plane
+        judgement = clipping & 0x02082;
+        if (judgement == 0x02082) {DEBUGLOG("HEREx-");  continue;} 
         
-        clipping = ((clipping & 0x3FFFF) + 0x7FFF);
-        //if (clipping >= 0x8000) clipping = 0x8000;
-        clipping = 0x7fff;
+        outclip = clipping;
+        clipping += 0x7FFF;
+        if (clipping >= 0x8000) clipping = 0x8000;
+        //clipping = 0x7fff;
         //DEBUGLOG("%x", clipping);
         float q = 1.0f/v[3];
         VectorScaleXYZ(v, v, q);
         VectorMultiplyXYZ(v, scale, v);
         VectorAddXYZ(v, scale, v);
+
+        float q1 = 1.0f/v1[3];
+        VectorScaleXYZ(v1, v1, q1);
+        VectorMultiplyXYZ(v1, scale, v1);
+        VectorAddXYZ(v1, scale, v1);
+
+        float q2 = 1.0f/v2[3];
+        VectorScaleXYZ(v2, v2, q2);
+        VectorMultiplyXYZ(v2, scale, v2);
+        VectorAddXYZ(v2, scale, v2);
+
         asm __volatile(
             "lqc2 $vf1, 0x00(%0)\n"
+            "lqc2 $vf2, 0x00(%1)\n"
+            "lqc2 $vf3, 0x00(%2)\n"
             "vftoi4.xyz $vf1, $vf1\n"
+            "vftoi4.xyz $vf2, $vf2\n"
+            "vftoi4.xyz $vf3, $vf3\n"
             "sqc2 $vf1, 0x00(%0)\n"
+            "sqc2 $vf2, 0x00(%1)\n"
+            "sqc2 $vf3, 0x00(%2)\n"
             :
-            : "r"(v)
+            : "r"(v), "r"(v1), "r"(v2)
             : "memory"
         );
 
         VectorScaleXYZ(st, texes[i], q);
-        DrawVector(st);
-        DrawColor(*color);
+         VectorScaleXYZ(st1, texes[i+1], q1);
+         VectorScaleXYZ(st2, texes[i+2], q2);
+       
         
         Bin2Float x1;
         x1.int_x = clipping;
     
         v[3] = x1.float_x;
+        v1[3] = x1.float_x;
+        v2[3] = x1.float_x;
+
+
+        DrawVector(st);
+        DrawColor(*color);
         DrawVector(v);
+        DrawVector(st1);
+        DrawColor(*color);
+        DrawVector(v1);
+        DrawVector(st2);
+        DrawColor(*color);
+        DrawVector(v2);
         //printf("%f %f %f", v[0], v[1], v[2]);
         //printf("%d %x %x %x %x\n", i, x1.int_x, x2.int_x, x3.int_x, clipping);
+        count += 3;
     }
+    DEBUGLOG("%d", count);
    SubmitCommand(false);
 }
 
@@ -441,7 +514,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
    // CreateMaterial(&box->vertexBuffer, 0, 17, id);
@@ -461,7 +534,7 @@ static void SetupAABBBox()
 
     box->update_object = NULL;
     
-   // InitVBO(box, VBO_FIT);
+    InitVBO(box, VBO_FIXED);
 
     CreateGraphicsPipeline(box, "Clipper");
 
@@ -825,7 +898,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-       // DrawWorld(world);
+        //DrawWorld(world);
 
        
 
@@ -853,16 +926,18 @@ int Render()
       // CreateWorldMatrixLTM(body->ltm, body->world);
 
        // RenderGameObject(body);
+
+       extern int res;
     
-        snprintf(print_out, 150, "%d", FrameCounter);
+        snprintf(print_out, 150, "%d", res);
 
        // 
        // dump_packet(g_Manager.drawBuffers->readvif, 5, 0);
        // DrawTexturedQuad(448, 640, GetTexByName(g_Manager.texManager, wowwer));
 
-      //  PrintText(myFont, print_out, -310, -220, LEFT);
+        PrintText(myFont, print_out, -310, -220, LEFT);
        // PrintOut();
-      //while(true);
+     // while(true);
         StitchDrawBuffer(true);
 
       //  DEBUGLOG("%f", getTicks(g_Manager.timer)- time1);

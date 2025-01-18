@@ -32,6 +32,7 @@ static int sg_VifCodeUploadCount;
 static int sg_GapCount;
 static int sg_VU1LoadOffset;
 static int sg_VU1SplitTopSize;
+static bool sg_UseRegList;
 #define sgc_TextureSyncSize 24
 
 static void AddVIFCode(u32 a1, u32 a2);
@@ -123,6 +124,7 @@ void ResetVIFDrawingState()
     sg_VU1SplitTopSize = 0;
     sg_DrawBufferPtr = NULL;
     sg_SplitHeaderUpload = NULL;
+    sg_UseRegList = false;
 }
 
 void ResetState() 
@@ -427,6 +429,7 @@ void DrawCountDirectRegList(int num)
     PACK_GIFTAG(sg_DrawBufferPtr, GIF_SET_TAG(num, 1, 0, 0, GIF_FLG_REGLIST, sg_RegisterCount), sg_RegisterType);
     sg_VIFDirectDraw = sg_DrawBufferPtr;
     sg_DrawBufferPtr++;
+    sg_UseRegList = true;
 }
 
 void DrawCountDirectPacked(int num)
@@ -652,8 +655,9 @@ static void FlushProgram(bool end)
     {
         if (!(sg_VIFDirectDraw->dw[0] & 0x00007fff)) {
             u32 size = sg_DrawBufferPtr - sg_VIFDirectDraw;
-            u32 dmaToPrimSize = ((size<<1) / sg_RegisterCount);
-            AddSizeToGSSetTag(sg_VIFDirectDraw, dmaToPrimSize);
+            if (sg_UseRegList) size <<= 1;
+            size /= sg_RegisterCount;
+            AddSizeToGSSetTag(sg_VIFDirectDraw, size);
         }
         sg_VIFDirectDraw = NULL;
     }

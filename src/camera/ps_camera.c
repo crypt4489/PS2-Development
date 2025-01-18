@@ -339,7 +339,6 @@ void FindPosAndNegVertexvbo(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal
 
     if (normal[1] > EPSILON)
     {
-
         pVertex[1] = topExtent[1];
         nVertex[1] = bottomExtent[1];
     }
@@ -351,12 +350,12 @@ void FindPosAndNegVertexvbo(VECTOR topExtent, VECTOR bottomExtent, VECTOR normal
     }
 
 }
-
+int res = 0;
 int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 {
-    MATRIX worldMatrix;
-
     int ret = 1;
+
+    res = 0;
 
     if (obj->vboContainer->type == VBO_FIXED || obj->vboContainer->type == VBO_FIT)
     {
@@ -366,9 +365,18 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
         if (obj->vboContainer->type == VBO_FIXED)
         {
-            CreateWorldMatrixLTM(obj->ltm, worldMatrix);
-            MatrixVectorMultiply(topExtWorld, worldMatrix, box->top);
-            MatrixVectorMultiply(botExtWorld, worldMatrix, box->bottom);
+            MatrixVectorMultiply(topExtWorld, obj->world, box->top);
+            MatrixVectorMultiply(botExtWorld, obj->world, box->bottom);
+            asm __volatile__(
+                "lqc2 $vf1, 0x00(%0)\n"
+                "lqc2 $vf2, 0x00(%1)\n"
+                "vmax.xyz $vf3, $vf1, $vf2\n"
+                "vmini.xyz $vf4, $vf1, $vf2\n"
+                "sqc2 $vf3, 0x00(%2)\n"
+                "sqc2 $vf4, 0x00(%3)\n"
+            :
+            : "r"(topExtWorld), "r"(botExtWorld), "r"(maxExtent), "r"(minExtent)
+            : "memory");
 
         }
         else if (obj->vboContainer->type == VBO_FIT)
@@ -376,17 +384,6 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
            VectorCopy(topExtWorld, box->top);
            VectorCopy(botExtWorld, box->bottom);
         }
-
-        asm __volatile__(
-        "lqc2 $vf1, 0x00(%0)\n"
-        "lqc2 $vf2, 0x00(%1)\n"
-        "vmax.xyz $vf3, $vf1, $vf2\n"
-        "vmini.xyz $vf4, $vf1, $vf2\n"
-        "sqc2 $vf3, 0x00(%2)\n"
-        "sqc2 $vf4, 0x00(%3)\n"
-        :
-        : "r"(topExtWorld), "r"(botExtWorld), "r"(maxExtent), "r"(minExtent)
-        : "memory");
         
         for (int i = 0; i < 6; i++)
         {
@@ -396,6 +393,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
             
             if (DistanceFromPlane(cam->frus[1]->sides[i].planeEquation, pVert) < 0)
             {
+                res = i+1;
                 DEBUGLOG("%d", i+1);
                 return 0;
             }

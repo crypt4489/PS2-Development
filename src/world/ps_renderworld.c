@@ -123,6 +123,9 @@ void DrawWorld(RenderWorld *world)
     while (node != NULL)
     {
         GameObject *obj = (GameObject *)node->data;
+
+        CreateWorldMatrixLTM(obj->ltm, obj->world);
+
         if (obj->interpolator)
         {
             ExecuteMorphTargetCBFuncs(obj->interpolator);
@@ -133,12 +136,10 @@ void DrawWorld(RenderWorld *world)
             obj->update_object(obj);
         }
 
-        int draw = (!obj->renderState.properties.CULLING_OPTION ? 1 : TestObjectInCameraFrustum(world->cam, obj));
+        int draw = (obj->renderState.properties.CULLING_OPTION ? TestObjectInCameraFrustum(world->cam, obj) : 1);
         
-        if (draw != 0)
+        if (draw)
         {
-            CreateWorldMatrixLTM(obj->ltm, obj->world);
-        
             RenderPipeline(obj, obj->activePipeline);
         }
         //dump_packet(obj->activePipeline->q, obj->activePipeline->qwSize, 0);
