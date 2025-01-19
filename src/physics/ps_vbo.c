@@ -652,21 +652,30 @@ void ComputeBoundingSphereIterative(GameObject *obj)
 
     }
 }
-
+#include <malloc.h>
 void ComputeBoundingSphere(GameObject *obj)
 {
     VECTOR *verts = obj->vertexBuffer.meshData[MESHVERTICES]->vertices;
     u32 vertexCount = obj->vertexBuffer.meshData[MESHVERTICES]->vertexCount;
     BoundingSphere *sphere = (BoundingSphere*)obj->vboContainer->vbo;
+    VECTOR *scaledVerts = (VECTOR*)memalign(16, sizeof(VECTOR) * vertexCount);
+    MATRIX scales;
+    CreateScaleMatrixLTM(obj->ltm, scales);
+    for (u32 i = 0; i<vertexCount; i++)
+    {
+        MatrixVectorMultiply(scaledVerts[i], scales, verts[i]);
+    }
     int min, max;
-    MostSeparatedPointsOnAABB(&min, &max, verts, vertexCount);
+    MostSeparatedPointsOnAABB(&min, &max, scaledVerts, vertexCount);
 
     VECTOR temp;
-    VectorAddXYZ(verts[min], verts[max], temp);
+    VectorAddXYZ(scaledVerts[min], scaledVerts[max], temp);
     VectorScaleXYZ(sphere->center, temp, 0.5f);
-    VectorSubtractXYZ(verts[max], sphere->center, temp);
+    VectorSubtractXYZ(scaledVerts[max], sphere->center, temp);
     sphere->radius = Sqrt(DotProduct(temp, temp));
-    ExpandSphere(sphere->center, &sphere->radius, verts, vertexCount, 0);
+    ExpandSphere(sphere->center, &sphere->radius, scaledVerts, vertexCount, true);
+    sphere->center[3] = 1.0f;
+    free(scaledVerts);
 }
 
 static void ExpandSphere(VECTOR center, float *radius, VECTOR *verts, u32 vertCount, int randomize)
@@ -678,12 +687,12 @@ static void ExpandSphere(VECTOR center, float *radius, VECTOR *verts, u32 vertCo
         int j = i;
         if (randomize)
         {
-            int size = vertCount - (i+1);
-            j = (rand() % size) + (i+1); 
+            int size = vertCount - i;
+            j = (rand() % size) + i;
         }
         VectorSubtractXYZ(verts[j], center, d);
         float dist2 = DotProduct(d, d);
-        if (dist2 < temp)
+        if (dist2 > temp)
         {
             dist2 = Sqrt(dist2);
             temp = (*radius + dist2) * 0.5f;

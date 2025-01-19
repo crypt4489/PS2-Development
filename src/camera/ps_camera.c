@@ -406,7 +406,22 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
     }
     else if (obj->vboContainer->type == VBO_SPHERE)
     {
+        BoundingSphere *sphere = (BoundingSphere *)obj->vboContainer->vbo;
 
+        VECTOR worldCenter;
+        MatrixVectorTransform(worldCenter, obj->world, sphere->center);
+        float r = sphere->radius ;
+
+        for (int i = 0; i<6; i++)
+        {
+            float d = DistanceFromPlane(cam->frus[1]->sides[i].planeEquation, worldCenter);
+            // determine if the sphere is behind the plane (negative halfspace)
+            if (d < -r)
+            {
+                res = i+1;
+                return 0;
+            }
+        }
     }
     return ret;
 }

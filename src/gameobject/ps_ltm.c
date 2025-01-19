@@ -8,6 +8,15 @@ void SetLastAndDirtyLTM(MATRIX m, float w)
     SetLastLTM(m, w);
 }
 
+void CreateScaleMatrixLTM(MATRIX ltm, MATRIX m)
+{
+    MatrixIdentity(m);
+    m[0] = ltm[3];
+    m[5] = ltm[7];
+    m[10] = ltm[11];
+    m[15] = 1.0f;
+}
+
 void CreateTransScaleMatrixLTM(MATRIX ltm, MATRIX m)
 {
     MATRIX work;

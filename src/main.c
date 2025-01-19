@@ -250,28 +250,64 @@ static void ClippVerts(GameObject *obj)
 
         clipping &= 0x3FFFF;
         u32 judgement = 0;
+        u32 comp = 0x01041;
         DEBUGLOG("%x", clipping);
 
-        //positive z near plane
-        judgement = clipping & 0x10410;
-        if (judgement == 0x10410) {DEBUGLOG("HERElol");  continue;}  
-        //negative z far plane
-        judgement = clipping & 0x20820;
-        if (judgement == 0x20820) {DEBUGLOG("HERE");  continue;} 
+         //x right plane
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREx+");  continue;} 
+
+        comp += comp; 
+        //x left plane
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREx-");  continue;} 
+
+        comp += comp;
 
         //y bottom plane
-        judgement = clipping & 0x04104;
-        if (judgement == 0x04104) {DEBUGLOG("HEREy+");  continue;}  
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREy+");  continue;}  
         //y top plane
-        judgement = clipping & 0x08208;
-        if (judgement == 0x08208) {DEBUGLOG("HEREy-");  continue;} 
+        comp += comp;
 
-        //x right plane
-        judgement = clipping & 0x01041;
-        if (judgement == 0x01041) {DEBUGLOG("HEREx+");  continue;}  
-        //x left plane
-        judgement = clipping & 0x02082;
-        if (judgement == 0x02082) {DEBUGLOG("HEREx-");  continue;} 
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREy-");  continue;} 
+
+        comp += comp;
+        //positive z near plane
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREnear");  continue;}  
+        //negative z far plane
+        comp += comp;
+
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREfar");  continue;} 
+
+        
+        //judge Edge AB
+        //first for +x, check if AB is on side
+        comp = 0x01040;
+        judgement = clipping & comp;
+        if (judgement-comp == 0)
+        {
+
+        }
+
+        // negative -x
+        comp += comp;
+        judgement = clipping & comp;
+        if (judgement-comp == 0)
+        {
+
+        }
+        //negative z
+        comp += comp;
+        judgement = clipping & comp;
+        if (judgement-comp == 0)
+        {
+
+        }
+       
         
         outclip = clipping;
         clipping += 0x7FFF;
@@ -534,7 +570,7 @@ static void SetupAABBBox()
 
     box->update_object = NULL;
     
-    InitVBO(box, VBO_FIXED);
+    InitVBO(box, VBO_SPHERE);
 
     CreateGraphicsPipeline(box, "Clipper");
 
@@ -898,7 +934,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-        //DrawWorld(world);
+        DrawWorld(world);
 
        
 
@@ -919,7 +955,7 @@ int Render()
     
        // RenderShadowVertices(adjs, count, m);
         
-       ClippVerts(box);
+       //ClippVerts(box);
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 

@@ -177,4 +177,6 @@ void SetupLTM(VECTOR pos, VECTOR up, VECTOR right,
          VECTOR forward, VECTOR scales,
           float q, MATRIX ltm);
 
+void CreateScaleMatrixLTM(MATRIX ltm, MATRIX m);
+
 #endif
