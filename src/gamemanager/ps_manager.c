@@ -58,10 +58,6 @@ extern u32 VU1_ShadowExtrusion_CodeEnd __attribute__((section(".vudata")));
 
 // pad;
 
-char padBuf[256] __attribute__((aligned(64)));
-u32 port = 0;
-u32 slot = 0;
-
 void InitializeSystem(ManagerInfo *info)
 {
     InitializeDMAChannels();
@@ -70,7 +66,7 @@ void InitializeSystem(ManagerInfo *info)
 
     InitDVDDrive();
 
-    InitPad(port, slot, padBuf);
+    LoadInitLibPad();
 
     SetupVU1INTEHandler();
 

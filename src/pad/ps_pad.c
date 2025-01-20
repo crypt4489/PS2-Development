@@ -3,9 +3,11 @@
 #include <loadfile.h>
 #include <gs_privileged.h>
 
+#include <string.h>
+
 #include "log/ps_log.h"
 
-void loadPadModules()
+void LoadInitLibPad()
 {
     int ret;
 
@@ -22,6 +24,13 @@ void loadPadModules()
         ERRORLOG("sifLoadModule pad failed: %d", ret);
         // SleepThread();
     }
+
+    ret = padInit(0);
+
+    if (ret != 1)
+    {
+        ERRORLOG("LibPad Initialization failed: %d", ret);
+    }
 }
 
 static void wait_vsync()
@@ -30,9 +39,7 @@ static void wait_vsync()
     *GS_REG_CSR |= GS_SET_CSR(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0);
 
     // Wait for the vsync interrupt.
-    while (!(*GS_REG_CSR & (GS_SET_CSR(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0))))
-    {
-    }
+    while (!(*GS_REG_CSR & (GS_SET_CSR(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0))));
 
     // Disable the vsync interrupt.
     *GS_REG_CSR &= ~GS_SET_CSR(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -58,14 +65,11 @@ void InitPad(int port, int slot, char *buff)
 
     acts[0] = 0;
     acts[1] = 0;
-
-    loadPadModules();
-
-    padInit(0);
-
+   
     if ((ret = padPortOpen(port, slot, buff)) == 0)
     {
         ERRORLOG("padOpenPort failed: %d", ret);
+        return;
         // SleepThread();
     }
 
@@ -100,4 +104,34 @@ void InitPad(int port, int slot, char *buff)
     }
 
     padWait(port);
+}
+
+void InitializeController(Controller *controller, int port, int slot)
+{
+    memset(controller, '\0', sizeof(Controller));
+    controller->port = port;
+    controller->slot = slot;
+    InitPad(port, slot, controller->padBuf);
+}
+
+int GetPadWhenReady(Controller *controller)
+{
+    int state = -1;
+    while((state = padGetState(controller->port, controller->slot)) != PAD_STATE_STABLE && state != PAD_STATE_DISCONN);
+
+    if (state == PAD_STATE_DISCONN) { return -1; }
+
+    return 1;
+}
+
+int ReadPad(Controller *controller)
+{
+    u8 state = padRead(controller->port, controller->slot, &controller->buttons);
+    if (!state) { return -1; }
+    controller->previousButtonsPressed = controller->currentButtonsPressed;
+    u16 currData = ~(controller->buttons.btns); // if one, button is not pressed, so xor to become zero;
+    controller->buttonsToggledDown =  currData & ~(controller->previousButtonsPressed); // check currentData with complement previous to get toggled state (1 means down)
+    controller->buttonsToggledUp = ~(currData) & controller->previousButtonsPressed;
+    controller->currentButtonsPressed = currData;
+    return 0;
 }

@@ -57,6 +57,8 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
+Controller mainController;
+
 char print_out[150];
 
 MATRIX animTransform, squareTransform, lightTransform, cameraTransform;
@@ -955,7 +957,7 @@ int Render()
     
        // RenderShadowVertices(adjs, count, m);
         
-       //ClippVerts(box);
+      // ClippVerts(box);
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
@@ -1064,6 +1066,8 @@ int main(int argc, char **argv)
 {
     
     StartUpSystem();
+
+    InitializeController(&mainController, 0, 0);
 
     float totalTime;
 

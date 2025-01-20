@@ -11,173 +11,144 @@
 #include "math/ps_vector.h"
 #include "math/ps_matrix.h"
 
-extern u32 port;
-extern u32 slot;
-extern char padBuf[256];
-static u32 old_pad = 0;
-static u32 new_pad;
-static u32 currData;
+extern Controller mainController;
 
-struct padButtonStatus buttons;
 extern char *print_out;
 
-extern GameObject *box;
-extern GameObject *sphere;
-
-extern const char *waterName;
-extern const char *NewYorkName;
-
 extern Camera *cam;
-extern RenderWorld *world;
-extern LightStruct *point;
-extern LightStruct *spotLight;
-// extern float rad;
 
-float localHighAngle = 90.0f;
-float localLowAngle = 25.0f;
-VECTOR pointpos = {+0.0f, +0.0f, 0.0f, 0.0f};
-extern int alpha;
-
-extern float k;
-
-extern Color *colors[5];
-extern Color highlight;
-extern Color *held;
-
-extern int objectIndex;
-extern int moveX;
-extern int moveY;
-extern int moveZ;
 
 void UpdatePad()
 {
-    s32 state = padGetState(port, 0);
+    int state = GetPadWhenReady(&mainController);
 
-    if (state == PAD_STATE_DISCONN)
+    if (state < 0)
     {
-        ERRORLOG("Pad(%d, %d) is disconnected", port, slot);
+        ERRORLOG("Pad(%d, %d) is disconnected", mainController.port, mainController.slot);
         return;
     }
 
-    int toggleZ = 0;
+    state = ReadPad(&mainController);
 
-    moveX = moveY = moveZ = 0;
+    if (state) { ERRORLOG("Cannot read from pad %d %d", mainController.port, mainController.slot); }
+   
+    int moveCamera = 0;
 
-    state = padRead(port, 0, &buttons);
-
-    if (state != 0)
+    if (mainController.buttons.rjoy_h <= 50)
     {
-        currData = 0xffff ^ buttons.btns;
+        moveCamera = HandleCamMovement(cam, 4);
+    }
+    else if (mainController.buttons.rjoy_h >= 200)
+    {
+        moveCamera = HandleCamMovement(cam, 3);
+    }
 
-        new_pad = currData & ~old_pad;
-        old_pad = currData;
+    if (mainController.buttons.ljoy_h <= 50)
+    {
+        moveCamera = HandleCamMovement(cam, 1);
+    }
+    else if (mainController.buttons.ljoy_h >= 200)
+    {
+        moveCamera = HandleCamMovement(cam, 2);
+    }
 
-        int moveCamera = 0;
+    if (mainController.buttons.rjoy_v <= 50)
+    {
+        moveCamera = HandleCamMovement(cam, 8);
+    }
+    else if (mainController.buttons.rjoy_v >= 200)
+    {
+        moveCamera = HandleCamMovement(cam, 7);
+    }
 
-        if (buttons.rjoy_h <= 50)
-        {
-            moveCamera = HandleCamMovement(cam, 4);
-        }
-        else if (buttons.rjoy_h >= 200)
-        {
-            moveCamera = HandleCamMovement(cam, 3);
-        }
+    if (mainController.buttons.ljoy_v >= 200)
+    {
+        moveCamera = HandleCamMovement(cam, 6);
+    }
+    else if (mainController.buttons.ljoy_v <= 50)
+    {
+        moveCamera = HandleCamMovement(cam, 5);
+    }
 
-        if (buttons.ljoy_h <= 50)
-        {
-            moveCamera = HandleCamMovement(cam, 1);
-        }
-        else if (buttons.ljoy_h >= 200)
-        {
-            moveCamera = HandleCamMovement(cam, 2);
-        }
+    if (moveCamera)
+    {
+        UpdateCameraMatrix(cam);
+    }
 
-        if (buttons.rjoy_v <= 50)
-        {
-            moveCamera = HandleCamMovement(cam, 8);
-        }
-        else if (buttons.rjoy_v >= 200)
-        {
-            moveCamera = HandleCamMovement(cam, 7);
-        }
 
-        if (buttons.ljoy_v >= 200)
-        {
-            moveCamera = HandleCamMovement(cam, 6);
-        }
-        else if (buttons.ljoy_v <= 50)
-        {
-            moveCamera = HandleCamMovement(cam, 5);
-        }
+    u32 new_pad = mainController.buttonsToggledDown;
+    u32 toggledUp = mainController.buttonsToggledUp;
 
-        if (moveCamera)
-        {
-            UpdateCameraMatrix(cam);
-        }
+    if (toggledUp & PAD_SQUARE)
+    {
+        DEBUGLOG("Square Toggled Up");
+    }
+    if (toggledUp & PAD_CIRCLE)
+    {
+        DEBUGLOG("Circle Toggled Up");
+    }
+    if (toggledUp & PAD_TRIANGLE)
+    {
+        DEBUGLOG("Triangle Toggled Up");
+    }
+    if (toggledUp & PAD_CROSS)
+    {
+        DEBUGLOG("Cross Toggled Up");
+    }
 
-        if (new_pad & PAD_SQUARE)
-        {
-            
-        }
-        if (new_pad & PAD_CIRCLE)
-        {
-           
-        }
-        if (new_pad & PAD_TRIANGLE)
-        {
-           
-        }
-        if (new_pad & PAD_CROSS)
-        {
-       
-        }
+    if (new_pad & PAD_SQUARE)
+    {
+        DEBUGLOG("Square Toggled Down");
+    }
+    if (new_pad & PAD_CIRCLE)
+    {
+        DEBUGLOG("Circle Toggled Down");
+    }
+    if (new_pad & PAD_TRIANGLE)
+    {
+        DEBUGLOG("Triangle Toggled Down");
+    }
+    if (new_pad & PAD_CROSS)
+    {
+        DEBUGLOG("Cross Toggled Down");
+    }
 
-        if (new_pad & PAD_L1)
-        {
-           colors[objectIndex] = held;
-           objectIndex = (objectIndex - 1) % 5;
-           if (objectIndex < 0)
-           {
-            objectIndex += 5;
-           }
-           held = colors[objectIndex];
-           colors[objectIndex] = &highlight;
-        }
+    if (new_pad & PAD_L1)
+    {
+    
+    }
 
-        if (new_pad & PAD_R1)
-        {
-           colors[objectIndex] = held;
-           objectIndex = (objectIndex + 1) % 5;
-           held = colors[objectIndex];
-           colors[objectIndex] = &highlight;
-        }
+    if (new_pad & PAD_R1)
+    {
+    
+    }
 
-        if (currData & PAD_L2)
-        {
-            toggleZ = 1;
-            
-        }
+    if (mainController.currentButtonsPressed & PAD_L2)
+    {
+        DEBUGLOG("L2 Held Down");
+    }
 
-        if (new_pad & PAD_R2)
-        {
-        }
-        if (new_pad & PAD_DOWN)
-        {
-            if (toggleZ) moveZ = -1;
-            else moveY = -1;
-        }
-        if (new_pad & PAD_UP)
-        {
-            if (toggleZ) moveZ = 1;
-            else moveY = 1;
-        }
-        if (new_pad & PAD_LEFT)
-        {
-            moveX = -1;
-        }
-        if (new_pad & PAD_RIGHT)
-        {
-            moveX = 1;
-        }
+    if (new_pad & PAD_R2)
+    {
+
+    }
+
+    if (new_pad & PAD_DOWN)
+    {
+        
+    }
+
+    if (new_pad & PAD_UP)
+    {
+        
+    }
+
+    if (new_pad & PAD_LEFT)
+    {
+        
+    }
+    if (new_pad & PAD_RIGHT)
+    {
+    
     }
 }
