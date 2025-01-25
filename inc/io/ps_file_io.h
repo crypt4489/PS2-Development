@@ -19,12 +19,6 @@ bool IsFileCompressed(const char *filename);
 
 u8* ReadSector(u32 sector, u32 numOfSecs, u8* buffer);
 
-void ReadModelFile(const char *filename, MeshBuffers *buffers);
-
-void CreateMeshBuffersFromFile(void *object, void *, u8 *buffer, u32 bufferLen);
-
 bool FileExist(const char *filename);
-
-void DestroyAnimationMesh(AnimationMesh *meshAnimationData);
 
 #endif

@@ -23,7 +23,7 @@ void DestroyRenderTarget(RenderTarget *target, bool system)
 Texture *CreateTextureFromRenderTarget(RenderTarget *target, u32 filter, u32 function)
 {
 	Texture *tex = (Texture *)malloc(sizeof(Texture));
-	tex->psm = GS_PSM_32;
+	tex->psm = target->render->psm;
 	tex->width = target->render->width;
 	tex->height = target->render->height;
 	tex->texbuf.address = target->render->address;

@@ -9,6 +9,7 @@
 #include "pipelines/ps_vu1pipeline.h"
 #include "world/ps_renderworld.h"
 #include "io/ps_file_io.h"
+#include "io/ps_model_io.h"
 #include "textures/ps_texture.h"
 #include "textures/ps_texturemanager.h"
 #include "math/ps_matrix.h"

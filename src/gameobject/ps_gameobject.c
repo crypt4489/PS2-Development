@@ -16,6 +16,7 @@
 #include "log/ps_log.h"
 #include "util/ps_linkedlist.h"
 #include "io/ps_file_io.h"
+#include "io/ps_model_io.h"
 
 void SetupGameObjectPrimRegs(GameObject *obj, Color color, u32 renderState)
 {

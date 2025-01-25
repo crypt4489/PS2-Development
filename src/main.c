@@ -23,6 +23,7 @@
 #include "gamemanager/ps_manager.h"
 #include "camera/ps_camera.h"
 #include "io/ps_file_io.h"
+#include "io/ps_model_io.h"
 #include "gameobject/ps_gameobject.h"
 #include "physics/ps_vbo.h"
 #include "physics/ps_movement.h"

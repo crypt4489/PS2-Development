@@ -639,7 +639,7 @@ typedef struct dma_buffers_t
 {
     qword_t *tosprtape;
     qword_t *tospr;
-} DMABuffers __attribute__((aligned(16)));
+} DMABuffers;
 
 typedef struct
 {

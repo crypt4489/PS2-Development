@@ -9,6 +9,7 @@
 #include "dma/ps_dma.h"
 #include "pipelines/ps_vu1pipeline.h"
 #include "log/ps_log.h"
+#include "io/ps_model_io.h"
 
 void CreateMorphTargetBuffersFromFile(const char *targetFile, MeshBuffers *buffer)
 {
