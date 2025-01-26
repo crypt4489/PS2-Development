@@ -174,6 +174,7 @@ static void ClippVerts(GameObject *obj)
     MATRIX m;
 
     VECTOR scale = {2048.0f, 2048.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
+    VECTOR camScale = {640.0f/2.0f, 448/2.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
     
     u32 vertCount = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
     VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
@@ -253,9 +254,21 @@ static void ClippVerts(GameObject *obj)
 
         clipping &= 0x3FFFF;
         u32 judgement = 0;
-        u32 comp = 0x01041;
+        u32 comp = 0x10410;
         DEBUGLOG("%x", clipping);
+        DumpVector(v);
+        
 
+
+        //positive z near plane
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREnear");  continue;}  
+        //negative z far plane
+        comp += comp;
+        judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREfar");  continue;} 
+
+        comp = 0x01041;
          //x right plane
         judgement = clipping & comp;
         if (judgement == comp) {DEBUGLOG("HEREx+");  continue;} 
@@ -276,15 +289,7 @@ static void ClippVerts(GameObject *obj)
         judgement = clipping & comp;
         if (judgement == comp) {DEBUGLOG("HEREy-");  continue;} 
 
-        comp += comp;
-        //positive z near plane
-        judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREnear");  continue;}  
-        //negative z far plane
-        comp += comp;
-
-        judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREfar");  continue;} 
+        
 
         
         //judge Edge AB
@@ -313,23 +318,25 @@ static void ClippVerts(GameObject *obj)
        
         
         outclip = clipping;
-        clipping += 0x7FFF;
-        if (clipping >= 0x8000) clipping = 0x8000;
+       // clipping += 0x7FFF;
+       clipping = 0;
+       // if (clipping >= 0x8000) clipping = 0x8000; 
         //clipping = 0x7fff;
         //DEBUGLOG("%x", clipping);
         float q = 1.0f/v[3];
         VectorScaleXYZ(v, v, q);
-        VectorMultiplyXYZ(v, scale, v);
+        VectorMultiplyXYZ(v, camScale, v);
         VectorAddXYZ(v, scale, v);
+       
 
         float q1 = 1.0f/v1[3];
         VectorScaleXYZ(v1, v1, q1);
-        VectorMultiplyXYZ(v1, scale, v1);
+        VectorMultiplyXYZ(v1, camScale, v1);
         VectorAddXYZ(v1, scale, v1);
 
         float q2 = 1.0f/v2[3];
         VectorScaleXYZ(v2, v2, q2);
-        VectorMultiplyXYZ(v2, scale, v2);
+        VectorMultiplyXYZ(v2, camScale, v2);
         VectorAddXYZ(v2, scale, v2);
 
         asm __volatile(
@@ -398,6 +405,8 @@ static void SetupWorldObjects()
     VECTOR camera_position = {55.0f, 0.0f, +120.00f, 1.00f};
 
     VECTOR at = {+50.0f, 0.0f, +100.0f, 0.0f};
+
+    DEBUGLOG("%f", graph_aspect_ratio());
 
     cam = InitCamera(g_Manager.ScreenWidth, g_Manager.ScreenHeight, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
 
@@ -937,7 +946,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-        DrawWorld(world);
+      //  DrawWorld(world);
 
        
 
@@ -958,7 +967,7 @@ int Render()
     
        // RenderShadowVertices(adjs, count, m);
         
-      // ClippVerts(box);
+       ClippVerts(box);
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 

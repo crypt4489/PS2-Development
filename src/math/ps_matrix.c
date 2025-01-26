@@ -155,8 +155,8 @@ void CreateProjectionMatrix(MATRIX output, float width, float height, float aspe
     float f = far;                           // Far plane
     float FovYdiv2 = DegToRad(angle) * 0.5f; // 60 degree FOV
     float cotFOV = 1.0f / (Sin(FovYdiv2) / Cos(FovYdiv2));
-    float w = cotFOV * (width / 4096.0f) / aspect;
-    float h = cotFOV * (height / 4096.0f);
+    float w = cotFOV / aspect;
+    float h = cotFOV;
 
     MatrixIdentity(temp);
 
