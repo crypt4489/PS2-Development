@@ -12,7 +12,7 @@
 
 #include "log/ps_log.h"
 #include "io/ps_file_io.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include "math/ps_fast_maths.h"
 
 extern void *_gp;

@@ -8,7 +8,7 @@
 #include "pipelines/ps_vu1pipeline.h"
 #include "log/ps_log.h"
 #include "textures/ps_texture.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include <string.h>
 
 static qword_t *sg_DrawBufferPtr = NULL; // current draw buffer pointer

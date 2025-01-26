@@ -13,7 +13,7 @@
 #include "math/ps_plane.h"
 #include "gs/ps_gs.h"
 #include "system/ps_vif.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include "system/ps_timer.h"
 #include "textures/ps_texture.h"
 #include "pad/ps_pad.h"

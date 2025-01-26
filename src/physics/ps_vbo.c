@@ -14,7 +14,7 @@
 #include "math/ps_matrix.h"
 #include "dma/ps_dma.h"
 #include "system/ps_timer.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include "math/ps_plane.h"
 
 extern volatile u32 *vu1_data_address;

@@ -15,7 +15,7 @@
 #include "io/ps_texture_io.h"
 #include "math/ps_fast_maths.h"
 #include "dma/ps_dma.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include "log/ps_log.h"
 #include "util/ps_linkedlist.h"
 

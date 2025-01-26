@@ -13,7 +13,7 @@
 #include "textures/ps_texture.h"
 #include "textures/ps_texturemanager.h"
 #include "math/ps_matrix.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 
 extern const char *face1Name; // = "FACE1";
 extern const char *face2Name; // = "FACE2";

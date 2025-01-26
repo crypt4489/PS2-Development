@@ -732,7 +732,7 @@ void CreateGraphicsPipeline(GameObject *obj, const char *name)
     EndAndCopy(pipeline, GetDrawBegin(), obj);
 } 
 
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 static void EndAndCopy(VU1Pipeline *pipeline, qword_t *begin, GameObject *obj)
 {
     int size = ReturnCommand();

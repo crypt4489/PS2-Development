@@ -113,7 +113,7 @@ RenderWorld *RemoveObjectFromRenderWorld(RenderWorld *world, GameObject *obj)
     }
     return world;
 }
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 void DrawWorld(RenderWorld *world)
 {
     LinkedList *node = world->objList;

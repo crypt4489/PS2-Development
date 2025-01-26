@@ -5,7 +5,7 @@
 
 #include "log/ps_log.h"
 #include "util/ps_queue.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include "system/ps_timer.h"
 typedef struct io_file_info_t
 {

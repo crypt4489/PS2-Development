@@ -4,7 +4,7 @@
 #include "physics/ps_vbo.h"
 #include "math/ps_fast_maths.h"
 #include "math/ps_plane.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 
 void ClosestPointToTriangle(VECTOR point, VECTOR a, VECTOR b, VECTOR c, VECTOR intersect)
 {

@@ -1,6 +1,6 @@
 #include "io/ps_model_io.h"
 #include "io/ps_file_io.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include "log/ps_log.h"
 
 #include "gameobject/ps_gameobject.h"
@@ -311,8 +311,6 @@ static void AssignChildren(AnimationNode *node, u32 nodeCount)
 
     u32 *child = (u32*)malloc(sizeof(u32) * nodeCount);
 
-    u32 current = 0;
-
     int stackptr = 0;
 
     child[stackptr] = 0;
@@ -397,7 +395,7 @@ static u32 LoadAnimationSRTs(u32 *ptr, MeshBuffers *buffers, u32 *start, u32 *en
 
     data->numPositionKeys = posSize;
     data->keyPositions = malloc(sizeof(AnimationKeyHolder *) * posSize);
-    Bin2Float copy;
+    
     for (int i = 0; i < posSize; i++)
     {
         AnimationKeyHolder *keyH = (AnimationKeyHolder *)malloc(sizeof(AnimationKeyHolder));

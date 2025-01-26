@@ -9,7 +9,7 @@
 #include "log/ps_log.h"
 #include "gs/ps_gs.h"
 #include "textures/ps_texture.h"
-#include "math/ps_misc.h"
+#include "util/ps_misc.h"
 #include "io/ps_file_io.h"
 #include "dma/ps_dma.h"
 #include "graphics/ps_drawing.h"
