@@ -164,10 +164,20 @@ static Ray rayray2 = {{-5.0f, 0.0f, -5.0f, 1.0f}, {-1.0f, 0.0f, 0.0f, 1.0f}};
 static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
 
 
-static void WriteOut(VECTOR v)
+static VECTOR ClipSTVertBuffer[144];
+static VECTOR ClippingBuffer[72];
+
+
+static void WriteOut(VECTOR v, VECTOR stq)
 {
     
 }
+
+static void IntersectEdge(VECTOR a, VECTOR b, VECTOR stA, VECTOR stB, float interpolant)
+{
+
+}
+
 u32 clipping, outclip;
 static void ClippVerts(GameObject *obj)
 {
@@ -195,38 +205,23 @@ static void ClippVerts(GameObject *obj)
                 obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
                 obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
                 obj->renderState.gsstate.prim.colorfix));
-   // DrawCountDirectRegList(vertCount);
     DrawCountDirectPacked(0);
 
-    VECTOR zero;
-    u32 clipping1;
-    ZeroVector(zero);
-    for (int i = 0; i<4; i++)
-    {
-         asm __volatile(
-            "lqc2 $vf1, 0x00(%1)\n"
-            "vclipw.xyz $vf1, $vf1\n"
-            "vnop\n"
-            "vnop\n"
-            "vnop\n"
-            "vnop\n"
-            "cfc2 %0, $vi18\n"
-            : "=r"(clipping1)
-            : "r"(zero)
-            : "memory"
-        );
-    }
-
-    //DEBUGLOG("%d", clipping1);
+// STEP 1 : Initial Clipping, reject or accept in Input buffer (reject with codes) or Put in Clip Buffer to be clipped
     int count = 0;
-    for(int i = 0; i<3; i+=3)
+    int clipCount = 0;
+    int lastClipped = -1;
+    int clippedStart = 0;
+    for (int i = 0; i<3; i+=3)
     {
-        clipping = 0;
-        VECTOR v, v1, v2, st, st1, st2;
+        VECTOR v, v1, v2;
         MatrixVectorMultiply(v, m, verts[i]);
         MatrixVectorMultiply(v1, m, verts[i+1]);
         MatrixVectorMultiply(v2, m, verts[i+2]);
-        //DumpVector(v);  
+        DEBUGLOG("-------------");
+        DumpVector(v);
+        DumpVector(v1);
+        DumpVector(v2);
         asm __volatile(
             "lqc2 $vf1, 0x00(%1)\n"
             "vclipw.xyz $vf1, $vf1\n"
@@ -252,92 +247,105 @@ static void ClippVerts(GameObject *obj)
             : "memory"
         );
 
-        clipping &= 0x3FFFF;
-        u32 judgement = 0;
-        u32 comp = 0x10410;
-        DEBUGLOG("%x", clipping);
-        DumpVector(v);
-        
+        clipping &= 0x3ffff;
 
+        if (!clipping) 
+        {
+            VectorCopy(ClipSTVertBuffer[count], v);
+            VectorCopy(ClipSTVertBuffer[count+1], texes[i]);  
+            VectorCopy(ClipSTVertBuffer[count+2], v1); 
+            VectorCopy(ClipSTVertBuffer[count+3], texes[i+1]); 
+            VectorCopy(ClipSTVertBuffer[count+4], v2); 
+            VectorCopy(ClipSTVertBuffer[count+5], texes[i+2]); 
+            count += 6;
+            continue;
+        }
 
+        u32 comp;
         //positive z near plane
-        judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREnear");  continue;}  
-        //negative z far plane
-        comp += comp;
-        judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREfar");  continue;} 
+        
 
         comp = 0x01041;
          //x right plane
-        judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREx+");  continue;} 
+        u32 judgement = clipping & comp;
+        if (judgement == comp) {DEBUGLOG("HEREx+");  goto WriteOutCode;} 
 
         comp += comp; 
         //x left plane
         judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREx-");  continue;} 
+        if (judgement == comp) {DEBUGLOG("HEREx-");  goto WriteOutCode;} 
 
         comp += comp;
 
         //y bottom plane
         judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREy+");  continue;}  
+        if (judgement == comp) {DEBUGLOG("HEREy+");  goto WriteOutCode;}  
         //y top plane
         comp += comp;
 
         judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREy-");  continue;} 
+        if (judgement == comp) {DEBUGLOG("HEREy-");  goto WriteOutCode;} 
 
-        
-
-        
-        //judge Edge AB
-        //first for +x, check if AB is on side
-        comp = 0x01040;
         judgement = clipping & comp;
-        if (judgement-comp == 0)
-        {
-
-        }
-
-        // negative -x
+        if (judgement == comp) {DEBUGLOG("HEREnear");  goto WriteOutCode;}  
+        //negative z far plane
         comp += comp;
         judgement = clipping & comp;
-        if (judgement-comp == 0)
-        {
+        if (judgement == comp) {DEBUGLOG("HEREfar");  goto WriteOutCode;} 
 
-        }
-        //negative z
-        comp += comp;
-        judgement = clipping & comp;
-        if (judgement-comp == 0)
+        VectorCopy(ClippingBuffer[clipCount], v);
+        VectorCopy(ClippingBuffer[clipCount+1], texes[i]);  
+        VectorCopy(ClippingBuffer[clipCount+2], v1); 
+        VectorCopy(ClippingBuffer[clipCount+3], texes[i+1]); 
+        VectorCopy(ClippingBuffer[clipCount+4], v2); 
+        VectorCopy(ClippingBuffer[clipCount+5], texes[i+2]); 
+        clipCount += 6;
+        continue;
+WriteOutCode:
+        Bin2Float x;
+        x.int_x = 3;
+        ClipSTVertBuffer[i][0] = x.float_x;
+        x.int_x = 0xbeef;
+        ClipSTVertBuffer[i][1] = x.float_x;
+        ClipSTVertBuffer[i][2] = 0;
+        if (lastClipped < 0)
         {
-
+            lastClipped = i;
+            clippedStart = i;
+        } else {
+            x.int_x = i - lastClipped;
+            ClipSTVertBuffer[lastClipped][2] = x.float_x;
+            lastClipped = i;
         }
+    }
+
+    DEBUGLOG("%d", count);
+    DEBUGLOG("%d", clipCount);
+
+    //STEP 3 Do Perspective Divide
+
+    for (int i = 0; i<count; i+=6)
+    {
+        DumpVector(ClipSTVertBuffer[i]);
+        DumpVector(ClipSTVertBuffer[i+2]);
+        DumpVector(ClipSTVertBuffer[i+4]);
+        float q = 1.0f/ClipSTVertBuffer[i][3];
+        VectorScaleXYZ(ClipSTVertBuffer[i], ClipSTVertBuffer[i], q);
+        VectorMultiplyXYZ(ClipSTVertBuffer[i], camScale, ClipSTVertBuffer[i]);
+        VectorAddXYZ(ClipSTVertBuffer[i], scale, ClipSTVertBuffer[i]);
        
+
+        float q1 = 1.0f/ClipSTVertBuffer[i+2][3];
+        VectorScaleXYZ(ClipSTVertBuffer[i+2], ClipSTVertBuffer[i+2], q1);
+        VectorMultiplyXYZ(ClipSTVertBuffer[i+2], camScale, ClipSTVertBuffer[i+2]);
+        VectorAddXYZ(ClipSTVertBuffer[i+2], scale, ClipSTVertBuffer[i+2]);
+
+        float q2 = 1.0f/ClipSTVertBuffer[i+4][3];
+        VectorScaleXYZ(ClipSTVertBuffer[i+4], ClipSTVertBuffer[i+4], q2);
+        VectorMultiplyXYZ(ClipSTVertBuffer[i+4], camScale, ClipSTVertBuffer[i+4]);
+        VectorAddXYZ(ClipSTVertBuffer[i+4], scale, ClipSTVertBuffer[i+4]);
+
         
-        outclip = clipping;
-       // clipping += 0x7FFF;
-       clipping = 0;
-       // if (clipping >= 0x8000) clipping = 0x8000; 
-        //clipping = 0x7fff;
-        //DEBUGLOG("%x", clipping);
-        float q = 1.0f/v[3];
-        VectorScaleXYZ(v, v, q);
-        VectorMultiplyXYZ(v, camScale, v);
-        VectorAddXYZ(v, scale, v);
-       
-
-        float q1 = 1.0f/v1[3];
-        VectorScaleXYZ(v1, v1, q1);
-        VectorMultiplyXYZ(v1, camScale, v1);
-        VectorAddXYZ(v1, scale, v1);
-
-        float q2 = 1.0f/v2[3];
-        VectorScaleXYZ(v2, v2, q2);
-        VectorMultiplyXYZ(v2, camScale, v2);
-        VectorAddXYZ(v2, scale, v2);
 
         asm __volatile(
             "lqc2 $vf1, 0x00(%0)\n"
@@ -346,42 +354,39 @@ static void ClippVerts(GameObject *obj)
             "vftoi4.xyz $vf1, $vf1\n"
             "vftoi4.xyz $vf2, $vf2\n"
             "vftoi4.xyz $vf3, $vf3\n"
+            "vaddx.w $vf1, $vf0, $vf0\n"
+            "vaddx.w $vf2, $vf0, $vf0\n"
+            "vaddx.w $vf3, $vf0, $vf0\n"
             "sqc2 $vf1, 0x00(%0)\n"
             "sqc2 $vf2, 0x00(%1)\n"
             "sqc2 $vf3, 0x00(%2)\n"
+           
             :
-            : "r"(v), "r"(v1), "r"(v2)
+            : "r"(ClipSTVertBuffer[i]), "r"(ClipSTVertBuffer[i+2]), "r"(ClipSTVertBuffer[i+4])
             : "memory"
         );
 
-        VectorScaleXYZ(st, texes[i], q);
-         VectorScaleXYZ(st1, texes[i+1], q1);
-         VectorScaleXYZ(st2, texes[i+2], q2);
-       
-        
-        Bin2Float x1;
-        x1.int_x = clipping;
+
+        VectorScaleXYZ(ClipSTVertBuffer[i+1], ClipSTVertBuffer[i+1], q);
+        VectorScaleXYZ(ClipSTVertBuffer[i+3], ClipSTVertBuffer[i+3], q1);
+        VectorScaleXYZ(ClipSTVertBuffer[i+5], ClipSTVertBuffer[i+5], q2);
+
+
+
     
-        v[3] = x1.float_x;
-        v1[3] = x1.float_x;
-        v2[3] = x1.float_x;
-
-
-        DrawVector(st);
+        
+        DrawVector(ClipSTVertBuffer[i+1]);
         DrawColor(*color);
-        DrawVector(v);
-        DrawVector(st1);
+        DrawVector(ClipSTVertBuffer[i]);
+        DrawVector(ClipSTVertBuffer[i+3]);
         DrawColor(*color);
-        DrawVector(v1);
-        DrawVector(st2);
+        DrawVector(ClipSTVertBuffer[i+2]);
+        DrawVector(ClipSTVertBuffer[i+5]);
         DrawColor(*color);
-        DrawVector(v2);
-        //printf("%f %f %f", v[0], v[1], v[2]);
-        //printf("%d %x %x %x %x\n", i, x1.int_x, x2.int_x, x3.int_x, clipping);
-        count += 3;
+        DrawVector(ClipSTVertBuffer[i+4]);        
     }
-    DEBUGLOG("%d", count);
-   SubmitCommand(false);
+
+    SubmitCommand(false);
 }
 
 static void update_cube(GameObject *cube)
@@ -693,7 +698,7 @@ static void SetupGameObjects()
 {
 
     // InitSkybox();
-    //SetupBody();
+   // SetupBody();
     // SetupOBBBody();
    // SetupGrid();
    SetupAABBBox();
@@ -946,7 +951,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-      //  DrawWorld(world);
+       // DrawWorld(world);
 
        
 
