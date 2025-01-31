@@ -211,17 +211,17 @@ static void ClippVerts(GameObject *obj)
     int count = 0;
     int clipCount = 0;
     int lastClipped = -1;
-    int clippedStart = 0;
+    int lastPassed = -1;
+    int clippedStart = -1;
+    int passedStart = -1;
+    Bin2Float x;
     for (int i = 0; i<3; i+=3)
     {
         VECTOR v, v1, v2;
         MatrixVectorMultiply(v, m, verts[i]);
         MatrixVectorMultiply(v1, m, verts[i+1]);
         MatrixVectorMultiply(v2, m, verts[i+2]);
-        DEBUGLOG("-------------");
-        DumpVector(v);
-        DumpVector(v1);
-        DumpVector(v2);
+    
         asm __volatile(
             "lqc2 $vf1, 0x00(%1)\n"
             "vclipw.xyz $vf1, $vf1\n"
@@ -299,36 +299,78 @@ static void ClippVerts(GameObject *obj)
         VectorCopy(ClippingBuffer[clipCount+3], texes[i+1]); 
         VectorCopy(ClippingBuffer[clipCount+4], v2); 
         VectorCopy(ClippingBuffer[clipCount+5], texes[i+2]); 
+        
+        
+        ClipSTVertBuffer[count][0] = 0;
+        
+        if (lastClipped < 0)
+        {
+            lastClipped = count;
+            clippedStart = count;
+        } else {
+            x.int_x = count - lastClipped;
+            ClipSTVertBuffer[lastClipped][0] = x.float_x;
+            lastClipped = count;
+        }
+        x.int_x = 3;
+        ClipSTVertBuffer[count][1] = x.float_x;
         clipCount += 6;
         continue;
 WriteOutCode:
-        Bin2Float x;
-        x.int_x = 3;
-        ClipSTVertBuffer[i][0] = x.float_x;
-        x.int_x = 0xbeef;
-        ClipSTVertBuffer[i][1] = x.float_x;
-        ClipSTVertBuffer[i][2] = 0;
-        if (lastClipped < 0)
+        
+        if (lastPassed < 0)
         {
-            lastClipped = i;
-            clippedStart = i;
-        } else {
-            x.int_x = i - lastClipped;
-            ClipSTVertBuffer[lastClipped][2] = x.float_x;
-            lastClipped = i;
+            lastPassed = count;
+            passedStart = count;
         }
+        else 
+        {
+            x.int_x = count - lastPassed;
+            ClipSTVertBuffer[lastPassed][0] = x.float_x;
+            lastPassed = count;
+        }
+        ClipSTVertBuffer[count++][0] = 0;
     }
 
     DEBUGLOG("%d", count);
     DEBUGLOG("%d", clipCount);
+    float multiplicand = 1.0f;
+    for (int j = 0; j<6; j++)
+    {
+        if (j & 1)
+        {
+            multiplicand = -1.0f;
+        } else {
+            multiplicand = 1.0f;
+        }
+        for(int i = 0; i<clipCount; i+=6)
+        {
+
+        }
+    }
 
     //STEP 3 Do Perspective Divide
 
-    for (int i = 0; i<count; i+=6)
+    for (int i = 0; i<count;)
     {
-        DumpVector(ClipSTVertBuffer[i]);
-        DumpVector(ClipSTVertBuffer[i+2]);
-        DumpVector(ClipSTVertBuffer[i+4]);
+        Bin2Float x;
+
+        if (i == passedStart)
+        {
+            i++;
+            x.float_x = ClipSTVertBuffer[i][0];
+            passedStart += x.int_x;
+            continue;
+        }
+
+        if (i == clippedStart) 
+        {
+            i++; 
+            x.float_x = ClipSTVertBuffer[i][0];
+            clippedStart += x.int_x;
+            continue; 
+        }
+
         float q = 1.0f/ClipSTVertBuffer[i][3];
         VectorScaleXYZ(ClipSTVertBuffer[i], ClipSTVertBuffer[i], q);
         VectorMultiplyXYZ(ClipSTVertBuffer[i], camScale, ClipSTVertBuffer[i]);
@@ -370,10 +412,6 @@ WriteOutCode:
         VectorScaleXYZ(ClipSTVertBuffer[i+1], ClipSTVertBuffer[i+1], q);
         VectorScaleXYZ(ClipSTVertBuffer[i+3], ClipSTVertBuffer[i+3], q1);
         VectorScaleXYZ(ClipSTVertBuffer[i+5], ClipSTVertBuffer[i+5], q2);
-
-
-
-    
         
         DrawVector(ClipSTVertBuffer[i+1]);
         DrawColor(*color);
@@ -383,7 +421,8 @@ WriteOutCode:
         DrawVector(ClipSTVertBuffer[i+2]);
         DrawVector(ClipSTVertBuffer[i+5]);
         DrawColor(*color);
-        DrawVector(ClipSTVertBuffer[i+4]);        
+        DrawVector(ClipSTVertBuffer[i+4]); 
+        i += 6;       
     }
 
     SubmitCommand(false);
