@@ -335,8 +335,13 @@ WriteOutCode:
     DEBUGLOG("%d", count);
     DEBUGLOG("%d", clipCount);
     float multiplicand = 1.0f;
+
+    //AB BC CA A B C
+    u32 clipshit[6] = {0x01040, 0x00041, 0x010001, 0x01000, 0x00040, 0x00001};
     for (int j = 0; j<6; j++)
     {
+        VECTOR tempClipBuffer[72];
+        u32 outCount = 0;
         if (j & 1)
         {
             multiplicand = -1.0f;
@@ -345,8 +350,76 @@ WriteOutCode:
         }
         for(int i = 0; i<clipCount; i+=6)
         {
+             asm __volatile(
+                "lqc2 $vf1, 0x00(%1)\n"
+                "vclipw.xyz $vf1, $vf1\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "lqc2 $vf1, 0x00(%2)\n"
+                "vclipw.xyz $vf1, $vf1\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "lqc2 $vf1, 0x00(%3)\n"
+                "vclipw.xyz $vf1, $vf1\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "cfc2 %0, $vi18\n"
+                : "=r"(clipping)
+                : "r"(ClippingBuffer[i]), "r"(ClippingBuffer[i+2]), "r"(ClippingBuffer[i+4])
+                : "memory"
+            );
+
+            //AB intersection
+            if (clipping & clipshit[0] == clipshit[0])
+            {
+                clipCount += 3;
+                continue;
+            }
+
+            if (clipping & clipshit[1] == clipshit[1])
+            {
+                clipCount += 3;
+                continue;
+            }
+
+            if (clipping & clipshit[2] == clipshit[2])
+            {
+                clipCount += 3;
+                continue;
+            }
+
+            if (clipping & clipshit[3] == clipshit[3])
+            {
+                continue;
+            }
+
+            if (clipping & clipshit[4] == clipshit[4])
+            {
+                continue;
+            }
+
+            if (clipping & clipshit[5] == clipshit[5])
+            {
+                continue;
+            }
+            VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]);
+            VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]);  
+            VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]); 
+            VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+3]); 
+            VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+4]); 
+            VectorCopy(tempClipBuffer[outCount], ClippingBuffer[i+5]); 
 
         }
+        
+        for (int k = 0; k<6; k++) clipshit[k] += clipshit[k];
+
+        for (int k = 0; k<clipCount; k++) VectorCopy(ClippingBuffer[k], tempClipBuffer[k]);
     }
 
     //STEP 3 Do Perspective Divide
