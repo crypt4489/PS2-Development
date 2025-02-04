@@ -173,9 +173,9 @@ static void WriteOut(VECTOR v, VECTOR stq)
     
 }
 
-static void IntersectEdge(VECTOR a, VECTOR b, VECTOR stA, VECTOR stB, float interpolant)
+static float IntersectEdge(float com1, float com2, float w1, float w2)
 {
-
+    return (w1 - com1) / ((com2 - com1) - (w2 - w1));
 }
 
 u32 clipping, outclip;
@@ -315,6 +315,7 @@ static void ClippVerts(GameObject *obj)
         x.int_x = 3;
         ClipSTVertBuffer[count][1] = x.float_x;
         clipCount += 6;
+        count++;
         continue;
 WriteOutCode:
         
@@ -332,12 +333,15 @@ WriteOutCode:
         ClipSTVertBuffer[count++][0] = 0;
     }
 
-    DEBUGLOG("%d", count);
-    DEBUGLOG("%d", clipCount);
+    DEBUGLOG("reg count %d", count);
+    DEBUGLOG("clip count %d", clipCount);
     float multiplicand = 1.0f;
 
+    if (clipCount == 0) goto PD;
+
     //AB BC CA A B C
-    u32 clipshit[6] = {0x01040, 0x00041, 0x010001, 0x01000, 0x00040, 0x00001};
+    u32 clipshit[6] = {0x01040, 0x00041, 0x01001, 0x01000, 0x00040, 0x00001};
+    u32 component[6] = {0, 0, 1, 1, 2, 2};
     for (int j = 0; j<6; j++)
     {
         VECTOR tempClipBuffer[72];
@@ -375,37 +379,90 @@ WriteOutCode:
                 : "memory"
             );
 
+            DEBUGLOG("CLIPP CODE %x", clipping);
+
             //AB intersection
-            if (clipping & clipshit[0] == clipshit[0])
+            if ((clipping & clipshit[0]) == clipshit[0])
             {
-                clipCount += 3;
+                DEBUGLOG("HEREAB");
+                float t = IntersectEdge(ClippingBuffer[i+4][component[j]], ClippingBuffer[i][component[j]], multiplicand*ClippingBuffer[i+4][3], multiplicand * ClippingBuffer[i][3]);
+                float t2 = IntersectEdge(ClippingBuffer[i+4][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i+4][3], multiplicand * ClippingBuffer[i+2][3]);
+                VECTOR Aprime, Bprime, Tex1Prime, Tex2Prime;
+                LerpNum(ClippingBuffer[i+4], ClippingBuffer[i], Aprime, t, 4);
+                LerpNum(ClippingBuffer[i+4], ClippingBuffer[i+2], Bprime, t2, 4);
+                LerpNum(ClippingBuffer[i+5], ClippingBuffer[i+1], Tex1Prime, t, 3);
+                LerpNum(ClippingBuffer[i+5], ClippingBuffer[i+3], Tex2Prime, t2, 3);
+                VectorCopy(tempClipBuffer[outCount++], Aprime);
+                VectorCopy(tempClipBuffer[outCount++], Tex1Prime);  
+                VectorCopy(tempClipBuffer[outCount++], Bprime); 
+                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+4]); 
+                VectorCopy(tempClipBuffer[outCount], ClippingBuffer[i+5]);  
                 continue;
             }
-
-            if (clipping & clipshit[1] == clipshit[1])
+            //BC 
+            if ((clipping & clipshit[1]) == clipshit[1])
             {
-                clipCount += 3;
+                DEBUGLOG("HEREBC");
+                float t = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+4][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+4][3]);
+                float t2 = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+4][3]);
+                VECTOR Cprime, Bprime, Tex3Prime, Tex2Prime;
+                LerpNum(ClippingBuffer[i], ClippingBuffer[i+4], Cprime, t, 4);
+                LerpNum(ClippingBuffer[i], ClippingBuffer[i+2], Bprime, t2, 4);
+                LerpNum(ClippingBuffer[i], ClippingBuffer[i+5], Tex3Prime, t, 3);
+                LerpNum(ClippingBuffer[i], ClippingBuffer[i+3], Tex2Prime, t2, 3);
+
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]);  
+                 
+                VectorCopy(tempClipBuffer[outCount++], Bprime); 
+                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
+                
+                VectorCopy(tempClipBuffer[outCount++], Cprime);
+                VectorCopy(tempClipBuffer[outCount], Tex3Prime); 
                 continue;
             }
-
-            if (clipping & clipshit[2] == clipshit[2])
+            //CA
+            if ((clipping & clipshit[2]) == clipshit[2])
             {
-                clipCount += 3;
+                DEBUGLOG("HERECA");
+                float t = IntersectEdge(ClippingBuffer[i+2][component[j]], ClippingBuffer[i+4][component[j]], multiplicand*ClippingBuffer[i+2][3], multiplicand * ClippingBuffer[i+4][3]);
+                float t2 = IntersectEdge(ClippingBuffer[i+2][component[j]], ClippingBuffer[i][component[j]], multiplicand*ClippingBuffer[i+2][3], multiplicand * ClippingBuffer[i][3]);
+                VECTOR Cprime, Aprime, Tex3Prime, Tex1Prime;
+                LerpNum(ClippingBuffer[i+2], ClippingBuffer[i+4], Cprime, t, 4);
+                LerpNum(ClippingBuffer[i+2], ClippingBuffer[i], Aprime, t2, 4);
+                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex3Prime, t, 3);
+                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+1], Tex1Prime, t2, 3);
+
+                VectorCopy(tempClipBuffer[outCount++], Aprime); 
+                VectorCopy(tempClipBuffer[outCount++], Tex1Prime);  
+                 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]); 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+3]); 
+                
+                VectorCopy(tempClipBuffer[outCount++], Cprime);
+                VectorCopy(tempClipBuffer[outCount], Tex3Prime); 
                 continue;
             }
-
-            if (clipping & clipshit[3] == clipshit[3])
+            //A
+            if ((clipping & clipshit[3]) == clipshit[3])
             {
+                DEBUGLOG("HEREA %d", j);
+                //clipCount -= 6;
                 continue;
             }
-
-            if (clipping & clipshit[4] == clipshit[4])
+            //B
+            if ((clipping & clipshit[4]) == clipshit[4])
             {
+                DEBUGLOG("HEREB");
+                //clipCount -= 6;
                 continue;
             }
-
-            if (clipping & clipshit[5] == clipshit[5])
+            //C
+            if ((clipping & clipshit[5]) == clipshit[5])
             {
+                DEBUGLOG("HEREC");
+               //clipCount -= 6;
                 continue;
             }
             VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]);
@@ -419,10 +476,17 @@ WriteOutCode:
         
         for (int k = 0; k<6; k++) clipshit[k] += clipshit[k];
 
-        for (int k = 0; k<clipCount; k++) VectorCopy(ClippingBuffer[k], tempClipBuffer[k]);
+        DEBUGLOG("%d", clipCount);
+        for (int k = 0; k<clipCount; k++) {
+           // DumpVector(tempClipBuffer[k]);
+            VectorCopy(ClippingBuffer[k], tempClipBuffer[k]);
+        } 
+        DEBUGLOG("----------");
     }
 
     //STEP 3 Do Perspective Divide
+PD:
+    u32 clipLoc = 0;
 
     for (int i = 0; i<count;)
     {
@@ -438,9 +502,69 @@ WriteOutCode:
 
         if (i == clippedStart) 
         {
-            i++; 
+             
             x.float_x = ClipSTVertBuffer[i][0];
+            DEBUGLOG("%d", x.int_x);
             clippedStart += x.int_x;
+            x.float_x = ClipSTVertBuffer[i][1];
+            DEBUGLOG("%d", x.int_x);
+            i++;
+            for (int j = 0; j<x.int_x; j+=3)
+            {
+                float q = 1.0f/ClippingBuffer[clipLoc][3];
+                VectorScaleXYZ(ClippingBuffer[clipLoc], ClippingBuffer[clipLoc], q);
+                VectorMultiplyXYZ(ClippingBuffer[clipLoc], camScale, ClippingBuffer[clipLoc]);
+                VectorAddXYZ(ClippingBuffer[clipLoc], scale, ClippingBuffer[clipLoc]);
+            
+
+                float q1 = 1.0f/ClippingBuffer[clipLoc+2][3];
+                VectorScaleXYZ(ClippingBuffer[clipLoc+2], ClippingBuffer[clipLoc+2], q1);
+                VectorMultiplyXYZ(ClippingBuffer[clipLoc+2], camScale, ClippingBuffer[clipLoc+2]);
+                VectorAddXYZ(ClippingBuffer[clipLoc+2], scale, ClippingBuffer[clipLoc+2]);
+
+                float q2 = 1.0f/ClippingBuffer[clipLoc+4][3];
+                VectorScaleXYZ(ClippingBuffer[clipLoc+4], ClippingBuffer[clipLoc+4], q2);
+                VectorMultiplyXYZ(ClippingBuffer[clipLoc+4], camScale, ClippingBuffer[clipLoc+4]);
+                VectorAddXYZ(ClippingBuffer[clipLoc+4], scale, ClippingBuffer[clipLoc+4]);
+
+                
+
+                asm __volatile(
+                    "lqc2 $vf1, 0x00(%0)\n"
+                    "lqc2 $vf2, 0x00(%1)\n"
+                    "lqc2 $vf3, 0x00(%2)\n"
+                    "vftoi4.xyz $vf1, $vf1\n"
+                    "vftoi4.xyz $vf2, $vf2\n"
+                    "vftoi4.xyz $vf3, $vf3\n"
+                    "vaddx.w $vf1, $vf0, $vf0\n"
+                    "vaddx.w $vf2, $vf0, $vf0\n"
+                    "vaddx.w $vf3, $vf0, $vf0\n"
+                    "sqc2 $vf1, 0x00(%0)\n"
+                    "sqc2 $vf2, 0x00(%1)\n"
+                    "sqc2 $vf3, 0x00(%2)\n"
+                
+                    :
+                    : "r"(ClippingBuffer[clipLoc]), "r"(ClippingBuffer[clipLoc+2]), "r"(ClippingBuffer[clipLoc+4])
+                    : "memory"
+                );
+
+
+                VectorScaleXYZ(ClippingBuffer[clipLoc+1], ClippingBuffer[clipLoc+1], q);
+                VectorScaleXYZ(ClippingBuffer[clipLoc+3], ClippingBuffer[clipLoc+3], q1);
+                VectorScaleXYZ(ClippingBuffer[clipLoc+5], ClippingBuffer[clipLoc+5], q2);
+                
+                DrawVector(ClippingBuffer[clipLoc+1]);
+                DrawColor(*color);
+                DrawVector(ClippingBuffer[clipLoc]);
+                DrawVector(ClippingBuffer[clipLoc+3]);
+                DrawColor(*color);
+                DrawVector(ClippingBuffer[clipLoc+2]);
+                DrawVector(ClippingBuffer[clipLoc+5]);
+                DrawColor(*color);
+                DrawVector(ClippingBuffer[clipLoc+4]); 
+                clipLoc+=6;
+                DEBUGLOG("HELLO");
+            }
             continue; 
         }
 
