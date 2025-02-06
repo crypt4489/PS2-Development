@@ -346,8 +346,11 @@ void LerpNum(VECTOR in1, VECTOR in2, VECTOR output, float delta, u32 components)
     for (int i = 0; i < components; i++)
     {
         temp = in2[i] - in1[i];
+        //DEBUGLOG("%f", temp);
         temp = temp * delta;
+        //DEBUGLOG("%f", temp);
         output[i] = temp + in1[i];
+        //DEBUGLOG("%f %f", output[i], temp+in1[i]);
     }
 }
 
