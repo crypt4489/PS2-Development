@@ -147,7 +147,7 @@ void MatrixVectorTransform(VECTOR out, MATRIX m, VECTOR in)
         : "memory");
 }
 
-void CreateProjectionMatrix(MATRIX output, float width, float height, float aspect, float near, float far, float angle)
+void CreateProjectionMatrix(MATRIX output, float aspect, float near, float far, float angle)
 {
 
     MATRIX temp;
@@ -162,9 +162,9 @@ void CreateProjectionMatrix(MATRIX output, float width, float height, float aspe
 
     temp[0] = w;
     temp[5] = -h;
-    temp[10] = (f + n) / (f - n);
+    temp[10] = -(f + n) / (f - n);
     temp[11] = -1;
-    temp[14] = (2 * f * n) / (f - n);
+    temp[14] = -(2 * f * n) / (f - n);
     temp[15] = 0;
 
     MatrixCopy(output, temp);

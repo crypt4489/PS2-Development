@@ -11,7 +11,7 @@ void MatrixVoidCopy(void *dest, void *in);
 void MatrixVectorMultiply(VECTOR out, MATRIX m, VECTOR in);
 void MatrixVectorTransform(VECTOR out, MATRIX m, VECTOR in);
 
-void CreateProjectionMatrix(MATRIX output, float width, float height, float aspect, float near, float far, float angle);
+void CreateProjectionMatrix(MATRIX output, float aspect, float near, float far, float angle);
 void CreateRotationMatrix(VECTOR axis, float angle, MATRIX output);
 void CreateTranslationMatrix(VECTOR pos, MATRIX output);
 void CreateScaleMatrix(VECTOR scales, MATRIX output);

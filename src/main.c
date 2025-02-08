@@ -173,9 +173,20 @@ static void WriteOut(VECTOR v, VECTOR stq)
     
 }
 
+static float IntersectEdge2(VECTOR a, VECTOR b, VECTOR plane)
+{
+    float numer = -DotProductFour(plane, a);
+    float denom = DotProductFour(plane, b);
+    float ret = (numer/(denom+numer));
+    if (ret > 1.0f) ret = 0.0f;
+    return ret;
+}
+
 static float IntersectEdge(float com1, float com2, float w1, float w2)
 {
-    return (w1 - com1) / ((com2 - com1) - (w2 - w1));
+    //DEBUGLOG("%f %f", w1, com1);
+    //DEBUGLOG("%f %f", w2, com2);
+    return ((w1-com1) / ((w1 - com1) -(w2-com2))) - 0.01;//((com2 - com1) - (w2 - w1));
 }
 
 u32 clipping, outclip;
@@ -221,6 +232,10 @@ static void ClippVerts(GameObject *obj)
         MatrixVectorMultiply(v, m, verts[i]);
         MatrixVectorMultiply(v1, m, verts[i+1]);
         MatrixVectorMultiply(v2, m, verts[i+2]);
+        DEBUGLOG("Before clipping");
+       DumpVector(v);
+        DumpVector(v1);
+        DumpVector(v2);
     
         asm __volatile(
             "lqc2 $vf1, 0x00(%1)\n"
@@ -286,12 +301,13 @@ static void ClippVerts(GameObject *obj)
         judgement = clipping & comp;
         if (judgement == comp) {DEBUGLOG("HEREy-");  goto WriteOutCode;} 
 
+        comp += comp;
         judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREnear");  goto WriteOutCode;}  
+        if (judgement == comp) {DEBUGLOG("HEREfar");  goto WriteOutCode;}  
         //negative z far plane
         comp += comp;
         judgement = clipping & comp;
-        if (judgement == comp) {DEBUGLOG("HEREfar");  goto WriteOutCode;} 
+        if (judgement == comp) {DEBUGLOG("HEREnear");  goto WriteOutCode;} 
 
         VectorCopy(ClippingBuffer[clipCount], v);
         VectorCopy(ClippingBuffer[clipCount+1], texes[i]);  
@@ -336,28 +352,39 @@ WriteOutCode:
 
     DEBUGLOG("reg count %d", count);
     DEBUGLOG("clip count %d", clipCount);
-    float multiplicand = 1.0f;
+    //float multiplicand = 1.0f;
 
     if (clipCount == 0) goto PD;
 
     
     //AB BC CA A B C
     u32 clipshit[6] = {0x01040, 0x00041, 0x01001, 0x01000, 0x00040, 0x00001};
+    //u32 clipshit[6] = {0x10400, 0x00410, 0x10010, 0x10000, 0x00400, 0x00010};
     u32 component[6] = {0, 0, 1, 1, 2, 2};
+// right, left, bottom, top, near, far
+   /* VECTOR planes[1] = {{0.0f, 0.0f, -1.0f, 1.0f} /**, {-1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f, 1.0f},
+                        {0.0f, 1.0f, 0.0f, 1.0f},  {0.0f, 0.0f, -1.0f, 1.0f} */
+    VECTOR planes[6] = { {-1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f, 1.0f},
+                        {0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}; 
+   // VECTOR planes[1] = {{0.0f, 0.0f, -1.0f, 1.0f}};
+   float t = 0.0f, t2 = 0.0f, multiplicand = -1.0f;
     for (int j = 0; j<6; j++)
     {
         Bin2Float wow;
         u32 currentClip = clippedStart;
         VECTOR tempClipBuffer[72];
         u32 outCount = 0;
+
         if (j & 1)
         {
             multiplicand = -1.0f;
         } else {
             multiplicand = 1.0f;
         }
+        
         for(int i = 0; i<clipCount; i+=6, wow.float_x = ClipSTVertBuffer[currentClip][0], currentClip += wow.int_x)
         {
+            if (t > 1.0f || t2 > 1.0f) while(true);
              asm __volatile(
                 "lqc2 $vf1, 0x00(%1)\n"
                 "vclipw.xyz $vf1, $vf1\n"
@@ -390,9 +417,13 @@ WriteOutCode:
             //AB intersection
             if ((clipping & clipshit[0]) == clipshit[0])
             {
-                DEBUGLOG("HEREAB");
-                float t = IntersectEdge(ClippingBuffer[i+4][component[j]], ClippingBuffer[i][component[j]], multiplicand*ClippingBuffer[i+4][3], multiplicand * ClippingBuffer[i][3]);
-                float t2 = IntersectEdge(ClippingBuffer[i+4][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i+4][3], multiplicand * ClippingBuffer[i+2][3]);
+                DEBUGLOG("HEREAB %x", clipshit[0]);
+                t = IntersectEdge2(ClippingBuffer[i+4], ClippingBuffer[i], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i+4], ClippingBuffer[i+2], planes[j]);
+              // t = IntersectEdge(ClippingBuffer[i+4][component[j]] * multiplicand, ClippingBuffer[i][component[j]] *multiplicand, ClippingBuffer[i+4][3], ClippingBuffer[i][3]);
+              // t2 = IntersectEdge(ClippingBuffer[i+2][component[j]] * multiplicand, ClippingBuffer[i+4][component[j]] *multiplicand, ClippingBuffer[i+2][3], ClippingBuffer[i+4][3]);
+                
+                DEBUGLOG("%f %f", t, t2);
                 VECTOR Aprime, Bprime, Tex1Prime, Tex2Prime;
                 LerpNum(ClippingBuffer[i+4], ClippingBuffer[i], Aprime, t, 4);
                 LerpNum(ClippingBuffer[i+4], ClippingBuffer[i+2], Bprime, t2, 4);
@@ -403,20 +434,21 @@ WriteOutCode:
                 VectorCopy(tempClipBuffer[outCount++], Bprime); 
                 VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+4]); 
-                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+5]);  
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+5]);   
                 continue;
             }
             //BC 
             if ((clipping & clipshit[1]) == clipshit[1])
             {
-                DEBUGLOG("HEREBC");
-                float t = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+4][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+4][3]);
-                float t2 = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+4][3]);
+                DEBUGLOG("HEREBC %x", clipshit[1]);
+                t = IntersectEdge2(ClippingBuffer[i], ClippingBuffer[i+4], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i], ClippingBuffer[i+2], planes[j]);
+                DEBUGLOG("%f %f", t, t2);
                 VECTOR Cprime, Bprime, Tex3Prime, Tex2Prime;
                 LerpNum(ClippingBuffer[i], ClippingBuffer[i+4], Cprime, t, 4);
                 LerpNum(ClippingBuffer[i], ClippingBuffer[i+2], Bprime, t2, 4);
-                LerpNum(ClippingBuffer[i], ClippingBuffer[i+5], Tex3Prime, t, 3);
-                LerpNum(ClippingBuffer[i], ClippingBuffer[i+3], Tex2Prime, t2, 3);
+                LerpNum(ClippingBuffer[i+1], ClippingBuffer[i+5], Tex3Prime, t, 3);
+                LerpNum(ClippingBuffer[i+1], ClippingBuffer[i+3], Tex2Prime, t2, 3);
 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]);  
@@ -431,14 +463,23 @@ WriteOutCode:
             //CA
             if ((clipping & clipshit[2]) == clipshit[2])
             {
-                DEBUGLOG("HERECA");
-                float t = IntersectEdge(ClippingBuffer[i+2][component[j]], ClippingBuffer[i+4][component[j]], multiplicand*ClippingBuffer[i+2][3], multiplicand * ClippingBuffer[i+4][3]);
-                float t2 = IntersectEdge(ClippingBuffer[i+2][component[j]], ClippingBuffer[i][component[j]], multiplicand*ClippingBuffer[i+2][3], multiplicand * ClippingBuffer[i][3]);
+                DEBUGLOG("HERECA %x", clipshit[2]);
+                //DEBUGLOG("%f %f", multiplicand*ClippingBuffer[i+4][3], ClippingBuffer[i+4][3]);
+                t = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i+4], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i], planes[j]);
                 VECTOR Cprime, Aprime, Tex3Prime, Tex1Prime;
+              
+               DEBUGLOG("%f %f", t, t2);
+               DumpVector(ClippingBuffer[i]);
+               DumpVector(ClippingBuffer[i+2]);
+                
+                DumpVector(ClippingBuffer[i+4]);
+
+                
                 LerpNum(ClippingBuffer[i+2], ClippingBuffer[i+4], Cprime, t, 4);
-                LerpNum(ClippingBuffer[i+2], ClippingBuffer[i], Aprime, t2, 4);
-                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex3Prime, t, 3);
-                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+1], Tex1Prime, t2, 3);
+                    LerpNum(ClippingBuffer[i+2], ClippingBuffer[i], Aprime, t2, 4);
+                    LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex3Prime, t, 3);
+                    LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+1], Tex1Prime, t2, 3);
 
                 VectorCopy(tempClipBuffer[outCount++], Aprime); 
                 VectorCopy(tempClipBuffer[outCount++], Tex1Prime);  
@@ -448,15 +489,18 @@ WriteOutCode:
                 
                 VectorCopy(tempClipBuffer[outCount++], Cprime);
                 VectorCopy(tempClipBuffer[outCount++], Tex3Prime); 
+                 
                 continue;
             }
             //A
             if ((clipping & clipshit[3]) == clipshit[3])
             {
-                DEBUGLOG("HEREA %d", j);
+                DEBUGLOG("HEREA %d %x", j, clipshit[3]);
                 
-                float t = IntersectEdge(ClippingBuffer[i+2][component[j]], ClippingBuffer[i][component[j]], multiplicand*ClippingBuffer[i+2][3], multiplicand * ClippingBuffer[i][3]);
-                float t2 = IntersectEdge(ClippingBuffer[i+4][component[j]], ClippingBuffer[i][component[j]], multiplicand*ClippingBuffer[i+4][3], multiplicand * ClippingBuffer[i][3]);
+                t = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i+4], ClippingBuffer[i], planes[j]);
+
+                DEBUGLOG("%f %f %d", t, t2, j);
                 VECTOR Cprime, Bprime, Tex3Prime, Tex2Prime;
                 LerpNum(ClippingBuffer[i+2], ClippingBuffer[i], Bprime, t, 4);
                 LerpNum(ClippingBuffer[i+4], ClippingBuffer[i], Cprime, t2, 4);
@@ -480,29 +524,38 @@ WriteOutCode:
                 
                 VectorCopy(tempClipBuffer[outCount++], Cprime);
                 VectorCopy(tempClipBuffer[outCount++], Tex3Prime);  
-                DEBUGLOG("%f %f", t, t2);
-                DumpVector(ClippingBuffer[i]);
-                DumpVector(ClippingBuffer[i+4]);
+               // DEBUGLOG("%f %f", t, t2);
+               // DumpVector(ClippingBuffer[i]);
+               // DumpVector(ClippingBuffer[i+4]);
                 DumpVector(Cprime);
                 wow.float_x = ClipSTVertBuffer[currentClip][1];
                 wow.int_x += 3;
-                ClipSTVertBuffer[currentClip][1] = wow.float_x; 
+                ClipSTVertBuffer[currentClip][1] = wow.float_x;  
 
                 continue;
             }
             //B
             if ((clipping & clipshit[4]) == clipshit[4])
             {
-                DEBUGLOG("HEREB");
+                DEBUGLOG("HEREB %x", clipshit[4]);
                 //clipCount -= 6;
                 
-                float t = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+2][3]);
-                float t2 = IntersectEdge(ClippingBuffer[i+4][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i+4][3], multiplicand * ClippingBuffer[i+2][3]);
+                //float t = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+2][3]);
+                //float t2 = IntersectEdge(ClippingBuffer[i+4][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i+4][3], multiplicand * ClippingBuffer[i+2][3]);
+                DumpVector(ClippingBuffer[i]);
+                DumpVector(ClippingBuffer[i+2]);
+                DumpVector(ClippingBuffer[i+4]);
+                
+                t = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i+4], planes[j]);
+
+                DEBUGLOG("%f %f %d", t, t2, j);
+                
                 VECTOR Cprime, Aprime, Tex3Prime, Tex1Prime;
-                LerpNum(ClippingBuffer[i], ClippingBuffer[i+2], Aprime, t, 4);
-                LerpNum(ClippingBuffer[i+4], ClippingBuffer[i+2], Cprime, t2, 4);
-                LerpNum(ClippingBuffer[i+1], ClippingBuffer[i+3], Tex1Prime, t, 3);
-                LerpNum(ClippingBuffer[i+5], ClippingBuffer[i+3], Tex3Prime, t2, 3);
+                LerpNum(ClippingBuffer[i+2], ClippingBuffer[i], Aprime, t, 4);
+                LerpNum(ClippingBuffer[i+2], ClippingBuffer[i+4], Cprime, t2, 4);
+                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+1], Tex1Prime, t, 3);
+                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex3Prime, t2, 3);
 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]);  
@@ -523,6 +576,8 @@ WriteOutCode:
                 
                 VectorCopy(tempClipBuffer[outCount++], Cprime);
                 VectorCopy(tempClipBuffer[outCount++], Tex3Prime); 
+               // DumpVector(ClippingBuffer[i+2]);
+               // DEBUGLOG("%f %f", t, t2);
                 wow.float_x = ClipSTVertBuffer[currentClip][1];
                 wow.int_x += 3;
                 ClipSTVertBuffer[currentClip][1] = wow.float_x;
@@ -532,11 +587,13 @@ WriteOutCode:
             //C
             if ((clipping & clipshit[5]) == clipshit[5])
             {
-                DEBUGLOG("HEREC");
+                DEBUGLOG("HEREC %x", clipshit[5]);
                //clipCount -= 6;
                 
-                float t = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+4][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+4][3]);
-                float t2 = IntersectEdge(ClippingBuffer[i+2][component[j]], ClippingBuffer[i+4][component[j]], multiplicand*ClippingBuffer[i+2][3], multiplicand * ClippingBuffer[i+4][3]);
+                t = IntersectEdge2(ClippingBuffer[i], ClippingBuffer[i+4], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i+4], planes[j]);
+
+                DEBUGLOG("%f %f", t, t2);
                 VECTOR Bprime, Aprime, Tex2Prime, Tex1Prime;
                 LerpNum(ClippingBuffer[i], ClippingBuffer[i+4], Aprime, t, 4);
                 LerpNum(ClippingBuffer[i+2], ClippingBuffer[i+4], Bprime, t2, 4);
@@ -548,21 +605,23 @@ WriteOutCode:
                  
                  VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+3]); 
+
+                VectorCopy(tempClipBuffer[outCount++], Bprime);
+                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
                 
-                VectorCopy(tempClipBuffer[outCount++], Aprime);
-                VectorCopy(tempClipBuffer[outCount++], Tex1Prime); 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]); 
+
+                VectorCopy(tempClipBuffer[outCount++], Bprime);
+                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
 
                 VectorCopy(tempClipBuffer[outCount++], Aprime); 
                 VectorCopy(tempClipBuffer[outCount++], Tex1Prime);  
-                 
-                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]);
-                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+3]); 
+            
                 
-                VectorCopy(tempClipBuffer[outCount++], Bprime);
-                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
                 wow.float_x = ClipSTVertBuffer[currentClip][1];
                 wow.int_x += 3;
-                ClipSTVertBuffer[currentClip][1] = wow.float_x;
+                ClipSTVertBuffer[currentClip][1] = wow.float_x; 
                 continue;
             }
             VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]);
@@ -578,8 +637,9 @@ WriteOutCode:
         clipCount = outCount;
         DEBUGLOG("%d", clipCount);
         for (int k = 0; k<clipCount; k++) {
-           // DumpVector(tempClipBuffer[k]);
+           DumpVector(tempClipBuffer[k]);
             VectorCopy(ClippingBuffer[k], tempClipBuffer[k]);
+            if (((k+1) % 6) == 0) DEBUGLOG("---------------");
         } 
         DEBUGLOG("----------");
     }
@@ -614,6 +674,35 @@ PD:
             i++;
             for (int j = 0; j<x.int_x; j+=3)
             {
+
+
+                asm __volatile(
+                "lqc2 $vf1, 0x00(%1)\n"
+                "vclipw.xyz $vf1, $vf1\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "lqc2 $vf1, 0x00(%2)\n"
+                "vclipw.xyz $vf1, $vf1\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "lqc2 $vf1, 0x00(%3)\n"
+                "vclipw.xyz $vf1, $vf1\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "vnop\n"
+                "cfc2 %0, $vi18\n"
+                : "=r"(clipping)
+                : "r"(ClippingBuffer[clipLoc]), "r"(ClippingBuffer[clipLoc+2]), "r"(ClippingBuffer[clipLoc+4])
+                : "memory"
+            );
+
+                DEBUGLOG("FINAL CLIP %x", clipping);
+
                 float q = 1.0f/ClippingBuffer[clipLoc][3];
                 VectorScaleXYZ(ClippingBuffer[clipLoc], ClippingBuffer[clipLoc], q);
                 VectorMultiplyXYZ(ClippingBuffer[clipLoc], camScale, ClippingBuffer[clipLoc]);
@@ -746,19 +835,24 @@ static void SetupFont()
 
 static void SetupWorldObjects()
 {
+
+    float near = 3.0f;
+
+    float far = 1500.0f;
+
     VECTOR camera_position = {55.0f, 0.0f, +120.00f, 1.00f};
 
     VECTOR at = {+50.0f, 0.0f, +100.0f, 0.0f};
 
     DEBUGLOG("%f", graph_aspect_ratio());
 
-    cam = InitCamera(g_Manager.ScreenWidth, g_Manager.ScreenHeight, 1.0f, 1500.0, graph_aspect_ratio(), 60.0f);
+    cam = InitCamera(g_Manager.ScreenWidth, g_Manager.ScreenHeight, near, far, graph_aspect_ratio(), 60.0f);
 
     InitCameraVBOContainer(cam, 10.0f, 10.0f, 10.0f, VBO_FIT);
 
     CameraLookAt(cam, camera_position, at, up);
 
-    CreateProjectionMatrix(cam->proj, cam->width, cam->height, cam->aspect, 0.1f, 1500.0f, cam->angle);
+    CreateProjectionMatrix(cam->proj, cam->aspect, near, far, cam->angle);
 
     UpdateCameraMatrix(cam);
 
