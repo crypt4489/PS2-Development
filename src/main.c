@@ -165,7 +165,7 @@ static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
 
 
 static VECTOR ClipSTVertBuffer[144];
-static VECTOR ClippingBuffer[72];
+static VECTOR ClippingBuffer[160];
 
 
 static void WriteOut(VECTOR v, VECTOR stq)
@@ -178,7 +178,8 @@ static float IntersectEdge2(VECTOR a, VECTOR b, VECTOR plane)
     float numer = -DotProductFour(plane, a);
     float denom = DotProductFour(plane, b);
     float ret = (numer/(denom+numer));
-    if (ret > 1.0f) ret = 0.0f;
+    if (ret > 1.0f) ret = 1.0f;
+    if (ret < 0.0f) ret = 0.0f;
     return ret;
 }
 
@@ -195,7 +196,7 @@ static void ClippVerts(GameObject *obj)
     MATRIX m;
 
     VECTOR scale = {2048.0f, 2048.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
-    VECTOR camScale = {640.0f/2.0f, 448/2.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
+    VECTOR camScale = {320.0f, 224.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
     
     u32 vertCount = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
     VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
@@ -226,7 +227,7 @@ static void ClippVerts(GameObject *obj)
     int clippedStart = -1;
     int passedStart = -1;
     Bin2Float x;
-    for (int i = 0; i<3; i+=3)
+    for (int i = 0; i<6; i+=3)
     {
         VECTOR v, v1, v2;
         MatrixVectorMultiply(v, m, verts[i]);
@@ -358,21 +359,29 @@ WriteOutCode:
 
     
     //AB BC CA A B C
-    u32 clipshit[6] = {0x01040, 0x00041, 0x01001, 0x01000, 0x00040, 0x00001};
-    //u32 clipshit[6] = {0x10400, 0x00410, 0x10010, 0x10000, 0x00400, 0x00010};
+    //u32 clipshit[6] = {0x01040, 0x00041, 0x01001, 0x01000, 0x00040, 0x00001};
+  //  u32 clipshit[6] = {0x10400, 0x00410, 0x10010, 0x10000, 0x00400, 0x00010};
+    u32 clipshit[6] = {0x20800, 0x00820, 0x20020, 0x20000, 0x00800, 0x00020};
+
+    u32 clipshit2[6][6] = {{0x20800, 0x00820, 0x20020, 0x20000, 0x00800, 0x00020}, {0x10400, 0x00410, 0x10010, 0x10000, 0x00400, 0x00010},
+                            {0x01040, 0x00041, 0x01001, 0x01000, 0x00040, 0x00001}, {0x02080, 0x00082, 0x02002, 0x02000, 0x00080, 0x00002},
+                            {0x04100, 0x00104, 0x04004, 0x04000, 0x00100, 0x00004}, {0x08200, 0x00208, 0x08008, 0x08000, 0x00200, 0x00008}};
     u32 component[6] = {0, 0, 1, 1, 2, 2};
-// right, left, bottom, top, near, far
+// right, left, bottom, top, far, near
    /* VECTOR planes[1] = {{0.0f, 0.0f, -1.0f, 1.0f} /**, {-1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f, 1.0f},
                         {0.0f, 1.0f, 0.0f, 1.0f},  {0.0f, 0.0f, -1.0f, 1.0f} */
-    VECTOR planes[6] = { {-1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f, 1.0f},
-                        {0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}; 
-   // VECTOR planes[1] = {{0.0f, 0.0f, -1.0f, 1.0f}};
+   // VECTOR planes[6] = { {-1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f, 1.0f},
+     //                   {0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}; 
+
+     VECTOR planes[6] = { {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, -1.0f, 1.0f}, {-1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f, 1.0f},
+                       {0.0f, 1.0f, 0.0f, 1.0f}};
+    //VECTOR planes[1] = {{0.0f, 0.0f, 1.0f, 1.0f}};
    float t = 0.0f, t2 = 0.0f, multiplicand = -1.0f;
     for (int j = 0; j<6; j++)
     {
         Bin2Float wow;
         u32 currentClip = clippedStart;
-        VECTOR tempClipBuffer[72];
+        VECTOR tempClipBuffer[150];
         u32 outCount = 0;
 
         if (j & 1)
@@ -384,7 +393,7 @@ WriteOutCode:
         
         for(int i = 0; i<clipCount; i+=6, wow.float_x = ClipSTVertBuffer[currentClip][0], currentClip += wow.int_x)
         {
-            if (t > 1.0f || t2 > 1.0f) while(true);
+        
              asm __volatile(
                 "lqc2 $vf1, 0x00(%1)\n"
                 "vclipw.xyz $vf1, $vf1\n"
@@ -415,32 +424,42 @@ WriteOutCode:
             DEBUGLOG("CLIPP CODE %x %d", clipping, j);
 
             //AB intersection
-            if ((clipping & clipshit[0]) == clipshit[0])
+            if ((clipping & clipshit2[j][0]) == clipshit2[j][0])
             {
-                DEBUGLOG("HEREAB %x", clipshit[0]);
+                DEBUGLOG("HEREAB %x", clipshit2[j][0]);
                 t = IntersectEdge2(ClippingBuffer[i+4], ClippingBuffer[i], planes[j]);
-                t2 = IntersectEdge2(ClippingBuffer[i+4], ClippingBuffer[i+2], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i+4], planes[j]);
               // t = IntersectEdge(ClippingBuffer[i+4][component[j]] * multiplicand, ClippingBuffer[i][component[j]] *multiplicand, ClippingBuffer[i+4][3], ClippingBuffer[i][3]);
               // t2 = IntersectEdge(ClippingBuffer[i+2][component[j]] * multiplicand, ClippingBuffer[i+4][component[j]] *multiplicand, ClippingBuffer[i+2][3], ClippingBuffer[i+4][3]);
                 
                 DEBUGLOG("%f %f", t, t2);
                 VECTOR Aprime, Bprime, Tex1Prime, Tex2Prime;
                 LerpNum(ClippingBuffer[i+4], ClippingBuffer[i], Aprime, t, 4);
-                LerpNum(ClippingBuffer[i+4], ClippingBuffer[i+2], Bprime, t2, 4);
+                LerpNum(ClippingBuffer[i+2], ClippingBuffer[i+4], Bprime, t2, 4);
                 LerpNum(ClippingBuffer[i+5], ClippingBuffer[i+1], Tex1Prime, t, 3);
-                LerpNum(ClippingBuffer[i+5], ClippingBuffer[i+3], Tex2Prime, t2, 3);
+                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex2Prime, t2, 3);
+
+
+              /*  if (j == 0)
+                {
+                    float clamp = Abs(Aprime[3])- 0.05;
+                    Aprime[2] = Max(-clamp, Aprime[2]);
+                    clamp = Abs(Bprime[3])- 0.05;
+                    Bprime[2] = Max(-clamp, Bprime[2]);
+                } 
+                */
                 VectorCopy(tempClipBuffer[outCount++], Aprime);
                 VectorCopy(tempClipBuffer[outCount++], Tex1Prime);  
                 VectorCopy(tempClipBuffer[outCount++], Bprime); 
                 VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+4]); 
-                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+5]);   
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+5]);    
                 continue;
             }
             //BC 
-            if ((clipping & clipshit[1]) == clipshit[1])
+            if ((clipping & clipshit2[j][1]) == clipshit2[j][1])
             {
-                DEBUGLOG("HEREBC %x", clipshit[1]);
+                DEBUGLOG("HEREBC %x", clipshit2[j][1]);
                 t = IntersectEdge2(ClippingBuffer[i], ClippingBuffer[i+4], planes[j]);
                 t2 = IntersectEdge2(ClippingBuffer[i], ClippingBuffer[i+2], planes[j]);
                 DEBUGLOG("%f %f", t, t2);
@@ -449,6 +468,14 @@ WriteOutCode:
                 LerpNum(ClippingBuffer[i], ClippingBuffer[i+2], Bprime, t2, 4);
                 LerpNum(ClippingBuffer[i+1], ClippingBuffer[i+5], Tex3Prime, t, 3);
                 LerpNum(ClippingBuffer[i+1], ClippingBuffer[i+3], Tex2Prime, t2, 3);
+
+              /*  if (j == 0)
+                {
+                    float clamp = Abs(Cprime[3])- 0.05;
+                    Cprime[2] = Max(-clamp, Cprime[2]);
+                    clamp = Abs(Bprime[3])- 0.05;
+                    Bprime[2] = Max(-clamp, Bprime[2]);
+                } */
 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]);  
@@ -461,12 +488,12 @@ WriteOutCode:
                 continue;
             }
             //CA
-            if ((clipping & clipshit[2]) == clipshit[2])
+            if ((clipping & clipshit2[j][2]) == clipshit2[j][2])
             {
-                DEBUGLOG("HERECA %x", clipshit[2]);
+                DEBUGLOG("HERECA %x", clipshit2[j][2]);
                 //DEBUGLOG("%f %f", multiplicand*ClippingBuffer[i+4][3], ClippingBuffer[i+4][3]);
                 t = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i+4], planes[j]);
-                t2 = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i], planes[j]);
+                t2 = IntersectEdge2(ClippingBuffer[i], ClippingBuffer[i+2], planes[j]);
                 VECTOR Cprime, Aprime, Tex3Prime, Tex1Prime;
               
                DEBUGLOG("%f %f", t, t2);
@@ -476,26 +503,42 @@ WriteOutCode:
                 DumpVector(ClippingBuffer[i+4]);
 
                 
+
+                
                 LerpNum(ClippingBuffer[i+2], ClippingBuffer[i+4], Cprime, t, 4);
-                    LerpNum(ClippingBuffer[i+2], ClippingBuffer[i], Aprime, t2, 4);
+                    LerpNum(ClippingBuffer[i], ClippingBuffer[i+2], Aprime, t2, 4);
                     LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex3Prime, t, 3);
-                    LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+1], Tex1Prime, t2, 3);
+                    LerpNum(ClippingBuffer[i+1], ClippingBuffer[i+3], Tex1Prime, t2, 3);
+
+                /*   if (j == 0)
+                {
+                    
+                    float clamp = Abs(Cprime[3])- 0.05;
+                    DEBUGLOG("CLAMP %f %f", -clamp, Cprime[2]);
+                  //  Cprime[2] = Max(-clamp, Cprime[2]);
+                   clamp = Abs(Aprime[3])- 0.05;
+                   DEBUGLOG("CLAMP %f %f", -clamp, Aprime[2]);
+                    //Aprime[2] = Max(-clamp, Aprime[2]);
+                     DEBUGLOG("CLAMP %f %f", Cprime[2], Aprime[2]);
+                } */
+                
+              
 
                 VectorCopy(tempClipBuffer[outCount++], Aprime); 
-                VectorCopy(tempClipBuffer[outCount++], Tex1Prime);  
+                VectorCopy(tempClipBuffer[outCount++], Tex1Prime); 
                  
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+3]); 
                 
-                VectorCopy(tempClipBuffer[outCount++], Cprime);
+                  VectorCopy(tempClipBuffer[outCount++], Cprime);
                 VectorCopy(tempClipBuffer[outCount++], Tex3Prime); 
-                 
+                
                 continue;
             }
             //A
-            if ((clipping & clipshit[3]) == clipshit[3])
+            if ((clipping & clipshit2[j][3]) == clipshit2[j][3])
             {
-                DEBUGLOG("HEREA %d %x", j, clipshit[3]);
+                DEBUGLOG("HEREA %d %x", j, clipshit2[j][3]);
                 
                 t = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i], planes[j]);
                 t2 = IntersectEdge2(ClippingBuffer[i+4], ClippingBuffer[i], planes[j]);
@@ -507,6 +550,14 @@ WriteOutCode:
                 LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+1], Tex2Prime, t, 3);
                 LerpNum(ClippingBuffer[i+5], ClippingBuffer[i+1], Tex3Prime, t2, 3);
 
+               /* if (j == 0)
+                {
+                    float clamp = Abs(Cprime[3])- 0.05;
+                    Cprime[2] = Max(-clamp, Cprime[2]);
+                     clamp = Abs(Bprime[3])- 0.05;
+                    Bprime[2] = Max(-clamp, Bprime[2]);
+                } */
+                
                 VectorCopy(tempClipBuffer[outCount++], Bprime); 
                 VectorCopy(tempClipBuffer[outCount++], Tex2Prime);  
                  
@@ -516,14 +567,19 @@ WriteOutCode:
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+4]);
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+5]); 
 
+                VectorCopy(tempClipBuffer[outCount++], Cprime);
+                VectorCopy(tempClipBuffer[outCount++], Tex3Prime); 
+
                 VectorCopy(tempClipBuffer[outCount++], Bprime); 
-                VectorCopy(tempClipBuffer[outCount++], Tex2Prime);  
+                VectorCopy(tempClipBuffer[outCount++], Tex2Prime);
+                
                  
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+4]);
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+5]); 
+
+                  
                 
-                VectorCopy(tempClipBuffer[outCount++], Cprime);
-                VectorCopy(tempClipBuffer[outCount++], Tex3Prime);  
+                 
                // DEBUGLOG("%f %f", t, t2);
                // DumpVector(ClippingBuffer[i]);
                // DumpVector(ClippingBuffer[i+4]);
@@ -535,9 +591,9 @@ WriteOutCode:
                 continue;
             }
             //B
-            if ((clipping & clipshit[4]) == clipshit[4])
+            if ((clipping & clipshit2[j][4]) == clipshit2[j][4])
             {
-                DEBUGLOG("HEREB %x", clipshit[4]);
+                DEBUGLOG("HEREB %x", clipshit2[j][4]);
                 //clipCount -= 6;
                 
                 //float t = IntersectEdge(ClippingBuffer[i][component[j]], ClippingBuffer[i+2][component[j]], multiplicand*ClippingBuffer[i][3], multiplicand * ClippingBuffer[i+2][3]);
@@ -557,6 +613,14 @@ WriteOutCode:
                 LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+1], Tex1Prime, t, 3);
                 LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex3Prime, t2, 3);
 
+               /*if (j == 0)
+                {
+                    float clamp = Abs(Cprime[3])- 0.05;
+                    Cprime[2] = Max(-clamp, Cprime[2]);
+                    clamp = Abs(Aprime[3])- 0.05;
+                    Aprime[2] = Max(-clamp, Aprime[2]);
+                } */
+                
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]);  
                  
@@ -576,6 +640,8 @@ WriteOutCode:
                 
                 VectorCopy(tempClipBuffer[outCount++], Cprime);
                 VectorCopy(tempClipBuffer[outCount++], Tex3Prime); 
+
+                
                // DumpVector(ClippingBuffer[i+2]);
                // DEBUGLOG("%f %f", t, t2);
                 wow.float_x = ClipSTVertBuffer[currentClip][1];
@@ -585,38 +651,55 @@ WriteOutCode:
                 continue;
             }
             //C
-            if ((clipping & clipshit[5]) == clipshit[5])
+            if ((clipping & clipshit2[j][5]) == clipshit2[j][5])
             {
-                DEBUGLOG("HEREC %x", clipshit[5]);
+                DEBUGLOG("HEREC %x", clipshit2[j][5]);
                //clipCount -= 6;
                 
-                t = IntersectEdge2(ClippingBuffer[i], ClippingBuffer[i+4], planes[j]);
+                t = IntersectEdge2(ClippingBuffer[i+4], ClippingBuffer[i], planes[j]);
                 t2 = IntersectEdge2(ClippingBuffer[i+2], ClippingBuffer[i+4], planes[j]);
 
                 DEBUGLOG("%f %f", t, t2);
                 VECTOR Bprime, Aprime, Tex2Prime, Tex1Prime;
-                LerpNum(ClippingBuffer[i], ClippingBuffer[i+4], Aprime, t, 4);
+                LerpNum(ClippingBuffer[i+4], ClippingBuffer[i], Aprime, t, 4);
                 LerpNum(ClippingBuffer[i+2], ClippingBuffer[i+4], Bprime, t2, 4);
-                LerpNum(ClippingBuffer[i+1], ClippingBuffer[i+5], Tex1Prime, t, 3);
-                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex2Prime, t2, 3);
+                LerpNum(ClippingBuffer[i+5], ClippingBuffer[i+1], Tex1Prime, t, 2);
+                LerpNum(ClippingBuffer[i+3], ClippingBuffer[i+5], Tex2Prime, t2, 2);
 
+                Tex1Prime[2] = 1.0f;
+                Tex2Prime[2] = 1.0f;
+
+              /*  if (j == 0)
+                {
+                    float clamp = Abs(Bprime[3])- 0.05;
+                    Bprime[2] = Max(-clamp, Bprime[2]);
+                    clamp = Abs(Aprime[3])- 0.05;
+                    Aprime[2] = Max(-clamp, Aprime[2]);
+                } */
+                
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]);  
                  
-                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]); 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]); 
                 VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+3]); 
 
-                VectorCopy(tempClipBuffer[outCount++], Bprime);
-                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
-                
-                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]); 
-                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+1]); 
-
-                VectorCopy(tempClipBuffer[outCount++], Bprime);
-                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
+                VectorCopy(tempClipBuffer[outCount++], Aprime); 
+                VectorCopy(tempClipBuffer[outCount++], Tex1Prime); 
 
                 VectorCopy(tempClipBuffer[outCount++], Aprime); 
-                VectorCopy(tempClipBuffer[outCount++], Tex1Prime);  
+                VectorCopy(tempClipBuffer[outCount++], Tex1Prime);
+
+               
+
+               
+                
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+2]); 
+                VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+3]); 
+
+                
+                VectorCopy(tempClipBuffer[outCount++], Bprime);
+                VectorCopy(tempClipBuffer[outCount++], Tex2Prime); 
+                 
             
                 
                 wow.float_x = ClipSTVertBuffer[currentClip][1];
@@ -633,13 +716,13 @@ WriteOutCode:
 
         }
         
-        for (int k = 0; k<6; k++) clipshit[k] += clipshit[k];
+       // for (int k = 0; k<6; k++) clipshit[k] += clipshit[k];
         clipCount = outCount;
         DEBUGLOG("%d", clipCount);
         for (int k = 0; k<clipCount; k++) {
-           DumpVector(tempClipBuffer[k]);
+          // DumpVector(tempClipBuffer[k]);
             VectorCopy(ClippingBuffer[k], tempClipBuffer[k]);
-            if (((k+1) % 6) == 0) DEBUGLOG("---------------");
+            //if (((k+1) % 6) == 0) DEBUGLOG("---------------");
         } 
         DEBUGLOG("----------");
     }
@@ -671,8 +754,9 @@ PD:
             clippedStart += x.int_x;
             x.float_x = ClipSTVertBuffer[i][1];
             DEBUGLOG("%d", x.int_x);
+            int loop = x.int_x;
             i++;
-            for (int j = 0; j<x.int_x; j+=3)
+            for (int j = 0; j<loop; j+=3)
             {
 
 
@@ -702,6 +786,16 @@ PD:
             );
 
                 DEBUGLOG("FINAL CLIP %x", clipping);
+
+                clipping &= 0x20820;
+
+                if (clipping)
+                {
+                    DEBUGLOG("HERE");
+                    x.int_x = 0x0000;
+                } else {
+                    x.int_x = 0;
+                }
 
                 float q = 1.0f/ClippingBuffer[clipLoc][3];
                 VectorScaleXYZ(ClippingBuffer[clipLoc], ClippingBuffer[clipLoc], q);
@@ -739,6 +833,10 @@ PD:
                     : "r"(ClippingBuffer[clipLoc]), "r"(ClippingBuffer[clipLoc+2]), "r"(ClippingBuffer[clipLoc+4])
                     : "memory"
                 );
+
+                ClippingBuffer[clipLoc][3] = x.float_x;
+                ClippingBuffer[clipLoc+2][3] = x.float_x;
+                ClippingBuffer[clipLoc+4][3] = x.float_x;
 
 
                 VectorScaleXYZ(ClippingBuffer[clipLoc+1], ClippingBuffer[clipLoc+1], q);
@@ -836,9 +934,9 @@ static void SetupFont()
 static void SetupWorldObjects()
 {
 
-    float near = 3.0f;
+    float near = .1f;
 
-    float far = 1500.0f;
+    float far = near*10000.0f;
 
     VECTOR camera_position = {55.0f, 0.0f, +120.00f, 1.00f};
 
@@ -1011,7 +1109,7 @@ static void SetupAABBBox()
 
     VECTOR scales;
     CreateVector(1.0f, 1.0f, 1.0f, 1.0f, scales);
-
+   // CreateVector(.25f, .25f, .25f, 1.0f, scales);
     SetupLTM(pos, up, right, forward, 
              scales,
              1.0f, box->ltm);
