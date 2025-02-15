@@ -165,7 +165,7 @@ static VECTOR volLightPos = {-20.0f, 15.0f, -20.0f, 1.0f};
 
 
 static VECTOR ClipSTVertBuffer[144];
-static VECTOR ClippingBuffer[160];
+static VECTOR ClippingBuffer[240];
 
 
 static void WriteOut(VECTOR v, VECTOR stq)
@@ -205,7 +205,7 @@ static void ClippVerts(GameObject *obj)
     MATRIX m;
 
     VECTOR scale = {2048.0f, 2048.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
-    VECTOR camScale = {320.0f, 224.0f, ((float)0xFFFFFF) / 32.0f, 0.0f};
+    VECTOR camScale = {320.0f, 224.0f, -((float)0xFFFFFF) / 32.0f, 0.0f};
     
     u32 vertCount = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertexCount;
     VECTOR *verts = obj->vertexBuffer.meshData[MESHTRIANGLES]->vertices;
@@ -236,7 +236,7 @@ static void ClippVerts(GameObject *obj)
     int clippedStart = -1;
     int passedStart = -1;
     Bin2Float x;
-    for (int i = 0; i<6; i+=3)
+    for (int i = 0; i<36; i+=3)
     {
         VECTOR v, v1, v2;
         MatrixVectorMultiply(v, m, verts[i]);
@@ -283,6 +283,7 @@ static void ClippVerts(GameObject *obj)
             VectorCopy(ClipSTVertBuffer[count+4], v2); 
             VectorCopy(ClipSTVertBuffer[count+5], texes[i+2]); 
             count += 6;
+        //    DEBUGLOG("%d", i);
             continue;
         }
 
@@ -326,7 +327,7 @@ static void ClippVerts(GameObject *obj)
         VectorCopy(ClippingBuffer[clipCount+4], v2); 
         VectorCopy(ClippingBuffer[clipCount+5], texes[i+2]); 
         
-        
+      //  DEBUGLOG("%d", i);
         ClipSTVertBuffer[count][0] = 0;
         
         if (lastClipped < 0)
@@ -360,8 +361,8 @@ WriteOutCode:
         ClipSTVertBuffer[count++][0] = 0;
     }
 
-    //DEBUGLOG("reg count %d", count);
-   // DEBUGLOG("clip count %d", clipCount);
+    DEBUGLOG("reg count %d", count);
+    DEBUGLOG("clip count %d", clipCount);
     //float multiplicand = 1.0f;
 
     if (clipCount == 0) goto PD;
@@ -386,36 +387,48 @@ WriteOutCode:
                        {0.0f, 1.0f, 0.0f, 1.0f}};
     //VECTOR planes[1] = {{0.0f, 0.0f, 1.0f, 1.0f}};
    float t = 1.0f, t2 = 1.0f;
+   u32 clipper2 = clippedStart;
     for (int g = 0; g<6; g++)
     {
         int j = component[g];
         Bin2Float wow;
-        u32 currentClip = clippedStart;
-        VECTOR tempClipBuffer[150];
+        u32 currentClip = clipper2;
+        VECTOR tempClipBuffer[240];
         
         u32 outCount = 0;
         wow.float_x = ClipSTVertBuffer[currentClip][1];
         int prevCount = wow.int_x;
-        for(int i = 0 ; i<clipCount; i+=6, wow.float_x = ClipSTVertBuffer[currentClip][1])
+        int what = prevCount * 2;
+        for(int i = 0 ; i<clipCount; i+=6)
         {
-            //DEBUGLOG("%d %d %d %d", i, wow.int_x, currentClip, prevCount);
+            
             
 
-            if ((i >> 1) >= prevCount)
+            while (what == i)
             {
-                //DEBUGLOG("HERE");
+                DEBUGLOG("%d %d %d", i, what, prevCount);
+                wow.int_x = prevCount;
+                ClipSTVertBuffer[currentClip][1] = wow.float_x;
                 wow.float_x = ClipSTVertBuffer[currentClip][0];
-                currentClip += wow.int_x;
+
+                if (!prevCount)
+                {
+                    int temp = currentClip;
+                    currentClip += wow.int_x;
+                    if (temp == clipper2)
+                    {
+                        clipper2 = currentClip;
+                    }
+                } else {
+                    currentClip += wow.int_x;
+                }
+
+                
+                
+
                 wow.float_x = ClipSTVertBuffer[currentClip][1];
-                prevCount = wow.int_x + i;
-            } 
-            else if (wow.int_x==0)
-            {
-               // DEBUGLOG("HERE");
-                wow.float_x = ClipSTVertBuffer[currentClip][0];
-                currentClip += wow.int_x;
-                wow.float_x = ClipSTVertBuffer[currentClip][1];
-                prevCount = wow.int_x + i;
+                prevCount = wow.int_x;
+                what = i + (prevCount * 2);
             }
 
            // DEBUGLOG("%d %d %d %d", i, wow.int_x, currentClip, prevCount);
@@ -452,9 +465,7 @@ WriteOutCode:
 
            if ((clipping & clipshit2[6][j]) == clipshit2[6][j]) { 
 
-                wow.int_x -= 3;
-                ClipSTVertBuffer[currentClip][1] = wow.float_x; 
-               // DEBUGLOG("%d %d", currentClip, wow.int_x);
+                prevCount -= 3;
                 continue;
                  
             
@@ -620,13 +631,7 @@ WriteOutCode:
                   
                 
                  
-               // DEBUGLOG("%f %f", t, t2);
-               // DumpVector(ClippingBuffer[i]);
-               // DumpVector(ClippingBuffer[i+4]);
-              //  DumpVector(Cprime);
-                wow.float_x = ClipSTVertBuffer[currentClip][1];
-                wow.int_x += 3;
-                ClipSTVertBuffer[currentClip][1] = wow.float_x;  
+                prevCount += 3;
 
                 continue;
             }
@@ -686,9 +691,7 @@ WriteOutCode:
                 
                // DumpVector(ClippingBuffer[i+2]);
                // DEBUGLOG("%f %f", t, t2);
-                wow.float_x = ClipSTVertBuffer[currentClip][1];
-                wow.int_x += 3;
-                ClipSTVertBuffer[currentClip][1] = wow.float_x;
+                prevCount += 3;
                   
                 continue;
             }
@@ -741,9 +744,7 @@ WriteOutCode:
                  
             
                 
-                wow.float_x = ClipSTVertBuffer[currentClip][1];
-                wow.int_x += 3;
-                ClipSTVertBuffer[currentClip][1] = wow.float_x; 
+                prevCount += 3;
                 continue;
             }
             VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i]);
@@ -754,6 +755,11 @@ WriteOutCode:
             VectorCopy(tempClipBuffer[outCount++], ClippingBuffer[i+5]); 
 
         }
+
+        wow.int_x = prevCount;
+        ClipSTVertBuffer[currentClip][1] = wow.float_x;
+        //wow.float_x = ClipSTVertBuffer[currentClip][0];
+            
         // DEBUGLOG("----------");
        // for (int k = 0; k<6; k++) clipshit[k] += clipshit[k];
         clipCount = outCount;
@@ -771,16 +777,19 @@ WriteOutCode:
 PD:
     u32 clipLoc = 0;
    //DEBUGLOG("--------------------");
-    for (int i = 0; i<count;)
+   int i = 0;
+    for (; i<count;)
     {
         Bin2Float x;
+
+        DEBUGLOG("%d", i);
 
         if (i == passedStart)
         {
             
             x.float_x = ClipSTVertBuffer[i][0];
             passedStart += x.int_x;
-            //DEBUGLOG("HERE %d %d", passedStart, x.int_x);
+           // DEBUGLOG("HERE %d %d", passedStart, x.int_x);
             i++;
             continue;
         }
@@ -789,10 +798,10 @@ PD:
         {
              
             x.float_x = ClipSTVertBuffer[i][0];
-           // DEBUGLOG("%d", x.int_x);
+          //  DEBUGLOG("%d", x.int_x);
             clippedStart += x.int_x;
             x.float_x = ClipSTVertBuffer[i][1];
-            //DEBUGLOG("%d", x.int_x);
+          //  DEBUGLOG("%d", x.int_x);
             int loop = x.int_x;
             i++;
             for (int j = 0; j<loop; j+=3)
@@ -939,6 +948,7 @@ PD:
     }
 
     SubmitCommand(false);
+    DEBUGLOG("%d %d %d", count, clipLoc, clippedStart);
 }
 
 static void update_cube(GameObject *cube)

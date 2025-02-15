@@ -11,7 +11,7 @@ START:
 
     lq.xyz  scale,          8(vi00)
 
-    ilw.w   renderFlags,    12(vi00)
+    ilw.w   renderFlags,    8(vi00)
 
     iaddiu  useSTQ,            vi00,         0x0040
     iand    useSTQ,           renderFlags,  useSTQ
