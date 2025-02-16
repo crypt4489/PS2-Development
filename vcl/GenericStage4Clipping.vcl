@@ -2,6 +2,45 @@
 
 #vuprog VU1_FullClipStage4
 
+
+; Persistent Integer Registers Mapping
+
+; VI03 - useSTQ
+; VI04 - useColor
+; VI05 - vertexData
+; VI06 - vertexCount
+; VI07 - destAddress
+; VI08 - outAddress
+; VI09 - clipStart
+; VI10 - passedStart
+
+
+; Non-Persistent Mapping For Sections
+
+; Setup 
+
+; VI01 - renderFlags
+; VI02 - iBase/useBW
+
+; Trivial Clip Check
+
+; VI01 - ClipTest/temp/nextPtr
+; VI02 - lastPassed
+; VI11 - lastClipped
+; VI12 - clipCount
+; VI13 - inPtr
+; VI14 - vertexCounter
+
+
+; Perspective Divide
+; VI01 - skip/loop
+; VI02 - stride
+; VI11 - totalCount
+; VI12 - vertexCounter
+; VI13 - kickAddress 
+; VI14 - inPtr
+; VI15 - ret
+
 START:
 
     MatrixLoad{ viewProj, 0, vi00 }
@@ -9,61 +48,58 @@ START:
 
  
 
-    ilw.w   renderFlags,    8(vi00)
+    ilw.w   VI01,    8(vi00)
 
-   
+    
 
-    iaddiu  useSTQ,            vi00,         0x0040
-    iand    useSTQ,           renderFlags,  useSTQ
+    iaddiu  VI03,            vi00,         0x0040
+    iand    VI03,            VI01,         VI03
 
-    iaddiu  useColor,            vi00,         0x0080
-    iand    useColor,            renderFlags,  useColor
+    iaddiu  VI04,            vi00,         0x0080
+    iand    VI04,            VI01,         VI04
 
 begin:
-    xtop    iBase
+    xtop    VI02
 
-    iaddiu  vertexData,     iBase,        1
-    ilw.w   vertCount,      0(iBase)
-    ibeq    vertCount,      vi00,          end
-    iadd    destAddress,    vertexData,   vertCount
-    ibeq    useSTQ,          vi00,         colorData
-    iadd    destAddress,    destAddress,  vertCount
+    iaddiu  VI05,      VI02,          1
+    ilw.w   VI06,      0(VI02)
+    ibeq    VI06,      VI00,         end
+    iadd    VI07,      VI05,         VI06
+    ibeq    VI03,      vi00,         colorData
+    iadd    VI07,      VI07,         VI06
 
 colorData:
-    ibeq    useColor,          vi00,         createColorOut
-    iadd    destAddress,    destAddress,  vertCount
-    b       checkOutBonesAndWeights
-createColorOut:
-    lq     outColor, 11(vi00)
+    ibeq    VI04,       vi00,       checkOutBonesAndWeights
+    iadd    VI07,       VI07,       VI06
 checkOutBonesAndWeights:
-    iaddiu  useBW,            vi00,         0x0100
-    iand    useBW,           renderFlags,    useBW
-    ibeq    useBW,            vi00,         startLoop
-    iadd    destAddress,    destAddress,  vertCount
-    iadd    destAddress,    destAddress,  vertCount
+    iaddiu  VI02,       VI00,       0x0100
+    iand    VI02,       VI01,       VI02
+    ibeq    VI02,       VI00,       startLoop
+    iadd    VI07,       VI07,       VI06
+    iadd    VI07,       VI07,       VI06
     
 
 startLoop:
-    iadd    outAddress, vi00,  destAddress
+    iadd   VI08,       VI00,       VI07
 
-    iadd vertexCounter, iBase, vertCount
+    iadd   VI14,        VI00,       VI06
 
     MatrixMultiply{ WVP, world, viewProj }
 
-    iaddi clipStart, vi00, -1
-    iaddi passedStart, vi00, -1
-    iaddi lastPassed, vi00, -1
-    iaddi lastClipped, vi00, -1
+    iaddi VI09, vi00, -1
+    iaddi VI10, vi00, -1
+    iaddi VI02, vi00, -1
+    iaddi VI11, vi00, -1
 
-    iadd clipCount, vi00, vi00
+    iadd  VI12, vi00, vi00
     
-    iadd  inPtr, vi00, vertexData
+    iadd  VI13, vi00, VI05
 
     clipTestLoop:
 
-        lq vertex1, 0(inPtr)
-        lq vertex2, 1(inPtr)
-        lq vertex3, 2(inPtr)
+        lq vertex1, 0(VI13)
+        lq vertex2, 1(VI13)
+        lq vertex3, 2(VI13)
 
 
         MatrixMultiplyVertex{ vertex1, WVP, vertex1 }
@@ -104,175 +140,186 @@ startLoop:
         ibne        VI01, VI00, OutsideClipSpace
     ; if none of those work, then we intersect
     IntersectClipSpace:
-        iaddiu, clipCount, clipCount, 3
-        sq vertex1, 0(destAddress)
-        sq vertex2, 1(destAddress)
-        sq vertex3, 2(destAddress)
-        iaddiu destAddress, destAddress, 3
-        iadd    nextPtr, inPtr, vertCount
-        ibeq    useSTQ, vi00, IntersectingColor
+        iaddiu, VI12, VI12, 3
+        sq vertex1, 0(VI07)
+        sq vertex2, 1(VI07)
+        sq vertex3, 2(VI07)
+        iaddiu  VI07, VI07, 3
+        iadd    VI01, VI13, VI06
+        ibeq    VI03, VI00, IntersectingColor
         
-        lq.xyz  tex1, 0(nextPtr)
-        lq.xyz  tex2, 1(nextPtr)
-        lq.xyz  tex3, 2(nextPtr)  
-        iadd    nextPtr, inPtr, vertCount
-        sq.xyz  tex1, 0(destAddress)  
-        sq.xyz  tex2, 1(destAddress)  
-        sq.xyz  tex3, 2(destAddress)   
-        iaddiu destAddress, destAddress, 3
+        lq.xyz  tex1, 0(VI01)
+        lq.xyz  tex2, 1(VI01)
+        lq.xyz  tex3, 2(VI01)  
+        iadd    VI01, VI01, VI05
+        sq.xyz  tex1, 0(VI07)  
+        sq.xyz  tex2, 1(VI07)  
+        sq.xyz  tex3, 2(VI07)   
+        iaddiu  VI07, VI07, 3
 
     IntersectingColor:
-        ibeq    useColor, vi00, LastClippedDet
-        lq.xyz  color1, 0(nextPtr)
-        lq.xyz  color2, 1(nextPtr)
-        lq.xyz  color3, 2(nextPtr)  
-        sq.xyz  color1, 0(destAddress)  
-        sq.xyz  color2, 1(destAddress)  
-        sq.xyz  color3, 2(destAddress)   
-        iaddiu destAddress, destAddress, 3
+        ibeq    VI04,   VI00, LastClippedDet
+        lq.xyz  color1, 0(VI01)
+        lq.xyz  color2, 1(VI01)
+        lq.xyz  color3, 2(VI01)  
+        sq.xyz  color1, 0(VI07)  
+        sq.xyz  color2, 1(VI07)  
+        sq.xyz  color3, 2(VI07)   
+        iaddiu  VI07, VI07, 3
 
     LastClippedDet:
-        ibgez  lastClipped, SetLastClipped
-        iadd   lastClipped, inPtr, vi00
-        iadd   clippedStart, inPtr, vi00
+        ibgez  VI11, SetLastClipped
+        iadd   VI11, VI13, vi00
+        iadd   VI09, VI13, vi00
         b      SetClipCount
-    SetLastClipped
-        isub   temp, inPtr, lastClipped
-        isw.x  temp, 0(lastClipped)
-        iadd   lastClipped, vi00, temp
+    SetLastClipped:
+        isub   VI01, VI13, VI11
+        isw.x  VI01, 0(VI11)
+        iadd   VI11, vi00, VI13
 
     SetClipCount:
-        iaddiu temp, vi00, 3
-        isw.y  temp, 0(inPtr)
-        isw.x  VI00, 0(inPtr)
+        iaddiu VI01, vi00, 3
+        isw.y  VI01, 0(VI13)
+        isw.x  VI00, 0(VI13)
         b      NextVertCheck
 
     OutsideClipSpace:
-        ibgez  lastPassed, SetLastPassed
-        iadd   lastPassed, inPtr, vi00
-        iadd   passedStart, inPtr, vi00
+        ibgez  VI02, SetLastPassed
+        iadd   VI02, VI13, vi00
+        iadd   VI10, VI13, vi00
         b      NextVertCheck
     SetLastPassed:
-        isub   temp, inPtr, lastPassed
-        isw.x  temp, 0(lastPassed)
-        iadd   lastPassed, vi00, temp
+        isub   VI01, VI13, VI02
+        isw.x  VI01, 0(VI02)
+        iadd   VI02, vi00, VI13
         b      NextVertCheck
     InClipSpace:
-        sq vertex1, 0(inPtr)
-        sq vertex2, 1(inPtr)
-        sq vertex3, 2(inPtr)
+        sq vertex1, 0(VI13)
+        sq vertex2, 1(VI13)
+        sq vertex3, 2(VI13)
    NextVertCheck: 
-        iadd inPtr, inPtr, 3
+        iaddiu VI13, VI13, 3
 
-        iaddi   vertexCounter,  vertexCounter,  -3
-        ibne    vertexCounter,  iBase,   clipTestLoop
-
-
-
-ibeq clipCount, vi00, PerspectiveDivide
+        iaddi   VI14,  VI14,  -3
+        ibne    VI14,  VI00,   clipTestLoop
 
 
+
+ibeq VI12, vi00, PerspectiveDivide
 
 PerspectiveDivide:
 lq.xyz  scale,          8(vi00)
 lq.xyz  camScale,       9(vi00)
 lq.yzw  primTag,        10(vi00)
-sq.yzw  primTag,    0(outAddress)
-iadd totalCount, vi00, vi00
-iadd vertexCounter, vi00, vertCount
-iaddiu outAddress, outAddress, 1
-iaddi kickAddress, outAddress, VI00
-iaddiu writeAddr, VI00, WriteOutVertex
+sq.yzw  primTag,    0(VI08)
+lq     outColor, 11(vi00)
+iadd VI11, vi00, vi00
+iadd VI12, vi00, VI06
+iaddiu VI08, VI08, 1
+iaddiu VI13, VI08, 0
 PerspectiveLoop:
 
-        iadd  inPtr, vi00, vertexData
+        iadd  VI14, vi00, VI05
 
-        ibne  inPtr, passedStart, CheckClipStart
+        ibne  VI14, VI10, CheckClipStart
 
-        ilw.x  skip, 0(inPtr)
+        iaddiu VI05, VI05, 2 ; skip two extra verts
 
-        iadd passedStart, skip, passedStart
+        ilw.x  VI01, 0(VI14)
+
+        iadd VI10, VI01, VI10
+
+        b NextPersVert
 
 CheckClipStart:
-        ibne  inPtr, clippedStart, InClipSpaceVert
+        ibne  VI14, VI09, InClipSpaceVert
 
-        ilw.x skip, 0(inPtr)
+        ilw.x VI01, 0(VI14)
 
-        iadd clipStart, skip, clipStart
+        iadd VI09, VI01, VI09
 
-        iaddiu vertexData, vertexData, 2 ; skip two extra, because we did it by triangle in beginning
+        iaddiu VI05, VI05, 2 ; skip two extra, because we did it by triangle in beginning
 
-        ilw.y loop,  0(inPtr)
+        ilw.y VI01,  0(VI14)
 
-        ibeq  loop, vi00, NextPersVert
+        ibeq  VI01, vi00, NextPersVert
 
-        iaddiu stride, vi00, 1
+        iaddiu VI02, vi00, 3
 
-        iadd inPtr, destAddress, vi00
+        
 
         ClippedWriteLoop:
 
-            jalr  ret, WriteOutVertex
+            iaddiu VI14, VI07, 0
 
-            iaddiu totalCount, totalCount, 1
+            bal VI15, WriteOutVertex
 
-            iaddi loop, loop, -1
+            iaddiu VI11, VI11, 1
 
-            ibne  loop, vi00, ClippedWriteLoop
+            iaddi VI01, VI01, -1
 
-        iadd destAddress, inPtr, vi00
+            iaddiu VI07, VI07, 1
+
+            ibne  VI01, vi00, ClippedWriteLoop
+
+            iaddiu VI07, VI14, 1 ; swap the tmep pointer to clip buffer new pointer
 
         b NextPersVert
 InClipSpaceVert:
 
-        iadd stride, vi00, vertCount
+        iadd VI02, vi00, VI06
 
-        jalr ret, writeAddr
+        bal VI15, WriteOutVertex
+
+         iaddiu VI11, VI11, 1
 
 
 NextPersVert:
-        iaddiu vertexData, vertexData, 1
-        iaddi  vertexCounter, vertexCounter, -1
-        ibne   vertexCounter,  vi00,   PerspectiveLoop
+        iaddiu VI05, VI05, 1
+        iaddi  VI12, VI12, -1
+        ibne   VI12,  vi00,   PerspectiveLoop
 
-    ilw.x   countTag,       10(vi00)
+    ilw.x   VI01,       10(vi00)
 
-    ior     countTag,       countTag,     vertCount
+    ior     VI01,       VI01,     VI11
 
-    isw.x   countTag,   0(kickAddress)
+    isw.x   VI01,   0(VI13)
 
-    xgkick kickAddress
+    xgkick VI13
 
     b end
 
 WriteOutVertex:
 
-        lq          vertex, 0(inPtr)
+        lq          vertex, 0(VI14)
         div         q,      vf00[w],    vertex[w]
-        iadd        inPtr,  stride,    inPtr
+        
         mul.xyz     vertex, vertex,     q
         mula.xyz    acc,    scale,      vf00[w]
         madd.xyz    vertex, vertex,     camScale
         ftoi4.xyz   vertex, vertex
         
 
-        ibeq    useSTQ,            vi00,         loadColor
-        lq      stq,            0(inPtr)
+        ibeq    VI03,            vi00,         loadColor
+        iadd     VI14,  VI02,    VI14
+        lq      stq,            0(VI14)
         mulq    modStq,         stq,          q
-        sq      modStq,         0(outAddress)
-        iaddiu  outAddress,    outAddress,    1
-        iadd    inPtr,  inPtr, stride
+        sq      modStq,         0(VI08)
+        iaddiu  VI08,    VI08,    1
+        
 
 loadColor:
-        ibeq    useColor,       vi00,         WriteDest
-        lq      outColor,       0(inPtr)
+        ibeq    VI04,           vi00,         WriteDest
+        iadd    VI14,    VI14,    VI02
+        lq      outColor,       0(VI14)
+
 
 WriteDest:
-        sq outColor,    0(outAddress)
-        sq.xyz vertex,  1(outAddress)
-        isw.w		VI00,   1(outAddress)
-        iaddiu  outAddress, outAddress, 2
-        jr ret
+        sq outColor,    0(VI08)
+        sq.xyz vertex,  1(VI08)
+        isw.w		VI00,   1(VI08)
+        iaddiu  VI08, VI08, 2
+        jr VI15
 
     --barrier
 
