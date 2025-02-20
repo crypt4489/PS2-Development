@@ -83,12 +83,14 @@ void RenderRay(Ray *ray, Color color, float t)
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
-    PushMatrix(m, 4, sizeof(MATRIX));
-    PushScaleVector();
-    PushColor(color.r, color.g, color.b, color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    PushInteger(0, 12, 3);
+    PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+    PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+    PushGSOffsetVector();
+    PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
+                DRAW_RGBAQ_REGLIST, VU1_LOCATION_PRIM_TAG);
+    PushInteger(0, VU1_LOCATION_RENDERFLAGS, 3);
     DrawCountWrite(2, 1);
     DrawVectorFloat(v[0][0], v[0][1], v[0][2], 1.0f);
     DrawVectorFloat(v[1][0], v[1][1], v[1][2], 1.0f);
@@ -106,12 +108,14 @@ void RenderLine(Line *line, Color color)
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
-    PushMatrix(m, 4, sizeof(MATRIX));
-    PushScaleVector();
-    PushColor(color.r, color.g, color.b, color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    PushInteger(0, 12, 3);
+    PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+    PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+    PushGSOffsetVector();
+    PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
+                DRAW_RGBAQ_REGLIST, VU1_LOCATION_PRIM_TAG);
+    PushInteger(0, VU1_LOCATION_RENDERFLAGS, 3);
     DrawCountWrite(2, 1);
     DrawVector(line->p1);
     DrawVector(line->p2);
@@ -129,11 +133,14 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
-    PushMatrix(m, 4, sizeof(MATRIX));
-    PushScaleVector();
-    PushColor(color.r, color.g, color.b, color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
+    PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+    PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+    PushGSOffsetVector();
+    PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
+                DRAW_RGBAQ_REGLIST, VU1_LOCATION_PRIM_TAG);
+    PushInteger(0, VU1_LOCATION_RENDERFLAGS, 3);
     DrawCountWrite(numVerts, 1);
     for (int i = 0; i<numVerts; i++)
     {
@@ -209,7 +216,7 @@ void RenderGameObject(GameObject *obj)
     AllocateShaderSpace(base, 0);
     PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushMatrix(obj->world, 4, sizeof(MATRIX));
-    PushScaleVector();
+    PushGSOffsetVector();
     PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
@@ -336,12 +343,14 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
-    PushMatrix(m, 4, sizeof(MATRIX));
-    PushScaleVector();
-    PushColor(color.r, color.g, color.b, color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    PushInteger(0, 12, 3);
+    PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+    PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+    PushGSOffsetVector();
+    PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
+                DRAW_RGBAQ_REGLIST, VU1_LOCATION_PRIM_TAG);
+    PushInteger(0, VU1_LOCATION_RENDERFLAGS, 3);
     DrawCountWrite(10, 1);
 
     DrawVector(v[0]);
@@ -380,13 +389,14 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
-    PushMatrix(m, 4, sizeof(MATRIX));
-    PushScaleVector();
-    PushColor(color.r, color.g, color.b, color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT,
-     DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    PushInteger(0, 12, 3);
+    PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+    PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+    PushGSOffsetVector();
+    PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
+                DRAW_RGBAQ_REGLIST, VU1_LOCATION_PRIM_TAG);
+    PushInteger(0, VU1_LOCATION_RENDERFLAGS, 3);
     DrawCountWrite(size*2, 1);
     for (int i = 0; i < size - 1; i++)
     {
@@ -425,12 +435,14 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     DepthTest(1, 3);
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_NOTEQUAL, 0xFF);
     AllocateShaderSpace(16, 0);
-     PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
-    PushMatrix(world, 4, sizeof(MATRIX));
-    PushScaleVector();
-    PushColor(color.r, color.g, color.b, color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
-    PushInteger(0, 12, 3);
+    PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+    PushMatrix(world, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+    PushGSOffsetVector();
+    PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
+                DRAW_RGBAQ_REGLIST, VU1_LOCATION_PRIM_TAG);
+    PushInteger(0, VU1_LOCATION_RENDERFLAGS, 3);
     DrawCountWrite(24, 1);
 
     DrawVector(v[0]);

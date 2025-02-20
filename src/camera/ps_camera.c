@@ -187,11 +187,11 @@ void CreateCameraFrustum(Camera *cam)
 
     float nh;
 
-    nh = cam->near * tanAngle;
+    nh = 1.0f * tanAngle;
 
     float nw;
 
-    nw = (cam->aspect * cam->near) - WIDTHEPSILON;
+    nw = (cam->aspect * 1.0f) - WIDTHEPSILON;
 
     frus->nwidth = nw;
     frus->nheight = nh;
@@ -203,7 +203,7 @@ void CreateCameraFrustum(Camera *cam)
 
     VectorScaleXYZ(farCenter, tempScale, cam->far);
     // VectorSubtractXYZ(cam->pos, tempScale, farCenter);
-    VectorScaleXYZ(nearCenter, tempScale, cam->near);
+    VectorScaleXYZ(nearCenter, tempScale, 1.0f);
     // VectorSubtractXYZ(cam->pos, tempScale, nearCenter);
     tempOut[3] = tempScale[3] = nearCenter[3] = farCenter[3] = 1.0f;
 
@@ -387,6 +387,7 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
         
         for (int i = 0; i < 6; i++)
         {
+            
             VECTOR pVert, nVert;
        
             FindPosAndNegVertexvbo(maxExtent, minExtent, cam->frus[1]->sides[i].planeEquation, pVert, nVert);
@@ -414,6 +415,10 @@ int TestObjectInCameraFrustum(Camera *cam, GameObject *obj)
 
         for (int i = 0; i<6; i++)
         {
+        
+
+            
+
             float d = DistanceFromPlane(cam->frus[1]->sides[i].planeEquation, worldCenter);
             // determine if the sphere is behind the plane (negative halfspace)
             if (d < -r)

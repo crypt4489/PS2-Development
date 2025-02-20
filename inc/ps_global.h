@@ -81,15 +81,7 @@ enum VU1Programs
     VU1GenericSkinned
 };
 
-enum VU1PipelineLocations
-{
-    VU1_LOCATION_GLOBAL_MATRIX = 4,
-    VU1_LOCATION_SCALE_VECTOR = 8,
-    VU1_LOCATION_PRIM_TAG = 10,
-    VU1_LOCATION_ANIMATION_VECTOR = 11,
-    VU1_LOCATION_UV_TRANSFORM = 16,
-    VU1_LOCATION_LIGHTS_BUFFER = 20,
-};
+
 
 
 #define GEN_PIPELINE_NAME "GEN_PIPELINE"
@@ -386,6 +378,22 @@ struct worldcblist_t
     world_callback callback;
     void *args;
     GameObject *obj;
+};
+
+enum VU1PipelineLocations
+{
+    VU1_LOCATION_VIEW_PROJ = 0,
+    VU1_LOCATION_GLOBAL_MATRIX = 4,
+    VU1_LOCATION_GS_SCALE_VECTOR = 8,
+    VU1_LOCATION_RENDERFLAGS = 8,
+    VU1_LOCATION_CAM_SCALE_VECTOR = 9,
+    VU1_LOCATION_ANIMATION_VECTOR = 9,
+    VU1_LOCATION_PRIM_TAG = 10,
+    VU1_LOCATION_MATERIAL_COLOR = 11,
+    VU1_LOCATION_NEGATIVE_CLIPPING = 14,
+    VU1_LOCATION_POSITIVE_CLIPPING = 15,
+    VU1_LOCATION_UV_TRANSFORM = 16,
+    VU1_LOCATION_LIGHTS_BUFFER = 20,
 };
 
 typedef void (*pipeline_callback)(VU1Pipeline *, GameObject *, void *, u32);

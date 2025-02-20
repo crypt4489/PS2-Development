@@ -972,7 +972,7 @@ static void SetupWorldObjects()
 
     float near = .1f;
 
-    float far = near*10000.0f;
+    float far = near*15000.0f;
 
     VECTOR camera_position = {55.0f, 0.0f, +120.00f, 1.00f};
 
@@ -1356,7 +1356,7 @@ static void RenderShadowVertices(VECTOR *verts, u32 numVerts, MATRIX m)
     AllocateShaderSpace(16, 0);
     PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
     PushMatrix(m, 4, sizeof(MATRIX));
-    PushScaleVector();
+    PushGSOffsetVector();
     PushColor(0, 0, 0, 0x80, 9);
     PushPairU64(GIF_SET_TAG(0, 1, 1, GS_SET_PRIM(PRIM_TRIANGLE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), DRAW_RGBAQ_REGLIST, 10);
     PushFloats(volLightPos, 11, 12);
@@ -1518,7 +1518,7 @@ int Render()
 
         ClearScreen(g_Manager.targetBack, g_Manager.gs_context, 0xFF, 0xFF, 0xFF, 0x80);
 
-       // DrawWorld(world);
+        DrawWorld(world);
 
        
 
@@ -1539,7 +1539,7 @@ int Render()
     
        // RenderShadowVertices(adjs, count, m);
         
-       ClippVerts(box);
+       //ClippVerts(box);
 
        // DrawShadowQuad(g_Manager.ScreenHeight, g_Manager.ScreenWidth, 0, 0, 1, 0xFF000000, 0, 0, 0, 0);
 
@@ -1567,7 +1567,9 @@ int Render()
         DispatchDrawBuffers();
 
 
-        //ReadFromVU(vu1_data_address, 100*4, 0);
+       // ReadFromVU(vu1_data_address, 100*4, 0);
+
+       // while(true);
 
         EndRendering(cam);
 

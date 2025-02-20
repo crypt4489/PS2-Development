@@ -96,7 +96,7 @@ void FrameBufferMaskWord(u32 mask);
 
 void DrawPairU64(u64 a, u64 b);
 
-void PushScaleVector();
+void PushGSOffsetVector();
 
 void DrawVectorFloat(float x, float y, float z, float w);
 
@@ -121,5 +121,7 @@ qword_t *GetVIFHeaderUpload();
 qword_t *GetSplitHeaderUpload();
 
 void ClearTape(int size);
+
+void PushCamOffsetVector(float camHWidth, float camHHeight, u32 zsm);
 
 #endif

@@ -250,28 +250,19 @@ void SetupPerObjDrawVU1HeaderAlphaMap(VU1Pipeline *pipe, GameObject *obj, void *
 
   InitializeVIFHeaderUpload(pipeline_temp, pipe->q + args->loc, args->count);
 
-  PushMatrix(screen, 0, sizeof(MATRIX));
-  PushMatrix(m, 4, sizeof(MATRIX));
-  PushScaleVector();
-  PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
+  //PushMatrix(screen, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+  //PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+  PushGSOffsetVector();
+  PushCamOffsetVector(cam->width>>1, cam->height>>1, g_Manager.targetBack->z->zsm);
+  PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, VU1_LOCATION_MATERIAL_COLOR);
   PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
                 obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 
                 obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
                 obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
                 obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count), 
-                obj->renderState.gsstate.gs_reg_mask, 10);
-  PushInteger((obj->renderState.properties.props & 0xffffff7f), 12, 3);
-  VECTOR camProps;
-  camProps[0] = cam->near;
-  camProps[1] = cam->frus[0]->nwidth;
-  camProps[2] = cam->frus[0]->nheight;
-  PushFloats(camProps, 13, sizeof(float) * 3);
-  if (GetDirtyLTM(cam->ltm))
-  {
-    PushMatrix(cam->quat, 14, sizeof(VECTOR));
-    PushFloats(*GetPositionVectorLTM(cam->ltm), 15, sizeof(float) * 3);
-  }
+                obj->renderState.gsstate.gs_reg_mask, VU1_LOCATION_PRIM_TAG);
+  PushInteger((obj->renderState.properties.props & 0xffffff7f), VU1_LOCATION_RENDERFLAGS, 3);
   ResetVIFDrawingState();
 }
 
@@ -295,27 +286,19 @@ void SetupPerObjDrawVU1Header(VU1Pipeline *pipe, GameObject *obj, void *arg, u32
   InitializeVIFHeaderUpload(pipeline_temp, pipe->q + args->loc, args->count);
 
 
-  PushScaleVector();
-  PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
+  PushGSOffsetVector();
+  PushCamOffsetVector(cam->width>>1, cam->height>>1, g_Manager.targetBack->z->zsm);
+
+  PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, VU1_LOCATION_MATERIAL_COLOR);
   PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
                 obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 
                 obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
                 obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
                 obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count), 
-                obj->renderState.gsstate.gs_reg_mask, 10);
-  PushInteger(obj->renderState.properties.props, 12, 3);
-  VECTOR camProps;
-  camProps[0] = cam->near;
-  camProps[1] = cam->frus[0]->nwidth;
-  camProps[2] = cam->frus[0]->nheight;
-  PushFloats(camProps, 13, sizeof(float) * 3);
-  if (GetDirtyLTM(cam->ltm))
-  {
-    
-    PushMatrix(cam->quat, 14, sizeof(VECTOR));
-    PushFloats(*GetPositionVectorLTM(cam->ltm), 15, sizeof(float) * 3);
-  }
+                obj->renderState.gsstate.gs_reg_mask, VU1_LOCATION_PRIM_TAG);
+  PushInteger(obj->renderState.properties.props, VU1_LOCATION_RENDERFLAGS, 3);
+ 
   ResetVIFDrawingState();
 }
 

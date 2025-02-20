@@ -312,11 +312,33 @@ void BindVectorInts(VectorInt *vectors, u32 count, bool top, u32 offset)
     UnpackAddress(assign, offset, vectors, count, top, VIF_CMD_UNPACK(0, 3, 0));
 }
 
-void PushScaleVector()
+void PushGSOffsetVector()
 {
     if (!sg_VIFHeaderUpload) return;
-    int diff = GetOffsetIntoHeader(VU1_LOCATION_SCALE_VECTOR);
-    VIFSetupScaleVector(sg_VIFHeaderUpload + 1 + diff);
+    int diff = GetOffsetIntoHeader(VU1_LOCATION_GS_SCALE_VECTOR);
+    qword_t *temp = DetermineVIFHeader(&diff);
+    VIFSetupScaleVector(temp + 1 + diff);
+}
+
+void PushCamOffsetVector(float camHWidth, float camHHeight, u32 zsm)
+{
+    if (!sg_VIFHeaderUpload) return;
+    int diff = GetOffsetIntoHeader(VU1_LOCATION_CAM_SCALE_VECTOR);
+    qword_t *temp = DetermineVIFHeader(&diff);
+    temp = temp + 1 + diff;
+    ((float *)temp->sw)[0] = camHWidth;
+    ((float *)temp->sw)[1] = camHHeight;
+    float depthScale = 0.0f;
+    switch(zsm)
+    {
+        case GS_PSMZ_24:
+            depthScale = -((float)0xFFFFFF) / 32.0f;
+            break;
+        default:
+            ERRORLOG("Unhandled depth value passed in");
+            break;
+    }
+    ((float *)temp->sw)[2] = depthScale;
 }
 
 void PushQWord(void *q, int offset)

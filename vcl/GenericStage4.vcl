@@ -9,15 +9,13 @@ START:
 
 	fcset   0x000000
 
-    lq.xyz  scale,          8(vi00)
-
     ilw.w   renderFlags,    8(vi00)
 
-    iaddiu  useSTQ,            vi00,         0x0040
+    iaddiu  useSTQ,           vi00,         0x0040
     iand    useSTQ,           renderFlags,  useSTQ
 
-    iaddiu  useColor,            vi00,         0x0080
-    iand    useColor,            renderFlags,  useColor
+    iaddiu  useColor,         vi00,         0x0080
+    iand    useColor,         renderFlags,  useColor
 
     add     outColor,       vf00,       vf00
 begin:
@@ -37,7 +35,7 @@ colorData:
     iadd    destAddress,    destAddress,  vertCount
     b       checkOutBonesAndWeights
 createColorOut:
-    lq     outColor, 9(vi00)
+    lq     outColor, 11(vi00)
 
 checkOutBonesAndWeights:
     iaddiu  useBW,            vi00,         0x0100
@@ -54,9 +52,13 @@ writeCountTag:
     iaddiu  destAddress, destAddress, 1
 
 
-    iadd vertexCounter, iBase, vertCount
+    iadd vertexCounter, VI00, vertCount
 
     MatrixMultiply{ WVP, world, viewProj }
+
+    lq.xyz  gsScale,          8(vi00)
+
+    lq.xyz  camScale,       9(VI00)
 
     vertexLoop:
 
@@ -75,11 +77,11 @@ writeCountTag:
 
         div         q,      vf00[w],    vertex[w]
         mul.xyz     vertex, vertex,     q
-        mula.xyz    acc,    scale,      vf00[w]
-        madd.xyz    vertex, vertex,     scale
+        mula.xyz    acc,    gsScale,    vf00[w]
+        madd.xyz    vertex, vertex,     camScale
         ftoi4.xyz   vertex, vertex
 
-        ibeq    useSTQ,            vi00,         loadColor
+        ibeq    useSTQ,         vi00,         loadColor
         iadd    inPtr,          inPtr,        vertCount
         lq      stq,            0(inPtr)
         mulq    modStq,         stq,          q
@@ -88,22 +90,22 @@ writeCountTag:
 
 loadColor:
 
-        ibeq    useColor,            vi00,         Data
+        ibeq    useColor,       vi00,         Data
         iadd    inPtr,          inPtr,        vertCount
         lq      outColor,       0(inPtr)
 
 
 
 Data:
-        sq outColor,    0(destAddress)
-        sq.xyz vertex,  1(destAddress)
-        isw.w		iADC,   1(destAddress)
+        sq      outColor,   0(destAddress)
+        sq.xyz  vertex,     1(destAddress)
+        isw.w   iADC,       1(destAddress)
 
-        iaddiu          destAddress,    destAddress,    2
-        iaddiu          vertexData,     vertexData,     1
+        iaddiu  destAddress,    destAddress,    2
+        iaddiu  vertexData,     vertexData,     1
 
         iaddi   vertexCounter,  vertexCounter,  -1
-        ibne    vertexCounter,  iBase,   vertexLoop
+        ibne    vertexCounter,  VI00,   vertexLoop
 
     --barrier
 
