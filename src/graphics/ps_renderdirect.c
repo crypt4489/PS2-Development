@@ -32,13 +32,10 @@ void DetermineVU1Programs(ObjectProperties *state, qword_t *programs)
 
     if (stage3)
     {
+        addr4 = VU1GenericLight3D;
         if (state->SPECULAR)
         {
             addr4 = VU1GenericSpecular;
-        }
-        else
-        {
-            addr4 = VU1GenericLight3D;
         }
     }
 
@@ -56,12 +53,9 @@ void DetermineVU1Programs(ObjectProperties *state, qword_t *programs)
 
     if (state->CLIPPING)
     {
-        programs->sw[stage1] = VU1GenericClipper;
-        programs->sw[(!stage1)&1] = addr4;
-    } else {
-        programs->sw[0] = addr4;
+        addr4 = VU1GenericClipper;
     }
-    
+    programs->sw[0] = addr4;
     programs->sw[2] = addr2;
     programs->sw[3] = addr3;
 }
@@ -86,6 +80,7 @@ void RenderRay(Ray *ray, Color color, float t)
     PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
     PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
     PushGSOffsetVector();
+    PushCamOffsetVector(g_DrawCamera->width>>1, g_DrawCamera->height>>1, g_Manager.targetBack->z->zsm);
     PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
@@ -111,6 +106,7 @@ void RenderLine(Line *line, Color color)
     PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
     PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
     PushGSOffsetVector();
+    PushCamOffsetVector(g_DrawCamera->width>>1, g_DrawCamera->height>>1, g_Manager.targetBack->z->zsm);
     PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
@@ -136,6 +132,7 @@ void RenderVertices(VECTOR *verts, u32 numVerts, Color color)
     PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
     PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
     PushGSOffsetVector();
+     PushCamOffsetVector(g_DrawCamera->width>>1, g_DrawCamera->height>>1, g_Manager.targetBack->z->zsm);
     PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
@@ -213,19 +210,6 @@ void RenderGameObject(GameObject *obj)
         ShaderProgram(programs.sw[i], i);
     DepthTest(obj->renderState.properties.Z_ENABLE, obj->renderState.properties.Z_TYPE);;
     SourceAlphaTest(ATEST_KEEP_FRAMEBUFFER, ATEST_METHOD_ALLPASS, 0xFF);
-    AllocateShaderSpace(base, 0);
-    PushMatrix(g_DrawCamera->viewProj, 0, sizeof(MATRIX));
-    PushMatrix(obj->world, 4, sizeof(MATRIX));
-    PushGSOffsetVector();
-    PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, 9);
-    PushPairU64(GIF_SET_TAG(0, 1, 1, 
-                GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
-                obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 
-                obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
-                obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
-                obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count), 
-                obj->renderState.gsstate.gs_reg_mask, 10);
-    PushInteger(obj->renderState.properties.props, 12, 3);
 
     Camera *cam = NULL;
     if (g_DrawWorld)
@@ -234,19 +218,29 @@ void RenderGameObject(GameObject *obj)
     }
     else
     {
-     cam = g_DrawCamera;
+        cam = g_DrawCamera;
     }
-    VECTOR camProps;
-    camProps[0] = cam->near;
-    camProps[1] = cam->frus[0]->nwidth;
-    camProps[2] = cam->frus[0]->nheight;
-    PushFloats(camProps, 13, sizeof(float) * 3);
-    PushMatrix(cam->quat, 14, sizeof(VECTOR));
-    PushFloats(*GetPositionVectorLTM(cam->ltm), 15, sizeof(float) * 3);
+
+    AllocateShaderSpace(base, 0);
+    PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
+    PushMatrix(obj->world, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
+    PushGSOffsetVector();
+    PushCamOffsetVector(cam->width>>1, cam->height>>1, g_Manager.targetBack->z->zsm);
+    PushColor(obj->renderState.color.r, obj->renderState.color.g, obj->renderState.color.b, obj->renderState.color.a, VU1_LOCATION_MATERIAL_COLOR);
+    PushPairU64(GIF_SET_TAG(0, 1, 1, 
+                GS_SET_PRIM(obj->renderState.gsstate.prim.type, obj->renderState.gsstate.prim.shading, 
+                obj->renderState.gsstate.prim.mapping, obj->renderState.gsstate.prim.fogging, 
+                obj->renderState.gsstate.prim.blending, obj->renderState.gsstate.prim.antialiasing, 
+                obj->renderState.gsstate.prim.mapping_type, g_Manager.gs_context, 
+                obj->renderState.gsstate.prim.colorfix), 0, obj->renderState.gsstate.gs_reg_count), 
+                obj->renderState.gsstate.gs_reg_mask, VU1_LOCATION_PRIM_TAG);
+    PushInteger(obj->renderState.properties.props, VU1_LOCATION_RENDERFLAGS, 3);
+
+    
   
     if (V_SKINNED & type)
     {
-        PushInteger(base, 11, 0);
+        PushInteger(base, VU1_LOCATION_ANIMATION_VECTOR, 0);
         UpdateVU1BoneMatrices(obj->vertexBuffer.meshAnimationData->finalBones, 
         obj->vertexBuffer.meshAnimationData->root,
         obj->objAnimator, 
@@ -346,6 +340,7 @@ void RenderPlaneLine(Plane *plane, Color color, int size)
     PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
     PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
     PushGSOffsetVector();
+    PushCamOffsetVector(g_DrawCamera->width>>1, g_DrawCamera->height>>1, g_Manager.targetBack->z->zsm);
     PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
@@ -392,6 +387,7 @@ void RenderSphereLine(BoundingSphere *sphere, Color color, int size)
     PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
     PushMatrix(m, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
     PushGSOffsetVector();
+    PushCamOffsetVector(g_DrawCamera->width>>1, g_DrawCamera->height>>1, g_Manager.targetBack->z->zsm);
     PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 
@@ -438,6 +434,7 @@ void RenderAABBBoxLine(BoundingBox *boxx, Color color, MATRIX world)
     PushMatrix(g_DrawCamera->viewProj, VU1_LOCATION_VIEW_PROJ, sizeof(MATRIX));
     PushMatrix(world, VU1_LOCATION_GLOBAL_MATRIX, sizeof(MATRIX));
     PushGSOffsetVector();
+    PushCamOffsetVector(g_DrawCamera->width>>1, g_DrawCamera->height>>1, g_Manager.targetBack->z->zsm);
     PushColor(color.r, color.g, color.b, color.a, VU1_LOCATION_MATERIAL_COLOR);
     PushPairU64(GIF_SET_TAG(0, 1, 1, 
                 GS_SET_PRIM(PRIM_LINE, PRIM_SHADE_FLAT, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, DRAW_DISABLE, PRIM_MAP_UV, g_Manager.gs_context, PRIM_UNFIXED), 0, 2), 

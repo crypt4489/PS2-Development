@@ -120,7 +120,7 @@ void DrawWorld(RenderWorld *world)
 
     g_DrawWorld = world;
 
-    while (node != NULL)
+    while (node)
     {
         GameObject *obj = (GameObject *)node->data;
 

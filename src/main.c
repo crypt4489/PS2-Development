@@ -1134,7 +1134,7 @@ static void SetupAABBBox()
 
     box = InitializeGameObject();
     ReadModelFile("MODELS\\BOX.BIN", &box->vertexBuffer);
-    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION);
+    SetupGameObjectPrimRegs(box, color, RENDERTEXTUREMAPPED | CULLING_OPTION | CLIPPING);
 
     u64 id = GetTextureIDByName(g_Manager.texManager, wowwer);
    // CreateMaterial(&box->vertexBuffer, 0, 17, id);
@@ -1567,9 +1567,9 @@ int Render()
         DispatchDrawBuffers();
 
 
-       // ReadFromVU(vu1_data_address, 100*4, 0);
+        //ReadFromVU(vu1_data_address + (*vif1_tops * 4), 100*4, 0);
 
-       // while(true);
+         //while(true);
 
         EndRendering(cam);
 

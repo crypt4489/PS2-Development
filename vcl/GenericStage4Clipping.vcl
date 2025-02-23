@@ -215,8 +215,9 @@ sq.yzw  primTag,    0(VI08)
 lq     outColor, 11(vi00)
 iadd VI11, vi00, vi00
 iadd VI12, vi00, VI06
-iaddiu VI08, VI08, 1
 iaddiu VI13, VI08, 0
+iaddiu VI08, VI08, 1
+
 PerspectiveLoop:
 
         iadd  VI14, vi00, VI05
@@ -224,6 +225,8 @@ PerspectiveLoop:
         ibne  VI14, VI10, CheckClipStart
 
         iaddiu VI05, VI05, 2 ; skip two extra verts
+
+        iaddi  VI12, VI12, -2
 
         ilw.x  VI01, 0(VI14)
 
@@ -239,6 +242,8 @@ CheckClipStart:
         iadd VI09, VI01, VI09
 
         iaddiu VI05, VI05, 2 ; skip two extra, because we did it by triangle in beginning
+
+        iaddi  VI12, VI12, -2
 
         ilw.y VI01,  0(VI14)
 

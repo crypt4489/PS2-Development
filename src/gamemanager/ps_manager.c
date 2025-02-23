@@ -44,9 +44,6 @@ extern u32 VU1_AnimTexStage2_CodeEnd __attribute__((section(".vudata")));
 extern u32 VU1_SpecularLightStage3_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_SpecularLightStage3_CodeEnd __attribute__((section(".vudata")));
 
-extern u32 VU1_ClippingStage_CodeStart __attribute__((section(".vudata")));
-extern u32 VU1_ClippingStage_CodeEnd __attribute__((section(".vudata")));
-
 extern u32 VU1_ClipStage4_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_ClipStage4_CodeEnd __attribute__((section(".vudata")));
 
@@ -55,6 +52,9 @@ extern u32 VU1_GenericBonesAnimStage1_CodeEnd __attribute__((section(".vudata"))
 
 extern u32 VU1_ShadowExtrusion_CodeStart __attribute__((section(".vudata")));
 extern u32 VU1_ShadowExtrusion_CodeEnd __attribute__((section(".vudata")));
+
+extern u32 VU1_FullClipStage4_CodeStart __attribute__((section(".vudata")));
+extern u32 VU1_FullClipStage4_CodeEnd __attribute__((section(".vudata")));
 
 // pad;
 
@@ -134,7 +134,7 @@ static void SetupVU1Programs()
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 
-    prog = CreateVU1Program(&VU1_ClippingStage_CodeStart, &VU1_ClippingStage_CodeEnd, 0); // 6
+    prog = CreateVU1Program(&VU1_FullClipStage4_CodeStart, &VU1_FullClipStage4_CodeEnd, 0); // 6
 
     AddProgramToManager(g_Manager.vu1Manager, prog);
 

@@ -186,35 +186,37 @@ NextVertCheck:
          NOP                                                        ibne          VI08,VI00,clipTestLoop              
          NOP                                                        iaddiu        VI13,VI13,0x00000003                
 ; _LNOPT_w=[ normal2 ] 9 [9 0] 9   [__v_GenericStage4Clipping_vcl_37]
-         NOP                                                        lq.yzw        VF11,10(VI00)                       
+         NOP                                                        lq.yzw        VF12,10(VI00)                       
          NOP                                                        lq.xyz        VF09,8(VI00)                        
          NOP                                                        lq.xyz        VF10,9(VI00)                        
-         NOP                                                        iaddiu        VI11,VI07,0x00000001                
-         NOP                                                        sq.yzw        VF11,0(VI07)                        
          NOP                                                        lq            VF11,11(VI00)                       
+         NOP                                                        sq.yzw        VF12,0(VI07)                        
          NOP                                                        iaddiu        VI08,VI00,0                         
          NOP                                                        iaddiu        VI01,VI05,0                         
-         NOP                                                        iaddiu        VI12,VI11,0                         
+         NOP                                                        iaddiu        VI11,VI07,0                         
+         NOP                                                        iaddiu        VI12,VI07,0x00000001                
 PerspectiveLoop:
 ; _LNOPT_w=[ normal2 ] 4 [4 0] 4   [PerspectiveLoop]
          NOP                                                        iaddiu        VI07,VI04,0                         
          NOP                                                        NOP                                               
          NOP                                                        ibne          VI07,VI10,CheckClipStart            
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 4 [5 0] 5   [__v_GenericStage4Clipping_vcl_41]
+; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [__v_GenericStage4Clipping_vcl_41]
          NOP                                                        ilw.x         VI07,0(VI07)                        
          NOP                                                        iaddiu        VI04,VI04,0x00000002                
+         NOP                                                        isubiu        VI01,VI01,2                         
          NOP                                                        b             NextPersVert                        
-         NOP                                                        iadd          VI10,VI07,VI10                             ;	STALL_LATENCY ?1
+         NOP                                                        iadd          VI10,VI07,VI10                      
 CheckClipStart:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [CheckClipStart]
          NOP                                                        ibne          VI07,VI09,InClipSpaceVert           
          NOP                                                        NOP                                               
-; _LNOPT_w=[ normal2 ] 5 [6 0] 6   [__v_GenericStage4Clipping_vcl_44]
+; _LNOPT_w=[ normal2 ] 6 [6 0] 6   [__v_GenericStage4Clipping_vcl_44]
          NOP                                                        ilw.y         VI13,0(VI07)                        
          NOP                                                        ilw.x         VI14,0(VI07)                        
          NOP                                                        iaddiu        VI04,VI04,0x00000002                
-         NOP                                                        ibeq          VI13,VI00,NextPersVert                     ;	STALL_LATENCY ?1
+         NOP                                                        isubiu        VI01,VI01,2                         
+         NOP                                                        ibeq          VI13,VI00,NextPersVert              
          NOP                                                        iadd          VI09,VI14,VI09                      
 ; _LNOPT_w=[ normal2 ] 1 [1 0] 1   [__v_GenericStage4Clipping_vcl_45]
          NOP                                                        iaddiu        VI14,VI00,0x00000003                
@@ -245,9 +247,9 @@ NextPersVert:
 ; _LNOPT_w=[ normal2 ] 5 [6 0] 8   [__v_GenericStage4Clipping_vcl_53]
          NOP                                                        ilw.x         VI01,10(VI00)                       
          NOP                                                        ior           VI01,VI01,VI08                             ;	STALL_LATENCY ?3
-         NOP                                                        isw.x         VI01,0(VI12)                        
+         NOP                                                        isw.x         VI01,0(VI11)                        
          NOP                                                        b             end                                 
-         NOP                                                        xgkick        VI12                                
+         NOP                                                        xgkick        VI11                                
 WriteOutVertex:
 ; _LNOPT_w=[ normal2 ] 6 [20 0] 20   [WriteOutVertex]
          mulaw.xyz     ACC,VF09,VF00w                               lq            VF12,0(VI07)                        
@@ -259,8 +261,8 @@ WriteOutVertex:
 ; _LNOPT_w=[ normal2 ] 4 [10 0] 10   [__v_GenericStage4Clipping_vcl_56]
          NOP                                                        iadd          VI07,VI14,VI07                      
          NOP                                                        lq            VF13,0(VI07)                        
-         mulq          VF13,VF13,Q                                  iaddiu        VI11,VI11,0x00000001                       ;	STALL_LATENCY ?3
-         NOP                                                        sq            VF13,-1(VI11)                              ;	STALL_LATENCY ?3
+         mulq          VF13,VF13,Q                                  iaddiu        VI12,VI12,0x00000001                       ;	STALL_LATENCY ?3
+         NOP                                                        sq            VF13,-1(VI12)                              ;	STALL_LATENCY ?3
 loadColor:
 ; _LNOPT_w=[ normal2 ] 2 [2 0] 2   [loadColor]
          NOP                                                        ibeq          VI03,VI00,WriteDest                 
@@ -270,11 +272,11 @@ loadColor:
          NOP                                                        lq            VF11,0(VI07)                        
 WriteDest:
 ; _LNOPT_w=[ normal2 ] 5 [5 0] 5   [WriteDest]
-         NOP                                                        isw.w         VI00,1(VI11)                        
-         NOP                                                        sq.xyz        VF12,1(VI11)                        
-         NOP                                                        iaddiu        VI11,VI11,0x00000002                
+         NOP                                                        isw.w         VI00,1(VI12)                        
+         NOP                                                        sq.xyz        VF12,1(VI12)                        
+         NOP                                                        iaddiu        VI12,VI12,0x00000002                
          NOP                                                        jr            VI15                                
-         NOP                                                        sq            VF11,-2(VI11)                       
+         NOP                                                        sq            VF11,-2(VI12)                       
 end:
 ; _LNOPT_w=[ normal2 ] 2 [0 0] 2   [end]
          NOP[E]                                                     NOP                                               
@@ -284,7 +286,7 @@ end:
          NOP                                                        NOP                                               
 		.align 4
 VU1_FullClipStage4_CodeEnd:
-;	iCount=205
+;	iCount=207
 ; register stats:
 ;  16 VU User integer
 ;  16 VU User floating point
